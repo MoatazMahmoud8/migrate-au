@@ -1,10 +1,20 @@
 import { Tabs } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
+import { View, StyleSheet, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
 import { Colors } from '../constants/theme';
 
 SplashScreen.hideAsync();
+
+function TabIcon({ name, color, focused }: { name: any; color: string; focused: boolean }) {
+  return (
+    <View style={[tabStyles.iconWrap, focused && tabStyles.iconActive]}>
+      <Ionicons name={name} size={20} color={color} />
+    </View>
+  );
+}
 
 export default function RootLayout() {
   return (
@@ -14,21 +24,39 @@ export default function RootLayout() {
         screenOptions={{
           tabBarActiveTintColor: Colors.secondary,
           tabBarInactiveTintColor: Colors.textMuted,
+          tabBarBackground: () => (
+            Platform.OS === 'ios'
+              ? <BlurView intensity={80} tint="dark" style={StyleSheet.absoluteFill} />
+              : <View style={[StyleSheet.absoluteFill, { backgroundColor: Colors.primaryDark }]} />
+          ),
           tabBarStyle: {
-            backgroundColor: Colors.primary,
-            borderTopColor: Colors.primaryDark,
+            position: 'absolute',
+            borderTopColor: 'rgba(255,255,255,0.08)',
             borderTopWidth: 1,
-            height: 62,
-            paddingBottom: 8,
-            paddingTop: 6,
+            height: Platform.OS === 'ios' ? 88 : 70,
+            paddingBottom: Platform.OS === 'ios' ? 28 : 10,
+            paddingTop: 8,
+            elevation: 0,
           },
           tabBarLabelStyle: {
-            fontSize: 11,
-            fontWeight: '500',
+            fontSize: 10,
+            fontWeight: '600',
+            letterSpacing: 0.3,
           },
-          headerStyle: { backgroundColor: Colors.primary },
-          headerTintColor: Colors.white,
-          headerTitleStyle: { fontWeight: '700', fontSize: 18 },
+          headerTransparent: true,
+          headerStyle: { backgroundColor: 'transparent' },
+          headerTintColor: Colors.textPrimary,
+          headerTitleStyle: {
+            fontWeight: '700',
+            fontSize: 18,
+            color: Colors.textPrimary,
+          },
+          headerBlurEffect: 'dark',
+          headerBackground: () => (
+            Platform.OS === 'ios'
+              ? <BlurView intensity={60} tint="dark" style={StyleSheet.absoluteFill} />
+              : <View style={[StyleSheet.absoluteFill, { backgroundColor: Colors.background }]} />
+          ),
           headerShadowVisible: false,
         }}
       >
@@ -36,8 +64,8 @@ export default function RootLayout() {
           name="(tabs)/index"
           options={{
             title: 'Home',
-            tabBarIcon: ({ color, size }) => (
-              <Ionicons name="home" size={size} color={color} />
+            tabBarIcon: ({ color, focused }) => (
+              <TabIcon name={focused ? 'home' : 'home-outline'} color={color} focused={focused} />
             ),
           }}
         />
@@ -45,8 +73,8 @@ export default function RootLayout() {
           name="(tabs)/calculator"
           options={{
             title: 'Points',
-            tabBarIcon: ({ color, size }) => (
-              <Ionicons name="calculator" size={size} color={color} />
+            tabBarIcon: ({ color, focused }) => (
+              <TabIcon name={focused ? 'calculator' : 'calculator-outline'} color={color} focused={focused} />
             ),
           }}
         />
@@ -54,17 +82,17 @@ export default function RootLayout() {
           name="(tabs)/states"
           options={{
             title: 'States',
-            tabBarIcon: ({ color, size }) => (
-              <Ionicons name="map" size={size} color={color} />
+            tabBarIcon: ({ color, focused }) => (
+              <TabIcon name={focused ? 'map' : 'map-outline'} color={color} focused={focused} />
             ),
           }}
         />
         <Tabs.Screen
           name="(tabs)/ai"
           options={{
-            title: 'AI',
-            tabBarIcon: ({ color, size }) => (
-              <Ionicons name="sparkles" size={size} color={color} />
+            title: 'Aria AI',
+            tabBarIcon: ({ color, focused }) => (
+              <TabIcon name={focused ? 'sparkles' : 'sparkles-outline'} color={color} focused={focused} />
             ),
           }}
         />
@@ -72,8 +100,8 @@ export default function RootLayout() {
           name="(tabs)/profile"
           options={{
             title: 'Profile',
-            tabBarIcon: ({ color, size }) => (
-              <Ionicons name="person" size={size} color={color} />
+            tabBarIcon: ({ color, focused }) => (
+              <TabIcon name={focused ? 'person-circle' : 'person-circle-outline'} color={color} focused={focused} />
             ),
           }}
         />
@@ -81,3 +109,16 @@ export default function RootLayout() {
     </>
   );
 }
+
+const tabStyles = StyleSheet.create({
+  iconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconActive: {
+    backgroundColor: 'rgba(255,205,0,0.15)',
+  },
+});

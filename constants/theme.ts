@@ -1,31 +1,36 @@
 export const Colors = {
   // Brand
-  primary: '#002D62',    // Deep Blue (Gov-tech)
-  secondary: '#FFCD00',  // Gold
-  primaryDark: '#001A3D',
+  primary: '#002D62',
+  secondary: '#FFCD00',
+  primaryDark: '#001224',
   primaryLight: '#E8EEF8',
+  accent: '#00C2FF',      // Electric cyan accent
+  accentPurple: '#7C3AED',
 
   // UI
-  background: '#F4F6FA',
-  surface: '#FFFFFF',
-  border: '#DDE3EE',
-  divider: '#EEF1F8',
+  background: '#06101F',  // Deep dark navy
+  surface: '#0D1F38',     // Card surface
+  surfaceRaised: '#112445', // Elevated surface
+  border: '#1E3358',
+  divider: '#152B4A',
+  glass: 'rgba(255,255,255,0.06)',
+  glassStrong: 'rgba(255,255,255,0.10)',
 
   // Text
-  textPrimary: '#0D1B2A',
-  textSecondary: '#5A6B82',
-  textMuted: '#9AAABB',
+  textPrimary: '#EDF2FF',
+  textSecondary: '#7A9BBF',
+  textMuted: '#3D5A80',
   white: '#FFFFFF',
 
   // Status
-  success: '#00875A',
-  successLight: '#E3F9F0',
-  warning: '#FF8B00',
-  warningLight: '#FFF4E5',
-  error: '#DE350B',
-  errorLight: '#FFEBE6',
-  info: '#0065FF',
-  infoLight: '#E6F0FF',
+  success: '#00D68F',
+  successLight: 'rgba(0,214,143,0.15)',
+  warning: '#FFB800',
+  warningLight: 'rgba(255,184,0,0.15)',
+  error: '#FF4757',
+  errorLight: 'rgba(255,71,87,0.15)',
+  info: '#00C2FF',
+  infoLight: 'rgba(0,194,255,0.12)',
 };
 
 export const Spacing = {

@@ -6,186 +6,197 @@ import {
   TouchableOpacity,
   StyleSheet,
   Linking,
+  Animated,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, Radius, FontSize, FontWeight } from '../../constants/theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const STATES = [
-  {
-    code: 'VIC',
-    name: 'Victoria',
-    color: '#003087',
-    newsUrl: 'https://www.vic.gov.au/skilled-migration-victoria',
-    desc: 'VMAS — Victorian Skilled Migration program with multiple streams',
-  },
-  {
-    code: 'NSW',
-    name: 'New South Wales',
-    color: '#00539C',
-    newsUrl: 'https://www.nsw.gov.au/living-and-working/migration',
-    desc: 'NSW Skilled Nominated Visa program',
-  },
-  {
-    code: 'QLD',
-    name: 'Queensland',
-    color: '#6D1A36',
-    newsUrl: 'https://migration.qld.gov.au/',
-    desc: 'Queensland Skilled Visa program',
-  },
-  {
-    code: 'SA',
-    name: 'South Australia',
-    color: '#D4002A',
-    newsUrl: 'https://migration.sa.gov.au/',
-    desc: 'SA Skilled & Business Migration',
-  },
-  {
-    code: 'WA',
-    name: 'Western Australia',
-    color: '#F5A800',
-    newsUrl: 'https://www.wa.gov.au/service/employment/workplace-policy-and-standards/skilled-migration-western-australia',
-    desc: 'WA Skilled Migration program',
-  },
-  {
-    code: 'TAS',
-    name: 'Tasmania',
-    color: '#006B3F',
-    newsUrl: 'https://www.migration.tas.gov.au/',
-    desc: 'Tasmanian Skilled Migration program',
-  },
-  {
-    code: 'ACT',
-    name: 'Australian Capital Territory',
-    color: '#004F9F',
-    newsUrl: 'https://www.act.gov.au/skilled-migration',
-    desc: 'ACT Skilled Migration — Critical Skills list',
-  },
-  {
-    code: 'NT',
-    name: 'Northern Territory',
-    color: '#BE6A14',
-    newsUrl: 'https://migration.nt.gov.au/',
-    desc: 'NT Skilled & Business migration',
-  },
+  { code: 'VIC', name: 'Victoria', color: '#4F8EF7', newsUrl: 'https://www.vic.gov.au/skilled-migration-victoria', desc: 'Victorian Managed Admission Scheme (VMAS)' },
+  { code: 'NSW', name: 'New South Wales', color: '#00C2FF', newsUrl: 'https://www.nsw.gov.au/living-and-working/migration', desc: 'NSW Skilled Nominated Visa program' },
+  { code: 'QLD', name: 'Queensland', color: '#FF6B8A', newsUrl: 'https://migration.qld.gov.au/', desc: 'Queensland Skilled Visa program' },
+  { code: 'SA', name: 'South Australia', color: '#FF7043', newsUrl: 'https://migration.sa.gov.au/', desc: 'SA Skilled & Business Migration' },
+  { code: 'WA', name: 'Western Australia', color: '#FFCD00', newsUrl: 'https://www.wa.gov.au/service/employment/workplace-policy-and-standards/skilled-migration-western-australia', desc: 'WA Skilled Migration program' },
+  { code: 'TAS', name: 'Tasmania', color: '#00D68F', newsUrl: 'https://www.migration.tas.gov.au/', desc: 'Tasmanian Skilled Migration program' },
+  { code: 'ACT', name: 'Australian Capital Territory', color: '#A78BFA', newsUrl: 'https://www.act.gov.au/skilled-migration', desc: 'ACT Skilled Migration — Critical Skills list' },
+  { code: 'NT', name: 'Northern Territory', color: '#FFB800', newsUrl: 'https://migration.nt.gov.au/', desc: 'NT Skilled & Business migration' },
 ];
 
 export default function StatesScreen() {
   const [expanded, setExpanded] = useState<string | null>(null);
+  const insets = useSafeAreaInsets();
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>State Migration News</Text>
+    <ScrollView
+      style={styles.container}
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={{ paddingBottom: 100 }}
+    >
+      {/* Header */}
+      <LinearGradient
+        colors={[Colors.primaryDark, Colors.background]}
+        style={[styles.header, { paddingTop: insets.top + 60 }]}
+      >
+        <View style={styles.headerBadge}>
+          <Ionicons name="map" size={14} color={Colors.accent} />
+          <Text style={styles.headerBadgeText}>8 States & Territories</Text>
+        </View>
+        <Text style={styles.headerTitle}>State Nomination</Text>
         <Text style={styles.headerSub}>
-          Tap a state to see details and visit official migration pages.
+          Explore migration programs across Australia and visit official portals.
         </Text>
-      </View>
+      </LinearGradient>
 
-      {STATES.map((state) => {
-        const isOpen = expanded === state.code;
-        return (
-          <TouchableOpacity
-            key={state.code}
-            style={styles.card}
-            onPress={() => setExpanded(isOpen ? null : state.code)}
-            activeOpacity={0.8}
-          >
-            <View style={styles.cardHeader}>
-              <View style={[styles.codeTag, { backgroundColor: state.color + '18' }]}>
-                <Text style={[styles.codeText, { color: state.color }]}>{state.code}</Text>
-              </View>
-              <View style={styles.cardMeta}>
-                <Text style={styles.stateName}>{state.name}</Text>
-                <Text style={styles.stateDesc} numberOfLines={isOpen ? undefined : 1}>
-                  {state.desc}
-                </Text>
-              </View>
-              <Ionicons
-                name={isOpen ? 'chevron-up' : 'chevron-down'}
-                size={20}
-                color={Colors.textMuted}
-              />
-            </View>
+      <View style={styles.list}>
+        {STATES.map((state) => {
+          const isOpen = expanded === state.code;
+          return (
+            <TouchableOpacity
+              key={state.code}
+              onPress={() => setExpanded(isOpen ? null : state.code)}
+              activeOpacity={0.85}
+            >
+              <View style={[styles.card, isOpen && styles.cardOpen]}>
+                {/* Left color accent */}
+                <View style={[styles.cardAccent, { backgroundColor: state.color }]} />
 
-            {isOpen && (
-              <View style={styles.cardBody}>
-                <View style={styles.divider} />
-                <TouchableOpacity
-                  style={styles.linkBtn}
-                  onPress={() => Linking.openURL(state.newsUrl)}
-                >
-                  <Ionicons name="open-outline" size={16} color={Colors.primary} />
-                  <Text style={styles.linkText}>View Official Migration Page</Text>
-                </TouchableOpacity>
-                <View style={styles.noticeBox}>
-                  <Ionicons name="notifications-outline" size={16} color={Colors.textMuted} />
-                  <Text style={styles.noticeText}>
-                    Push notifications for {state.code} coming soon. Subscribe in Profile.
-                  </Text>
+                <View style={styles.cardMain}>
+                  <View style={styles.cardTop}>
+                    {/* Code badge */}
+                    <View style={[styles.codeBadge, { backgroundColor: state.color + '18', borderColor: state.color + '30' }]}>
+                      <Text style={[styles.codeText, { color: state.color }]}>{state.code}</Text>
+                    </View>
+
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.stateName}>{state.name}</Text>
+                      <Text style={styles.stateDesc} numberOfLines={isOpen ? undefined : 1}>
+                        {state.desc}
+                      </Text>
+                    </View>
+
+                    <View style={[styles.chevron, isOpen && styles.chevronOpen]}>
+                      <Ionicons name="chevron-down" size={16} color={Colors.textMuted} />
+                    </View>
+                  </View>
+
+                  {isOpen && (
+                    <View style={styles.cardBody}>
+                      <View style={styles.divider} />
+                      <TouchableOpacity
+                        style={[styles.linkBtn, { borderColor: state.color + '40' }]}
+                        onPress={() => Linking.openURL(state.newsUrl)}
+                      >
+                        <LinearGradient
+                          colors={[state.color + '15', state.color + '08']}
+                          style={styles.linkBtnGrad}
+                          start={{ x: 0, y: 0 }}
+                          end={{ x: 1, y: 0 }}
+                        >
+                          <Ionicons name="globe-outline" size={16} color={state.color} />
+                          <Text style={[styles.linkText, { color: state.color }]}>
+                            Visit Official Migration Page
+                          </Text>
+                          <Ionicons name="arrow-forward" size={14} color={state.color} />
+                        </LinearGradient>
+                      </TouchableOpacity>
+
+                      <View style={styles.noticeRow}>
+                        <View style={styles.noticeDot} />
+                        <Text style={styles.noticeText}>
+                          Push notifications for {state.code} updates coming soon.
+                        </Text>
+                      </View>
+                    </View>
+                  )}
                 </View>
               </View>
-            )}
-          </TouchableOpacity>
-        );
-      })}
-
-      <View style={{ height: Spacing.xl }} />
+            </TouchableOpacity>
+          );
+        })}
+      </View>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
+
   header: {
-    backgroundColor: Colors.primary,
-    padding: Spacing.xl,
+    paddingHorizontal: Spacing.xl,
     paddingBottom: Spacing.xxl,
   },
-  headerTitle: { color: Colors.white, fontSize: FontSize.xxl, fontWeight: FontWeight.bold },
-  headerSub: { color: Colors.white + 'CC', fontSize: FontSize.sm, marginTop: Spacing.xs },
-  card: {
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.lg,
-    margin: Spacing.lg,
-    marginBottom: 0,
-    padding: Spacing.lg,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 2,
+  headerBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+    alignSelf: 'flex-start',
+    backgroundColor: Colors.infoLight,
+    borderWidth: 1,
+    borderColor: Colors.accent + '30',
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs,
+    borderRadius: Radius.full,
+    marginBottom: Spacing.md,
   },
-  cardHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
-  codeTag: {
-    width: 48,
-    height: 48,
-    borderRadius: Radius.md,
+  headerBadgeText: { color: Colors.accent, fontSize: FontSize.sm, fontWeight: FontWeight.semiBold },
+  headerTitle: { color: Colors.textPrimary, fontSize: FontSize.xxxl, fontWeight: FontWeight.extraBold, marginBottom: Spacing.sm, letterSpacing: -0.5 },
+  headerSub: { color: Colors.textSecondary, fontSize: FontSize.md, lineHeight: 22 },
+
+  list: { padding: Spacing.lg, gap: Spacing.md },
+
+  card: {
+    flexDirection: 'row',
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.xl,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  cardOpen: { borderColor: Colors.divider },
+  cardAccent: { width: 4 },
+  cardMain: { flex: 1, padding: Spacing.lg },
+  cardTop: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
+
+  codeBadge: {
+    width: 52,
+    height: 52,
+    borderRadius: Radius.lg,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  codeText: { fontSize: FontSize.sm, fontWeight: FontWeight.bold },
-  cardMeta: { flex: 1 },
+  codeText: { fontSize: FontSize.sm, fontWeight: FontWeight.extraBold, letterSpacing: 0.5 },
   stateName: { fontSize: FontSize.md, fontWeight: FontWeight.semiBold, color: Colors.textPrimary },
   stateDesc: { fontSize: FontSize.sm, color: Colors.textSecondary, marginTop: 2 },
+
+  chevron: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  chevronOpen: { transform: [{ rotate: '180deg' }] },
+
   cardBody: { marginTop: Spacing.md },
   divider: { height: 1, backgroundColor: Colors.divider, marginBottom: Spacing.md },
+
   linkBtn: {
+    borderRadius: Radius.lg,
+    borderWidth: 1,
+    overflow: 'hidden',
+    marginBottom: Spacing.sm,
+  },
+  linkBtnGrad: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.sm,
-    backgroundColor: Colors.primaryLight,
     padding: Spacing.md,
-    borderRadius: Radius.md,
-    marginBottom: Spacing.sm,
   },
-  linkText: { color: Colors.primary, fontSize: FontSize.sm, fontWeight: FontWeight.semiBold },
-  noticeBox: {
+  linkText: { flex: 1, fontSize: FontSize.sm, fontWeight: FontWeight.semiBold },
+
+  noticeRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     gap: Spacing.sm,
-    backgroundColor: Colors.background,
-    padding: Spacing.md,
-    borderRadius: Radius.md,
+    paddingTop: Spacing.xs,
   },
-  noticeText: { flex: 1, fontSize: FontSize.xs, color: Colors.textMuted, lineHeight: 17 },
+  noticeDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: Colors.textMuted },
+  noticeText: { fontSize: FontSize.xs, color: Colors.textMuted, flex: 1, lineHeight: 16 },
 });

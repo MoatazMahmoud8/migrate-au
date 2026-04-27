@@ -7,12 +7,14 @@ import {
   StyleSheet,
   TextInput,
   Alert,
+  Linking,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { getProfile, saveProfile } from '../../utils/storage';
 import { UserProfile } from '../../constants/types';
 import { Colors, Spacing, Radius, FontSize, FontWeight } from '../../constants/theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function ProfileScreen() {
   const [profile, setProfile] = useState<UserProfile>({
@@ -24,6 +26,7 @@ export default function ProfileScreen() {
   });
   const [editingName, setEditingName] = useState(false);
   const [nameInput, setNameInput] = useState('');
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     getProfile().then(setProfile);
@@ -39,28 +42,48 @@ export default function ProfileScreen() {
   const handleUpgrade = () => {
     Alert.alert(
       'Upgrade to Premium',
-      'Premium features:\n• ANZSCO occupation tracker\n• Custom state notifications\n• AI consultant unlimited access\n\nRevenueCat integration coming soon.',
-      [{ text: 'OK' }],
+      '⭐ Premium features include:\n\n• ANZSCO occupation tracker\n• Custom state notifications\n• Unlimited Aria AI queries\n\nRevenueCat integration coming soon.',
+      [{ text: 'Got it', style: 'default' }],
     );
   };
 
+  const initials = profile.name
+    ? profile.name.trim().split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
+    : '?';
+
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Profile Header */}
-      <LinearGradient colors={[Colors.primary, Colors.primaryDark]} style={styles.header}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>
-            {profile.name ? profile.name.charAt(0).toUpperCase() : '?'}
-          </Text>
+    <ScrollView
+      style={styles.container}
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={{ paddingBottom: 100 }}
+    >
+      {/* Header with avatar */}
+      <LinearGradient
+        colors={[Colors.primaryDark, '#0D1F38']}
+        style={[styles.header, { paddingTop: insets.top + 60 }]}
+      >
+        {/* Decorative orb */}
+        <View style={styles.headerOrb} />
+
+        <View style={styles.avatarWrap}>
+          <LinearGradient colors={[Colors.secondary, '#FFB800']} style={styles.avatar}>
+            <Text style={styles.avatarText}>{initials}</Text>
+          </LinearGradient>
+          {profile.isPremium && (
+            <View style={styles.premiumBadgeSmall}>
+              <Ionicons name="star" size={10} color={Colors.primaryDark} />
+            </View>
+          )}
         </View>
+
         {editingName ? (
-          <View style={styles.nameEdit}>
+          <View style={styles.nameEditRow}>
             <TextInput
               style={styles.nameInput}
               value={nameInput}
               onChangeText={setNameInput}
               placeholder="Your name"
-              placeholderTextColor={Colors.white + '80'}
+              placeholderTextColor={Colors.textMuted}
               autoFocus
             />
             <TouchableOpacity onPress={saveName} style={styles.saveBtn}>
@@ -68,101 +91,199 @@ export default function ProfileScreen() {
             </TouchableOpacity>
           </View>
         ) : (
-          <TouchableOpacity onPress={() => { setNameInput(profile.name); setEditingName(true); }}>
-            <Text style={styles.profileName}>
-              {profile.name || 'Tap to set your name'} <Ionicons name="pencil" size={14} color={Colors.white + '99'} />
-            </Text>
+          <TouchableOpacity
+            onPress={() => { setNameInput(profile.name); setEditingName(true); }}
+            style={styles.nameRow}
+          >
+            <Text style={styles.profileName}>{profile.name || 'Tap to set your name'}</Text>
+            <Ionicons name="pencil" size={14} color={Colors.textMuted} />
           </TouchableOpacity>
         )}
-        <Text style={styles.profileSub}>
-          {profile.isPremium ? '⭐ Premium Member' : 'Free Plan'}
-        </Text>
+
+        <View style={styles.planBadge}>
+          {profile.isPremium
+            ? <><Ionicons name="star" size={12} color={Colors.secondary} /><Text style={styles.planText}>Premium Member</Text></>
+            : <><Ionicons name="person-outline" size={12} color={Colors.textMuted} /><Text style={[styles.planText, { color: Colors.textMuted }]}>Free Plan</Text></>
+          }
+        </View>
       </LinearGradient>
 
-      {/* Premium Banner */}
+      {/* Premium upgrade card */}
       {!profile.isPremium && (
-        <TouchableOpacity style={styles.premiumBanner} onPress={handleUpgrade}>
-          <LinearGradient colors={['#6554C0', '#8777D9']} style={styles.premiumGrad}>
-            <View>
-              <Text style={styles.premiumTitle}>Upgrade to Premium ⭐</Text>
-              <Text style={styles.premiumSub}>Unlock all features — occupation tracking, custom alerts & more</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={22} color={Colors.white} />
-          </LinearGradient>
-        </TouchableOpacity>
+        <View style={styles.section}>
+          <TouchableOpacity onPress={handleUpgrade} activeOpacity={0.9}>
+            <LinearGradient
+              colors={['#2D1B6E', '#4C1D95']}
+              style={styles.premiumCard}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              <View style={styles.premiumGlow} />
+              <View style={styles.premiumLeft}>
+                <View style={styles.premiumIcon}>
+                  <Ionicons name="star" size={20} color={Colors.secondary} />
+                </View>
+                <View>
+                  <Text style={styles.premiumTitle}>Upgrade to Premium</Text>
+                  <Text style={styles.premiumSub}>Unlock occupation tracking, custom alerts & more</Text>
+                </View>
+              </View>
+              <View style={styles.premiumArrow}>
+                <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,0.6)" />
+              </View>
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
       )}
 
-      {/* ANZSCO Occupation */}
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Occupation (ANZSCO)</Text>
-        <View style={styles.lockedRow}>
-          <Ionicons name={profile.isPremium ? 'briefcase' : 'lock-closed'} size={20} color={profile.isPremium ? Colors.primary : Colors.textMuted} />
-          <Text style={[styles.lockedText, !profile.isPremium && styles.lockedMuted]}>
-            {profile.isPremium
-              ? (profile.anzscoCode || 'Set your ANZSCO code')
-              : 'Premium feature — upgrade to track your occupation'}
-          </Text>
+      {/* Settings rows */}
+      <View style={styles.section}>
+        <Text style={styles.sectionLabel}>Account</Text>
+        <View style={styles.card}>
+          <SettingRow
+            icon="briefcase-outline"
+            label="ANZSCO Occupation"
+            value={profile.isPremium ? (profile.anzscoCode || 'Not set') : 'Premium only'}
+            locked={!profile.isPremium}
+            onPress={profile.isPremium ? undefined : handleUpgrade}
+          />
         </View>
       </View>
 
-      {/* Notification Settings */}
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Notifications</Text>
-        <View style={styles.settingRow}>
-          <Ionicons name="notifications-outline" size={20} color={Colors.textSecondary} />
-          <Text style={styles.settingText}>State migration news alerts</Text>
-          <Text style={styles.comingSoon}>Soon</Text>
-        </View>
-        <View style={styles.settingRow}>
-          <Ionicons name="briefcase-outline" size={20} color={Colors.textSecondary} />
-          <Text style={styles.settingText}>Occupation list changes</Text>
-          <Text style={styles.comingSoon}>Soon</Text>
+      <View style={styles.section}>
+        <Text style={styles.sectionLabel}>Notifications</Text>
+        <View style={styles.card}>
+          <SettingRow icon="notifications-outline" label="State migration news" badge="Soon" />
+          <SettingRow icon="briefcase-outline" label="Occupation list changes" badge="Soon" last />
         </View>
       </View>
 
-      {/* About */}
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>About</Text>
-        <View style={styles.settingRow}>
-          <Ionicons name="information-circle-outline" size={20} color={Colors.textSecondary} />
-          <Text style={styles.settingText}>MigrateAU v1.0.0</Text>
-        </View>
-        <View style={styles.settingRow}>
-          <Ionicons name="shield-outline" size={20} color={Colors.textSecondary} />
-          <Text style={styles.settingText}>Privacy Policy</Text>
-          <Ionicons name="open-outline" size={16} color={Colors.textMuted} />
-        </View>
-        <View style={[styles.settingRow, { borderBottomWidth: 0 }]}>
-          <Ionicons name="alert-circle-outline" size={20} color={Colors.textSecondary} />
-          <Text style={[styles.settingText, { flex: 1 }]}>
-            Information is general in nature. Always consult a registered migration agent (MARA).
-          </Text>
+      <View style={styles.section}>
+        <Text style={styles.sectionLabel}>About</Text>
+        <View style={styles.card}>
+          <SettingRow icon="information-circle-outline" label="MigrateAU" value="v1.0.0" />
+          <SettingRow
+            icon="shield-outline"
+            label="Privacy Policy"
+            onPress={() => Linking.openURL('https://jsmglobal.xyz/migration-privacy.html')}
+            showArrow
+          />
+          <SettingRow icon="logo-github" label="By JSM Global" value="jsmglobal.xyz" last />
         </View>
       </View>
 
-      <View style={{ height: Spacing.xl }} />
+      <View style={styles.disclaimer}>
+        <Ionicons name="alert-circle-outline" size={14} color={Colors.textMuted} />
+        <Text style={styles.disclaimerText}>
+          Information is general in nature. Always consult a MARA-registered migration agent for formal advice.
+        </Text>
+      </View>
     </ScrollView>
   );
 }
 
+function SettingRow({
+  icon, label, value, badge, locked, onPress, showArrow, last,
+}: {
+  icon: string; label: string; value?: string; badge?: string; locked?: boolean; onPress?: () => void; showArrow?: boolean; last?: boolean;
+}) {
+  return (
+    <TouchableOpacity
+      style={[rowStyles.row, !last && rowStyles.rowBorder]}
+      onPress={onPress}
+      activeOpacity={onPress ? 0.7 : 1}
+      disabled={!onPress && !showArrow}
+    >
+      <View style={rowStyles.iconWrap}>
+        <Ionicons name={icon as any} size={18} color={locked ? Colors.textMuted : Colors.textSecondary} />
+      </View>
+      <Text style={[rowStyles.label, locked && rowStyles.labelMuted]}>{label}</Text>
+      <View style={rowStyles.right}>
+        {value && <Text style={rowStyles.value}>{value}</Text>}
+        {badge && <View style={rowStyles.badge}><Text style={rowStyles.badgeText}>{badge}</Text></View>}
+        {locked && <Ionicons name="lock-closed" size={14} color={Colors.textMuted} />}
+        {showArrow && <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} />}
+      </View>
+    </TouchableOpacity>
+  );
+}
+
+const rowStyles = StyleSheet.create({
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: Spacing.md,
+    gap: Spacing.md,
+  },
+  rowBorder: { borderBottomWidth: 1, borderBottomColor: Colors.divider },
+  iconWrap: {
+    width: 34,
+    height: 34,
+    borderRadius: Radius.md,
+    backgroundColor: Colors.background,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  label: { flex: 1, fontSize: FontSize.md, color: Colors.textPrimary },
+  labelMuted: { color: Colors.textMuted },
+  right: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+  value: { fontSize: FontSize.sm, color: Colors.textMuted },
+  badge: {
+    backgroundColor: Colors.secondary + '20',
+    borderRadius: Radius.full,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 2,
+  },
+  badgeText: { fontSize: FontSize.xs, color: Colors.secondary, fontWeight: FontWeight.bold },
+});
+
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
-  header: { alignItems: 'center', padding: Spacing.xl, paddingVertical: Spacing.xxxl },
+
+  header: {
+    alignItems: 'center',
+    paddingHorizontal: Spacing.xl,
+    paddingBottom: Spacing.xxl,
+    overflow: 'hidden',
+  },
+  headerOrb: {
+    position: 'absolute',
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    backgroundColor: Colors.secondary,
+    opacity: 0.04,
+    top: -60,
+    right: -40,
+  },
+  avatarWrap: { position: 'relative', marginBottom: Spacing.md },
   avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: Radius.full,
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText: { fontSize: FontSize.xxl, fontWeight: FontWeight.extraBold, color: Colors.primaryDark },
+  premiumBadgeSmall: {
+    position: 'absolute',
+    bottom: 2,
+    right: 2,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
     backgroundColor: Colors.secondary,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: Spacing.md,
+    borderWidth: 2,
+    borderColor: Colors.primaryDark,
   },
-  avatarText: { fontSize: FontSize.xxxl, fontWeight: FontWeight.bold, color: Colors.primary },
-  profileName: { color: Colors.white, fontSize: FontSize.xl, fontWeight: FontWeight.bold },
-  profileSub: { color: Colors.white + 'AA', fontSize: FontSize.sm, marginTop: Spacing.xs },
-  nameEdit: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+
+  nameRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginBottom: Spacing.sm },
+  profileName: { color: Colors.textPrimary, fontSize: FontSize.xl, fontWeight: FontWeight.bold },
+  nameEditRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginBottom: Spacing.sm },
   nameInput: {
-    color: Colors.white,
+    color: Colors.textPrimary,
     fontSize: FontSize.xl,
     fontWeight: FontWeight.bold,
     borderBottomWidth: 2,
@@ -170,49 +291,88 @@ const styles = StyleSheet.create({
     minWidth: 160,
     paddingBottom: 2,
   },
-  saveBtn: { backgroundColor: Colors.secondary, paddingHorizontal: Spacing.md, paddingVertical: Spacing.xs, borderRadius: Radius.full },
-  saveBtnText: { color: Colors.primary, fontWeight: FontWeight.bold, fontSize: FontSize.sm },
-  premiumBanner: { margin: Spacing.lg, borderRadius: Radius.lg, overflow: 'hidden' },
-  premiumGrad: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: Spacing.lg,
-  },
-  premiumTitle: { color: Colors.white, fontSize: FontSize.md, fontWeight: FontWeight.bold },
-  premiumSub: { color: Colors.white + 'CC', fontSize: FontSize.sm, marginTop: 2, maxWidth: '90%' },
-  card: {
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.lg,
-    padding: Spacing.lg,
-    margin: Spacing.lg,
-    marginBottom: 0,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  cardTitle: { fontSize: FontSize.lg, fontWeight: FontWeight.bold, color: Colors.textPrimary, marginBottom: Spacing.md },
-  lockedRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, padding: Spacing.sm },
-  lockedText: { fontSize: FontSize.md, color: Colors.textPrimary },
-  lockedMuted: { color: Colors.textMuted },
-  settingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.md,
-    paddingVertical: Spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.divider,
-  },
-  settingText: { flex: 1, fontSize: FontSize.md, color: Colors.textPrimary },
-  comingSoon: {
-    fontSize: FontSize.xs,
-    color: Colors.warning,
-    fontWeight: FontWeight.semiBold,
-    backgroundColor: Colors.warningLight,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 2,
+  saveBtn: {
+    backgroundColor: Colors.secondary,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs,
     borderRadius: Radius.full,
   },
+  saveBtnText: { color: Colors.primaryDark, fontWeight: FontWeight.bold, fontSize: FontSize.sm },
+
+  planBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderRadius: Radius.full,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  planText: { fontSize: FontSize.sm, fontWeight: FontWeight.semiBold, color: Colors.secondary },
+
+  section: { paddingHorizontal: Spacing.lg, paddingTop: Spacing.xl },
+  sectionLabel: { fontSize: FontSize.xs, fontWeight: FontWeight.semiBold, color: Colors.textMuted, letterSpacing: 1, textTransform: 'uppercase', marginBottom: Spacing.sm },
+
+  card: {
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.xl,
+    paddingHorizontal: Spacing.lg,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+
+  // Premium card
+  premiumCard: {
+    borderRadius: Radius.xl,
+    padding: Spacing.lg,
+    overflow: 'hidden',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  premiumGlow: {
+    position: 'absolute',
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: 'rgba(167,139,250,0.2)',
+    top: -40,
+    right: -20,
+  },
+  premiumLeft: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
+  premiumIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,205,0,0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,205,0,0.3)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  premiumTitle: { color: Colors.textPrimary, fontSize: FontSize.md, fontWeight: FontWeight.bold },
+  premiumSub: { color: Colors.textSecondary, fontSize: FontSize.sm, marginTop: 2, maxWidth: 200 },
+  premiumArrow: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  disclaimer: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacing.sm,
+    marginHorizontal: Spacing.lg,
+    marginTop: Spacing.xl,
+    padding: Spacing.md,
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.md,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  disclaimerText: { flex: 1, fontSize: FontSize.xs, color: Colors.textMuted, lineHeight: 16 },
 });
