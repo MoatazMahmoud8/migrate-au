@@ -1,0 +1,28 @@
+# Expo
+.expo/
+dist/
+web-build/
+node_modules/
+
+# Native
+android/
+ios/
+
+# Firebase (never commit real keys)
+google-services.json
+GoogleService-Info.plist
+.env
+.env.local
+.env.production
+
+# EAS
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+
+# OS
+.DS_Store
+*.log

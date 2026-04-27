@@ -1,0 +1,28 @@
+{
+  "cli": {
+    "version": ">= 12.0.0",
+    "appVersionSource": "remote",
+    "requireCommit": true
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal"
+    },
+    "preview": {
+      "distribution": "store"
+    },
+    "production": {
+      "autoIncrement": true,
+      "credentialsSource": "remote",
+      "node": "22.15.0",
+      "env": {
+        "GEMINI_API_KEY": "",
+        "REVENUECAT_PUBLIC_KEY": ""
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}
