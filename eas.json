@@ -15,11 +15,7 @@
     "production": {
       "autoIncrement": true,
       "credentialsSource": "remote",
-      "node": "22.15.0",
-      "env": {
-        "GEMINI_API_KEY": "",
-        "REVENUECAT_PUBLIC_KEY": ""
-      }
+      "node": "22.15.0"
     }
   },
   "submit": {

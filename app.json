@@ -12,15 +12,21 @@
       "resizeMode": "contain",
       "backgroundColor": "#002D62"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "xyz.jsmglobal.migrateur",
       "buildNumber": "1",
       "infoPlist": {
-        "NSAppTransportSecurity": { "NSAllowsArbitraryLoads": false },
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": false
+        },
         "ITSAppUsesNonExemptEncryption": false,
-        "UIBackgroundModes": ["remote-notification"]
+        "UIBackgroundModes": [
+          "remote-notification"
+        ]
       }
     },
     "android": {
@@ -56,7 +62,7 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/notification-icon.png",
+          "icon": "./assets/icon.png",
           "color": "#002D62"
         }
       ]
@@ -65,9 +71,12 @@
       "typedRoutes": true
     },
     "extra": {
+      "geminiApiKey": "",
+      "revenueCatKey": "",
       "eas": {
-        "projectId": "REPLACE_WITH_EAS_PROJECT_ID"
-      }
+        "projectId": "d89609e7-a74f-4146-9eb2-0e8387e71fd2"
+      },
+      "router": {}
     },
     "owner": "moataz.alsbak"
   }
