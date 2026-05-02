@@ -1,0 +1,157 @@
+name: Android Build (Local)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '**.ts'
+      - '**.tsx'
+      - '**.js'
+      - '**.json'
+      - 'app.json'
+      - 'eas.json'
+      - '.github/workflows/android-build.yml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    env:
+      JAVA_TOOL_OPTIONS: '-Xmx4g'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.22.2'
+          cache: 'npm'
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          api-levels: '36'
+          build-tools-version: '36.0.0'
+          ndk-version: '27.1.12297006'
+
+      - name: Prebuild Android app
+        run: npx expo prebuild --platform android --clean
+
+      - name: Setup signing configuration
+        working-directory: ./android
+        run: |
+          # Create keystore.properties for signing (optional for now)
+          # Signing secrets can be added later in GitHub repository settings
+          if [ ! -z "${{ secrets.KEYSTORE_BASE64 }}" ]; then
+            echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > app/keystore.jks
+            cat > keystore.properties << EOF
+          storeFile=${{ github.workspace }}/android/app/keystore.jks
+          storePassword=${{ secrets.KEYSTORE_PASSWORD }}
+          keyAlias=${{ secrets.KEY_ALIAS }}
+          keyPassword=${{ secrets.KEY_PASSWORD }}
+          EOF
+            echo "Keystore configured"
+          else
+            echo "No keystore secrets found - using unsigned builds"
+          fi
+
+      - name: Build Android AAB (Release)
+        working-directory: ./android
+        run: |
+          chmod +x gradlew
+          ./gradlew bundleRelease --no-daemon -x lint -x test || {
+            echo "AAB build failed, attempting unsigned build..."
+            ./gradlew bundleRelease --no-daemon -x lint -x test -Dorg.gradle.jvmargs="-Xmx4g"
+          }
+
+      - name: Build Android APK (Release)
+        working-directory: ./android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon -x lint -x test || {
+            echo "APK build failed, attempting unsigned build..."
+            ./gradlew assembleRelease --no-daemon -x lint -x test -Dorg.gradle.jvmargs="-Xmx4g"
+          }
+
+      - name: Upload AAB to artifacts
+        uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: migrate-au-aab
+          path: android/app/build/outputs/bundle/release/*.aab
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Upload APK to artifacts
+        uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: migrate-au-apk
+          path: android/app/build/outputs/apk/release/*.apk
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Upload mappings (for crash reporting)
+        uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: mappings
+          path: android/app/build/outputs/mapping/release/mapping.txt
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: List build outputs
+        if: always()
+        run: |
+          echo "=== Build Outputs ===" 
+          find android/app/build/outputs -type f -name "*.aab" -o -name "*.apk" 2>/dev/null | head -20
+          echo "=== Build Dir ===" 
+          ls -la android/app/build/outputs/ 2>/dev/null || echo "No outputs yet"
+
+      - name: Create GitHub Release
+        if: success()
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            android/app/build/outputs/bundle/release/*.aab
+            android/app/build/outputs/apk/release/*.apk
+            android/app/build/outputs/mapping/release/mapping.txt
+          tag_name: build-${{ github.run_number }}
+          name: Build ${{ github.run_number }} - MigrateAU Android
+          body: |
+            **MigrateAU Production Build #${{ github.run_number }}**
+            
+            Generated on: ${{ github.event.head_commit.timestamp }}
+            Author: ${{ github.event.head_commit.author.name }}
+            Commit: ${{ github.event.head_commit.message }}
+            
+            **Build Artifacts:**
+            - 📦 **AAB** (for Google Play Store): `migrate-au-aab`
+            - 📱 **APK** (for direct installation): `migrate-au-apk`
+            - 🗺️ **ProGuard Mappings** (for crash reporting): `mappings`
+            
+            **Next Steps:**
+            1. Download the AAB from this release
+            2. Upload to [Google Play Console](https://play.google.com/console)
+            3. Review release notes and submit for review
+            
+            **Build Details:**
+            - Commit: [${{ github.sha }}](https://github.com/${{ github.repository }}/commit/${{ github.sha }})
+            - Workflow: [Action Run](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          draft: false
+          prerelease: false
+        continue-on-error: true
+
