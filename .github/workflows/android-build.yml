@@ -53,38 +53,40 @@ jobs:
       - name: Setup signing configuration
         working-directory: ./android
         run: |
-          # Create keystore.properties for signing (optional for now)
-          # Signing secrets can be added later in GitHub repository settings
+          # Create keystore.properties for signing
           if [ ! -z "${{ secrets.KEYSTORE_BASE64 }}" ]; then
             echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > app/keystore.jks
+            ls -lh app/keystore.jks
+            
             cat > keystore.properties << EOF
           storeFile=${{ github.workspace }}/android/app/keystore.jks
           storePassword=${{ secrets.KEYSTORE_PASSWORD }}
           keyAlias=${{ secrets.KEY_ALIAS }}
           keyPassword=${{ secrets.KEY_PASSWORD }}
           EOF
-            echo "Keystore configured"
+            echo "✓ Keystore configured"
+            echo "✓ keystore.properties content:"
+            cat keystore.properties | sed 's/storePassword=.*/storePassword=***/' | sed 's/keyPassword=.*/keyPassword=***/'
+            test -f keystore.properties && echo "✓ keystore.properties exists" || echo "✗ keystore.properties missing"
+            test -f app/keystore.jks && echo "✓ app/keystore.jks exists" || echo "✗ app/keystore.jks missing"
           else
-            echo "No keystore secrets found - using unsigned builds"
+            echo "⚠ No keystore secrets found - using unsigned builds"
           fi
 
       - name: Build Android AAB (Release)
         working-directory: ./android
         run: |
           chmod +x gradlew
-          ./gradlew bundleRelease --no-daemon -x lint -x test || {
-            echo "AAB build failed, attempting unsigned build..."
-            ./gradlew bundleRelease --no-daemon -x lint -x test -Dorg.gradle.jvmargs="-Xmx4g"
-          }
+          echo "Building with release signing..."
+          ./gradlew bundleRelease --no-daemon -x lint -x test --info 2>&1 | grep -E "signing|keystore|Signing" || true
+          ./gradlew bundleRelease --no-daemon -x lint -x test
 
       - name: Build Android APK (Release)
         working-directory: ./android
         run: |
           chmod +x gradlew
-          ./gradlew assembleRelease --no-daemon -x lint -x test || {
-            echo "APK build failed, attempting unsigned build..."
-            ./gradlew assembleRelease --no-daemon -x lint -x test -Dorg.gradle.jvmargs="-Xmx4g"
-          }
+          echo "Building APK with release signing..."
+          ./gradlew assembleRelease --no-daemon -x lint -x test
 
       - name: Upload AAB to artifacts
         uses: actions/upload-artifact@v4
