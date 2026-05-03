@@ -51,13 +51,14 @@ jobs:
         run: npx expo prebuild --platform android --clean
 
       - name: Setup signing configuration
-        working-directory: ./android
         run: |
-          # Create keystore.properties for signing
+          # Create keystore in android/app directory
           if [ ! -z "${{ secrets.KEYSTORE_BASE64 }}" ]; then
-            echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > app/keystore.jks
-            ls -lh app/keystore.jks
+            mkdir -p ./android/app
+            echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > ./android/app/keystore.jks
+            ls -lh ./android/app/keystore.jks
             
+            # Create keystore.properties in ROOT directory (gradle looks here)
             cat > keystore.properties << EOF
           storeFile=${{ github.workspace }}/android/app/keystore.jks
           storePassword=${{ secrets.KEYSTORE_PASSWORD }}
@@ -65,10 +66,10 @@ jobs:
           keyPassword=${{ secrets.KEY_PASSWORD }}
           EOF
             echo "✓ Keystore configured"
-            echo "✓ keystore.properties content:"
+            echo "✓ keystore.properties created in root directory"
             cat keystore.properties | sed 's/storePassword=.*/storePassword=***/' | sed 's/keyPassword=.*/keyPassword=***/'
             test -f keystore.properties && echo "✓ keystore.properties exists" || echo "✗ keystore.properties missing"
-            test -f app/keystore.jks && echo "✓ app/keystore.jks exists" || echo "✗ app/keystore.jks missing"
+            test -f ./android/app/keystore.jks && echo "✓ ./android/app/keystore.jks exists" || echo "✗ ./android/app/keystore.jks missing"
           else
             echo "⚠ No keystore secrets found - using unsigned builds"
           fi
