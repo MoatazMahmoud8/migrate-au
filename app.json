@@ -17,7 +17,7 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "xyz.jsmglobal.migrateur",
+      "bundleIdentifier": "com.jsmglobal.migrationau",
       "buildNumber": "1",
       "infoPlist": {
         "NSAppTransportSecurity": {
@@ -34,7 +34,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#002D62"
       },
-      "package": "xyz.jsmglobal.migrateur",
+      "package": "com.jsmglobal.migrationau",
       "versionCode": 100,
       "googleServicesFile": "./google-services.json",
       "permissions": [
