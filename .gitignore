@@ -5,8 +5,8 @@ web-build/
 node_modules/
 
 # Native
-android/
-ios/
+# android/  - Commented out: needed for EAS Build with prebuild
+# ios/
 
 # Firebase (never commit real keys)
 google-services.json
