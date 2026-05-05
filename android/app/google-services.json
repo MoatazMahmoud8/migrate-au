@@ -1,0 +1,126 @@
+{
+  "project_info": {
+    "project_number": "205705723367",
+    "project_id": "swift-shore-238707",
+    "storage_bucket": "swift-shore-238707.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:205705723367:android:d5571a7b3d7ec57f7b9142",
+        "android_client_info": {
+          "package_name": "com.migrateau.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "205705723367-9v0a8q5nc75lvkprngts6rbn2e8lb8tj.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAZ9uzDiSmUiKoRjpy_A-RcO0jGsUR0mLs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "205705723367-9v0a8q5nc75lvkprngts6rbn2e8lb8tj.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:205705723367:android:0cfc1c0c33eb1fd97b9142",
+        "android_client_info": {
+          "package_name": "com.moataz.au_migration_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "205705723367-9v0a8q5nc75lvkprngts6rbn2e8lb8tj.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAZ9uzDiSmUiKoRjpy_A-RcO0jGsUR0mLs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "205705723367-9v0a8q5nc75lvkprngts6rbn2e8lb8tj.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:205705723367:android:853982a261615f7a7b9142",
+        "android_client_info": {
+          "package_name": "xyz.jsmglobal.migrateur"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "205705723367-9v0a8q5nc75lvkprngts6rbn2e8lb8tj.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAZ9uzDiSmUiKoRjpy_A-RcO0jGsUR0mLs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "205705723367-9v0a8q5nc75lvkprngts6rbn2e8lb8tj.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:205705723367:android:f2e1d9c8b7a6f5e4c3b2",
+        "android_client_info": {
+          "package_name": "com.jsmglobal.migrationau"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "205705723367-9v0a8q5nc75lvkprngts6rbn2e8lb8tj.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAZ9uzDiSmUiKoRjpy_A-RcO0jGsUR0mLs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "205705723367-9v0a8q5nc75lvkprngts6rbn2e8lb8tj.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
