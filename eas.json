@@ -17,7 +17,7 @@
       "credentialsSource": "local",
       "node": "22.15.0",
       "android": {
-        "buildType": "release",
+        "buildType": "app-bundle",
         "withoutCredentials": true
       }
     }
