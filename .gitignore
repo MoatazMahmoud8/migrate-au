@@ -9,8 +9,8 @@ node_modules/
 # ios/
 
 # Firebase (never commit real keys)
-google-services.json
-GoogleService-Info.plist
+# google-services.json - Commented out: needed for EAS Build (package config is not a secret)
+# GoogleService-Info.plist
 .env
 .env.local
 .env.production
