@@ -1,4 +1,4 @@
-package com.jsmglobal.migrationau
+package com.jsmglobal.migrate_au
 
 import android.app.Application
 import android.content.res.Configuration

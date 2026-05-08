@@ -1,4 +1,4 @@
-package com.jsmglobal.migrationau
+package com.jsmglobal.migrate_au
 import expo.modules.splashscreen.SplashScreenManager
 
 import android.os.Build

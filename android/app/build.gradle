@@ -87,9 +87,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace 'com.jsmglobal.migrationau'
+    namespace 'com.jsmglobal.migrate_au'
     defaultConfig {
-        applicationId 'com.jsmglobal.migrationau'
+        applicationId 'com.jsmglobal.migrate_au'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 100

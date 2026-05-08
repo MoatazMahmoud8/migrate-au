@@ -34,7 +34,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#002D62"
       },
-      "package": "com.jsmglobal.migrationau",
+      "package": "com.jsmglobal.migrate_au",
       "versionCode": 100,
       "googleServicesFile": "./google-services.json",
       "permissions": [
