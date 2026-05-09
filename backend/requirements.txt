@@ -1,0 +1,4 @@
+requests
+beautifulsoup4
+firebase-admin>=6.5.0
+lxml
