@@ -1,22 +1,54 @@
 import { Tabs } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
-import { View, StyleSheet, Platform } from 'react-native';
+import { View, Text, StyleSheet, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { Colors } from '../constants/theme';
+import { useEffect, useState } from 'react';
+import { initNotifications, subscribeToFeed } from '../utils/notifications';
 
 SplashScreen.hideAsync();
 
-function TabIcon({ name, color, focused }: { name: any; color: string; focused: boolean }) {
+function TabIcon({
+  name,
+  color,
+  focused,
+  badge,
+}: {
+  name: any;
+  color: string;
+  focused: boolean;
+  badge?: number;
+}) {
   return (
-    <View style={[tabStyles.iconWrap, focused && tabStyles.iconActive]}>
-      <Ionicons name={name} size={20} color={color} />
+    <View style={tabStyles.iconWrap}>
+      <View style={[tabStyles.iconInner, focused && tabStyles.iconActive]}>
+        <Ionicons name={name} size={20} color={color} />
+      </View>
+      {badge != null && badge > 0 && (
+        <View style={tabStyles.badge}>
+          <Text style={tabStyles.badgeText}>{badge > 9 ? '9+' : badge}</Text>
+        </View>
+      )}
     </View>
   );
 }
 
 export default function RootLayout() {
+  const [unread, setUnread] = useState(0);
+
+  useEffect(() => {
+    // Initialise FCM — subscribe to all migration topics
+    initNotifications(['NSW', 'VIC', 'QLD', 'WA', 'SA', 'TAS', 'ACT', 'NT']);
+
+    // Track unread count for tab badge
+    const unsub = subscribeToFeed(items => {
+      setUnread(items.filter(n => !n.read).length);
+    });
+    return unsub;
+  }, []);
+
   return (
     <>
       <StatusBar style="light" />
@@ -97,6 +129,20 @@ export default function RootLayout() {
           }}
         />
         <Tabs.Screen
+          name="(tabs)/notifications"
+          options={{
+            title: 'Updates',
+            tabBarIcon: ({ color, focused }) => (
+              <TabIcon
+                name={focused ? 'notifications' : 'notifications-outline'}
+                color={color}
+                focused={focused}
+                badge={unread}
+              />
+            ),
+          }}
+        />
+        <Tabs.Screen
           name="(tabs)/profile"
           options={{
             title: 'Profile',
@@ -112,12 +158,34 @@ export default function RootLayout() {
 
 const tabStyles = StyleSheet.create({
   iconWrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconInner: {
     width: 36,
     height: 36,
     borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  badge: {
+    position: 'absolute',
+    top: -2,
+    right: -6,
+    backgroundColor: Colors.error,
+    borderRadius: 8,
+    minWidth: 16,
+    height: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 3,
+  },
+  badgeText: {
+    color: Colors.white,
+    fontSize: 9,
+    fontWeight: '800',
+  },
+  // kept for backward compat
   iconActive: {
     backgroundColor: 'rgba(255,205,0,0.15)',
   },
