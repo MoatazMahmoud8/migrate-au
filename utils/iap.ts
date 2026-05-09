@@ -12,7 +12,7 @@ import Purchases, {
   BILLING_ENTITLEMENT_ID,
 } from 'react-native-purchases';
 import { BillingCycle, PaymentMethod } from '../types/subscription';
-import { convertTrialToPaid, startTrial } from './billing';
+import { convertTrialToPaid, startTrial, PRICING } from './billing';
 
 // RevenueCat API Key (for Android)
 const REVENUECAT_API_KEY_ANDROID = 'goog_YOUR_KEY_HERE'; // Get from RevenueCat dashboard
@@ -196,4 +196,36 @@ export async function restorePurchases(userId: string): Promise<boolean> {
     console.warn('[IAP] Restore error:', err);
     return false;
   }
+}
+
+/**
+ * Get formatted price display
+ */
+export function getFormattedPrice(billingCycle: BillingCycle): {
+  amount: string;
+  currency: string;
+  cycle: string;
+} {
+  return {
+    amount: billingCycle === 'monthly' ? `$${PRICING.monthly}` : `$${PRICING.yearly}`,
+    currency: 'AUD',
+    cycle: billingCycle === 'monthly' ? '/month' : '/year',
+  };
+}
+
+/**
+ * Calculate savings for yearly plan
+ */
+export function getYearlySavings(): {
+  percent: number;
+  amount: string;
+} {
+  const monthlyAnnual = PRICING.monthly * 12;
+  const savings = monthlyAnnual - PRICING.yearly;
+  const percent = Math.round((savings / monthlyAnnual) * 100);
+
+  return {
+    percent,
+    amount: `$${savings.toFixed(2)}`,
+  };
 }

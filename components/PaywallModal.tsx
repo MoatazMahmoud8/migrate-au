@@ -6,13 +6,10 @@ import {
   StyleSheet,
   Modal,
   ActivityIndicator,
-  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, Radius, FontSize, FontWeight } from '../../constants/theme';
-import { startFreeTrialIAP, purchaseSubscription } from '../../utils/iap';
-import { createTrialCheckoutSession, getFormattedPrice, getYearlySavings } from '../../utils/stripe';
-import { useRouter } from 'expo-router';
+import { startFreeTrialIAP, purchaseSubscription, getFormattedPrice, getYearlySavings } from '../../utils/iap';
 
 interface PaywallModalProps {
   visible: boolean;
@@ -52,36 +49,19 @@ export function PaywallModal({
   };
 
   const handlePurchase = async () => {
-    if (Platform.OS === 'web') {
-      // Redirect to Stripe Checkout
-      setLoading(true);
-      try {
-        const session = await createTrialCheckoutSession(userId, selectedCycle);
-        if (session?.url) {
-          router.push(session.url);
-        } else {
-          alert('Failed to create checkout session');
-        }
-      } catch (err) {
-        alert('Error creating checkout session');
-      } finally {
-        setLoading(false);
+    // Mobile: use IAP (RevenueCat)
+    setLoading(true);
+    try {
+      const success = await purchaseSubscription(userId, selectedCycle);
+      if (success) {
+        onClose();
+      } else {
+        alert('Purchase failed or cancelled');
       }
-    } else {
-      // Mobile: use IAP
-      setLoading(true);
-      try {
-        const success = await purchaseSubscription(userId, selectedCycle);
-        if (success) {
-          onClose();
-        } else {
-          alert('Purchase failed or cancelled');
-        }
-      } catch (err) {
-        alert('Error processing purchase');
-      } finally {
-        setLoading(false);
-      }
+    } catch (err) {
+      alert('Error processing purchase');
+    } finally {
+      setLoading(false);
     }
   };
 
