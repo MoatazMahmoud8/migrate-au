@@ -7,6 +7,35 @@
   "client": [
     {
       "client_info": {
+        "mobilesdk_app_id": "1:205705723367:android:db467072ed8e64027b9142",
+        "android_client_info": {
+          "package_name": "com.jsmglobal.migration_au"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "205705723367-9v0a8q5nc75lvkprngts6rbn2e8lb8tj.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAZ9uzDiSmUiKoRjpy_A-RcO0jGsUR0mLs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "205705723367-9v0a8q5nc75lvkprngts6rbn2e8lb8tj.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
         "mobilesdk_app_id": "1:205705723367:android:d5571a7b3d7ec57f7b9142",
         "android_client_info": {
           "package_name": "com.migrateau.app"
@@ -68,64 +97,6 @@
         "mobilesdk_app_id": "1:205705723367:android:853982a261615f7a7b9142",
         "android_client_info": {
           "package_name": "xyz.jsmglobal.migrateur"
-        }
-      },
-      "oauth_client": [
-        {
-          "client_id": "205705723367-9v0a8q5nc75lvkprngts6rbn2e8lb8tj.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
-      "api_key": [
-        {
-          "current_key": "AIzaSyAZ9uzDiSmUiKoRjpy_A-RcO0jGsUR0mLs"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "205705723367-9v0a8q5nc75lvkprngts6rbn2e8lb8tj.apps.googleusercontent.com",
-              "client_type": 3
-            }
-          ]
-        }
-      }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:205705723367:android:f2e1d9c8b7a6f5e4c3b2",
-        "android_client_info": {
-          "package_name": "com.jsmglobal.migrationau"
-        }
-      },
-      "oauth_client": [
-        {
-          "client_id": "205705723367-9v0a8q5nc75lvkprngts6rbn2e8lb8tj.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
-      "api_key": [
-        {
-          "current_key": "AIzaSyAZ9uzDiSmUiKoRjpy_A-RcO0jGsUR0mLs"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "205705723367-9v0a8q5nc75lvkprngts6rbn2e8lb8tj.apps.googleusercontent.com",
-              "client_type": 3
-            }
-          ]
-        }
-      }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:205705723367:android:a1b2c3d4e5f6a7b8c9d0",
-        "android_client_info": {
-          "package_name": "com.jsmglobal.migration_au"
         }
       },
       "oauth_client": [
