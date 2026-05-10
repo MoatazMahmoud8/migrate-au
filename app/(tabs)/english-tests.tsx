@@ -460,7 +460,7 @@ export default function EnglishTestsScreen() {
       <TouchableOpacity
         activeOpacity={0.8}
         style={styles.partnerBanner}
-        onPress={() => Linking.openURL('mailto:hello@jsmglobal.xyz?subject=Test%20Centre%20Partnership%20Enquiry&body=Hi%2C%20I%20am%20interested%20in%20partnering%20with%20MigrateAU%20to%20reach%20skilled%20migration%20applicants%20preparing%20for%20English%20tests.')}
+        onPress={() => Linking.openURL('mailto:support@jsmglobal.xyz?subject=Test%20Centre%20Partnership%20Enquiry&body=Hi%2C%20I%20am%20interested%20in%20partnering%20with%20MigrateAU%20to%20reach%20skilled%20migration%20applicants%20preparing%20for%20English%20tests.')}
       >
         <LinearGradient
           colors={['#0A1A2E', '#0D2240']}
