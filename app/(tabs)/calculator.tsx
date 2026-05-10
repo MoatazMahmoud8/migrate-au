@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ScrollView,
   View,
@@ -6,14 +6,11 @@ import {
   TouchableOpacity,
   StyleSheet,
   Switch,
-  Animated,
-  Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '@react-native-firebase/auth';
 import { calculatePoints } from '../../utils/pointsCalculator';
-import { recordUsage, getRemainingUsage, resetMonthlyUsageIfNeeded } from '../../utils/usage';
+import { getRemainingUsage, resetMonthlyUsageIfNeeded } from '../../utils/usage';
 import { PaywallModal } from '../../components/PaywallModal';
 import { PointsInput, VisaSubclass, EnglishLevel } from '../../constants/types';
 import { Colors, Spacing, Radius, FontSize, FontWeight } from '../../constants/theme';
@@ -33,58 +30,7 @@ const defaultInput: PointsInput = {
   hasAustralianStudy: false,
 };
 
-function CalculatorScreen() {
-  const auth = useAuth();
-  const user = auth.currentUser;
-  const [input, setInput] = useState<PointsInput>(defaultInput);
-  const [showPaywall, setShowPaywall] = useState(false);
-  const [remaining, setRemaining] = useState<number | null>(null);
 
-  useEffect(() => {
-    if (user) {
-      resetMonthlyUsageIfNeeded(user.uid);
-      checkRemainingCalculations();
-    }
-  }, [user]);
-
-  const checkRemainingCalculations = async () => {
-    if (!user) return;
-    const usage = await getRemainingUsage(user.uid, 'calculation');
-    setRemaining(usage.remaining);
-  };
-
-  const handleCalculate = async () => {
-    if (!user) {
-      alert('Please sign in to calculate');
-      return;
-    }
-
-    // Check if can use feature
-    const canUse = await recordUsage(user.uid, 'calculation');
-    if (!canUse) {
-      setShowPaywall(true);
-      return;
-    }
-
-    // Proceed with calculation
-    checkRemainingCalculations();
-    // ... rest of calculation logic
-  };
-
-  return (
-    <>
-      <CalculatorContent onCalculate={handleCalculate} remaining={remaining} />
-      <PaywallModal
-        visible={showPaywall}
-        onClose={() => setShowPaywall(false)}
-        userId={user?.uid || ''}
-        title="Unlimited Calculations Await"
-        message="Upgrade to Pro to save and compare unlimited visa scenarios."
-        feature="calculator"
-      />
-    </>
-  );
-}
 
 function SegmentControl<T extends string>({
   options, value, onChange, labels,
@@ -193,7 +139,16 @@ function ScoreRing({ score, eligible }: { score: number; eligible: boolean }) {
 
 export default function CalculatorScreen() {
   const [input, setInput] = useState<PointsInput>(defaultInput);
+  const [showPaywall, setShowPaywall] = useState(false);
+  const [remaining, setRemaining] = useState<number | null>(null);
   const breakdown = calculatePoints(input);
+
+  const PLACEHOLDER_USER_ID = 'local_user'; // replace with real auth uid when auth is wired
+
+  useEffect(() => {
+    resetMonthlyUsageIfNeeded(PLACEHOLDER_USER_ID);
+    getRemainingUsage(PLACEHOLDER_USER_ID, 'calculation').then((u) => setRemaining(u.remaining));
+  }, []);
 
   const set = (patch: Partial<PointsInput>) => setInput((p) => ({ ...p, ...patch }));
 
@@ -211,6 +166,7 @@ export default function CalculatorScreen() {
   ];
 
   return (
+    <>
     <ScrollView
       style={styles.container}
       showsVerticalScrollIndicator={false}
@@ -381,6 +337,16 @@ export default function CalculatorScreen() {
         </View>
       </View>
     </ScrollView>
+
+    <PaywallModal
+      visible={showPaywall}
+      onClose={() => setShowPaywall(false)}
+      userId={PLACEHOLDER_USER_ID}
+      title="Unlimited Calculations Await"
+      message="You've used your free calculations for this month. Upgrade to Pro for unlimited access."
+      feature="calculator"
+    />
+    </>
   );
 }
 
