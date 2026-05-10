@@ -15,6 +15,80 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // ─── Data ──────────────────────────────────────────────────────────────────
 
+const TEST_CENTERS = [
+  {
+    name: 'IELTS',
+    color: '#4F8EF7',
+    icon: 'document-text-outline',
+    providers: [
+      {
+        label: 'IDP Australia (Official Administrator)',
+        sublabel: 'Book online — real-time seat availability',
+        url: 'https://ielts.idp.com/australia',
+        badge: 'Official',
+      },
+      {
+        label: 'IELTS.org — Global Test Centre Search',
+        sublabel: 'Find any IELTS-approved venue worldwide',
+        url: 'https://www.ielts.org/',
+        badge: null,
+      },
+    ],
+  },
+  {
+    name: 'PTE Academic',
+    color: '#00C2FF',
+    icon: 'laptop-outline',
+    providers: [
+      {
+        label: 'Pearson PTE — Test Centres & Dates',
+        sublabel: 'Computer-based — centres in all major Australian cities',
+        url: 'https://www.pearsonpte.com/pte-academic',
+        badge: 'Official',
+      },
+    ],
+  },
+  {
+    name: 'TOEFL iBT',
+    color: '#FF6B8A',
+    icon: 'school-outline',
+    providers: [
+      {
+        label: 'ETS — Find TOEFL Test Centres',
+        sublabel: 'Available at-home and at test centres across Australia',
+        url: 'https://www.ets.org/toefl/test-takers/ibt/about/',
+        badge: 'Official',
+      },
+    ],
+  },
+  {
+    name: 'CAE (Cambridge C1)',
+    color: '#A78BFA',
+    icon: 'ribbon-outline',
+    providers: [
+      {
+        label: 'Cambridge English — Find a Centre',
+        sublabel: 'Search approved exam centres in Australia',
+        url: 'https://www.cambridgeenglish.org/find-a-centre/',
+        badge: 'Official',
+      },
+    ],
+  },
+  {
+    name: 'OET',
+    color: '#00D68F',
+    icon: 'medkit-outline',
+    providers: [
+      {
+        label: 'OET — Book a Test',
+        sublabel: 'Healthcare professionals only · Computer-delivered',
+        url: 'https://oet.com/',
+        badge: 'Official',
+      },
+    ],
+  },
+];
+
 const APPROVED_TESTS = [
   { name: 'IELTS', full: 'International English Language Testing System', icon: 'document-text-outline', color: '#4F8EF7' },
   { name: 'PTE', full: 'Pearson Test of English Academic', icon: 'laptop-outline', color: '#00C2FF' },
@@ -347,6 +421,69 @@ export default function EnglishTestsScreen() {
         })}
       </View>
 
+      {/* Find a Test Centre */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Find a Test Centre</Text>
+        <Text style={styles.sectionSub}>Direct links to each official booking portal</Text>
+        {TEST_CENTERS.map((tc) => (
+          <View key={tc.name} style={[styles.centerCard, { borderColor: tc.color + '30' }]}>
+            <View style={[styles.centerHeader, { backgroundColor: tc.color + '12' }]}>
+              <Ionicons name={tc.icon as any} size={16} color={tc.color} />
+              <Text style={[styles.centerTestName, { color: tc.color }]}>{tc.name}</Text>
+            </View>
+            {tc.providers.map((p) => (
+              <TouchableOpacity
+                key={p.url}
+                style={styles.centerRow}
+                activeOpacity={0.75}
+                onPress={() => Linking.openURL(p.url)}
+              >
+                <View style={styles.centerRowLeft}>
+                  <Text style={styles.centerRowLabel}>{p.label}</Text>
+                  <Text style={styles.centerRowSub}>{p.sublabel}</Text>
+                </View>
+                <View style={styles.centerRowRight}>
+                  {p.badge && (
+                    <View style={[styles.officialBadge, { backgroundColor: tc.color + '18', borderColor: tc.color + '30' }]}>
+                      <Text style={[styles.officialBadgeText, { color: tc.color }]}>{p.badge}</Text>
+                    </View>
+                  )}
+                  <Ionicons name="open-outline" size={16} color={Colors.textMuted} />
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+        ))}
+      </View>
+
+      {/* Partner with us */}
+      <TouchableOpacity
+        activeOpacity={0.8}
+        style={styles.partnerBanner}
+        onPress={() => Linking.openURL('mailto:hello@jsmglobal.xyz?subject=Test%20Centre%20Partnership%20Enquiry&body=Hi%2C%20I%20am%20interested%20in%20partnering%20with%20MigrateAU%20to%20reach%20skilled%20migration%20applicants%20preparing%20for%20English%20tests.')}
+      >
+        <LinearGradient
+          colors={['#0A1A2E', '#0D2240']}
+          style={styles.partnerGrad}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
+          <View style={styles.partnerLeft}>
+            <View style={styles.partnerIcon}>
+              <Ionicons name="megaphone-outline" size={18} color={Colors.secondary} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.partnerTitle}>Are you a test prep centre?</Text>
+              <Text style={styles.partnerSub}>Reach thousands of skilled migration applicants — tap to get in touch</Text>
+            </View>
+          </View>
+          <View style={styles.partnerCta}>
+            <Ionicons name="mail-outline" size={14} color={Colors.secondary} />
+            <Text style={styles.partnerCtaText}>Partner with us</Text>
+          </View>
+        </LinearGradient>
+      </TouchableOpacity>
+
       {/* Disclaimer */}
       <View style={styles.disclaimer}>
         <Ionicons name="alert-circle-outline" size={14} color={Colors.textMuted} />
@@ -548,4 +685,80 @@ const styles = StyleSheet.create({
   },
   disclaimerText: { flex: 1, fontSize: FontSize.xs, color: Colors.textMuted, lineHeight: 16 },
   disclaimerLink: { color: Colors.accent, textDecorationLine: 'underline' },
+
+  // Test centre cards
+  centerCard: {
+    borderWidth: 1,
+    borderRadius: Radius.lg,
+    overflow: 'hidden',
+    marginBottom: Spacing.md,
+    backgroundColor: Colors.surface,
+  },
+  centerHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm + 2,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.divider,
+  },
+  centerTestName: { fontSize: FontSize.sm, fontWeight: FontWeight.bold },
+  centerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.md,
+    gap: Spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.divider,
+  },
+  centerRowLeft: { flex: 1 },
+  centerRowLabel: { fontSize: FontSize.sm, fontWeight: FontWeight.semiBold, color: Colors.textPrimary },
+  centerRowSub: { fontSize: FontSize.xs, color: Colors.textSecondary, marginTop: 2 },
+  centerRowRight: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+  officialBadge: {
+    borderWidth: 1,
+    borderRadius: Radius.full,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  officialBadgeText: { fontSize: 10, fontWeight: FontWeight.bold },
+
+  // Partner banner
+  partnerBanner: {
+    marginHorizontal: Spacing.xl,
+    marginTop: Spacing.xl,
+    borderRadius: Radius.xl,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,205,0,0.2)',
+  },
+  partnerGrad: { padding: Spacing.xl },
+  partnerLeft: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.md, marginBottom: Spacing.md },
+  partnerIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,205,0,0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,205,0,0.3)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  partnerTitle: { fontSize: FontSize.md, fontWeight: FontWeight.bold, color: Colors.textPrimary },
+  partnerSub: { fontSize: FontSize.xs, color: Colors.textSecondary, lineHeight: 16, marginTop: 2 },
+  partnerCta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    backgroundColor: 'rgba(255,205,0,0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,205,0,0.25)',
+    borderRadius: Radius.md,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    alignSelf: 'flex-start',
+  },
+  partnerCtaText: { fontSize: FontSize.sm, fontWeight: FontWeight.semiBold, color: Colors.secondary },
 });
