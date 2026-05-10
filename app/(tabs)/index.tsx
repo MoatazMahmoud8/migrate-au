@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Dimensions,
   Animated,
+  Linking,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -185,6 +186,36 @@ export default function HomeScreen() {
             </PressableCard>
           ))}
         </ScrollView>
+      </View>
+
+      {/* English Tests promo */}
+      <View style={styles.section}>
+        <PressableCard onPress={() => router.push('/(tabs)/english-tests' as any)}>
+          <LinearGradient
+            colors={['#0A2A1A', '#0D3B2A']}
+            style={styles.englishCard}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            <View style={styles.englishLeft}>
+              <View style={styles.englishIconWrap}>
+                <Ionicons name="language" size={20} color={Colors.success} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.englishTitle}>English Test Requirements</Text>
+                <Text style={styles.englishSub}>IELTS · PTE · TOEFL · CAE · OET scores for every visa</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={Colors.success} />
+            </View>
+            <View style={styles.englishChips}>
+              {['SC 189', 'SC 190', 'SC 482', 'SC 186'].map((v) => (
+                <View key={v} style={styles.englishChip}>
+                  <Text style={styles.englishChipText}>{v}</Text>
+                </View>
+              ))}
+            </View>
+          </LinearGradient>
+        </PressableCard>
       </View>
 
       {/* Aria AI promo */}
@@ -405,6 +436,32 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+
+  // English Tests card
+  englishCard: { borderRadius: Radius.xl, padding: Spacing.xl, overflow: 'hidden' },
+  englishLeft: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, marginBottom: Spacing.lg },
+  englishIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(0,214,143,0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(0,214,143,0.3)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  englishTitle: { color: Colors.textPrimary, fontSize: FontSize.md, fontWeight: FontWeight.bold },
+  englishSub: { color: Colors.textSecondary, fontSize: FontSize.xs, marginTop: 2 },
+  englishChips: { flexDirection: 'row', gap: Spacing.sm, flexWrap: 'wrap' },
+  englishChip: {
+    backgroundColor: 'rgba(0,214,143,0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(0,214,143,0.25)',
+    borderRadius: Radius.full,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 5,
+  },
+  englishChipText: { color: Colors.success, fontSize: FontSize.xs, fontWeight: FontWeight.semiBold },
 
   ariaCard: { borderRadius: Radius.xl, padding: Spacing.xl, overflow: 'hidden' },
   ariaCardShine: {

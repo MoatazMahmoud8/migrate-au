@@ -155,6 +155,15 @@ export default function RootLayout() {
             ),
           }}
         />
+        {/* Hidden screen — no tab bar entry */}
+        <Tabs.Screen
+          name="(tabs)/english-tests"
+          options={{
+            title: 'English Tests',
+            tabBarButton: () => null,
+            headerShown: false,
+          }}
+        />
       </Tabs>
     </>
   );
