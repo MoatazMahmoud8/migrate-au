@@ -220,6 +220,13 @@ export default function ProfileScreen() {
             onPress={() => Linking.openURL('https://immi.homeaffairs.gov.au')}
             showArrow
           />
+          <SettingRow
+            icon="person-circle-outline"
+            label="Find a MARA Agent"
+            value="portal.mara.gov.au"
+            onPress={() => Linking.openURL('https://portal.mara.gov.au')}
+            showArrow
+          />
           <SettingRow icon="logo-github" label="By JSM Global" value="jsmglobal.xyz" last />
         </View>
       </View>
@@ -227,7 +234,14 @@ export default function ProfileScreen() {
       <View style={styles.disclaimer}>
         <Ionicons name="alert-circle-outline" size={14} color={Colors.textMuted} />
         <Text style={styles.disclaimerText}>
-          Information is general in nature. Always consult a MARA-registered migration agent for formal advice.
+          Information is general in nature. Always consult a{' '}
+          <Text
+            style={styles.disclaimerLink}
+            onPress={() => Linking.openURL('https://portal.mara.gov.au')}
+          >
+            MARA-registered migration agent
+          </Text>
+          {' '}for formal advice.
         </Text>
       </View>
 
@@ -449,4 +463,5 @@ const styles = StyleSheet.create({
     borderColor: Colors.border,
   },
   disclaimerText: { flex: 1, fontSize: FontSize.xs, color: Colors.textMuted, lineHeight: 16 },
+  disclaimerLink: { color: Colors.accent, textDecorationLine: 'underline' },
 });

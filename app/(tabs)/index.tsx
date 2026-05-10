@@ -221,7 +221,14 @@ export default function HomeScreen() {
       <View style={styles.disclaimer}>
         <Ionicons name="shield-checkmark-outline" size={14} color={Colors.textMuted} />
         <Text style={styles.disclaimerText}>
-          Points are indicative only. Consult a MARA-registered agent for formal advice.
+          Points are indicative only. Consult a{' '}
+          <Text
+            style={styles.disclaimerLink}
+            onPress={() => Linking.openURL('https://portal.mara.gov.au')}
+          >
+            MARA-registered agent
+          </Text>
+          {' '}for formal advice.
         </Text>
       </View>
 
@@ -444,6 +451,7 @@ const styles = StyleSheet.create({
     borderColor: Colors.border,
   },
   disclaimerText: { flex: 1, fontSize: FontSize.xs, color: Colors.textMuted, lineHeight: 16 },
+  disclaimerLink: { color: Colors.accent, textDecorationLine: 'underline' },
 
   independentBanner: {
     flexDirection: 'row',
