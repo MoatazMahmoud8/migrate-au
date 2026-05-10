@@ -8,8 +8,8 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Spacing, Radius, FontSize, FontWeight } from '../../constants/theme';
-import { startFreeTrialIAP, purchaseSubscription, getFormattedPrice, getYearlySavings } from '../../utils/iap';
+import { Colors, Spacing, Radius, FontSize, FontWeight } from '../constants/theme';
+import { startFreeTrialIAP, purchaseSubscription, getFormattedPrice, getYearlySavings } from '../utils/iap';
 
 interface PaywallModalProps {
   visible: boolean;
