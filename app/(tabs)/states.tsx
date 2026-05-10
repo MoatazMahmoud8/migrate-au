@@ -14,13 +14,13 @@ import { Colors, Spacing, Radius, FontSize, FontWeight } from '../../constants/t
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const STATES = [
-  { code: 'VIC', name: 'Victoria', color: '#4F8EF7', newsUrl: 'https://www.vic.gov.au/skilled-migration-victoria', desc: 'Victorian Managed Admission Scheme (VMAS)' },
-  { code: 'NSW', name: 'New South Wales', color: '#00C2FF', newsUrl: 'https://www.nsw.gov.au/living-and-working/migration', desc: 'NSW Skilled Nominated Visa program' },
+  { code: 'VIC', name: 'Victoria', color: '#4F8EF7', newsUrl: 'https://liveinmelbourne.vic.gov.au/migrate/skilled-migration-to-victoria', desc: 'Victorian Managed Admission Scheme (VMAS)' },
+  { code: 'NSW', name: 'New South Wales', color: '#00C2FF', newsUrl: 'https://www.nsw.gov.au/topics/visas-and-migration', desc: 'NSW Skilled Nominated Visa program' },
   { code: 'QLD', name: 'Queensland', color: '#FF6B8A', newsUrl: 'https://migration.qld.gov.au/', desc: 'Queensland Skilled Visa program' },
   { code: 'SA', name: 'South Australia', color: '#FF7043', newsUrl: 'https://migration.sa.gov.au/', desc: 'SA Skilled & Business Migration' },
-  { code: 'WA', name: 'Western Australia', color: '#FFCD00', newsUrl: 'https://www.wa.gov.au/service/employment/workplace-policy-and-standards/skilled-migration-western-australia', desc: 'WA Skilled Migration program' },
+  { code: 'WA', name: 'Western Australia', color: '#FFCD00', newsUrl: 'https://migration.wa.gov.au/', desc: 'WA Skilled Migration program' },
   { code: 'TAS', name: 'Tasmania', color: '#00D68F', newsUrl: 'https://www.migration.tas.gov.au/', desc: 'Tasmanian Skilled Migration program' },
-  { code: 'ACT', name: 'Australian Capital Territory', color: '#A78BFA', newsUrl: 'https://www.act.gov.au/skilled-migration', desc: 'ACT Skilled Migration — Critical Skills list' },
+  { code: 'ACT', name: 'Australian Capital Territory', color: '#A78BFA', newsUrl: 'https://www.act.gov.au/migration/skilled-migrants', desc: 'ACT Skilled Migration — Critical Skills list' },
   { code: 'NT', name: 'Northern Territory', color: '#FFB800', newsUrl: 'https://migration.nt.gov.au/', desc: 'NT Skilled & Business migration' },
 ];
 
@@ -105,7 +105,7 @@ export default function StatesScreen() {
                       <View style={styles.noticeRow}>
                         <View style={styles.noticeDot} />
                         <Text style={styles.noticeText}>
-                          Push notifications for {state.code} updates coming soon.
+                          Tap to open official government portal.
                         </Text>
                       </View>
                     </View>

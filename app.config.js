@@ -12,6 +12,7 @@ module.exports = ({ config }) => {
     },
     extra: {
       ...config.extra,
+      geminiApiKey:         process.env.GEMINI_API_KEY ?? '',
       revenueCatKeyIos:     process.env.REVENUECAT_API_KEY_IOS ?? '',
       revenueCatKeyAndroid: process.env.REVENUECAT_API_KEY_ANDROID ?? '',
     },
