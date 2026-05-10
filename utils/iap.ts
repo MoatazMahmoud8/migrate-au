@@ -11,12 +11,14 @@ import Purchases, {
   CustomerInfo,
   BILLING_ENTITLEMENT_ID,
 } from 'react-native-purchases';
+import { Platform } from 'react-native';
+import Constants from 'expo-constants';
 import { BillingCycle, PaymentMethod } from '../types/subscription';
 import { convertTrialToPaid, startTrial, PRICING } from './billing';
 
-// RevenueCat API Key (for Android)
-const REVENUECAT_API_KEY_ANDROID = 'goog_YOUR_KEY_HERE'; // Get from RevenueCat dashboard
-// Apple App Store API Key is configured in EAS build
+// RevenueCat API keys — read from app.config.js extra (set via .env / EAS secrets)
+const REVENUECAT_API_KEY_IOS: string     = Constants.expoConfig?.extra?.revenueCatKeyIos ?? '';
+const REVENUECAT_API_KEY_ANDROID: string = Constants.expoConfig?.extra?.revenueCatKeyAndroid ?? '';
 
 // Revenue Cat product IDs
 const PRODUCTS = {
@@ -34,12 +36,13 @@ export async function initRevenueCat() {
   if (rcInitialized) return;
 
   try {
-    // Set API key (Android only; iOS uses entitlements)
-    await Purchases.configure({
-      apiKey: REVENUECAT_API_KEY_ANDROID,
-    });
+    const apiKey = Platform.OS === 'ios'
+      ? REVENUECAT_API_KEY_IOS
+      : REVENUECAT_API_KEY_ANDROID;
+
+    await Purchases.configure({ apiKey });
     rcInitialized = true;
-    console.log('[IAP] RevenueCat initialized');
+    console.log('[IAP] RevenueCat initialized on', Platform.OS);
   } catch (err) {
     console.warn('[IAP] RevenueCat init error:', err);
   }

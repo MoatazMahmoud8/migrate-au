@@ -7,6 +7,7 @@ import { BlurView } from 'expo-blur';
 import { Colors } from '../constants/theme';
 import { useEffect, useState } from 'react';
 import { initNotifications, subscribeToFeed } from '../utils/notifications';
+import { initRevenueCat } from '../utils/iap';
 
 SplashScreen.hideAsync();
 
@@ -39,6 +40,9 @@ export default function RootLayout() {
   const [unread, setUnread] = useState(0);
 
   useEffect(() => {
+    // Initialise RevenueCat for IAP
+    initRevenueCat();
+
     // Initialise FCM — subscribe to all migration topics
     initNotifications(['NSW', 'VIC', 'QLD', 'WA', 'SA', 'TAS', 'ACT', 'NT']);
 

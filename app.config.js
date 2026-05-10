@@ -10,5 +10,10 @@ module.exports = ({ config }) => {
       googleServicesFile:
         process.env.GOOGLE_SERVICES_JSON ?? config.android?.googleServicesFile ?? './google-services.json',
     },
+    extra: {
+      ...config.extra,
+      revenueCatKeyIos:     process.env.REVENUECAT_API_KEY_IOS ?? '',
+      revenueCatKeyAndroid: process.env.REVENUECAT_API_KEY_ANDROID ?? '',
+    },
   };
 };

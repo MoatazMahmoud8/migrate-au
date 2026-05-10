@@ -224,6 +224,14 @@ export default function HomeScreen() {
           Points are indicative only. Consult a MARA-registered agent for formal advice.
         </Text>
       </View>
+
+      {/* Independent guide banner */}
+      <View style={styles.independentBanner}>
+        <Ionicons name="information-circle-outline" size={14} color={Colors.accent} />
+        <Text style={styles.independentText}>
+          Independent Guide — Not affiliated with the Australian Government
+        </Text>
+      </View>
     </ScrollView>
   );
 }
@@ -436,4 +444,22 @@ const styles = StyleSheet.create({
     borderColor: Colors.border,
   },
   disclaimerText: { flex: 1, fontSize: FontSize.xs, color: Colors.textMuted, lineHeight: 16 },
+
+  independentBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.xs,
+    marginHorizontal: Spacing.lg,
+    marginTop: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: Colors.divider,
+  },
+  independentText: {
+    fontSize: FontSize.xs,
+    color: Colors.accent,
+    opacity: 0.7,
+    textAlign: 'center',
+  },
 });

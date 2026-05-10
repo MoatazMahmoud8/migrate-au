@@ -10,6 +10,7 @@ import {
   Platform,
   ActivityIndicator,
   Animated,
+  Linking,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { GoogleGenerativeAI } from '@google/generative-ai';
@@ -153,7 +154,16 @@ export default function AiScreen() {
 
           <View style={styles.disclaimer}>
             <Ionicons name="shield-checkmark-outline" size={13} color={Colors.textMuted} />
-            <Text style={styles.disclaimerText}>For general guidance only. Consult a MARA agent for formal advice.</Text>
+            <Text style={styles.disclaimerText}>
+              Aria provides info based on official docs. Double-check on{' '}
+              <Text
+                style={styles.disclaimerLink}
+                onPress={() => Linking.openURL('https://immi.homeaffairs.gov.au')}
+              >
+                immi.homeaffairs.gov.au
+              </Text>
+              {' '}before making decisions.
+            </Text>
           </View>
         </View>
       ) : (
@@ -175,6 +185,19 @@ export default function AiScreen() {
           <Text style={styles.typingText}>Aria is thinking…</Text>
         </View>
       )}
+
+      <View style={styles.sourceNote}>
+        <Ionicons name="globe-outline" size={11} color={Colors.accent} style={{ opacity: 0.6 }} />
+        <Text style={styles.sourceNoteText}>
+          Verify on{' '}
+          <Text
+            style={styles.sourceNoteLink}
+            onPress={() => Linking.openURL('https://immi.homeaffairs.gov.au')}
+          >
+            immi.homeaffairs.gov.au
+          </Text>
+        </Text>
+      </View>
 
       <View style={styles.inputRow}>
         <TextInput
@@ -252,6 +275,19 @@ const styles = StyleSheet.create({
     borderColor: Colors.border,
   },
   disclaimerText: { flex: 1, fontSize: FontSize.xs, color: Colors.textMuted, lineHeight: 16 },
+  disclaimerLink: { color: Colors.accent, textDecorationLine: 'underline' },
+
+  sourceNote: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    paddingVertical: 6,
+    borderTopWidth: 1,
+    borderTopColor: Colors.divider,
+  },
+  sourceNoteText: { fontSize: 10, color: Colors.textMuted },
+  sourceNoteLink: { fontSize: 10, color: Colors.accent, textDecorationLine: 'underline' },
 
   // Messages
   list: { padding: Spacing.lg, paddingBottom: Spacing.xl, gap: Spacing.md },

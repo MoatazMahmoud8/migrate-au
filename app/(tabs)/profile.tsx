@@ -15,6 +15,8 @@ import { getProfile, saveProfile } from '../../utils/storage';
 import { UserProfile } from '../../constants/types';
 import { Colors, Spacing, Radius, FontSize, FontWeight } from '../../constants/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { checkRenewalStatus } from '../../utils/billing';
+import PaywallModal from '../../components/PaywallModal';
 
 export default function ProfileScreen() {
   const [profile, setProfile] = useState<UserProfile>({
@@ -26,10 +28,22 @@ export default function ProfileScreen() {
   });
   const [editingName, setEditingName] = useState(false);
   const [nameInput, setNameInput] = useState('');
+  const [showPaywall, setShowPaywall] = useState(false);
+  const [renewalDays, setRenewalDays] = useState<number | null>(null);
+  const [renewalStatus, setRenewalStatus] = useState<'active' | 'expiring_soon' | 'expired'>('expired');
   const insets = useSafeAreaInsets();
 
   useEffect(() => {
-    getProfile().then(setProfile);
+    getProfile().then((p) => {
+      setProfile(p);
+      if (p.isPremium) {
+        // Use a placeholder userId — replace with real auth uid when auth is wired
+        checkRenewalStatus('local_user').then((res) => {
+          setRenewalStatus(res.status);
+          setRenewalDays(res.daysUntilExpiry ?? null);
+        });
+      }
+    });
   }, []);
 
   const saveName = async () => {
@@ -39,13 +53,7 @@ export default function ProfileScreen() {
     setEditingName(false);
   };
 
-  const handleUpgrade = () => {
-    Alert.alert(
-      'Upgrade to Premium',
-      '⭐ Premium features include:\n\n• ANZSCO occupation tracker\n• Custom state notifications\n• Unlimited Aria AI queries\n\nRevenueCat integration coming soon.',
-      [{ text: 'Got it', style: 'default' }],
-    );
-  };
+  const handleUpgrade = () => setShowPaywall(true);
 
   const initials = profile.name
     ? profile.name.trim().split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
@@ -108,8 +116,45 @@ export default function ProfileScreen() {
         </View>
       </LinearGradient>
 
-      {/* Premium upgrade card */}
-      {!profile.isPremium && (
+      {/* Subscription card */}
+      {profile.isPremium ? (
+        <View style={styles.section}>
+          <LinearGradient
+            colors={['#0A3D1F', '#0D5C2E']}
+            style={styles.premiumCard}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            <View style={styles.premiumGlow} />
+            <View style={styles.premiumLeft}>
+              <View style={[styles.premiumIcon, { backgroundColor: 'rgba(0,214,143,0.2)' }]}>
+                <Ionicons name="checkmark-circle" size={20} color={Colors.success} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.premiumTitle}>Premium Plan</Text>
+                {renewalDays !== null ? (
+                  <Text style={[
+                    styles.premiumSub,
+                    renewalStatus === 'expiring_soon' && { color: '#FBBF24' },
+                  ]}>
+                    {renewalStatus === 'expiring_soon'
+                      ? `⚠️ Expires in ${renewalDays} day${renewalDays === 1 ? '' : 's'}`
+                      : `Renews in ${renewalDays} days`}
+                  </Text>
+                ) : (
+                  <Text style={styles.premiumSub}>Active subscription</Text>
+                )}
+              </View>
+            </View>
+            <TouchableOpacity
+              style={styles.manageBillingBtn}
+              onPress={() => Alert.alert('Manage Billing', 'To cancel or change your plan, go to:\n\niOS → Settings → Apple ID → Subscriptions\n\nAndroid → Play Store → Subscriptions')}
+            >
+              <Text style={styles.manageBillingText}>Manage</Text>
+            </TouchableOpacity>
+          </LinearGradient>
+        </View>
+      ) : (
         <View style={styles.section}>
           <TouchableOpacity onPress={handleUpgrade} activeOpacity={0.9}>
             <LinearGradient
@@ -168,6 +213,13 @@ export default function ProfileScreen() {
             onPress={() => Linking.openURL('https://jsmglobal.xyz/migration-privacy.html')}
             showArrow
           />
+          <SettingRow
+            icon="globe-outline"
+            label="Official Source"
+            value="immi.homeaffairs.gov.au"
+            onPress={() => Linking.openURL('https://immi.homeaffairs.gov.au')}
+            showArrow
+          />
           <SettingRow icon="logo-github" label="By JSM Global" value="jsmglobal.xyz" last />
         </View>
       </View>
@@ -178,6 +230,15 @@ export default function ProfileScreen() {
           Information is general in nature. Always consult a MARA-registered migration agent for formal advice.
         </Text>
       </View>
+
+      <PaywallModal
+        visible={showPaywall}
+        onClose={() => setShowPaywall(false)}
+        userId="local_user"
+        title="Upgrade to Premium"
+        message="Unlock ANZSCO tracking, custom state alerts, and unlimited Aria AI."
+        feature="premium"
+      />
     </ScrollView>
   );
 }
@@ -265,6 +326,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   avatarText: { fontSize: FontSize.xxl, fontWeight: FontWeight.extraBold, color: Colors.primaryDark },
+  manageBillingBtn: {
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    borderRadius: Radius.full,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+  },
+  manageBillingText: {
+    color: Colors.textPrimary,
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.semiBold,
+  },
   premiumBadgeSmall: {
     position: 'absolute',
     bottom: 2,
