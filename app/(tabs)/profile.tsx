@@ -227,7 +227,8 @@ export default function ProfileScreen() {
             onPress={() => Linking.openURL('https://portal.mara.gov.au')}
             showArrow
           />
-          <SettingRow icon="logo-github" label="By JSM Global" value="jsmglobal.xyz" last />
+          <SettingRow icon="logo-github" label="By JSM Global" value="jsmglobal.xyz" />
+          <SettingRow icon="gift-outline" label="Go Premium" value="Unlock all features" showArrow last onPress={() => setShowPaywall(true)} />
         </View>
       </View>
 

@@ -78,6 +78,12 @@ export default function RootLayout() {
             fontSize: 10,
             fontWeight: '600',
             letterSpacing: 0.3,
+            marginTop: -4,
+          },
+          tabBarItemStyle: {
+            flex: 1,
+            alignItems: 'center',
+            justifyContent: 'center',
           },
           headerTransparent: true,
           headerStyle: { backgroundColor: 'transparent' },

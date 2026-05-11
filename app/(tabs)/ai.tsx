@@ -85,10 +85,11 @@ export default function AiScreen() {
       };
       setMessages((prev) => [...prev, aiMsg]);
     } catch (e: any) {
+      console.error('Aria error:', e?.message, e?.code);
       const errMsg: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'model',
-        text: 'Sorry, I encountered an error. Please try again.',
+        text: `Sorry, I encountered an error: ${e?.message || 'Unknown error'}. Please check your internet connection and try again.`,
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, errMsg]);

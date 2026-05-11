@@ -45,10 +45,10 @@ const VISA_CARDS = [
 ];
 
 const QUICK_TILES = [
-  { icon: 'calculator', label: 'Calculator', route: '/(tabs)/calculator', color: Colors.secondary, bg: 'rgba(255,205,0,0.12)' },
-  { icon: 'sparkles', label: 'Ask Aria', route: '/(tabs)/ai', color: '#A78BFA', bg: 'rgba(167,139,250,0.12)' },
-  { icon: 'map', label: 'States', route: '/(tabs)/states', color: Colors.accent, bg: 'rgba(0,194,255,0.12)' },
-  { icon: 'person-circle', label: 'Profile', route: '/(tabs)/profile', color: Colors.success, bg: 'rgba(0,214,143,0.12)' },
+  { icon: 'book-outline', label: 'English Tests', route: '/(tabs)/english-tests', color: Colors.success, bg: 'rgba(0,214,143,0.12)' },
+  { icon: 'checkmark-circle-outline', label: 'Occupation List', route: '/(tabs)/calculator', color: Colors.accent, bg: 'rgba(0,194,255,0.12)' },
+  { icon: 'megaphone-outline', label: 'State News', route: '/(tabs)/notifications', color: Colors.secondary, bg: 'rgba(255,205,0,0.12)' },
+  { icon: 'gift-outline', label: 'Go Premium', route: '/(tabs)/profile', color: '#FF6B8A', bg: 'rgba(255,107,154,0.12)' },
 ];
 
 function PressableCard({ children, onPress, style }: any) {
@@ -199,7 +199,7 @@ export default function HomeScreen() {
           >
             <View style={styles.englishLeft}>
               <View style={styles.englishIconWrap}>
-                <Ionicons name="language" size={20} color={Colors.success} />
+                <Ionicons name="book-outline" size={20} color={Colors.success} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.englishTitle}>English Test Requirements</Text>
