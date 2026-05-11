@@ -336,6 +336,80 @@ export default function CalculatorScreen() {
           </Text>
         </View>
       </View>
+
+      {/* Gap Filler — Points Improvement Tips */}
+      {((): JSX.Element | null => {
+        const score = breakdown.total;
+        const TARGET_BRACKETS = [65, 70, 75, 80, 85, 90, 95];
+        const nextBracket = TARGET_BRACKETS.find((b) => b > score) ?? 100;
+        const gap = nextBracket - score;
+
+        const tips: Array<{ label: string; pts: number; available: boolean }> = [
+          {
+            label: 'NAATI CCL Credential',
+            pts: 5,
+            available: !input.hasNaati,
+          },
+          {
+            label: 'Professional Year Program',
+            pts: 5,
+            available: !input.hasProfessionalYear,
+          },
+          {
+            label: 'Superior English (IELTS 8+/PTE 79+)',
+            pts: input.english < 20 ? 20 - input.english : 0,
+            available: input.english < 20,
+          },
+          {
+            label: 'State Nomination 190 (+5)',
+            pts: 5,
+            available: input.visaSubclass === '189' || (!input.hasStateNomination && input.visaSubclass === '190'),
+          },
+          {
+            label: 'State Nomination 491 (+15)',
+            pts: 15,
+            available: input.visaSubclass === '189' && !input.hasStateNomination,
+          },
+          {
+            label: 'Regional Study Bonus',
+            pts: 5,
+            available: !input.hasAustralianStudy,
+          },
+          {
+            label: 'Partner Skills Assessment',
+            pts: 5,
+            available: input.partner < 10,
+          },
+        ].filter((t) => t.available && t.pts > 0);
+
+        if (tips.length === 0) return null;
+
+        return (
+          <View style={styles.card}>
+            <View style={styles.cardHeader}>
+              <Ionicons name="trending-up" size={18} color={Colors.warning} />
+              <Text style={styles.cardTitle}>🏆 Gap Filler — Reach {nextBracket}+ Points</Text>
+            </View>
+            <Text style={[styles.rowHint, { marginBottom: 12 }]}>
+              You need {gap} more point{gap === 1 ? '' : 's'} for the next bracket. Here's how:
+            </Text>
+            {tips.slice(0, 5).map((tip) => (
+              <View key={tip.label} style={styles.gapRow}>
+                <View style={styles.gapLeft}>
+                  <Ionicons name="add-circle-outline" size={16} color={Colors.success} />
+                  <Text style={styles.gapLabel}>{tip.label}</Text>
+                </View>
+                <View style={styles.gapPill}>
+                  <Text style={styles.gapPts}>+{tip.pts} pts</Text>
+                </View>
+              </View>
+            ))}
+            <Text style={[styles.rowHint, { marginTop: 10, textAlign: 'center', fontSize: 11 }]}>
+              Ask Aria for a personalised Gap Audit 🇦🇺
+            </Text>
+          </View>
+        );
+      })()}
     </ScrollView>
 
     <PaywallModal
@@ -495,4 +569,23 @@ const styles = StyleSheet.create({
   },
   breakdownTotalLabel: { fontSize: FontSize.md, fontWeight: FontWeight.bold, color: Colors.textPrimary },
   breakdownTotalNum: { fontSize: FontSize.xl, fontWeight: FontWeight.extraBold, color: Colors.secondary },
+  gapRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  gapLeft: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 },
+  gapLabel: { fontSize: FontSize.sm, color: Colors.textPrimary, flex: 1 },
+  gapPill: {
+    backgroundColor: Colors.success + '20',
+    borderRadius: Radius.full,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderWidth: 1,
+    borderColor: Colors.success + '40',
+  },
+  gapPts: { fontSize: FontSize.sm, fontWeight: FontWeight.bold, color: Colors.success },
 });

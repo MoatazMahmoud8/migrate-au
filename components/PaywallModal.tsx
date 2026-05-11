@@ -28,7 +28,6 @@ export function PaywallModal({
   message,
   feature,
 }: PaywallModalProps) {
-  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [selectedCycle, setSelectedCycle] = useState<'monthly' | 'yearly'>('monthly');
 
@@ -150,10 +149,13 @@ export function PaywallModal({
 
           {/* Pro Benefits */}
           <View style={styles.benefits}>
-            <BenefitRow icon="zap" text="Unlimited calculations & AI" />
-            <BenefitRow icon="bell" text="Instant state alerts" />
-            <BenefitRow icon="trending-up" text="Advanced analytics" />
-            <BenefitRow icon="download" text="Export as PDF/CSV" />
+            <BenefitRow icon="zap" text="Unlimited calculations & Aria AI" />
+            <BenefitRow icon="map-outline" text="Golden Path — 5-stage roadmap" />
+            <BenefitRow icon="shield-checkmark-outline" text="Document expiry & age-drop alerts" />
+            <BenefitRow icon="location-outline" text="State-specific intelligence by ANZSCO" />
+            <BenefitRow icon="trending-up" text="Advanced points engineering (95+ gap audit)" />
+            <BenefitRow icon="document-text-outline" text="Premium Migration Audit Report" />
+            <BenefitRow icon="bell" text="Instant state nomination alerts" />
           </View>
 
           {/* CTA Buttons */}
@@ -362,3 +364,5 @@ const styles = StyleSheet.create({
     lineHeight: 14,
   },
 });
+
+export default PaywallModal;
