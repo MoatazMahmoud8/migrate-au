@@ -21,26 +21,29 @@ const VISA_CARDS = [
   {
     subclass: '189',
     name: 'Skilled Independent',
-    desc: 'No sponsorship required. Apply anywhere in Australia.',
+    desc: 'No sponsorship. Apply anywhere.',
     minPts: 65,
     gradient: ['#0047AB', '#002D62'] as [string, string],
     icon: 'globe-outline',
+    type: 'Skilled',
   },
   {
     subclass: '190',
     name: 'Skilled Nominated',
-    desc: 'State or territory sponsorship. +5 bonus points.',
+    desc: 'State sponsorship. +5 points.',
     minPts: 65,
     gradient: ['#005C99', '#003366'] as [string, string],
     icon: 'location-outline',
+    type: 'Skilled',
   },
   {
     subclass: '491',
     name: 'Work Regional',
-    desc: 'Regional sponsorship pathway. +15 bonus points.',
+    desc: 'Regional sponsorship. +15 points.',
     minPts: 65,
     gradient: ['#006080', '#003344'] as [string, string],
     icon: 'map-outline',
+    type: 'Skilled',
   },
 ];
 
@@ -216,6 +219,68 @@ export default function HomeScreen() {
             </View>
           </LinearGradient>
         </PressableCard>
+      </View>
+
+      {/* Processing Times */}
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Processing Times</Text>
+          <View style={styles.sectionPill}>
+            <Text style={styles.sectionPillText}>DHA Official</Text>
+          </View>
+        </View>
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={() => Linking.openURL('https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-processing-times')}
+          style={styles.processingCard}
+        >
+          <LinearGradient
+            colors={['#1A0A2E', '#2D1B4E']}
+            style={styles.processingGrad}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            <View style={styles.processingLeft}>
+              <Ionicons name="calendar-outline" size={18} color={Colors.accent} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.processingTitle}>Check Current Processing Times</Text>
+                <Text style={styles.processingSub}>View official DHA timeframes by visa subclass</Text>
+              </View>
+            </View>
+            <Ionicons name="open-outline" size={14} color={Colors.accent} />
+          </LinearGradient>
+        </TouchableOpacity>
+      </View>
+
+      {/* Other Visa Types */}
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Other Visa Pathways</Text>
+          <View style={styles.sectionPill}>
+            <Text style={styles.sectionPillText}>Family, Employer, Student</Text>
+          </View>
+        </View>
+        <Text style={styles.sectionSub}>Not eligible for skilled migration? Explore other options:</Text>
+        <View style={styles.otherVisasGrid}>
+          {[
+            { code: '186', name: 'Employer Sponsored', icon: 'briefcase-outline', url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/employer-nomination-scheme-186' },
+            { code: '482', name: 'Temporary Skill', icon: 'hourglass-outline', url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/temporary-skill-shortage-482' },
+            { code: '820/801', name: 'Partner', icon: 'heart-outline', url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/partner-820-801' },
+            { code: '500', name: 'Student', icon: 'school-outline', url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/student-500' },
+          ].map((v) => (
+            <TouchableOpacity
+              key={v.code}
+              activeOpacity={0.75}
+              onPress={() => Linking.openURL(v.url)}
+              style={styles.otherVisaCard}
+            >
+              <Ionicons name={v.icon as any} size={20} color={Colors.accent} />
+              <Text style={styles.otherVisaCode}>{v.code}</Text>
+              <Text style={styles.otherVisaName}>{v.name}</Text>
+              <Ionicons name="arrow-forward" size={12} color={Colors.textMuted} style={{ marginTop: 6 }} />
+            </TouchableOpacity>
+          ))}
+        </View>
       </View>
 
       {/* Aria AI promo */}
