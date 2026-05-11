@@ -43,6 +43,17 @@ HEADERS = {
         "AppleWebKit/537.36 (KHTML, like Gecko) "
         "Chrome/124.0.0.0 Safari/537.36"
     ),
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+    "Accept-Language": "en-AU,en;q=0.9",
+    "Accept-Encoding": "gzip, deflate, br",
+    "DNT": "1",
+    "Connection": "keep-alive",
+    "Upgrade-Insecure-Requests": "1",
+    "Sec-Fetch-Dest": "document",
+    "Sec-Fetch-Mode": "navigate",
+    "Sec-Fetch-Site": "none",
+    "Sec-Fetch-User": "?1",
+    "Cache-Control": "max-age=0",
 }
 
 
@@ -53,10 +64,12 @@ def _hash(text: str) -> str:
 def scrape(db) -> list[dict]:
     notifications = []
     meta_ref = db.collection("_scraper_meta")
+    session = requests.Session()
+    session.headers.update(HEADERS)
 
     for src in SOURCES:
         try:
-            resp = requests.get(src["url"], headers=HEADERS, timeout=20)
+            resp = session.get(src["url"], timeout=20)
             resp.raise_for_status()
             soup = BeautifulSoup(resp.text, "html.parser")
             elements = soup.select(src["selector"])
