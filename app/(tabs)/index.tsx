@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   ScrollView,
   View,
@@ -54,6 +54,74 @@ const QUICK_TILES = [
   { icon: 'gift-outline', label: 'Go Premium', route: '/(tabs)/profile', color: '#FF6B8A', bg: 'rgba(255,107,154,0.12)' },
 ];
 
+const OTHER_VISAS_DATA = [
+  {
+    code: '186',
+    name: 'Employer Nominated',
+    icon: 'briefcase-outline',
+    type: 'Permanent',
+    subclasses: ['186 - Main', '187 - Regional'],
+    conditions: [
+      'Nominated by Australian employer',
+      'Skills on eligible occupation list',
+      'Meet health & character requirements',
+    ],
+    url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/employer-nomination-scheme-186',
+  },
+  {
+    code: '482',
+    name: 'Temporary Skill',
+    icon: 'hourglass-outline',
+    type: 'Temporary',
+    subclasses: ['482 - Core Skills', '482 - Specialist', '482 - Agreement', '482 - Entrant'],
+    conditions: [
+      'Nominated by approved employer',
+      'Skills match required position',
+      'Meet English language requirements',
+    ],
+    url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skills-in-demand-visa-subclass-482',
+  },
+  {
+    code: '820/801',
+    name: 'Partner Visa',
+    icon: 'heart-outline',
+    type: 'Permanent',
+    subclasses: ['820 - Onshore', '801 - Offshore'],
+    conditions: [
+      'Spouse/de facto partner of citizen/PR',
+      'Genuine relationship & commitment',
+      'Meet health & character requirements',
+    ],
+    url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/partner-820-801',
+  },
+  {
+    code: '500',
+    name: 'Student Visa',
+    icon: 'school-outline',
+    type: 'Temporary',
+    subclasses: ['500 - Full-time Study'],
+    conditions: [
+      'Enrolled in eligible course (CoE)',
+      'Hold Overseas Student Health Cover',
+      'Minimum 6 years old (under 18 needs arrangement)',
+    ],
+    url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/student-500',
+  },
+  {
+    code: '600',
+    name: 'Visitor Visa',
+    icon: 'airplane-outline',
+    type: 'Temporary',
+    subclasses: ['600 - Tourism', '600 - Business', '600 - Family Visit'],
+    conditions: [
+      'Genuine visitor to Australia',
+      'Sufficient funds for stay & departure',
+      'Meet health & character requirements',
+    ],
+    url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/visitor-600',
+  },
+];
+
 function PressableCard({ children, onPress, style }: any) {
   const scale = useRef(new Animated.Value(1)).current;
   const press = () => {
@@ -75,6 +143,7 @@ function PressableCard({ children, onPress, style }: any) {
 export default function HomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const [expandedVisa, setExpandedVisa] = useState<string | null>(null);
 
   return (
     <ScrollView
@@ -261,25 +330,64 @@ export default function HomeScreen() {
           </View>
         </View>
         <Text style={styles.sectionSub}>Not eligible for skilled migration? Explore other options:</Text>
-        <View style={styles.otherVisasGrid}>
-          {[
-            { code: '186', name: 'Employer Sponsored', icon: 'briefcase-outline', url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/employer-nomination-scheme-186' },
-            { code: '482', name: 'Temporary Skill', icon: 'hourglass-outline', url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/temporary-skill-shortage-482' },
-            { code: '820/801', name: 'Partner', icon: 'heart-outline', url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/partner-820-801' },
-            { code: '500', name: 'Student', icon: 'school-outline', url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/student-500' },
-          ].map((v) => (
-            <TouchableOpacity
-              key={v.code}
-              activeOpacity={0.75}
-              onPress={() => Linking.openURL(v.url)}
-              style={styles.otherVisaCard}
-            >
-              <Ionicons name={v.icon as any} size={20} color={Colors.accent} />
-              <Text style={styles.otherVisaCode}>{v.code}</Text>
-              <Text style={styles.otherVisaName}>{v.name}</Text>
-              <Ionicons name="arrow-forward" size={12} color={Colors.textMuted} style={{ marginTop: 6 }} />
-            </TouchableOpacity>
-          ))}
+        <View>
+          {OTHER_VISAS_DATA.map((visa) => {
+            const isExpanded = expandedVisa === visa.code;
+            return (
+              <View key={visa.code}>
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={() => setExpandedVisa(isExpanded ? null : visa.code)}
+                  style={styles.visaCardExpand}
+                >
+                  <View style={styles.visaCardHeader}>
+                    <View style={styles.visaCardIcon}>
+                      <Ionicons name={visa.icon as any} size={18} color={Colors.accent} />
+                    </View>
+                    <View style={styles.visaCardInfo}>
+                      <Text style={styles.visaCode}>{visa.code}</Text>
+                      <Text style={styles.visaTitle}>{visa.name}</Text>
+                    </View>
+                    <View style={styles.visaTypeTag}>
+                      <Text style={styles.visaTypeText}>{visa.type}</Text>
+                    </View>
+                    <Ionicons 
+                      name={isExpanded ? "chevron-up" : "chevron-down"} 
+                      size={18} 
+                      color={Colors.textMuted} 
+                    />
+                  </View>
+                </TouchableOpacity>
+
+                {isExpanded && (
+                  <View style={styles.visaExpandedContent}>
+                    <View style={styles.visaSubsection}>
+                      <Text style={styles.visaSubtitle}>Subclasses:</Text>
+                      {visa.subclasses.map((sc, idx) => (
+                        <Text key={idx} style={styles.visaListItem}>• {sc}</Text>
+                      ))}
+                    </View>
+
+                    <View style={styles.visaSubsection}>
+                      <Text style={styles.visaSubtitle}>Main Requirements:</Text>
+                      {visa.conditions.map((cond, idx) => (
+                        <Text key={idx} style={styles.visaListItem}>• {cond}</Text>
+                      ))}
+                    </View>
+
+                    <TouchableOpacity
+                      activeOpacity={0.7}
+                      onPress={() => Linking.openURL(visa.url)}
+                      style={styles.visaLinkButton}
+                    >
+                      <Text style={styles.visaLinkButtonText}>View Full Details on DHA Website</Text>
+                      <Ionicons name="open-outline" size={14} color={Colors.accent} />
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </View>
+            );
+          })}
         </View>
       </View>
 
@@ -591,5 +699,92 @@ const styles = StyleSheet.create({
     color: Colors.accent,
     opacity: 0.7,
     textAlign: 'center',
+  },
+
+  // Expandable Visa Cards
+  visaCardExpand: {
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: Radius.lg,
+    marginBottom: Spacing.md,
+    overflow: 'hidden',
+    backgroundColor: 'rgba(0,194,255,0.04)',
+  },
+  visaCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.md,
+    gap: Spacing.md,
+  },
+  visaCardIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: Radius.md,
+    backgroundColor: 'rgba(0,194,255,0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  visaCardInfo: {
+    flex: 1,
+  },
+  visaCode: {
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.bold,
+    color: Colors.accent,
+  },
+  visaTitle: {
+    fontSize: FontSize.md,
+    fontWeight: FontWeight.semiBold,
+    color: Colors.textPrimary,
+    marginTop: 2,
+  },
+  visaTypeTag: {
+    backgroundColor: Colors.accent + '20',
+    borderRadius: Radius.full,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 3,
+  },
+  visaTypeText: {
+    fontSize: FontSize.xs,
+    fontWeight: FontWeight.semiBold,
+    color: Colors.accent,
+  },
+  visaExpandedContent: {
+    paddingHorizontal: Spacing.md,
+    paddingBottom: Spacing.md,
+    backgroundColor: Colors.primaryDark + '40',
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+  },
+  visaSubsection: {
+    marginBottom: Spacing.md,
+  },
+  visaSubtitle: {
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.semiBold,
+    color: Colors.secondary,
+    marginBottom: Spacing.xs,
+  },
+  visaListItem: {
+    fontSize: FontSize.sm,
+    color: Colors.textSecondary,
+    marginBottom: 6,
+    lineHeight: 18,
+  },
+  visaLinkButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.sm,
+    paddingVertical: Spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+    paddingTop: Spacing.md,
+  },
+  visaLinkButtonText: {
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.semiBold,
+    color: Colors.accent,
   },
 });
