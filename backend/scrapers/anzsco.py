@@ -16,6 +16,7 @@ SOURCES = [
         "topic": "anzsco",
         "category": "ANZSCO Occupation List",
         "url": "https://immi.homeaffairs.gov.au/visas/working-in-australia/skill-occupation-list",
+        "link_url": "https://immi.homeaffairs.gov.au/visas/working-in-australia/skill-occupation-list",
         "selector": "table, .field--name-body",
         "description": "Medium and Long-term Strategic Skills List (MLTSSL)",
     },
@@ -24,6 +25,7 @@ SOURCES = [
         "topic": "anzsco",
         "category": "ANZSCO Occupation List",
         "url": "https://immi.homeaffairs.gov.au/visas/working-in-australia/skill-occupation-list",
+        "link_url": "https://immi.homeaffairs.gov.au/visas/working-in-australia/skill-occupation-list",
         "selector": "table tr td",
         "description": "Short-term Skilled Occupation List (STSOL)",
     },
@@ -32,6 +34,7 @@ SOURCES = [
         "topic": "anzsco",
         "category": "ANZSCO Classification",
         "url": "https://www.abs.gov.au/statistics/classifications/anzsco-australian-and-new-zealand-standard-classification-occupations/latest-release",
+        "link_url": "https://www.abs.gov.au/statistics/classifications/anzsco-australian-and-new-zealand-standard-classification-occupations/latest-release",
         "selector": ".content-body p, table",
         "description": "Full ANZSCO classification update",
     },
@@ -90,7 +93,7 @@ def scrape(db) -> list[dict]:
                 "category": src["category"],
                 "title": f"📋 {src['category']} Changed",
                 "body": f"{src['description']} has been updated. Tap to see the changes.",
-                "url": src["url"],
+                "url": src.get("link_url", src["url"]),
                 "timestamp": datetime.now(timezone.utc).isoformat(),
             })
 

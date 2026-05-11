@@ -17,6 +17,7 @@ SOURCES = [
         "topic": "au_migration",
         "category": "Policy Update",
         "url": "https://immi.homeaffairs.gov.au/news-media",
+        "link_url": "https://immi.homeaffairs.gov.au/news-media",
         "selector": "article, .news-item, h2, h3, .field--name-title, p strong",
         "title_attr": None,  # use text
         "base_url": "https://immi.homeaffairs.gov.au",
@@ -26,6 +27,7 @@ SOURCES = [
         "topic": "au_migration",
         "category": "Visa Change",
         "url": "https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skilled-independent-189",
+        "link_url": "https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skilled-independent-189",
         "selector": ".last-updated, .alert, .field--name-body p",
         "title_attr": None,
         "base_url": "https://immi.homeaffairs.gov.au",
@@ -35,6 +37,7 @@ SOURCES = [
         "topic": "skillselect",
         "category": "SkillSelect Round",
         "url": "https://immi.homeaffairs.gov.au/visas/working-in-australia/skillselect/invitation-rounds",
+        "link_url": "https://immi.homeaffairs.gov.au/visas/working-in-australia/skillselect/invitation-rounds",
         "selector": "table tr, .invitation-round, h3",
         "title_attr": None,
         "base_url": "https://immi.homeaffairs.gov.au",
@@ -43,7 +46,9 @@ SOURCES = [
         "id": "points_test",
         "topic": "au_migration",
         "category": "Points Test",
+        # Scrape SkillSelect main page for changes; link users to the actual points calculator tool
         "url": "https://immi.homeaffairs.gov.au/visas/working-in-australia/skillselect",
+        "link_url": "https://immi.homeaffairs.gov.au/help-support/tools/points-calculator",
         "selector": "table, .field--name-body, h2, h3, .alert",
         "title_attr": None,
         "base_url": "https://immi.homeaffairs.gov.au",
@@ -53,6 +58,7 @@ SOURCES = [
         "topic": "processing_times",
         "category": "Processing Time",
         "url": "https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-processing-times/global-visa-processing-times",
+        "link_url": "https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-processing-times/global-visa-processing-times",
         "selector": "table tr",
         "title_attr": None,
         "base_url": "https://immi.homeaffairs.gov.au",
@@ -117,7 +123,7 @@ def scrape(db) -> list[dict]:
                 "category": src["category"],
                 "title": f"🇦🇺 {src['category']} — Home Affairs",
                 "body": title_text,
-                "url": src["url"],
+                "url": src.get("link_url", src["url"]),
                 "timestamp": datetime.now(timezone.utc).isoformat(),
             })
 
