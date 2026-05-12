@@ -166,7 +166,7 @@ export default function RootLayout() {
           name="(tabs)/english-tests"
           options={{
             title: 'English Tests',
-            tabBarButton: () => null,
+            href: null,
             headerShown: false,
           }}
         />
