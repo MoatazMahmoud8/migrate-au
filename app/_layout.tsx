@@ -12,6 +12,7 @@ import { initRevenueCat, syncSubscriptionStatus } from '../utils/iap';
 import { selection } from '../utils/haptics';
 import { getProfile, saveProfile } from '../utils/storage';
 import OnboardingModal from '../components/OnboardingModal';
+import { refreshProcessingTimes } from '../utils/processingTimes';
 
 SplashScreen.hideAsync();
 
@@ -79,6 +80,9 @@ export default function RootLayout() {
     getProfile().then((p) => {
       if (!p.onboardingComplete) setOnboardingVisible(true);
     });
+
+    // Once-per-day processing-time refresh (silent; screen also pull-to-refreshes)
+    refreshProcessingTimes().catch(() => {});
 
     return unsub;
   }, []);
@@ -173,6 +177,7 @@ export default function RootLayout() {
           name="(tabs)/notifications"
           options={{
             title: 'Updates',
+            headerShown: false,
             tabBarIcon: ({ color, focused }) => (
               <TabIcon
                 name={focused ? 'notifications' : 'notifications-outline'}
@@ -204,6 +209,14 @@ export default function RootLayout() {
           name="(tabs)/english-tests"
           options={{
             title: 'English Tests',
+            href: null,
+            headerShown: false,
+          }}
+        />
+        <Tabs.Screen
+          name="processing-times"
+          options={{
+            title: 'Processing Times',
             href: null,
             headerShown: false,
           }}

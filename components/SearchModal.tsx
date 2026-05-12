@@ -57,7 +57,7 @@ const INDEX: SearchItem[] = [
   { id: 't-aria', category: 'tool', title: 'Ask Aria AI', subtitle: '24/7 AI migration consultant', icon: 'sparkles-outline', color: '#A78BFA', action: 'route', target: '/(tabs)/ai' },
   { id: 't-news', category: 'tool', title: 'Updates & Alerts', subtitle: 'Migration news per state', icon: 'notifications-outline', color: '#FB923C', action: 'route', target: '/(tabs)/notifications' },
   { id: 't-skl',  category: 'tool', title: 'Skills Occupation List', subtitle: 'MLTSSL · STSOL · ROL · DHA', icon: 'list-outline', color: Colors.accent, action: 'url', target: 'https://immi.homeaffairs.gov.au/visas/working-in-australia/skill-occupation-list' },
-  { id: 't-proc', category: 'tool', title: 'Processing Times', subtitle: 'Official DHA timeframes', icon: 'time-outline', color: '#FB923C', action: 'url', target: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-processing-times' },
+  { id: 't-proc', category: 'tool', title: 'Processing Times', subtitle: 'Latest DHA timeframes — in-app', icon: 'time-outline', color: '#FB923C', action: 'route', target: '/processing-times' },
   { id: 't-mara', category: 'tool', title: 'Find a MARA Agent', subtitle: 'Registered migration agents', icon: 'person-circle-outline', color: Colors.accent, action: 'url', target: 'https://portal.mara.gov.au' },
 ];
 
