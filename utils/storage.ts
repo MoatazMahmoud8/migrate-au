@@ -9,6 +9,7 @@ const defaultProfile: UserProfile = {
   isPremium: false,
   subscribedStates: [],
   subscribedOccupation: '',
+  journeyStage: 0,
 };
 
 export async function getProfile(): Promise<UserProfile> {

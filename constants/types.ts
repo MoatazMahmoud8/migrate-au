@@ -59,4 +59,5 @@ export interface UserProfile {
   isPremium: boolean;
   subscribedStates: string[];
   subscribedOccupation: string;
+  journeyStage: number;
 }

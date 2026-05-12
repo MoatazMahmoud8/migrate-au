@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef } from 'react';
 import {
   ScrollView,
   View,
@@ -48,10 +48,20 @@ const VISA_CARDS = [
 ];
 
 const QUICK_TILES = [
-  { icon: 'book-outline',          label: 'English Tests',  route: '/(tabs)/english-tests',  color: Colors.success,   bg: 'rgba(0,214,143,0.12)' },
-  { icon: 'list-outline',          label: 'Skills List',    url: 'https://immi.homeaffairs.gov.au/visas/working-in-australia/skill-occupation-list', color: Colors.accent,    bg: 'rgba(0,194,255,0.12)' },
-  { icon: 'notifications-outline', label: 'Updates',        route: '/(tabs)/notifications',  color: Colors.secondary, bg: 'rgba(255,205,0,0.12)' },
-  { icon: 'star-outline',          label: 'Go Premium',     route: '/(tabs)/profile',        color: '#FF6B8A',        bg: 'rgba(255,107,154,0.12)' },
+  { icon: 'book-outline',     label: 'English Tests', route: '/(tabs)/english-tests', color: Colors.success,   bg: 'rgba(0,214,143,0.12)' },
+  { icon: 'list-outline',     label: 'Skills List',   url: 'https://immi.homeaffairs.gov.au/visas/working-in-australia/skill-occupation-list', color: Colors.accent, bg: 'rgba(0,194,255,0.12)' },
+  { icon: 'map-outline',      label: 'States',        route: '/(tabs)/states',        color: Colors.secondary, bg: 'rgba(255,205,0,0.12)' },
+  { icon: 'calendar-outline', label: 'Processing',    url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-processing-times', color: '#FF6B8A', bg: 'rgba(255,107,154,0.12)' },
+];
+
+const VISA_CATEGORIES = [
+  { label: 'Employer',        icon: 'briefcase-outline', color: Colors.accent,        bg: 'rgba(0,194,255,0.10)',   url: 'https://immi.homeaffairs.gov.au/visas/working-in-australia' },
+  { label: 'Family',          icon: 'heart-outline',     color: '#FF6B8A',            bg: 'rgba(255,107,154,0.10)', url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/family' },
+  { label: 'Student',         icon: 'school-outline',    color: Colors.success,       bg: 'rgba(0,214,143,0.10)',   url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/studying' },
+  { label: 'Working Holiday', icon: 'sunny-outline',     color: Colors.secondary,     bg: 'rgba(255,205,0,0.10)',   url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/working-holiday' },
+  { label: 'Graduate',        icon: 'ribbon-outline',    color: '#A78BFA',            bg: 'rgba(167,139,250,0.10)', url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/temporary-graduate-485' },
+  { label: 'Visitor',         icon: 'airplane-outline',  color: Colors.textSecondary, bg: 'rgba(255,255,255,0.06)', url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/visitor-600' },
+  { label: 'Humanitarian',    icon: 'shield-outline',    color: Colors.error,         bg: 'rgba(255,59,48,0.10)',   url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/humanitarian' },
 ];
 
 const OTHER_VISAS_DATA = [
@@ -322,15 +332,6 @@ function FadeInView({ children, delay = 0, style }: any) {
 export default function HomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const [expandedVisa, setExpandedVisa] = useState<string | null>(null);
-  const [showAllVisas, setShowAllVisas] = useState(false);
-  const displayedVisas = showAllVisas ? OTHER_VISAS_DATA : OTHER_VISAS_DATA.slice(0, 4);
-
-  const toggleShowAll = () => {
-    setShowAllVisas(prev => !prev);
-    if (showAllVisas) setExpandedVisa(null);
-  };
-
   return (
     <ScrollView
       style={styles.container}
@@ -446,31 +447,6 @@ export default function HomeScreen() {
         </ScrollView>
       </View>
 
-      {/* English Tests promo */}
-      <View style={styles.section}>
-        <PressableCard onPress={() => router.push('/(tabs)/english-tests' as any)}>
-          <View style={styles.englishCard}>
-            <View style={styles.englishLeft}>
-              <View style={styles.englishIconWrap}>
-                <Ionicons name="book-outline" size={20} color={Colors.success} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.englishTitle}>English Test Requirements</Text>
-                <Text style={styles.englishSub}>IELTS · PTE · TOEFL · CAE · OET scores for every visa</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={18} color={Colors.success} />
-            </View>
-            <View style={styles.englishChips}>
-              {['SC 189', 'SC 190', 'SC 482', 'SC 186'].map((v) => (
-                <View key={v} style={styles.englishChip}>
-                  <Text style={styles.englishChipText}>{v}</Text>
-                </View>
-              ))}
-            </View>
-          </View>
-        </PressableCard>
-      </View>
-
       {/* Processing Times */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
@@ -503,105 +479,36 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Other Visa Types */}
+      {/* Other Visa Pathways */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Other Visa Pathways</Text>
           <View style={styles.sectionPill}>
-            <Text style={styles.sectionPillText}>Family, Employer, Student & more</Text>
+            <Text style={styles.sectionPillText}>{OTHER_VISAS_DATA.length} options</Text>
           </View>
         </View>
-        <Text style={styles.sectionSub}>Not eligible for skilled migration? Explore other options:</Text>
-        <View>
-          {displayedVisas.map((visa) => {
-            const isExpanded = expandedVisa === visa.code;
-            return (
-              <View key={visa.code}>
-                <TouchableOpacity
-                  activeOpacity={0.7}
-                  onPress={() => setExpandedVisa(isExpanded ? null : visa.code)}
-                  style={styles.visaCardExpand}
-                >
-                  <View style={styles.visaCardHeader}>
-                    <View style={styles.visaCardIcon}>
-                      <Ionicons name={visa.icon as any} size={18} color={Colors.accent} />
-                    </View>
-                    <View style={styles.visaCardInfo}>
-                      <Text style={styles.visaCode}>{visa.code}</Text>
-                      <Text style={styles.visaTitle}>{visa.name}</Text>
-                    </View>
-                    <View style={styles.visaTypeTag}>
-                      <Text style={styles.visaTypeText}>{visa.type}</Text>
-                    </View>
-                    <Ionicons 
-                      name={isExpanded ? "chevron-up" : "chevron-down"} 
-                      size={18} 
-                      color={Colors.textMuted} 
-                    />
-                  </View>
-                </TouchableOpacity>
-
-                {isExpanded && (
-                  <View style={styles.visaExpandedContent}>
-                    <View style={styles.visaSubsection}>
-                      <Text style={styles.visaSubtitle}>Subclasses:</Text>
-                      {visa.subclasses.map((sc, idx) => (
-                        <Text key={idx} style={styles.visaListItem}>• {sc}</Text>
-                      ))}
-                    </View>
-
-                    <View style={styles.visaSubsection}>
-                      <Text style={styles.visaSubtitle}>Main Requirements:</Text>
-                      {visa.conditions.map((cond, idx) => (
-                        <Text key={idx} style={styles.visaListItem}>• {cond}</Text>
-                      ))}
-                    </View>
-
-                    <TouchableOpacity
-                      activeOpacity={0.7}
-                      onPress={() => Linking.openURL(visa.url)}
-                      style={styles.visaLinkButton}
-                    >
-                      <Text style={styles.visaLinkButtonText}>View Full Details on DHA Website</Text>
-                      <Ionicons name="open-outline" size={14} color={Colors.accent} />
-                    </TouchableOpacity>
-                  </View>
-                )}
-              </View>
-            );
-          })}
+        <Text style={styles.sectionSub}>Not eligible for skilled migration? Explore other routes:</Text>
+        <View style={styles.visaCategoryGrid}>
+          {VISA_CATEGORIES.map((cat) => (
+            <TouchableOpacity
+              key={cat.label}
+              style={[styles.visaCategoryChip, { backgroundColor: cat.bg }]}
+              onPress={() => Linking.openURL(cat.url)}
+              activeOpacity={0.7}
+            >
+              <Ionicons name={cat.icon as any} size={13} color={cat.color} />
+              <Text style={[styles.visaCategoryText, { color: cat.color }]}>{cat.label}</Text>
+            </TouchableOpacity>
+          ))}
         </View>
-        <TouchableOpacity style={styles.showAllBtn} onPress={toggleShowAll}>
-          <Text style={styles.showAllBtnText}>
-            {showAllVisas ? 'Show Less' : `View All ${OTHER_VISAS_DATA.length} Pathways`}
-          </Text>
-          <Ionicons name={showAllVisas ? 'chevron-up' : 'chevron-down'} size={16} color={Colors.accent} />
+        <TouchableOpacity
+          style={styles.browseAllBtn}
+          onPress={() => Linking.openURL('https://immi.homeaffairs.gov.au/visas/getting-a-visa')}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.browseAllText}>Browse All Visa Subclasses on DHA</Text>
+          <Ionicons name="open-outline" size={14} color={Colors.accent} />
         </TouchableOpacity>
-      </FadeInView>
-
-      {/* Aria AI promo */}
-      <View style={styles.section}>
-        <PressableCard onPress={() => router.push('/(tabs)/ai')}>
-          <View style={styles.ariaCard}>
-            <View style={styles.ariaCardShine} />
-            <View style={styles.ariaLeft}>
-              <View style={styles.ariaAvatarSmall}>
-                <Ionicons name="sparkles" size={20} color={Colors.secondary} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.ariaTitle}>Ask Aria AI</Text>
-                <Text style={styles.ariaSub}>Your personal migration consultant — available 24/7</Text>
-              </View>
-            </View>
-            <View style={styles.ariaChips}>
-              {["What's 189 vs 190?", 'Do I need skills assessment?'].map((q) => (
-                <View key={q} style={styles.ariaChip}>
-                  <Text style={styles.ariaChipText}>{q}</Text>
-                </View>
-              ))}
-            </View>
-          </View>
-        </PressableCard>
       </View>
 
       {/* Disclaimer */}
@@ -1029,6 +936,50 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(0,194,255,0.15)',
   },
   showAllBtnText: {
+    color: Colors.accent,
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.semiBold,
+  },
+
+  /* Visa category chips */
+  sectionSub: {
+    fontSize: FontSize.xs,
+    color: Colors.textMuted,
+    marginBottom: Spacing.md,
+    lineHeight: 18,
+  },
+  visaCategoryGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.sm,
+    marginBottom: Spacing.md,
+  },
+  visaCategoryChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs + 2,
+    borderRadius: Radius.full,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+  },
+  visaCategoryText: {
+    fontSize: FontSize.xs,
+    fontWeight: FontWeight.semiBold,
+  },
+  browseAllBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.sm,
+    paddingVertical: Spacing.md,
+    backgroundColor: 'rgba(0,194,255,0.05)',
+    borderRadius: Radius.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(0,194,255,0.15)',
+  },
+  browseAllText: {
     color: Colors.accent,
     fontSize: FontSize.sm,
     fontWeight: FontWeight.semiBold,

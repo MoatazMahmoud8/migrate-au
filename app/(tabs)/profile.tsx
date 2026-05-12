@@ -18,6 +18,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { checkRenewalStatus } from '../../utils/billing';
 import PaywallModal from '../../components/PaywallModal';
 
+const JOURNEY_STAGES = [
+  { key: 'assess', label: 'Assess',   desc: 'Skills assessment & English test preparation' },
+  { key: 'eoi',    label: 'EOI',      desc: 'Submit Expression of Interest on SkillSelect' },
+  { key: 'invite', label: 'Invite',   desc: 'Received Invitation to Apply (ITA)' },
+  { key: 'apply',  label: 'Apply',    desc: 'Lodge visa application with Home Affairs' },
+  { key: 'grant',  label: 'Granted',  desc: '🎉 Visa granted — welcome to Australia!' },
+];
+
 export default function ProfileScreen() {
   const [profile, setProfile] = useState<UserProfile>({
     name: '',
@@ -54,6 +62,12 @@ export default function ProfileScreen() {
   };
 
   const handleUpgrade = () => setShowPaywall(true);
+
+  const handleJourneyStage = async (stage: number) => {
+    const updated = { ...profile, journeyStage: stage };
+    await saveProfile({ journeyStage: stage });
+    setProfile(updated);
+  };
 
   const initials = profile.name
     ? profile.name.trim().split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
@@ -115,6 +129,56 @@ export default function ProfileScreen() {
           }
         </View>
       </LinearGradient>
+
+      {/* My Journey */}
+      <View style={styles.section}>
+        <Text style={styles.sectionLabel}>My Journey</Text>
+        <View style={styles.journeyCard}>
+          <Text style={styles.journeyHint}>Tap your current stage to update progress</Text>
+          <View style={styles.journeyTrack}>
+            {JOURNEY_STAGES.map((stage, index) => {
+              const isCompleted = index < (profile.journeyStage ?? 0);
+              const isCurrent   = index === (profile.journeyStage ?? 0);
+              return (
+                <React.Fragment key={stage.key}>
+                  <TouchableOpacity
+                    style={styles.journeyStep}
+                    onPress={() => handleJourneyStage(index)}
+                    activeOpacity={0.7}
+                  >
+                    <View style={[
+                      styles.journeyDot,
+                      isCompleted && styles.journeyDotDone,
+                      isCurrent   && styles.journeyDotActive,
+                    ]}>
+                      {isCompleted
+                        ? <Ionicons name="checkmark" size={12} color={Colors.primaryDark} />
+                        : <Text style={[styles.journeyDotNum, isCurrent && { color: Colors.primaryDark }]}>{index + 1}</Text>
+                      }
+                    </View>
+                    <Text style={[
+                      styles.journeyLabel,
+                      isCurrent   && styles.journeyLabelActive,
+                      isCompleted && styles.journeyLabelDone,
+                    ]}>{stage.label}</Text>
+                  </TouchableOpacity>
+                  {index < JOURNEY_STAGES.length - 1 && (
+                    <View style={[styles.journeyLine, isCompleted && styles.journeyLineDone]} />
+                  )}
+                </React.Fragment>
+              );
+            })}
+          </View>
+          <View style={styles.journeyDetail}>
+            <Text style={styles.journeyDetailTitle}>
+              {JOURNEY_STAGES[profile.journeyStage ?? 0].label}
+            </Text>
+            <Text style={styles.journeyDetailSub}>
+              {JOURNEY_STAGES[profile.journeyStage ?? 0].desc}
+            </Text>
+          </View>
+        </View>
+      </View>
 
       {/* Subscription card */}
       {profile.isPremium ? (
@@ -464,4 +528,84 @@ const styles = StyleSheet.create({
   },
   disclaimerText: { flex: 1, fontSize: FontSize.xs, color: Colors.textMuted, lineHeight: 16 },
   disclaimerLink: { color: Colors.accent, textDecorationLine: 'underline' },
+
+  /* My Journey tracker */
+  journeyCard: {
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.xl,
+    padding: Spacing.lg,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  journeyHint: {
+    fontSize: FontSize.xs,
+    color: Colors.textMuted,
+    textAlign: 'center',
+    marginBottom: Spacing.lg,
+  },
+  journeyTrack: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: Spacing.lg,
+  },
+  journeyStep: {
+    alignItems: 'center',
+    gap: Spacing.xs,
+  },
+  journeyDot: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: Colors.background,
+    borderWidth: 2,
+    borderColor: Colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  journeyDotActive: {
+    backgroundColor: Colors.secondary,
+    borderColor: Colors.secondary,
+  },
+  journeyDotDone: {
+    backgroundColor: Colors.success,
+    borderColor: Colors.success,
+  },
+  journeyDotNum: {
+    fontSize: 10,
+    fontWeight: '700' as const,
+    color: Colors.textMuted,
+  },
+  journeyLabel: {
+    fontSize: 9,
+    fontWeight: '600' as const,
+    color: Colors.textMuted,
+    letterSpacing: 0.2,
+  },
+  journeyLabelActive: { color: Colors.secondary },
+  journeyLabelDone:   { color: Colors.success },
+  journeyLine: {
+    flex: 1,
+    height: 2,
+    backgroundColor: Colors.border,
+    marginBottom: 18,
+  },
+  journeyLineDone: { backgroundColor: Colors.success },
+  journeyDetail: {
+    backgroundColor: Colors.background,
+    borderRadius: Radius.md,
+    padding: Spacing.md,
+    borderWidth: 1,
+    borderColor: Colors.divider,
+  },
+  journeyDetailTitle: {
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.bold,
+    color: Colors.textPrimary,
+    marginBottom: 3,
+  },
+  journeyDetailSub: {
+    fontSize: FontSize.xs,
+    color: Colors.textSecondary,
+    lineHeight: 16,
+  },
 });

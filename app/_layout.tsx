@@ -124,9 +124,7 @@ export default function RootLayout() {
           name="(tabs)/states"
           options={{
             title: 'States',
-            tabBarIcon: ({ color, focused }) => (
-              <TabIcon name={focused ? 'map' : 'map-outline'} color={color} focused={focused} />
-            ),
+            href: null,
           }}
         />
         <Tabs.Screen
