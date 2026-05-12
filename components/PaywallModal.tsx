@@ -44,19 +44,23 @@ export function PaywallModal({ visible, onClose, userId, title, message, feature
         await syncSubscriptionStatus();
         onClose();
       } else { alert('Could not start trial. Please try again.'); }
-    } catch { alert('Error starting trial. Please try again.'); }
+    } catch (e: any) { alert('Error starting trial: ' + (e?.message || 'unknown error')); }
     finally { setLoading(false); }
   };
 
   const handlePurchase = async () => {
     setLoading(true);
     try {
-      const success = await purchaseSubscription(userId, selectedCycle);
-      if (success) {
+      const result = await purchaseSubscription(userId, selectedCycle);
+      if (result.success) {
         await syncSubscriptionStatus();
         onClose();
-      } else { alert('Purchase cancelled or failed. Please try again.'); }
-    } catch { alert('Error processing purchase. Please try again.'); }
+      } else if (result.cancelled) {
+        // user dismissed sheet — stay silent
+      } else {
+        alert(result.message || 'Purchase failed. Please try again.');
+      }
+    } catch (e: any) { alert('Error: ' + (e?.message || 'unknown error')); }
     finally { setLoading(false); }
   };
 
@@ -130,42 +134,45 @@ export function PaywallModal({ visible, onClose, userId, title, message, feature
 
             {/* CTAs — above the fold */}
             <View style={styles.actions}>
-              {/* Primary: Start Trial */}
+              {/* Primary: Subscribe (highlighted) */}
               <TouchableOpacity
-                style={styles.trialBtn}
-                onPress={handleStartTrial}
+                style={styles.primaryBtn}
+                onPress={handlePurchase}
                 disabled={loading}
                 activeOpacity={0.85}
               >
                 <LinearGradient
                   colors={[Colors.secondary, '#FFB800']}
                   start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                  style={styles.trialBtnGrad}
+                  style={styles.primaryBtnGrad}
                 >
                   {loading ? (
-                    <ActivityIndicator color={Colors.primary} />
+                    <ActivityIndicator color={Colors.primaryDark} />
                   ) : (
                     <>
-                      <Ionicons name="gift-outline" size={18} color={Colors.primaryDark} />
-                      <Text style={styles.trialBtnText}>Start 7-Day Free Trial</Text>
+                      <Ionicons name="flash" size={18} color={Colors.primaryDark} />
+                      <Text style={styles.primaryBtnText}>
+                        Subscribe — {selectedCycle === 'monthly' ? `${monthlyPrice.amount}/mo` : `${yearlyPrice.amount}/yr`}
+                      </Text>
                     </>
                   )}
                 </LinearGradient>
               </TouchableOpacity>
 
-              {/* Secondary: Subscribe */}
+              {/* Secondary: Start Trial */}
               <TouchableOpacity
-                style={styles.subscribeBtn}
-                onPress={handlePurchase}
+                style={styles.secondaryBtn}
+                onPress={handleStartTrial}
                 disabled={loading}
                 activeOpacity={0.8}
               >
                 {loading ? (
                   <ActivityIndicator color={Colors.textPrimary} />
                 ) : (
-                  <Text style={styles.subscribeBtnText}>
-                    Subscribe — {selectedCycle === 'monthly' ? `${monthlyPrice.amount}/mo` : `${yearlyPrice.amount}/yr`}
-                  </Text>
+                  <>
+                    <Ionicons name="gift-outline" size={16} color={Colors.textPrimary} />
+                    <Text style={styles.secondaryBtnText}>Or start 7-day free trial</Text>
+                  </>
                 )}
               </TouchableOpacity>
             </View>
@@ -379,32 +386,35 @@ const styles = StyleSheet.create({
 
   /* Actions */
   actions: { gap: Spacing.sm, marginBottom: Spacing.sm },
-  trialBtn: {
+  primaryBtn: {
     borderRadius: Radius.lg,
     overflow: 'hidden',
   },
-  trialBtnGrad: {
+  primaryBtnGrad: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: Spacing.sm,
-    paddingVertical: Spacing.md + 2,
+    paddingVertical: Spacing.md + 4,
   },
-  trialBtnText: {
+  primaryBtnText: {
     fontSize: FontSize.md,
     fontWeight: FontWeight.bold,
     color: Colors.primaryDark,
   },
-  subscribeBtn: {
+  secondaryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.xs,
     borderRadius: Radius.lg,
     borderWidth: 1.5,
     borderColor: Colors.border,
     paddingVertical: Spacing.md,
-    alignItems: 'center',
     backgroundColor: Colors.surface,
   },
-  subscribeBtnText: {
-    fontSize: FontSize.md,
+  secondaryBtnText: {
+    fontSize: FontSize.sm,
     fontWeight: FontWeight.semiBold,
     color: Colors.textPrimary,
   },

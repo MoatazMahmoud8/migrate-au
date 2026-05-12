@@ -9,7 +9,6 @@ import Purchases, {
   PurchasesPackage,
   PurchasesOffering,
   CustomerInfo,
-  BILLING_ENTITLEMENT_ID,
 } from 'react-native-purchases';
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
@@ -136,21 +135,24 @@ export async function startFreeTrialIAP(userId: string): Promise<boolean> {
 
 /**
  * Purchase a subscription (monthly or yearly)
+ * Returns { success, cancelled, message } so caller can surface real errors.
  */
 export async function purchaseSubscription(
   userId: string,
   billingCycle: 'monthly' | 'yearly'
-): Promise<boolean> {
+): Promise<{ success: boolean; cancelled: boolean; message?: string }> {
   try {
     const offering = await getOfferings();
-    if (!offering) throw new Error('No offerings available');
+    if (!offering) {
+      return { success: false, cancelled: false, message: 'Subscriptions are not configured yet. Please try again later.' };
+    }
 
     const productId = billingCycle === 'monthly' ? PRODUCTS.monthlyPro : PRODUCTS.yearlyPro;
     const pkg = offering.availablePackages.find(p => p.product.identifier === productId);
 
     if (!pkg) {
       console.warn(`[IAP] Package ${productId} not found`);
-      return false;
+      return { success: false, cancelled: false, message: `This plan (${billingCycle}) is not available right now. Please try the other option or contact support.` };
     }
 
     const purchaseResult = await Purchases.purchasePackage(pkg);
@@ -161,10 +163,8 @@ export async function purchaseSubscription(
       const paymentMethod: PaymentMethod =
         purchaseResult.customerInfo.originalAppUserId.includes('$google') ? 'google' : 'apple';
 
-      // Store the receipt for validation
-      const receiptId =
-        purchaseResult.customerInfo.originalPurchaseDate || 
-        purchaseResult.receipt;
+      // Use original purchase date as a receipt identifier (RC handles validation server-side)
+      const receiptId = purchaseResult.customerInfo.originalPurchaseDate || '';
 
       // Update Firestore with paid subscription
       await convertTrialToPaid(userId, billingCycle, paymentMethod, {
@@ -172,17 +172,17 @@ export async function purchaseSubscription(
         googleReceiptId: paymentMethod === 'google' ? receiptId : undefined,
       });
 
-      return true;
+      return { success: true, cancelled: false };
     }
 
-    return false;
+    return { success: false, cancelled: false, message: 'Purchase did not activate the subscription. Please contact support.' };
   } catch (err: any) {
-    if (err.code === 'PurchaseCancelledError') {
+    if (err?.userCancelled || err?.code === 'PurchaseCancelledError' || err?.code === '1') {
       console.log('[IAP] Purchase cancelled by user');
-      return false;
+      return { success: false, cancelled: true };
     }
     console.warn('[IAP] Purchase error:', err);
-    return false;
+    return { success: false, cancelled: false, message: err?.message || 'Purchase failed. Please try again.' };
   }
 }
 
