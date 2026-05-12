@@ -82,7 +82,29 @@ export default function RootLayout() {
     });
 
     // Once-per-day processing-time refresh (silent; screen also pull-to-refreshes)
-    refreshProcessingTimes().catch(() => {});
+    refreshProcessingTimes()
+      .then(async ({ changes }) => {
+        if (!changes.length) return;
+        try {
+          const Notifications = await import('expo-notifications');
+          const summary =
+            changes.length === 1
+              ? `${changes[0].name} now ${changes[0].after.p50} (was ${changes[0].before.p50})`
+              : `${changes.length} visas updated — tap to see new timeframes`;
+          await Notifications.scheduleNotificationAsync({
+            content: {
+              title: 'Processing times updated',
+              body: summary,
+              data: { route: '/processing-times' },
+              sound: 'default',
+            },
+            trigger: null,
+          });
+        } catch (e) {
+          console.warn('[processing-times] notify failed:', e);
+        }
+      })
+      .catch(() => {});
 
     return unsub;
   }, []);
@@ -217,6 +239,14 @@ export default function RootLayout() {
           name="processing-times"
           options={{
             title: 'Processing Times',
+            href: null,
+            headerShown: false,
+          }}
+        />
+        <Tabs.Screen
+          name="visas"
+          options={{
+            title: 'Visa Pathways',
             href: null,
             headerShown: false,
           }}

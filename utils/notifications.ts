@@ -173,8 +173,17 @@ function registerBackgroundOpenHandler() {
 
 function handleNotificationNavigation(data?: Record<string, string>) {
   if (!data) return;
-  // Future: use expo-router to navigate to relevant screen
-  // e.g. if data.category === 'State Nomination' → navigate to states tab
+  try {
+    const route = (data as any).route as string | undefined;
+    if (route) {
+      // Lazy import to avoid circular deps at module load
+      const { router } = require('expo-router');
+      router.push(route);
+      return;
+    }
+  } catch (e) {
+    console.warn('[notifications] navigation failed:', e);
+  }
   console.log('[notifications] Opened from notification:', data);
 }
 

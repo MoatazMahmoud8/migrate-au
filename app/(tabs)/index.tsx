@@ -504,7 +504,7 @@ export default function HomeScreen() {
             <TouchableOpacity
               key={cat.label}
               style={[styles.visaCategoryChip, { backgroundColor: cat.bg }]}
-              onPress={() => Linking.openURL(cat.url)}
+              onPress={() => router.push({ pathname: '/visas', params: { category: cat.label } } as any)}
               activeOpacity={0.7}
             >
               <Ionicons name={cat.icon as any} size={13} color={cat.color} />
@@ -514,11 +514,11 @@ export default function HomeScreen() {
         </View>
         <TouchableOpacity
           style={styles.browseAllBtn}
-          onPress={() => Linking.openURL('https://immi.homeaffairs.gov.au/visas/getting-a-visa')}
+          onPress={() => router.push('/visas' as any)}
           activeOpacity={0.8}
         >
-          <Text style={styles.browseAllText}>Browse All Visa Subclasses on DHA</Text>
-          <Ionicons name="open-outline" size={14} color={Colors.accent} />
+          <Text style={styles.browseAllText}>Browse All Visa Subclasses</Text>
+          <Ionicons name="arrow-forward" size={14} color={Colors.accent} />
         </TouchableOpacity>
       </View>
 
