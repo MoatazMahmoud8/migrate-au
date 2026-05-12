@@ -19,6 +19,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { checkRenewalStatus } from '../../utils/billing';
 import { restorePurchases, getRevenueCatUserId, syncSubscriptionStatus } from '../../utils/iap';
 import PaywallModal from '../../components/PaywallModal';
+import { success as hapticSuccess, tap as hapticTap } from '../../utils/haptics';
 
 const JOURNEY_STAGES = [
   { key: 'assess', label: 'Assess',   desc: 'Skills assessment & English test preparation' },
@@ -35,6 +36,9 @@ export default function ProfileScreen() {
     isPremium: false,
     subscribedStates: [],
     subscribedOccupation: '',
+    journeyStage: 0,
+    pinnedStates: [],
+    onboardingComplete: false,
   });
   const [editingName, setEditingName] = useState(false);
   const [nameInput, setNameInput] = useState('');
@@ -93,6 +97,7 @@ export default function ProfileScreen() {
     const updated = { ...profile, journeyStage: stage };
     await saveProfile({ journeyStage: stage });
     setProfile(updated);
+    hapticSuccess();
   };
 
   const initials = profile.name
@@ -273,7 +278,34 @@ export default function ProfileScreen() {
 
       {/* Settings rows */}
       <View style={styles.section}>
-        <Text style={styles.sectionLabel}>Account</Text>
+        <Text style={styles.sectionLabel}>Subscription</Text>
+        <View style={styles.card}>
+          <SettingRow
+            icon={profile.isPremium ? 'star' : 'star-outline'}
+            label="Plan"
+            value={profile.isPremium ? 'Premium' : 'Free'}
+          />
+          {profile.isPremium && (
+            <SettingRow
+              icon="card-outline"
+              label="Manage Billing"
+              onPress={() => Alert.alert('Manage Billing', 'To cancel or change your plan, go to:\n\niOS → Settings → Apple ID → Subscriptions\n\nAndroid → Play Store → Subscriptions')}
+              showArrow
+            />
+          )}
+          <SettingRow
+            icon="refresh-outline"
+            label="Restore Purchases"
+            onPress={handleRestore}
+            showArrow
+            loading={restoring}
+            last
+          />
+        </View>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionLabel}>Preferences</Text>
         <View style={styles.card}>
           <SettingRow
             icon="briefcase-outline"
@@ -282,28 +314,14 @@ export default function ProfileScreen() {
             locked={!profile.isPremium}
             onPress={profile.isPremium ? undefined : handleUpgrade}
           />
-        </View>
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.sectionLabel}>Notifications</Text>
-        <View style={styles.card}>
           <SettingRow icon="notifications-outline" label="State migration news" badge="Soon" />
-          <SettingRow icon="briefcase-outline" label="Occupation list changes" badge="Soon" last />
+          <SettingRow icon="alert-circle-outline" label="Occupation list changes" badge="Soon" last />
         </View>
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionLabel}>About</Text>
+        <Text style={styles.sectionLabel}>Resources</Text>
         <View style={styles.card}>
-          <SettingRow icon="information-circle-outline" label="MigrateAU" value="v1.0.0" />
-          <SettingRow icon="refresh-outline" label="Restore Purchases" onPress={handleRestore} showArrow loading={restoring} />
-          <SettingRow
-            icon="shield-outline"
-            label="Privacy Policy"
-            onPress={() => Linking.openURL('https://jsmglobal.xyz/migration-privacy.html')}
-            showArrow
-          />
           <SettingRow
             icon="globe-outline"
             label="Official Source"
@@ -316,6 +334,26 @@ export default function ProfileScreen() {
             label="Find a MARA Agent"
             value="portal.mara.gov.au"
             onPress={() => Linking.openURL('https://portal.mara.gov.au')}
+            showArrow
+          />
+          <SettingRow
+            icon="list-outline"
+            label="Skills Occupation List"
+            onPress={() => Linking.openURL('https://immi.homeaffairs.gov.au/visas/working-in-australia/skill-occupation-list')}
+            showArrow
+            last
+          />
+        </View>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionLabel}>About</Text>
+        <View style={styles.card}>
+          <SettingRow icon="information-circle-outline" label="MigrateAU" value="v1.0.0" />
+          <SettingRow
+            icon="shield-outline"
+            label="Privacy Policy"
+            onPress={() => Linking.openURL('https://jsmglobal.xyz/migration-privacy.html')}
             showArrow
           />
           <SettingRow icon="logo-github" label="By JSM Global" value="jsmglobal.xyz" />

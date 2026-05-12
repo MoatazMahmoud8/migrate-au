@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   ScrollView,
   View,
@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Colors, Spacing, Radius, FontSize, FontWeight } from '../../constants/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import SearchModal from '../../components/SearchModal';
 
 const { width, height } = Dimensions.get('window');
 
@@ -332,6 +333,7 @@ function FadeInView({ children, delay = 0, style }: any) {
 export default function HomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const [searchVisible, setSearchVisible] = useState(false);
   return (
     <ScrollView
       style={styles.container}
@@ -342,6 +344,15 @@ export default function HomeScreen() {
       <View style={[styles.hero, { paddingTop: insets.top + 20 }]}>
         <View style={styles.orb1} />
         <View style={styles.orb2} />
+
+        {/* Search button — top-right of hero */}
+        <TouchableOpacity
+          style={[styles.heroSearchBtn, { top: insets.top + 12 }]}
+          onPress={() => setSearchVisible(true)}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="search" size={20} color={Colors.textPrimary} />
+        </TouchableOpacity>
 
         <View style={styles.heroContent}>
           <View style={styles.badge}>
@@ -533,6 +544,8 @@ export default function HomeScreen() {
           Independent Guide — Not affiliated with the Australian Government
         </Text>
       </View>
+
+      <SearchModal visible={searchVisible} onClose={() => setSearchVisible(false)} />
     </ScrollView>
   );
 }
@@ -568,6 +581,19 @@ const styles = StyleSheet.create({
     opacity: 0.07,
   },
   heroContent: { zIndex: 2 },
+  heroSearchBtn: {
+    position: 'absolute',
+    right: Spacing.lg,
+    zIndex: 3,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   badge: {
     flexDirection: 'row',
     alignItems: 'center',

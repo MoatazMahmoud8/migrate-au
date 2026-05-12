@@ -60,4 +60,6 @@ export interface UserProfile {
   subscribedStates: string[];
   subscribedOccupation: string;
   journeyStage: number;
+  pinnedStates: string[];
+  onboardingComplete: boolean;
 }

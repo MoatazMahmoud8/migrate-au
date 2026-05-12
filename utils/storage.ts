@@ -10,6 +10,8 @@ const defaultProfile: UserProfile = {
   subscribedStates: [],
   subscribedOccupation: '',
   journeyStage: 0,
+  pinnedStates: [],
+  onboardingComplete: false,
 };
 
 export async function getProfile(): Promise<UserProfile> {

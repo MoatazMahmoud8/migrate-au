@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   ScrollView,
   View,
@@ -12,6 +12,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, Radius, FontSize, FontWeight } from '../../constants/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { getProfile, saveProfile } from '../../utils/storage';
+import { tap as hapticTap } from '../../utils/haptics';
 
 const STATES = [
   {
@@ -74,7 +76,29 @@ const STATES = [
 
 export default function StatesScreen() {
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [pinned, setPinned] = useState<string[]>([]);
   const insets = useSafeAreaInsets();
+
+  useEffect(() => {
+    getProfile().then((p) => setPinned(p.pinnedStates ?? []));
+  }, []);
+
+  const togglePin = async (code: string) => {
+    hapticTap();
+    const next = pinned.includes(code)
+      ? pinned.filter((c) => c !== code)
+      : [...pinned, code];
+    setPinned(next);
+    await saveProfile({ pinnedStates: next });
+  };
+
+  const orderedStates = useMemo(() => {
+    return [...STATES].sort((a, b) => {
+      const aP = pinned.includes(a.code) ? 0 : 1;
+      const bP = pinned.includes(b.code) ? 0 : 1;
+      return aP - bP;
+    });
+  }, [pinned]);
 
   return (
     <ScrollView
@@ -104,8 +128,9 @@ export default function StatesScreen() {
       </View>
 
       <View style={styles.list}>
-        {STATES.map((state) => {
+        {orderedStates.map((state) => {
           const isOpen = expanded === state.code;
+          const isPinned = pinned.includes(state.code);
           return (
             <TouchableOpacity
               key={state.code}
@@ -129,6 +154,19 @@ export default function StatesScreen() {
                         {state.desc}
                       </Text>
                     </View>
+
+                    {/* Pin toggle */}
+                    <TouchableOpacity
+                      onPress={(e) => { e.stopPropagation?.(); togglePin(state.code); }}
+                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                      style={styles.pinBtn}
+                    >
+                      <Ionicons
+                        name={isPinned ? 'star' : 'star-outline'}
+                        size={18}
+                        color={isPinned ? Colors.secondary : Colors.textMuted}
+                      />
+                    </TouchableOpacity>
 
                     <View style={[styles.chevron, isOpen && styles.chevronOpen]}>
                       <Ionicons name="chevron-down" size={16} color={Colors.textMuted} />
@@ -294,6 +332,13 @@ const styles = StyleSheet.create({
 
   chevron: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   chevronOpen: { transform: [{ rotate: '180deg' }] },
+  pinBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 
   cardBody: { marginTop: Spacing.md },
   divider: { height: 1, backgroundColor: Colors.divider, marginBottom: Spacing.md },

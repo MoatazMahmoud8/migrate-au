@@ -4,10 +4,14 @@ import * as SplashScreen from 'expo-splash-screen';
 import { View, Text, StyleSheet, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Colors } from '../constants/theme';
 import { useEffect, useState } from 'react';
 import { initNotifications, subscribeToFeed } from '../utils/notifications';
 import { initRevenueCat, syncSubscriptionStatus } from '../utils/iap';
+import { selection } from '../utils/haptics';
+import { getProfile, saveProfile } from '../utils/storage';
+import OnboardingModal from '../components/OnboardingModal';
 
 SplashScreen.hideAsync();
 
@@ -36,8 +40,24 @@ function TabIcon({
   );
 }
 
+function AriaFab({ focused }: { focused: boolean }) {
+  return (
+    <View style={tabStyles.fabWrap}>
+      <LinearGradient
+        colors={focused ? [Colors.secondary, '#FFB800'] : ['#A78BFA', '#7C3AED']}
+        style={tabStyles.fab}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      >
+        <Ionicons name="sparkles" size={26} color={focused ? Colors.primaryDark : Colors.white} />
+      </LinearGradient>
+    </View>
+  );
+}
+
 export default function RootLayout() {
   const [unread, setUnread] = useState(0);
+  const [onboardingVisible, setOnboardingVisible] = useState(false);
 
   useEffect(() => {
     // Initialise RevenueCat for IAP
@@ -54,8 +74,22 @@ export default function RootLayout() {
     const unsub = subscribeToFeed(items => {
       setUnread(items.filter(n => !n.read).length);
     });
+
+    // First-launch onboarding
+    getProfile().then((p) => {
+      if (!p.onboardingComplete) setOnboardingVisible(true);
+    });
+
     return unsub;
   }, []);
+
+  const closeOnboarding = async () => {
+    setOnboardingVisible(false);
+    try {
+      const p = await getProfile();
+      await saveProfile({ ...p, onboardingComplete: true });
+    } catch {}
+  };
 
   return (
     <>
@@ -105,6 +139,9 @@ export default function RootLayout() {
           ),
           headerShadowVisible: false,
         }}
+        screenListeners={{
+          tabPress: () => selection(),
+        }}
       >
         <Tabs.Screen
           name="(tabs)/index"
@@ -116,28 +153,20 @@ export default function RootLayout() {
           }}
         />
         <Tabs.Screen
-          name="(tabs)/calculator"
-          options={{
-            title: 'Points',
-            tabBarIcon: ({ color, focused }) => (
-              <TabIcon name={focused ? 'calculator' : 'calculator-outline'} color={color} focused={focused} />
-            ),
-          }}
-        />
-        <Tabs.Screen
           name="(tabs)/states"
           options={{
             title: 'States',
-            href: null,
+            tabBarIcon: ({ color, focused }) => (
+              <TabIcon name={focused ? 'map' : 'map-outline'} color={color} focused={focused} />
+            ),
           }}
         />
         <Tabs.Screen
           name="(tabs)/ai"
           options={{
-            title: 'Aria AI',
-            tabBarIcon: ({ color, focused }) => (
-              <TabIcon name={focused ? 'sparkles' : 'sparkles-outline'} color={color} focused={focused} />
-            ),
+            title: '',
+            tabBarIcon: ({ focused }) => <AriaFab focused={focused} />,
+            tabBarLabelStyle: { height: 0 },
           }}
         />
         <Tabs.Screen
@@ -163,7 +192,14 @@ export default function RootLayout() {
             ),
           }}
         />
-        {/* Hidden screen — no tab bar entry */}
+        {/* Hidden screens — no tab bar entry, accessible via routes only */}
+        <Tabs.Screen
+          name="(tabs)/calculator"
+          options={{
+            title: 'Points',
+            href: null,
+          }}
+        />
         <Tabs.Screen
           name="(tabs)/english-tests"
           options={{
@@ -173,6 +209,7 @@ export default function RootLayout() {
           }}
         />
       </Tabs>
+      <OnboardingModal visible={onboardingVisible} onClose={closeOnboarding} />
     </>
   );
 }
@@ -209,5 +246,26 @@ const tabStyles = StyleSheet.create({
   // kept for backward compat
   iconActive: {
     backgroundColor: 'rgba(255,205,0,0.15)',
+  },
+  fabWrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 56,
+    height: 56,
+    marginTop: Platform.OS === 'ios' ? -22 : -18,
+  },
+  fab: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 8,
+    borderWidth: 3,
+    borderColor: Colors.primaryDark,
   },
 });

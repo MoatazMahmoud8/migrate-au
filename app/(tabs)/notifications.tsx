@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   Linking,
   RefreshControl,
   ActivityIndicator,
+  ScrollView,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -100,6 +101,7 @@ export default function NotificationsScreen() {
   const [feed, setFeed]           = useState<AppNotification[]>([]);
   const [loading, setLoading]     = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [stateFilter, setStateFilter] = useState<string>('all');
 
   useEffect(() => {
     const unsub = subscribeToFeed(items => {
@@ -117,10 +119,28 @@ export default function NotificationsScreen() {
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    // Firestore listener will auto-update; just show spinner briefly
   }, []);
 
+  const filteredFeed = useMemo(() => {
+    if (stateFilter === 'all') return feed;
+    if (stateFilter === 'FED') return feed.filter(n => !n.state || n.state === 'FED' || n.state === 'Federal');
+    return feed.filter(n => (n.state ?? '').toUpperCase() === stateFilter);
+  }, [feed, stateFilter]);
+
   const unreadCount = feed.filter(n => !n.read).length;
+
+  const FILTERS: { id: string; label: string }[] = [
+    { id: 'all', label: 'All' },
+    { id: 'FED', label: 'Federal' },
+    { id: 'NSW', label: 'NSW' },
+    { id: 'VIC', label: 'VIC' },
+    { id: 'QLD', label: 'QLD' },
+    { id: 'WA',  label: 'WA'  },
+    { id: 'SA',  label: 'SA'  },
+    { id: 'TAS', label: 'TAS' },
+    { id: 'ACT', label: 'ACT' },
+    { id: 'NT',  label: 'NT'  },
+  ];
 
   return (
     <View style={[styles.screen, { paddingTop: insets.top + 60 }]}>
@@ -134,23 +154,53 @@ export default function NotificationsScreen() {
         )}
       </View>
 
+      {/* State filter pills */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.filterRow}
+      >
+        {FILTERS.map((f) => {
+          const active = stateFilter === f.id;
+          return (
+            <TouchableOpacity
+              key={f.id}
+              style={[styles.pill, active && styles.pillActive]}
+              activeOpacity={0.8}
+              onPress={() => setStateFilter(f.id)}
+            >
+              <Text style={[styles.pillText, active && styles.pillTextActive]}>{f.label}</Text>
+            </TouchableOpacity>
+          );
+        })}
+      </ScrollView>
+
       {loading ? (
-        <ActivityIndicator
-          size="large"
-          color={Colors.accent}
-          style={{ marginTop: 80 }}
-        />
-      ) : feed.length === 0 ? (
+        <View style={{ paddingHorizontal: Spacing.lg, paddingTop: Spacing.sm, gap: 10 }}>
+          {[0, 1, 2, 3].map((i) => (
+            <View key={i} style={styles.skeletonCard}>
+              <View style={styles.skeletonBar} />
+              <View style={styles.skeletonContent}>
+                <View style={[styles.skeletonLine, { width: '40%' }]} />
+                <View style={[styles.skeletonLine, { width: '85%', marginTop: 8 }]} />
+                <View style={[styles.skeletonLine, { width: '60%', marginTop: 6 }]} />
+              </View>
+            </View>
+          ))}
+        </View>
+      ) : filteredFeed.length === 0 ? (
         <View style={styles.empty}>
           <Ionicons name="notifications-off-outline" size={48} color={Colors.textMuted} />
-          <Text style={styles.emptyText}>No updates yet</Text>
+          <Text style={styles.emptyText}>{feed.length === 0 ? 'No updates yet' : 'No updates for this filter'}</Text>
           <Text style={styles.emptySubtext}>
-            You'll be notified instantly when Home Affairs, states, or occupation lists change.
+            {feed.length === 0
+              ? "You'll be notified instantly when Home Affairs, states, or occupation lists change."
+              : 'Try a different state or tap All to see everything.'}
           </Text>
         </View>
       ) : (
         <FlatList
-          data={feed}
+          data={filteredFeed}
           keyExtractor={item => item.id}
           renderItem={({ item }) => (
             <NotificationCard item={item} onRead={handleRead} />
@@ -286,5 +336,53 @@ const styles = StyleSheet.create({
     color: Colors.textMuted,
     textAlign: 'center',
     lineHeight: 20,
+  },
+  filterRow: {
+    paddingHorizontal: Spacing.lg,
+    paddingBottom: Spacing.sm,
+    gap: 8,
+  },
+  pill: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: Radius.full,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.surface,
+    marginRight: 6,
+  },
+  pillActive: {
+    borderColor: Colors.secondary,
+    backgroundColor: 'rgba(255,205,0,0.12)',
+  },
+  pillText: {
+    fontSize: FontSize.xs,
+    fontWeight: '600',
+    color: Colors.textMuted,
+  },
+  pillTextActive: {
+    color: Colors.secondary,
+  },
+  skeletonCard: {
+    flexDirection: 'row',
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.lg,
+    overflow: 'hidden',
+    minHeight: 84,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  skeletonBar: {
+    width: 4,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+  },
+  skeletonContent: {
+    flex: 1,
+    padding: Spacing.md,
+  },
+  skeletonLine: {
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: 'rgba(255,255,255,0.08)',
   },
 });
