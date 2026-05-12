@@ -7,7 +7,7 @@ import { BlurView } from 'expo-blur';
 import { Colors } from '../constants/theme';
 import { useEffect, useState } from 'react';
 import { initNotifications, subscribeToFeed } from '../utils/notifications';
-import { initRevenueCat } from '../utils/iap';
+import { initRevenueCat, syncSubscriptionStatus } from '../utils/iap';
 
 SplashScreen.hideAsync();
 
@@ -41,7 +41,11 @@ export default function RootLayout() {
 
   useEffect(() => {
     // Initialise RevenueCat for IAP
-    initRevenueCat();
+    initRevenueCat().then(() => {
+      // Sync entitlement → local isPremium on every cold start
+      // Handles reinstalls, device switches, and subscription expirations
+      syncSubscriptionStatus();
+    });
 
     // Initialise FCM — subscribe to all migration topics
     initNotifications(['NSW', 'VIC', 'QLD', 'WA', 'SA', 'TAS', 'ACT', 'NT']);

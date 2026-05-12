@@ -15,6 +15,7 @@ import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 import { BillingCycle, PaymentMethod } from '../types/subscription';
 import { convertTrialToPaid, startTrial, PRICING } from './billing';
+import { saveProfile } from './storage';
 
 // RevenueCat API keys — read from app.config.js extra (set via .env / EAS secrets)
 const REVENUECAT_API_KEY_IOS: string     = Constants.expoConfig?.extra?.revenueCatKeyIos ?? '';
@@ -28,6 +29,35 @@ const PRODUCTS = {
 };
 
 let rcInitialized = false;
+
+/**
+ * Get RevenueCat's anonymous app user ID (stable per-install)
+ * Use this as userId everywhere instead of hardcoded strings
+ */
+export async function getRevenueCatUserId(): Promise<string> {
+  try {
+    return await Purchases.getAppUserID();
+  } catch {
+    return 'anonymous';
+  }
+}
+
+/**
+ * Sync RC entitlement → local AsyncStorage isPremium flag.
+ * Call on app start and after any purchase/restore.
+ */
+export async function syncSubscriptionStatus(): Promise<boolean> {
+  try {
+    const customerInfo = await Purchases.getCustomerInfo();
+    const isActive = customerInfo.entitlements.active['pro'] != null;
+    await saveProfile({ isPremium: isActive });
+    console.log('[IAP] Subscription synced, isPremium:', isActive);
+    return isActive;
+  } catch (err) {
+    console.warn('[IAP] syncSubscriptionStatus error:', err);
+    return false;
+  }
+}
 
 /**
  * Initialize RevenueCat (call once on app start)
@@ -182,22 +212,25 @@ export async function getCustomerInfo(): Promise<CustomerInfo | null> {
 }
 
 /**
- * Restore purchases (for users who have multiple devices)
+ * Restore purchases (for users reinstalling or on new device)
+ * Updates local isPremium flag if entitlement found
  */
-export async function restorePurchases(userId: string): Promise<boolean> {
+export async function restorePurchases(): Promise<{ restored: boolean; message: string }> {
   try {
     const customerInfo = await Purchases.restorePurchases();
     const hasEntitlement = customerInfo.entitlements.active['pro'] != null;
 
     if (hasEntitlement) {
-      // Entitlement detected → already synced to Firestore via webhook
-      return true;
+      await saveProfile({ isPremium: true });
+      console.log('[IAP] Purchases restored — isPremium: true');
+      return { restored: true, message: 'Your subscription has been restored!' };
     }
 
-    return false;
+    return { restored: false, message: 'No active subscription found for this account.' };
   } catch (err) {
     console.warn('[IAP] Restore error:', err);
-    return false;
+    return { restored: false, message: 'Restore failed. Please check your internet connection and try again.' };
+  }
   }
 }
 

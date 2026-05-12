@@ -8,6 +8,7 @@ import {
   TextInput,
   Alert,
   Linking,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -16,6 +17,7 @@ import { UserProfile } from '../../constants/types';
 import { Colors, Spacing, Radius, FontSize, FontWeight } from '../../constants/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { checkRenewalStatus } from '../../utils/billing';
+import { restorePurchases, getRevenueCatUserId, syncSubscriptionStatus } from '../../utils/iap';
 import PaywallModal from '../../components/PaywallModal';
 
 const JOURNEY_STAGES = [
@@ -39,20 +41,30 @@ export default function ProfileScreen() {
   const [showPaywall, setShowPaywall] = useState(false);
   const [renewalDays, setRenewalDays] = useState<number | null>(null);
   const [renewalStatus, setRenewalStatus] = useState<'active' | 'expiring_soon' | 'expired'>('expired');
+  const [rcUserId, setRcUserId] = useState<string>('');
+  const [restoring, setRestoring] = useState(false);
   const insets = useSafeAreaInsets();
 
   useEffect(() => {
     getProfile().then((p) => {
       setProfile(p);
       if (p.isPremium) {
-        // Use a placeholder userId — replace with real auth uid when auth is wired
-        checkRenewalStatus('local_user').then((res) => {
-          setRenewalStatus(res.status);
-          setRenewalDays(res.daysUntilExpiry ?? null);
+        getRevenueCatUserId().then((uid) => {
+          checkRenewalStatus(uid).then((res) => {
+            setRenewalStatus(res.status);
+            setRenewalDays(res.daysUntilExpiry ?? null);
+          });
         });
       }
     });
+    getRevenueCatUserId().then(setRcUserId);
   }, []);
+
+  // Refresh profile after paywall closes (purchase may have set isPremium)
+  const handlePaywallClose = () => {
+    setShowPaywall(false);
+    getProfile().then(setProfile);
+  };
 
   const saveName = async () => {
     const updated = { ...profile, name: nameInput };
@@ -62,6 +74,20 @@ export default function ProfileScreen() {
   };
 
   const handleUpgrade = () => setShowPaywall(true);
+
+  const handleRestore = async () => {
+    setRestoring(true);
+    try {
+      const result = await restorePurchases();
+      if (result.restored) {
+        const updated = await getProfile();
+        setProfile(updated);
+      }
+      Alert.alert(result.restored ? 'Restored ✓' : 'Not Found', result.message);
+    } finally {
+      setRestoring(false);
+    }
+  };
 
   const handleJourneyStage = async (stage: number) => {
     const updated = { ...profile, journeyStage: stage };
@@ -271,6 +297,7 @@ export default function ProfileScreen() {
         <Text style={styles.sectionLabel}>About</Text>
         <View style={styles.card}>
           <SettingRow icon="information-circle-outline" label="MigrateAU" value="v1.0.0" />
+          <SettingRow icon="refresh-outline" label="Restore Purchases" onPress={handleRestore} showArrow loading={restoring} />
           <SettingRow
             icon="shield-outline"
             label="Privacy Policy"
@@ -291,7 +318,8 @@ export default function ProfileScreen() {
             onPress={() => Linking.openURL('https://portal.mara.gov.au')}
             showArrow
           />
-          <SettingRow icon="logo-github" label="By JSM Global" value="jsmglobal.xyz" last />
+          <SettingRow icon="logo-github" label="By JSM Global" value="jsmglobal.xyz" />
+          <SettingRow icon="key-outline" label="Account ID" value={rcUserId ? rcUserId.slice(0, 18) + '…' : '—'} last />
         </View>
       </View>
 
@@ -311,8 +339,8 @@ export default function ProfileScreen() {
 
       <PaywallModal
         visible={showPaywall}
-        onClose={() => setShowPaywall(false)}
-        userId="local_user"
+        onClose={handlePaywallClose}
+        userId={rcUserId || 'anonymous'}
         title="Upgrade to Premium"
         message="Unlock ANZSCO tracking, custom state alerts, and unlimited Aria AI."
         feature="premium"
@@ -322,26 +350,31 @@ export default function ProfileScreen() {
 }
 
 function SettingRow({
-  icon, label, value, badge, locked, onPress, showArrow, last,
+  icon, label, value, badge, locked, onPress, showArrow, last, loading,
 }: {
-  icon: string; label: string; value?: string; badge?: string; locked?: boolean; onPress?: () => void; showArrow?: boolean; last?: boolean;
+  icon: string; label: string; value?: string; badge?: string; locked?: boolean; onPress?: () => void; showArrow?: boolean; last?: boolean; loading?: boolean;
 }) {
   return (
     <TouchableOpacity
       style={[rowStyles.row, !last && rowStyles.rowBorder]}
       onPress={onPress}
       activeOpacity={onPress ? 0.7 : 1}
-      disabled={!onPress && !showArrow}
+      disabled={(!onPress && !showArrow) || loading}
     >
       <View style={rowStyles.iconWrap}>
         <Ionicons name={icon as any} size={18} color={locked ? Colors.textMuted : Colors.textSecondary} />
       </View>
       <Text style={[rowStyles.label, locked && rowStyles.labelMuted]}>{label}</Text>
       <View style={rowStyles.right}>
-        {value && <Text style={rowStyles.value}>{value}</Text>}
-        {badge && <View style={rowStyles.badge}><Text style={rowStyles.badgeText}>{badge}</Text></View>}
-        {locked && <Ionicons name="lock-closed" size={14} color={Colors.textMuted} />}
-        {showArrow && <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} />}
+        {loading
+          ? <ActivityIndicator size="small" color={Colors.textMuted} />
+          : <>
+              {value && <Text style={rowStyles.value}>{value}</Text>}
+              {badge && <View style={rowStyles.badge}><Text style={rowStyles.badgeText}>{badge}</Text></View>}
+              {locked && <Ionicons name="lock-closed" size={14} color={Colors.textMuted} />}
+              {showArrow && <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} />}
+            </>
+        }
       </View>
     </TouchableOpacity>
   );

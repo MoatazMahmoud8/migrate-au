@@ -11,7 +11,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, Spacing, Radius, FontSize, FontWeight } from '../constants/theme';
-import { startFreeTrialIAP, purchaseSubscription, getFormattedPrice, getYearlySavings } from '../utils/iap';
+import { startFreeTrialIAP, purchaseSubscription, getFormattedPrice, getYearlySavings, syncSubscriptionStatus } from '../utils/iap';
 
 interface PaywallModalProps {
   visible: boolean;
@@ -40,8 +40,10 @@ export function PaywallModal({ visible, onClose, userId, title, message, feature
     setLoading(true);
     try {
       const success = await startFreeTrialIAP(userId);
-      if (success) { onClose(); }
-      else { alert('Could not start trial. Please try again.'); }
+      if (success) {
+        await syncSubscriptionStatus();
+        onClose();
+      } else { alert('Could not start trial. Please try again.'); }
     } catch { alert('Error starting trial. Please try again.'); }
     finally { setLoading(false); }
   };
@@ -50,8 +52,10 @@ export function PaywallModal({ visible, onClose, userId, title, message, feature
     setLoading(true);
     try {
       const success = await purchaseSubscription(userId, selectedCycle);
-      if (success) { onClose(); }
-      else { alert('Purchase cancelled or failed. Please try again.'); }
+      if (success) {
+        await syncSubscriptionStatus();
+        onClose();
+      } else { alert('Purchase cancelled or failed. Please try again.'); }
     } catch { alert('Error processing purchase. Please try again.'); }
     finally { setLoading(false); }
   };
