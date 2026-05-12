@@ -70,7 +70,7 @@ export async function startFreeTrialIAP(userId: string): Promise<boolean> {
     if (!offering) throw new Error('No offerings available');
 
     const trialPackage = offering.availablePackages.find(
-      p => p.identifier === PRODUCTS.trialPro
+      p => p.product.identifier === PRODUCTS.trialPro
     );
 
     if (!trialPackage) {
@@ -116,7 +116,7 @@ export async function purchaseSubscription(
     if (!offering) throw new Error('No offerings available');
 
     const productId = billingCycle === 'monthly' ? PRODUCTS.monthlyPro : PRODUCTS.yearlyPro;
-    const pkg = offering.availablePackages.find(p => p.identifier === productId);
+    const pkg = offering.availablePackages.find(p => p.product.identifier === productId);
 
     if (!pkg) {
       console.warn(`[IAP] Package ${productId} not found`);
