@@ -14,14 +14,62 @@ import { Colors, Spacing, Radius, FontSize, FontWeight } from '../../constants/t
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const STATES = [
-  { code: 'VIC', name: 'Victoria', color: '#4F8EF7', newsUrl: 'https://liveinmelbourne.vic.gov.au/migrate/skilled-migration-to-victoria', desc: 'Victorian Managed Admission Scheme (VMAS)' },
-  { code: 'NSW', name: 'New South Wales', color: '#00C2FF', newsUrl: 'https://www.nsw.gov.au/topics/visas-and-migration', desc: 'NSW Skilled Nominated Visa program' },
-  { code: 'QLD', name: 'Queensland', color: '#FF6B8A', newsUrl: 'https://migration.qld.gov.au/', desc: 'Queensland Skilled Visa program' },
-  { code: 'SA', name: 'South Australia', color: '#FF7043', newsUrl: 'https://migration.sa.gov.au/', desc: 'SA Skilled & Business Migration' },
-  { code: 'WA', name: 'Western Australia', color: '#FFCD00', newsUrl: 'https://migration.wa.gov.au/', desc: 'WA Skilled Migration program' },
-  { code: 'TAS', name: 'Tasmania', color: '#00D68F', newsUrl: 'https://www.migration.tas.gov.au/', desc: 'Tasmanian Skilled Migration program' },
-  { code: 'ACT', name: 'Australian Capital Territory', color: '#A78BFA', newsUrl: 'https://www.act.gov.au/migration/skilled-migrants', desc: 'ACT Skilled Migration — Critical Skills list' },
-  { code: 'NT', name: 'Northern Territory', color: '#FFB800', newsUrl: 'https://migration.nt.gov.au/', desc: 'NT Skilled & Business migration' },
+  {
+    code: 'NSW', name: 'New South Wales', color: '#4F8EF7',
+    portalUrl: 'https://www.nsw.gov.au/visas-and-migration',
+    occupationUrl: 'https://www.nsw.gov.au/visas-and-migration/skilled-worker-visas',
+    visas: ['190', '491'],
+    desc: 'Victorian Managed Admission Scheme (VMAS)',
+  },
+  {
+    code: 'VIC', name: 'Victoria', color: '#00C2FF',
+    portalUrl: 'https://liveinmelbourne.vic.gov.au/skilled-migration',
+    occupationUrl: 'https://liveinmelbourne.vic.gov.au/skilled-migration/victorian-skilled-migration-program',
+    visas: ['190', '491'],
+    desc: 'Victorian Skilled Migration Program (VSMP)',
+  },
+  {
+    code: 'QLD', name: 'Queensland', color: '#FF6B8A',
+    portalUrl: 'https://migration.qld.gov.au/',
+    occupationUrl: 'https://migration.qld.gov.au/visa-options/skilled-migration/skilled-nominated-visa-subclass-190/',
+    visas: ['190', '491'],
+    desc: 'Queensland Skilled Visa program',
+  },
+  {
+    code: 'SA', name: 'South Australia', color: '#FF7043',
+    portalUrl: 'https://migration.sa.gov.au/',
+    occupationUrl: 'https://migration.sa.gov.au/skilled-migration/occupation-lists',
+    visas: ['190', '491'],
+    desc: 'SA Skilled & Business Migration',
+  },
+  {
+    code: 'WA', name: 'Western Australia', color: '#FFCD00',
+    portalUrl: 'https://migration.wa.gov.au/',
+    occupationUrl: 'https://migration.wa.gov.au/skilled-migration/occupation-list',
+    visas: ['190', '491'],
+    desc: 'WA Skilled Migration program',
+  },
+  {
+    code: 'TAS', name: 'Tasmania', color: '#00D68F',
+    portalUrl: 'https://www.migration.tas.gov.au/',
+    occupationUrl: 'https://www.migration.tas.gov.au/applicants/skilled_nominated_190',
+    visas: ['190', '491'],
+    desc: 'Tasmanian Skilled Migration program',
+  },
+  {
+    code: 'ACT', name: 'Australian Capital Territory', color: '#A78BFA',
+    portalUrl: 'https://www.act.gov.au/migration',
+    occupationUrl: 'https://www.act.gov.au/migration/skilled-migrants/critical-skills-list',
+    visas: ['190'],
+    desc: 'ACT Critical Skills — Skilled Nominated',
+  },
+  {
+    code: 'NT', name: 'Northern Territory', color: '#FFB800',
+    portalUrl: 'https://australiasnorthernterritory.com.au/move',
+    occupationUrl: 'https://australiasnorthernterritory.com.au/move/work/migrate-to-the-nt',
+    visas: ['190', '491'],
+    desc: 'NT Skilled & Business migration',
+  },
 ];
 
 export default function StatesScreen() {
@@ -84,30 +132,48 @@ export default function StatesScreen() {
                   {isOpen && (
                     <View style={styles.cardBody}>
                       <View style={styles.divider} />
+
+                      {/* Visa subclass chips */}
+                      <View style={styles.visaChips}>
+                        {state.visas.map((v) => (
+                          <View key={v} style={[styles.visaChip, { backgroundColor: state.color + '18', borderColor: state.color + '35' }]}>
+                            <Text style={[styles.visaChipText, { color: state.color }]}>SC {v}</Text>
+                          </View>
+                        ))}
+                      </View>
+
+                      {/* Occupation List */}
                       <TouchableOpacity
                         style={[styles.linkBtn, { borderColor: state.color + '40' }]}
-                        onPress={() => Linking.openURL(state.newsUrl)}
+                        onPress={() => Linking.openURL(state.occupationUrl)}
                       >
                         <LinearGradient
-                          colors={[state.color + '15', state.color + '08']}
+                          colors={[state.color + '20', state.color + '0A']}
                           style={styles.linkBtnGrad}
                           start={{ x: 0, y: 0 }}
                           end={{ x: 1, y: 0 }}
                         >
-                          <Ionicons name="globe-outline" size={16} color={state.color} />
+                          <Ionicons name="list-outline" size={16} color={state.color} />
                           <Text style={[styles.linkText, { color: state.color }]}>
-                            Visit Official Migration Page
+                            Occupation List
                           </Text>
                           <Ionicons name="arrow-forward" size={14} color={state.color} />
                         </LinearGradient>
                       </TouchableOpacity>
 
-                      <View style={styles.noticeRow}>
-                        <View style={styles.noticeDot} />
-                        <Text style={styles.noticeText}>
-                          Tap to open official government portal.
-                        </Text>
-                      </View>
+                      {/* Official Portal */}
+                      <TouchableOpacity
+                        style={[styles.linkBtn, { borderColor: Colors.border }]}
+                        onPress={() => Linking.openURL(state.portalUrl)}
+                      >
+                        <View style={[styles.linkBtnGrad, { backgroundColor: Colors.surface }]}>
+                          <Ionicons name="globe-outline" size={16} color={Colors.textSecondary} />
+                          <Text style={[styles.linkText, { color: Colors.textSecondary }]}>
+                            Official Migration Portal
+                          </Text>
+                          <Ionicons name="open-outline" size={14} color={Colors.textMuted} />
+                        </View>
+                      </TouchableOpacity>
                     </View>
                   )}
                 </View>
@@ -176,6 +242,15 @@ const styles = StyleSheet.create({
 
   cardBody: { marginTop: Spacing.md },
   divider: { height: 1, backgroundColor: Colors.divider, marginBottom: Spacing.md },
+
+  visaChips: { flexDirection: 'row', gap: Spacing.sm, marginBottom: Spacing.md },
+  visaChip: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs,
+    borderRadius: Radius.full,
+    borderWidth: 1,
+  },
+  visaChipText: { fontSize: FontSize.xs, fontWeight: FontWeight.bold, letterSpacing: 0.5 },
 
   linkBtn: {
     borderRadius: Radius.lg,

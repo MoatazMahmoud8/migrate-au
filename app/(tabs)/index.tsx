@@ -48,10 +48,10 @@ const VISA_CARDS = [
 ];
 
 const QUICK_TILES = [
-  { icon: 'book-outline', label: 'English Tests', route: '/(tabs)/english-tests', color: Colors.success, bg: 'rgba(0,214,143,0.12)' },
-  { icon: 'checkmark-circle-outline', label: 'Occupation List', route: '/(tabs)/calculator', color: Colors.accent, bg: 'rgba(0,194,255,0.12)' },
-  { icon: 'megaphone-outline', label: 'State News', route: '/(tabs)/notifications', color: Colors.secondary, bg: 'rgba(255,205,0,0.12)' },
-  { icon: 'gift-outline', label: 'Go Premium', route: '/(tabs)/profile', color: '#FF6B8A', bg: 'rgba(255,107,154,0.12)' },
+  { icon: 'book-outline',          label: 'English Tests',  route: '/(tabs)/english-tests',  color: Colors.success,   bg: 'rgba(0,214,143,0.12)' },
+  { icon: 'list-outline',          label: 'Skills List',    url: 'https://immi.homeaffairs.gov.au/visas/working-in-australia/skill-occupation-list', color: Colors.accent,    bg: 'rgba(0,194,255,0.12)' },
+  { icon: 'notifications-outline', label: 'Updates',        route: '/(tabs)/notifications',  color: Colors.secondary, bg: 'rgba(255,205,0,0.12)' },
+  { icon: 'star-outline',          label: 'Go Premium',     route: '/(tabs)/profile',        color: '#FF6B8A',        bg: 'rgba(255,107,154,0.12)' },
 ];
 
 const OTHER_VISAS_DATA = [
@@ -190,7 +190,7 @@ export default function HomeScreen() {
         {QUICK_TILES.map((tile) => (
           <PressableCard
             key={tile.label}
-            onPress={() => router.push(tile.route as any)}
+            onPress={() => (tile as any).url ? Linking.openURL((tile as any).url) : router.push((tile as any).route as any)}
             style={styles.tilePressable}
           >
             <View style={[styles.tile, { backgroundColor: tile.bg }]}>

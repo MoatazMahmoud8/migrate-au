@@ -6,8 +6,10 @@ import {
   StyleSheet,
   Modal,
   ActivityIndicator,
+  ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, Spacing, Radius, FontSize, FontWeight } from '../constants/theme';
 import { startFreeTrialIAP, purchaseSubscription, getFormattedPrice, getYearlySavings } from '../utils/iap';
 
@@ -17,185 +19,169 @@ interface PaywallModalProps {
   userId: string;
   title: string;
   message: string;
-  feature?: string; // 'scenarios' | 'ai' | 'pdf_export' etc.
+  feature?: string;
 }
 
-export function PaywallModal({
-  visible,
-  onClose,
-  userId,
-  title,
-  message,
-  feature,
-}: PaywallModalProps) {
+const BENEFITS = [
+  { icon: 'infinite-outline',          text: 'Unlimited Aria AI — your migration consultant' },
+  { icon: 'map-outline',               text: 'Golden Path — personalised 5-stage roadmap' },
+  { icon: 'shield-checkmark-outline',  text: 'Document expiry & age-bracket alerts' },
+  { icon: 'location-outline',          text: 'State-specific occupation intelligence' },
+  { icon: 'trending-up-outline',       text: 'Gap Filler — reach 90 / 95+ points' },
+  { icon: 'document-text-outline',     text: 'Full Migration Audit Report (PDF)' },
+  { icon: 'notifications-outline',     text: 'Instant state nomination alerts' },
+];
+
+export function PaywallModal({ visible, onClose, userId, title, message, feature }: PaywallModalProps) {
   const [loading, setLoading] = useState(false);
-  const [selectedCycle, setSelectedCycle] = useState<'monthly' | 'yearly'>('monthly');
+  const [selectedCycle, setSelectedCycle] = useState<'monthly' | 'yearly'>('yearly');
 
   const handleStartTrial = async () => {
     setLoading(true);
     try {
       const success = await startFreeTrialIAP(userId);
-      if (success) {
-        onClose();
-      } else {
-        alert('Failed to start trial. Please try again.');
-      }
-    } catch (err) {
-      alert('Error starting trial. Please try again.');
-    } finally {
-      setLoading(false);
-    }
+      if (success) { onClose(); }
+      else { alert('Could not start trial. Please try again.'); }
+    } catch { alert('Error starting trial. Please try again.'); }
+    finally { setLoading(false); }
   };
 
   const handlePurchase = async () => {
-    // Mobile: use IAP (RevenueCat)
     setLoading(true);
     try {
       const success = await purchaseSubscription(userId, selectedCycle);
-      if (success) {
-        onClose();
-      } else {
-        alert('Purchase failed or cancelled');
-      }
-    } catch (err) {
-      alert('Error processing purchase');
-    } finally {
-      setLoading(false);
-    }
+      if (success) { onClose(); }
+      else { alert('Purchase cancelled or failed. Please try again.'); }
+    } catch { alert('Error processing purchase. Please try again.'); }
+    finally { setLoading(false); }
   };
 
   const monthlyPrice = getFormattedPrice('monthly');
-  const yearlyPrice = getFormattedPrice('yearly');
+  const yearlyPrice  = getFormattedPrice('yearly');
   const yearlyDiscount = getYearlySavings();
 
   return (
     <Modal visible={visible} transparent animationType="slide">
       <View style={styles.backdrop}>
         <View style={styles.modal}>
-          {/* Header */}
-          <View style={styles.header}>
-            <TouchableOpacity onPress={onClose}>
-              <Ionicons name="close" size={24} color={Colors.textPrimary} />
-            </TouchableOpacity>
-          </View>
+          {/* Handle bar */}
+          <View style={styles.handle} />
 
-          {/* Content */}
-          <View style={styles.content}>
-            <Text style={styles.title}>{title}</Text>
-            <Text style={styles.message}>{message}</Text>
+          {/* Close */}
+          <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
+            <Ionicons name="close" size={20} color={Colors.textMuted} />
+          </TouchableOpacity>
 
-            {/* Feature Icon */}
-            {feature && (
-              <View style={styles.iconBox}>
-                <Ionicons
-                  name={
-                    feature === 'scenarios' ? 'checkmark-done-circle' :
-                    feature === 'ai' ? 'sparkles' :
-                    feature === 'pdf_export' ? 'document' :
-                    'lock'
-                  }
-                  size={48}
-                  color={Colors.accent}
-                />
-              </View>
-            )}
-          </View>
+          <ScrollView showsVerticalScrollIndicator={false} bounces={false}>
+            {/* Hero */}
+            <View style={styles.hero}>
+              <LinearGradient colors={['#3D1F8A', '#5B2D9E']} style={styles.heroIcon}>
+                <Ionicons name="star" size={32} color={Colors.secondary} />
+              </LinearGradient>
+              <Text style={styles.heroTitle}>{title}</Text>
+              <Text style={styles.heroSub}>{message}</Text>
+            </View>
 
-          {/* Pricing Options */}
-          <View style={styles.pricingSection}>
-            {/* Monthly */}
-            <TouchableOpacity
-              style={[
-                styles.priceCard,
-                selectedCycle === 'monthly' && styles.priceCardSelected,
-              ]}
-              onPress={() => setSelectedCycle('monthly')}
-            >
-              <View style={styles.priceContent}>
-                <Text style={styles.cycleLabel}>Monthly</Text>
-                <Text style={styles.priceAmount}>{monthlyPrice.amount}</Text>
-                <Text style={styles.priceSubtext}>{monthlyPrice.cycle}</Text>
-              </View>
-              {selectedCycle === 'monthly' && (
-                <View style={styles.checkmark}>
-                  <Ionicons name="checkmark-circle" size={24} color={Colors.secondary} />
+            {/* Plan selector */}
+            <View style={styles.planRow}>
+              {/* Monthly */}
+              <TouchableOpacity
+                style={[styles.planCard, selectedCycle === 'monthly' && styles.planCardActive]}
+                onPress={() => setSelectedCycle('monthly')}
+                activeOpacity={0.8}
+              >
+                {selectedCycle === 'monthly' && (
+                  <View style={styles.planCheck}>
+                    <Ionicons name="checkmark-circle" size={18} color={Colors.secondary} />
+                  </View>
+                )}
+                <Text style={[styles.planCycle, selectedCycle === 'monthly' && styles.planCycleActive]}>Monthly</Text>
+                <Text style={[styles.planPrice, selectedCycle === 'monthly' && styles.planPriceActive]}>
+                  {monthlyPrice.amount}
+                </Text>
+                <Text style={styles.planSub}>{monthlyPrice.cycle}</Text>
+              </TouchableOpacity>
+
+              {/* Yearly — recommended */}
+              <TouchableOpacity
+                style={[styles.planCard, styles.planCardYearly, selectedCycle === 'yearly' && styles.planCardActive]}
+                onPress={() => setSelectedCycle('yearly')}
+                activeOpacity={0.8}
+              >
+                <View style={styles.saveBadge}>
+                  <Text style={styles.saveBadgeText}>Save {yearlyDiscount.percent}%</Text>
                 </View>
-              )}
-            </TouchableOpacity>
+                {selectedCycle === 'yearly' && (
+                  <View style={styles.planCheck}>
+                    <Ionicons name="checkmark-circle" size={18} color={Colors.secondary} />
+                  </View>
+                )}
+                <Text style={[styles.planCycle, selectedCycle === 'yearly' && styles.planCycleActive]}>Yearly</Text>
+                <Text style={[styles.planPrice, selectedCycle === 'yearly' && styles.planPriceActive]}>
+                  {yearlyPrice.amount}
+                </Text>
+                <Text style={styles.planSub}>{yearlyPrice.cycle}</Text>
+              </TouchableOpacity>
+            </View>
 
-            {/* Yearly */}
-            <TouchableOpacity
-              style={[
-                styles.priceCard,
-                selectedCycle === 'yearly' && styles.priceCardSelected,
-              ]}
-              onPress={() => setSelectedCycle('yearly')}
-            >
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>Save {yearlyDiscount.percent}%</Text>
-              </View>
-              <View style={styles.priceContent}>
-                <Text style={styles.cycleLabel}>Yearly</Text>
-                <Text style={styles.priceAmount}>{yearlyPrice.amount}</Text>
-                <Text style={styles.priceSubtext}>{yearlyPrice.cycle}</Text>
-              </View>
-              {selectedCycle === 'yearly' && (
-                <View style={styles.checkmark}>
-                  <Ionicons name="checkmark-circle" size={24} color={Colors.secondary} />
+            {/* Benefits */}
+            <View style={styles.benefits}>
+              {BENEFITS.map(({ icon, text }) => (
+                <View key={text} style={styles.benefitRow}>
+                  <View style={styles.benefitIcon}>
+                    <Ionicons name={icon as any} size={16} color={Colors.secondary} />
+                  </View>
+                  <Text style={styles.benefitText}>{text}</Text>
                 </View>
-              )}
-            </TouchableOpacity>
-          </View>
+              ))}
+            </View>
 
-          {/* Pro Benefits */}
-          <View style={styles.benefits}>
-            <BenefitRow icon="zap" text="Unlimited calculations & Aria AI" />
-            <BenefitRow icon="map-outline" text="Golden Path — 5-stage roadmap" />
-            <BenefitRow icon="shield-checkmark-outline" text="Document expiry & age-drop alerts" />
-            <BenefitRow icon="location-outline" text="State-specific intelligence by ANZSCO" />
-            <BenefitRow icon="trending-up" text="Advanced points engineering (95+ gap audit)" />
-            <BenefitRow icon="document-text-outline" text="Premium Migration Audit Report" />
-            <BenefitRow icon="bell" text="Instant state nomination alerts" />
-          </View>
+            {/* CTAs */}
+            <View style={styles.actions}>
+              {/* Primary: Start Trial */}
+              <TouchableOpacity
+                style={styles.trialBtn}
+                onPress={handleStartTrial}
+                disabled={loading}
+                activeOpacity={0.85}
+              >
+                <LinearGradient
+                  colors={[Colors.secondary, '#FFB800']}
+                  start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                  style={styles.trialBtnGrad}
+                >
+                  {loading ? (
+                    <ActivityIndicator color={Colors.primary} />
+                  ) : (
+                    <>
+                      <Ionicons name="gift-outline" size={18} color={Colors.primaryDark} />
+                      <Text style={styles.trialBtnText}>Start 7-Day Free Trial</Text>
+                    </>
+                  )}
+                </LinearGradient>
+              </TouchableOpacity>
 
-          {/* CTA Buttons */}
-          <View style={styles.actions}>
-            <TouchableOpacity
-              style={styles.trialButton}
-              onPress={handleStartTrial}
-              disabled={loading}
-            >
-              {loading ? (
-                <ActivityIndicator color={Colors.primary} />
-              ) : (
-                <Text style={styles.trialButtonText}>Try 7 Days Free</Text>
-              )}
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.subscribeButton}
-              onPress={handlePurchase}
-              disabled={loading}
-            >
-              {loading ? (
-                <ActivityIndicator color={Colors.white} />
-              ) : (
-                <>
-                  <Text style={styles.subscribeButtonText}>
-                    Subscribe to {selectedCycle === 'monthly' ? 'Monthly' : 'Yearly'}
+              {/* Secondary: Subscribe */}
+              <TouchableOpacity
+                style={styles.subscribeBtn}
+                onPress={handlePurchase}
+                disabled={loading}
+                activeOpacity={0.8}
+              >
+                {loading ? (
+                  <ActivityIndicator color={Colors.textPrimary} />
+                ) : (
+                  <Text style={styles.subscribeBtnText}>
+                    Subscribe — {selectedCycle === 'monthly' ? `${monthlyPrice.amount}/mo` : `${yearlyPrice.amount}/yr`}
                   </Text>
-                  <Text style={styles.subscribeButtonSubtext}>
-                    After {selectedCycle === 'monthly' ? monthlyPrice.amount : yearlyPrice.amount}/month
-                  </Text>
-                </>
-              )}
-            </TouchableOpacity>
-          </View>
+                )}
+              </TouchableOpacity>
+            </View>
 
-          {/* Fine Print */}
-          <Text style={styles.fineprint}>
-            Cancel anytime. 7-day free trial, then {monthlyPrice.amount}/month or {yearlyPrice.amount}/year.
-          </Text>
+            <Text style={styles.fineprint}>
+              Cancel anytime · Auto-renews · {monthlyPrice.amount}/mo or {yearlyPrice.amount}/yr after trial
+            </Text>
+          </ScrollView>
         </View>
       </View>
     </Modal>
@@ -214,154 +200,192 @@ function BenefitRow({ icon, text }: { icon: string; text: string }) {
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    backgroundColor: 'rgba(0,0,0,0.75)',
     justifyContent: 'flex-end',
   },
   modal: {
     backgroundColor: Colors.background,
-    borderTopLeftRadius: Radius.xl,
-    borderTopRightRadius: Radius.xl,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
     paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.md,
-    paddingBottom: 60,
-    maxHeight: '85%',
+    paddingBottom: 48,
+    maxHeight: '92%',
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
+  handle: {
+    width: 40, height: 4,
+    borderRadius: 2,
+    backgroundColor: Colors.divider,
+    alignSelf: 'center',
     marginBottom: Spacing.lg,
   },
-  content: {
+  closeBtn: {
+    position: 'absolute',
+    top: Spacing.xl,
+    right: Spacing.lg,
+    zIndex: 10,
+    width: 32, height: 32,
+    borderRadius: 16,
+    backgroundColor: Colors.surface,
     alignItems: 'center',
-    marginBottom: Spacing.xl,
+    justifyContent: 'center',
   },
-  title: {
+
+  /* Hero */
+  hero: { alignItems: 'center', paddingVertical: Spacing.xl },
+  heroIcon: {
+    width: 72, height: 72,
+    borderRadius: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: Spacing.md,
+  },
+  heroTitle: {
     fontSize: FontSize.xl,
-    fontWeight: FontWeight.bold as any,
+    fontWeight: FontWeight.extraBold,
     color: Colors.textPrimary,
     textAlign: 'center',
     marginBottom: Spacing.sm,
   },
-  message: {
+  heroSub: {
     fontSize: FontSize.sm,
     color: Colors.textSecondary,
     textAlign: 'center',
     lineHeight: 20,
-    marginBottom: Spacing.lg,
+    paddingHorizontal: Spacing.xl,
   },
-  iconBox: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: `${Colors.accent}15`,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  pricingSection: {
+
+  /* Plan cards */
+  planRow: {
+    flexDirection: 'row',
     gap: Spacing.md,
     marginBottom: Spacing.xl,
   },
-  priceCard: {
-    flexDirection: 'row',
+  planCard: {
+    flex: 1,
     backgroundColor: Colors.surface,
-    borderRadius: Radius.lg,
+    borderRadius: Radius.xl,
     borderWidth: 2,
     borderColor: Colors.border,
-    padding: Spacing.md,
+    padding: Spacing.lg,
     alignItems: 'center',
-    justifyContent: 'space-between',
+    paddingTop: Spacing.xl,
+    position: 'relative',
+    minHeight: 110,
+    justifyContent: 'center',
   },
-  priceCardSelected: {
+  planCardYearly: {
+    borderColor: Colors.divider,
+  },
+  planCardActive: {
     borderColor: Colors.secondary,
-    backgroundColor: `${Colors.secondary}10`,
+    backgroundColor: `${Colors.secondary}12`,
   },
-  badge: {
+  planCheck: {
+    position: 'absolute',
+    top: Spacing.sm,
+    right: Spacing.sm,
+  },
+  saveBadge: {
     position: 'absolute',
     top: -12,
-    right: 16,
     backgroundColor: Colors.success,
     paddingHorizontal: Spacing.sm,
-    paddingVertical: 4,
-    borderRadius: Radius.md,
+    paddingVertical: 3,
+    borderRadius: Radius.full,
   },
-  badgeText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: Colors.white,
-  },
-  priceContent: {
-    flex: 1,
-  },
-  cycleLabel: {
+  saveBadgeText: {
     fontSize: FontSize.xs,
+    fontWeight: FontWeight.bold,
+    color: Colors.primaryDark,
+  },
+  planCycle: {
+    fontSize: FontSize.xs,
+    fontWeight: FontWeight.semiBold,
     color: Colors.textMuted,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 0.6,
+    marginBottom: Spacing.xs,
   },
-  priceAmount: {
-    fontSize: FontSize.lg,
-    fontWeight: FontWeight.bold as any,
+  planCycleActive: { color: Colors.secondary },
+  planPrice: {
+    fontSize: FontSize.xxl,
+    fontWeight: FontWeight.extraBold,
     color: Colors.textPrimary,
   },
-  priceSubtext: {
+  planPriceActive: { color: Colors.textPrimary },
+  planSub: {
     fontSize: FontSize.xs,
-    color: Colors.textSecondary,
+    color: Colors.textMuted,
+    marginTop: 2,
   },
-  checkmark: {
-    marginLeft: Spacing.md,
-  },
+
+  /* Benefits */
   benefits: {
-    gap: Spacing.sm,
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.xl,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    padding: Spacing.lg,
+    gap: Spacing.md,
     marginBottom: Spacing.xl,
-    paddingHorizontal: Spacing.sm,
   },
   benefitRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.sm,
+    gap: Spacing.md,
+  },
+  benefitIcon: {
+    width: 30, height: 30,
+    borderRadius: 8,
+    backgroundColor: `${Colors.secondary}15`,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   benefitText: {
+    flex: 1,
     fontSize: FontSize.sm,
     color: Colors.textSecondary,
+    lineHeight: 19,
   },
-  actions: {
-    gap: Spacing.md,
-    marginBottom: Spacing.lg,
+
+  /* Actions */
+  actions: { gap: Spacing.md, marginBottom: Spacing.md },
+  trialBtn: {
+    borderRadius: Radius.lg,
+    overflow: 'hidden',
   },
-  trialButton: {
-    backgroundColor: Colors.surfaceRaised,
+  trialBtnGrad: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.sm,
+    paddingVertical: Spacing.md + 2,
+  },
+  trialBtnText: {
+    fontSize: FontSize.md,
+    fontWeight: FontWeight.bold,
+    color: Colors.primaryDark,
+  },
+  subscribeBtn: {
+    borderRadius: Radius.lg,
     borderWidth: 1.5,
-    borderColor: Colors.accent,
-    borderRadius: Radius.lg,
+    borderColor: Colors.border,
     paddingVertical: Spacing.md,
     alignItems: 'center',
+    backgroundColor: Colors.surface,
   },
-  trialButtonText: {
+  subscribeBtnText: {
     fontSize: FontSize.md,
-    fontWeight: FontWeight.semibold as any,
-    color: Colors.accent,
+    fontWeight: FontWeight.semiBold,
+    color: Colors.textPrimary,
   },
-  subscribeButton: {
-    backgroundColor: Colors.secondary,
-    borderRadius: Radius.lg,
-    paddingVertical: Spacing.md,
-    alignItems: 'center',
-  },
-  subscribeButtonText: {
-    fontSize: FontSize.md,
-    fontWeight: FontWeight.bold as any,
-    color: Colors.primary,
-  },
-  subscribeButtonSubtext: {
-    fontSize: FontSize.xs,
-    color: `${Colors.primary}80`,
-    marginTop: 2,
-  },
+
   fineprint: {
     fontSize: FontSize.xs,
     color: Colors.textMuted,
     textAlign: 'center',
-    lineHeight: 14,
+    lineHeight: 16,
   },
 });
 

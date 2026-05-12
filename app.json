@@ -71,7 +71,8 @@
     },
     "extra": {
       "geminiApiKey": "REDACTED_GEMINI_KEY",
-      "revenueCatKey": "",
+      "revenueCatKeyAndroid": "goog_ItWTfepqXqSNKgnRyhyaCRqNCvI",
+      "revenueCatKeyIos": "",
       "eas": {
         "projectId": "d89609e7-a74f-4146-9eb2-0e8387e71fd2"
       },
