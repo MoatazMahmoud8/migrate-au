@@ -323,6 +323,13 @@ export default function HomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [expandedVisa, setExpandedVisa] = useState<string | null>(null);
+  const [showAllVisas, setShowAllVisas] = useState(false);
+  const displayedVisas = showAllVisas ? OTHER_VISAS_DATA : OTHER_VISAS_DATA.slice(0, 4);
+
+  const toggleShowAll = () => {
+    setShowAllVisas(prev => !prev);
+    if (showAllVisas) setExpandedVisa(null);
+  };
 
   return (
     <ScrollView
@@ -473,8 +480,9 @@ export default function HomeScreen() {
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Processing Times</Text>
-          <View style={styles.sectionPill}>
-            <Text style={styles.sectionPillText}>DHA Official</Text>
+          <View style={[styles.sectionPill, { backgroundColor: 'rgba(0,214,143,0.1)', flexDirection: 'row', alignItems: 'center' }]}>
+            <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: Colors.success, marginRight: 6 }} />
+            <Text style={[styles.sectionPillText, { color: Colors.success, fontWeight: '600' }]}>DHA Live Data</Text>
           </View>
         </View>
         <TouchableOpacity
@@ -510,7 +518,7 @@ export default function HomeScreen() {
         </View>
         <Text style={styles.sectionSub}>Not eligible for skilled migration? Explore other options:</Text>
         <View>
-          {OTHER_VISAS_DATA.map((visa) => {
+          {displayedVisas.map((visa) => {
             const isExpanded = expandedVisa === visa.code;
             return (
               <View key={visa.code}>
@@ -568,7 +576,13 @@ export default function HomeScreen() {
             );
           })}
         </View>
-      </View>
+        <TouchableOpacity style={styles.showAllBtn} onPress={toggleShowAll}>
+          <Text style={styles.showAllBtnText}>
+            {showAllVisas ? 'Show Less' : `View All ${OTHER_VISAS_DATA.length} Pathways`}
+          </Text>
+          <Ionicons name={showAllVisas ? 'chevron-up' : 'chevron-down'} size={16} color={Colors.accent} />
+        </TouchableOpacity>
+      </FadeInView>
 
       {/* Aria AI promo */}
       <View style={styles.section}>
@@ -996,5 +1010,22 @@ const styles = StyleSheet.create({
     fontSize: FontSize.sm,
     fontWeight: FontWeight.semiBold,
     color: Colors.accent,
+  },
+  showAllBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.xs,
+    paddingVertical: Spacing.md,
+    marginTop: Spacing.xs,
+    backgroundColor: 'rgba(0,194,255,0.05)',
+    borderRadius: Radius.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(0,194,255,0.15)',
+  },
+  showAllBtnText: {
+    color: Colors.accent,
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.semiBold,
   },
 });
