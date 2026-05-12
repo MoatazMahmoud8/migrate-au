@@ -124,19 +124,7 @@ export function PaywallModal({ visible, onClose, userId, title, message, feature
               </TouchableOpacity>
             </View>
 
-            {/* Benefits */}
-            <View style={styles.benefits}>
-              {BENEFITS.map(({ icon, text }) => (
-                <View key={text} style={styles.benefitRow}>
-                  <View style={styles.benefitIcon}>
-                    <Ionicons name={icon as any} size={16} color={Colors.secondary} />
-                  </View>
-                  <Text style={styles.benefitText}>{text}</Text>
-                </View>
-              ))}
-            </View>
-
-            {/* CTAs */}
+            {/* CTAs — above the fold */}
             <View style={styles.actions}>
               {/* Primary: Start Trial */}
               <TouchableOpacity
@@ -181,6 +169,23 @@ export function PaywallModal({ visible, onClose, userId, title, message, feature
             <Text style={styles.fineprint}>
               Cancel anytime · Auto-renews · {monthlyPrice.amount}/mo or {yearlyPrice.amount}/yr after trial
             </Text>
+
+            {/* Benefits — below the fold as supporting detail */}
+            <View style={styles.benefitsDivider}>
+              <View style={styles.benefitsDividerLine} />
+              <Text style={styles.benefitsDividerText}>What you get</Text>
+              <View style={styles.benefitsDividerLine} />
+            </View>
+            <View style={styles.benefits}>
+              {BENEFITS.map(({ icon, text }) => (
+                <View key={text} style={styles.benefitRow}>
+                  <View style={styles.benefitIcon}>
+                    <Ionicons name={icon as any} size={14} color={Colors.secondary} />
+                  </View>
+                  <Text style={styles.benefitText}>{text}</Text>
+                </View>
+              ))}
+            </View>
           </ScrollView>
         </View>
       </View>
@@ -232,26 +237,26 @@ const styles = StyleSheet.create({
   },
 
   /* Hero */
-  hero: { alignItems: 'center', paddingVertical: Spacing.xl },
+  hero: { alignItems: 'center', paddingTop: Spacing.lg, paddingBottom: Spacing.md },
   heroIcon: {
-    width: 72, height: 72,
-    borderRadius: 36,
+    width: 52, height: 52,
+    borderRadius: 26,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: Spacing.md,
+    marginBottom: Spacing.sm,
   },
   heroTitle: {
-    fontSize: FontSize.xl,
+    fontSize: FontSize.lg,
     fontWeight: FontWeight.extraBold,
     color: Colors.textPrimary,
     textAlign: 'center',
-    marginBottom: Spacing.sm,
+    marginBottom: Spacing.xs,
   },
   heroSub: {
-    fontSize: FontSize.sm,
+    fontSize: FontSize.xs,
     color: Colors.textSecondary,
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: 18,
     paddingHorizontal: Spacing.xl,
   },
 
@@ -259,7 +264,7 @@ const styles = StyleSheet.create({
   planRow: {
     flexDirection: 'row',
     gap: Spacing.md,
-    marginBottom: Spacing.xl,
+    marginBottom: Spacing.md,
   },
   planCard: {
     flex: 1,
@@ -267,11 +272,11 @@ const styles = StyleSheet.create({
     borderRadius: Radius.xl,
     borderWidth: 2,
     borderColor: Colors.border,
-    padding: Spacing.lg,
+    padding: Spacing.md,
     alignItems: 'center',
-    paddingTop: Spacing.xl,
+    paddingTop: Spacing.lg,
     position: 'relative',
-    minHeight: 110,
+    minHeight: 90,
     justifyContent: 'center',
   },
   planCardYearly: {
@@ -321,36 +326,55 @@ const styles = StyleSheet.create({
   },
 
   /* Benefits */
+  benefitsDivider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    marginTop: Spacing.lg,
+    marginBottom: Spacing.md,
+  },
+  benefitsDividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: Colors.divider,
+  },
+  benefitsDividerText: {
+    fontSize: FontSize.xs,
+    color: Colors.textMuted,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+  },
   benefits: {
     backgroundColor: Colors.surface,
     borderRadius: Radius.xl,
     borderWidth: 1,
     borderColor: Colors.border,
-    padding: Spacing.lg,
-    gap: Spacing.md,
+    padding: Spacing.md,
+    gap: Spacing.sm,
     marginBottom: Spacing.xl,
   },
   benefitRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.md,
+    gap: Spacing.sm,
   },
   benefitIcon: {
-    width: 30, height: 30,
-    borderRadius: 8,
+    width: 24, height: 24,
+    borderRadius: 6,
     backgroundColor: `${Colors.secondary}15`,
     alignItems: 'center',
     justifyContent: 'center',
   },
   benefitText: {
     flex: 1,
-    fontSize: FontSize.sm,
+    fontSize: FontSize.xs,
     color: Colors.textSecondary,
-    lineHeight: 19,
+    lineHeight: 17,
   },
 
   /* Actions */
-  actions: { gap: Spacing.md, marginBottom: Spacing.md },
+  actions: { gap: Spacing.sm, marginBottom: Spacing.sm },
   trialBtn: {
     borderRadius: Radius.lg,
     overflow: 'hidden',
