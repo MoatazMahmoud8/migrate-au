@@ -306,7 +306,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: FontSize.sm,
-    fontWeight: FontWeight.semibold as any,
+    fontWeight: FontWeight.semiBold as any,
     color: Colors.textPrimary,
     lineHeight: 18,
   },
@@ -328,7 +328,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: FontSize.lg,
-    fontWeight: FontWeight.semibold as any,
+    fontWeight: FontWeight.semiBold as any,
     color: Colors.textSecondary,
   },
   emptySubtext: {

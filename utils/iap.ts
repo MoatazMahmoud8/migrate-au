@@ -231,7 +231,6 @@ export async function restorePurchases(): Promise<{ restored: boolean; message: 
     console.warn('[IAP] Restore error:', err);
     return { restored: false, message: 'Restore failed. Please check your internet connection and try again.' };
   }
-  }
 }
 
 /**
