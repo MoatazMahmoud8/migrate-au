@@ -97,6 +97,12 @@ export default function StatesScreen() {
         </Text>
       </LinearGradient>
 
+      {/* Trust badge */}
+      <View style={styles.trustBadge}>
+        <Ionicons name="shield-checkmark-outline" size={14} color={Colors.success} />
+        <Text style={styles.trustText}>All links go directly to official state government portals</Text>
+      </View>
+
       <View style={styles.list}>
         {STATES.map((state) => {
           const isOpen = expanded === state.code;
@@ -182,6 +188,14 @@ export default function StatesScreen() {
           );
         })}
       </View>
+
+      {/* Footer source note */}
+      <View style={styles.sourceNote}>
+        <Ionicons name="information-circle-outline" size={13} color={Colors.textMuted} />
+        <Text style={styles.sourceNoteText}>
+          Data sourced from official state/territory migration portals. Eligibility criteria change — always confirm on the official site.
+        </Text>
+      </View>
     </ScrollView>
   );
 }
@@ -210,7 +224,48 @@ const styles = StyleSheet.create({
   headerTitle: { color: Colors.textPrimary, fontSize: FontSize.xxxl, fontWeight: FontWeight.extraBold, marginBottom: Spacing.sm, letterSpacing: -0.5 },
   headerSub: { color: Colors.textSecondary, fontSize: FontSize.md, lineHeight: 22 },
 
-  list: { padding: Spacing.lg, gap: Spacing.md },
+  trustBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    marginHorizontal: Spacing.lg,
+    marginBottom: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    backgroundColor: 'rgba(0,214,143,0.07)',
+    borderRadius: Radius.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(0,214,143,0.15)',
+  },
+  trustText: {
+    flex: 1,
+    fontSize: FontSize.xs,
+    color: Colors.success,
+    fontWeight: '500',
+    lineHeight: 16,
+  },
+  sourceNote: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacing.sm,
+    marginHorizontal: Spacing.lg,
+    marginTop: Spacing.md,
+    marginBottom: Spacing.xl,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.md,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  sourceNoteText: {
+    flex: 1,
+    fontSize: FontSize.xs,
+    color: Colors.textMuted,
+    lineHeight: 16,
+  },
+
+  list: { padding: Spacing.lg, paddingTop: Spacing.sm, gap: Spacing.md },
 
   card: {
     flexDirection: 'row',

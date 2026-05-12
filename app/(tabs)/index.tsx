@@ -449,12 +449,7 @@ export default function HomeScreen() {
       {/* English Tests promo */}
       <View style={styles.section}>
         <PressableCard onPress={() => router.push('/(tabs)/english-tests' as any)}>
-          <LinearGradient
-            colors={['#0A2A1A', '#0D3B2A']}
-            style={styles.englishCard}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          >
+          <View style={styles.englishCard}>
             <View style={styles.englishLeft}>
               <View style={styles.englishIconWrap}>
                 <Ionicons name="book-outline" size={20} color={Colors.success} />
@@ -472,7 +467,7 @@ export default function HomeScreen() {
                 </View>
               ))}
             </View>
-          </LinearGradient>
+          </View>
         </PressableCard>
       </View>
 
@@ -587,12 +582,7 @@ export default function HomeScreen() {
       {/* Aria AI promo */}
       <View style={styles.section}>
         <PressableCard onPress={() => router.push('/(tabs)/ai')}>
-          <LinearGradient
-            colors={['#1A0A3D', '#2D1B6E']}
-            style={styles.ariaCard}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          >
+          <View style={styles.ariaCard}>
             <View style={styles.ariaCardShine} />
             <View style={styles.ariaLeft}>
               <View style={styles.ariaAvatarSmall}>
@@ -610,7 +600,7 @@ export default function HomeScreen() {
                 </View>
               ))}
             </View>
-          </LinearGradient>
+          </View>
         </PressableCard>
       </View>
 
@@ -804,7 +794,14 @@ const styles = StyleSheet.create({
   },
 
   // English Tests card
-  englishCard: { borderRadius: Radius.xl, padding: Spacing.xl, overflow: 'hidden' },
+  englishCard: {
+    borderRadius: Radius.xl,
+    padding: Spacing.xl,
+    overflow: 'hidden',
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: 'rgba(0,214,143,0.18)',
+  },
   englishLeft: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, marginBottom: Spacing.lg },
   englishIconWrap: {
     width: 44,
@@ -860,7 +857,15 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
   },
 
-  ariaCard: { borderRadius: Radius.xl, padding: Spacing.xl, overflow: 'hidden' },
+  ariaCard: {
+    borderRadius: Radius.xl,
+    padding: Spacing.xl,
+    overflow: 'hidden',
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: 'rgba(167,139,250,0.18)',
+    position: 'relative',
+  },
   ariaCardShine: {
     position: 'absolute',
     top: 0, right: 0,
