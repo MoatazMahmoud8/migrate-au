@@ -9,6 +9,7 @@ import {
   Alert,
   Linking,
   ActivityIndicator,
+  Modal,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -48,6 +49,7 @@ export default function ProfileScreen() {
   const [renewalStatus, setRenewalStatus] = useState<'active' | 'expiring_soon' | 'expired'>('expired');
   const [rcUserId, setRcUserId] = useState<string>('');
   const [restoring, setRestoring] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
   const insets = useSafeAreaInsets();
   const router = useRouter();
 
@@ -363,6 +365,20 @@ export default function ProfileScreen() {
       </View>
 
       <View style={styles.section}>
+        <Text style={styles.sectionLabel}>Support</Text>
+        <View style={styles.card}>
+          <SettingRow
+            icon="chatbubble-ellipses-outline"
+            label="Send Feedback"
+            value="Ideas, complaints, suggestions"
+            onPress={() => setShowFeedback(true)}
+            showArrow
+            last
+          />
+        </View>
+      </View>
+
+      <View style={styles.section}>
         <Text style={styles.sectionLabel}>About</Text>
         <View style={styles.card}>
           <SettingRow icon="information-circle-outline" label="MigrateAU" value="v1.0.0" />
@@ -399,6 +415,81 @@ export default function ProfileScreen() {
         message="Unlock ANZSCO tracking, custom state alerts, and unlimited Aria AI."
         feature="premium"
       />
+
+      {/* Feedback sheet */}
+      <Modal
+        visible={showFeedback}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowFeedback(false)}
+      >
+        <View style={feedbackStyles.backdrop}>
+          <View style={[feedbackStyles.sheet, { paddingBottom: insets.bottom + 24 }]}>
+            <View style={feedbackStyles.handle} />
+            <Text style={feedbackStyles.title}>Get in Touch</Text>
+            <Text style={feedbackStyles.subtitle}>We read every message and aim to reply within 48 hours.</Text>
+
+            {([
+              {
+                icon: 'bulb-outline',
+                label: 'Suggestion',
+                desc: 'Feature idea or improvement',
+                subject: 'MigrateAU – Suggestion',
+                body: 'Hi MigrateAU team,\n\nI have a suggestion:\n\n',
+              },
+              {
+                icon: 'happy-outline',
+                label: 'Feedback',
+                desc: 'Tell us what you think',
+                subject: 'MigrateAU – Feedback',
+                body: 'Hi MigrateAU team,\n\nHere is my feedback:\n\n',
+              },
+              {
+                icon: 'bug-outline',
+                label: 'Report a Bug',
+                desc: 'Something not working right',
+                subject: 'MigrateAU – Bug Report',
+                body: 'Hi MigrateAU team,\n\nI found an issue:\n\nSteps to reproduce:\n1. \n\nExpected behaviour:\n\nActual behaviour:\n\n',
+              },
+              {
+                icon: 'alert-circle-outline',
+                label: 'Complaint',
+                desc: 'Let us know what went wrong',
+                subject: 'MigrateAU – Complaint',
+                body: 'Hi MigrateAU team,\n\nI would like to raise a concern:\n\n',
+              },
+            ] as const).map((item, i, arr) => (
+              <TouchableOpacity
+                key={item.label}
+                style={[feedbackStyles.option, i < arr.length - 1 && feedbackStyles.optionBorder]}
+                activeOpacity={0.75}
+                onPress={() => {
+                  setShowFeedback(false);
+                  const mailto = `mailto:support@jsmglobal.xyz?subject=${encodeURIComponent(item.subject)}&body=${encodeURIComponent(item.body)}`;
+                  Linking.openURL(mailto);
+                }}
+              >
+                <View style={feedbackStyles.optionIcon}>
+                  <Ionicons name={item.icon as any} size={20} color={Colors.accent} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={feedbackStyles.optionLabel}>{item.label}</Text>
+                  <Text style={feedbackStyles.optionDesc}>{item.desc}</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} />
+              </TouchableOpacity>
+            ))}
+
+            <TouchableOpacity
+              style={feedbackStyles.cancelBtn}
+              onPress={() => setShowFeedback(false)}
+              activeOpacity={0.8}
+            >
+              <Text style={feedbackStyles.cancelText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -461,6 +552,67 @@ const rowStyles = StyleSheet.create({
     paddingVertical: 2,
   },
   badgeText: { fontSize: FontSize.xs, color: Colors.secondary, fontWeight: FontWeight.bold },
+});
+
+const feedbackStyles = StyleSheet.create({
+  backdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'flex-end',
+  },
+  sheet: {
+    backgroundColor: Colors.surface,
+    borderTopLeftRadius: Radius.xl,
+    borderTopRightRadius: Radius.xl,
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.md,
+  },
+  handle: {
+    width: 36, height: 4,
+    borderRadius: 2,
+    backgroundColor: Colors.border,
+    alignSelf: 'center',
+    marginBottom: Spacing.lg,
+  },
+  title: {
+    fontSize: FontSize.lg,
+    fontWeight: FontWeight.bold,
+    color: Colors.textPrimary,
+    marginBottom: 4,
+  },
+  subtitle: {
+    fontSize: FontSize.sm,
+    color: Colors.textMuted,
+    marginBottom: Spacing.lg,
+  },
+  option: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: Spacing.md,
+    gap: Spacing.md,
+  },
+  optionBorder: { borderBottomWidth: 1, borderBottomColor: Colors.divider },
+  optionIcon: {
+    width: 38, height: 38,
+    borderRadius: Radius.md,
+    backgroundColor: `${Colors.accent}18`,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  optionLabel: {
+    fontSize: FontSize.md,
+    fontWeight: FontWeight.semiBold,
+    color: Colors.textPrimary,
+  },
+  optionDesc: { fontSize: FontSize.xs, color: Colors.textMuted, marginTop: 2 },
+  cancelBtn: {
+    marginTop: Spacing.lg,
+    paddingVertical: 14,
+    borderRadius: Radius.md,
+    backgroundColor: Colors.glass,
+    alignItems: 'center',
+  },
+  cancelText: { fontSize: FontSize.md, color: Colors.textSecondary, fontWeight: FontWeight.semiBold },
 });
 
 const styles = StyleSheet.create({
