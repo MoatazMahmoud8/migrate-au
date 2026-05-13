@@ -10,6 +10,7 @@ import {
   Linking,
   ActivityIndicator,
   Modal,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -23,6 +24,7 @@ import { restorePurchases, getRevenueCatUserId, syncSubscriptionStatus } from '.
 import PaywallModal from '../../components/PaywallModal';
 import { tap as hapticTap, success as hapticSuccess } from '../../utils/haptics';
 import { SKILLED_OCCUPATIONS } from '../../constants/skilledOccupations';
+import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 
 const JOURNEY_STAGES: Array<{ key: JourneyStageKey; label: string; desc: string }> = [
   { key: 'assess', label: 'Skills Assessment', desc: 'Skills assessment & English test preparation' },
@@ -182,11 +184,45 @@ export default function ProfileScreen() {
     hapticSuccess();
   };
 
+  const persistStageDate = async (
+    entryId: string,
+    stageKey: JourneyStageKey,
+    iso: string | undefined
+  ) => {
+    const updated = journeyEntries.map((e) =>
+      e.id === entryId
+        ? { ...e, stageDates: { ...e.stageDates, [stageKey]: iso } }
+        : e
+    );
+    setJourneyEntries(updated);
+    await saveProfile({ journeyEntries: updated });
+    hapticSuccess();
+  };
+
   const openDateModal = (entryId: string, stageKey: JourneyStageKey) => {
     const entry = journeyEntries.find((e) => e.id === entryId);
     const existing = entry?.stageDates?.[stageKey];
+    const initial = existing ? new Date(existing) : new Date();
+
+    if (Platform.OS === 'android') {
+      // Android: open native dialog directly, no JS modal needed
+      DateTimePickerAndroid.open({
+        value: initial,
+        mode: 'date',
+        maximumDate: new Date(),
+        onChange: (event, selected) => {
+          if (event.type === 'set' && selected) {
+            const iso = selected.toISOString().split('T')[0];
+            persistStageDate(entryId, stageKey, iso);
+          }
+        },
+      });
+      return;
+    }
+
+    // iOS: render inline spinner inside modal
     setDateTarget({ entryId, stageKey });
-    setDateInput(existing ? dateToInput(existing) : '');
+    setDateInput(existing ? dateToInput(existing) : dateToInput(initial.toISOString()));
     setShowDateModal(true);
   };
 
@@ -194,18 +230,11 @@ export default function ProfileScreen() {
     if (!dateTarget) return;
     const iso = parseInputDate(dateInput);
     if (!iso && dateInput.trim()) {
-      Alert.alert('Invalid date', 'Please enter the date as DD/MM/YYYY');
+      Alert.alert('Invalid date', 'Please pick a date');
       return;
     }
-    const updated = journeyEntries.map((e) =>
-      e.id === dateTarget.entryId
-        ? { ...e, stageDates: { ...e.stageDates, [dateTarget.stageKey]: iso ?? undefined } }
-        : e
-    );
-    setJourneyEntries(updated);
-    await saveProfile({ journeyEntries: updated });
+    await persistStageDate(dateTarget.entryId, dateTarget.stageKey, iso ?? undefined);
     setShowDateModal(false);
-    hapticSuccess();
   };
 
   const handleRestore = async () => {
@@ -701,18 +730,19 @@ export default function ProfileScreen() {
             <Text style={jStyles.modalTitle}>
               {dateTarget ? JOURNEY_STAGES.find(s => s.key === dateTarget.stageKey)?.label : 'Date'}
             </Text>
-            <Text style={jStyles.modalSub}>Enter the date for this milestone</Text>
-            <TextInput
-              style={[jStyles.textInput, { textAlign: 'center', fontSize: FontSize.lg, letterSpacing: 2 }]}
-              value={dateInput}
-              onChangeText={setDateInput}
-              placeholder="DD/MM/YYYY"
-              placeholderTextColor={Colors.textMuted}
-              keyboardType="numeric"
-              maxLength={10}
-              autoFocus
-              returnKeyType="done"
-              onSubmitEditing={saveStageDateInput}
+            <Text style={jStyles.modalSub}>Pick the date for this milestone</Text>
+            <DateTimePicker
+              value={(() => {
+                const iso = parseInputDate(dateInput);
+                return iso ? new Date(iso) : new Date();
+              })()}
+              mode="date"
+              display="spinner"
+              maximumDate={new Date()}
+              onChange={(_, selected) => {
+                if (selected) setDateInput(dateToInput(selected.toISOString()));
+              }}
+              style={{ alignSelf: 'stretch' }}
             />
             <View style={jStyles.dateActions}>
               <TouchableOpacity

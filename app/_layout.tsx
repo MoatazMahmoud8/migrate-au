@@ -116,47 +116,102 @@ export default function RootLayout() {
         if (!changes.length) return;
         try {
           const Notifications = await import('expo-notifications');
-          const added = changes.filter((c) => c.type === 'added');
-          const removed = changes.filter((c) => c.type === 'removed');
-          const updated = changes.filter((c) => c.type === 'updated');
+          const profile = await getProfile();
 
-          // Notify individually for small batches; otherwise send a summary.
-          if (changes.length <= 4) {
-            for (const c of changes) {
-              const icon = c.type === 'added' ? '+' : c.type === 'removed' ? '−' : '~';
-              const verb =
-                c.type === 'added'
-                  ? 'added to'
-                  : c.type === 'removed'
-                  ? 'removed from'
-                  : 'updated on';
-              const lists = c.lists?.join('/') ?? '';
+          // Build the user's "watch list": anything they care about gets a
+          // priority notification; everything else folds into a summary so we
+          // don't spam.
+          const watchedAnzscos = new Set<string>(
+            [
+              profile.anzscoCode,
+              ...(profile.journeyEntries ?? []).map((e) => e.anzscoCode),
+            ].filter((x): x is string => !!x)
+          );
+          const watchedStates = new Set<string>(profile.pinnedStates ?? []);
+
+          const isWatched = (c: typeof changes[number]): boolean => {
+            if (watchedAnzscos.has(c.anzsco)) return true;
+            if (watchedStates.size === 0) return false;
+            // Mention of a watched state in the change detail counts
+            if (c.detail) {
+              for (const st of watchedStates) {
+                if (c.detail.includes(st)) return true;
+              }
+            }
+            return false;
+          };
+
+          const priority = changes.filter(isWatched);
+          const others = changes.filter((c) => !isWatched(c));
+
+          // Priority: always individual, with ★ prefix
+          for (const c of priority) {
+            const icon = c.type === 'added' ? '+' : c.type === 'removed' ? '−' : '~';
+            const verb =
+              c.type === 'added'
+                ? 'added to'
+                : c.type === 'removed'
+                ? 'removed from'
+                : 'updated on';
+            const lists = c.lists?.join('/') ?? '';
+            await Notifications.scheduleNotificationAsync({
+              content: {
+                title: `★ ${icon} ${c.name} (${c.anzsco})`,
+                body: c.detail
+                  ? `${verb} ${lists} · ${c.detail}`
+                  : `${verb} ${lists}`,
+                data: { route: '/occupations', anzsco: c.anzsco },
+                sound: 'default',
+              },
+              trigger: null,
+            });
+          }
+
+          // Others: small batch → individual (only if no watched items),
+          // otherwise fold into a single summary.
+          if (others.length > 0) {
+            const shouldSummariseOthers =
+              priority.length > 0 || others.length > 4;
+            if (shouldSummariseOthers) {
+              const added = others.filter((c) => c.type === 'added').length;
+              const removed = others.filter((c) => c.type === 'removed').length;
+              const updated = others.filter((c) => c.type === 'updated').length;
+              const parts: string[] = [];
+              if (added) parts.push(`${added} added`);
+              if (removed) parts.push(`${removed} removed`);
+              if (updated) parts.push(`${updated} updated`);
               await Notifications.scheduleNotificationAsync({
                 content: {
-                  title: `${icon} ${c.name} (${c.anzsco})`,
-                  body: c.detail
-                    ? `${verb} ${lists} · ${c.detail}`
-                    : `${verb} ${lists}`,
+                  title: 'Skilled Occupation List updated',
+                  body: `${parts.join(' · ')} — tap to view`,
                   data: { route: '/occupations' },
                   sound: 'default',
                 },
                 trigger: null,
               });
+            } else {
+              for (const c of others) {
+                const icon = c.type === 'added' ? '+' : c.type === 'removed' ? '−' : '~';
+                const verb =
+                  c.type === 'added'
+                    ? 'added to'
+                    : c.type === 'removed'
+                    ? 'removed from'
+                    : 'updated on';
+                const lists = c.lists?.join('/') ?? '';
+                await Notifications.scheduleNotificationAsync({
+                  content: {
+                    title: `${icon} ${c.name} (${c.anzsco})`,
+                    body: c.detail
+                      ? `${verb} ${lists} · ${c.detail}`
+                      : `${verb} ${lists}`,
+                    data: { route: '/occupations' },
+                    sound: 'default',
+                  },
+                  trigger: null,
+                });
+              }
             }
-          } else {
-            const parts: string[] = [];
-            if (added.length) parts.push(`${added.length} added`);
-            if (removed.length) parts.push(`${removed.length} removed`);
-            if (updated.length) parts.push(`${updated.length} updated`);
-            await Notifications.scheduleNotificationAsync({
-              content: {
-                title: 'Skilled Occupation List updated',
-                body: `${parts.join(' · ')} — tap to view`,
-                data: { route: '/occupations' },
-                sound: 'default',
-              },
-              trigger: null,
-            });
           }
         } catch (e) {
           console.warn('[skilled-occupations] notify failed:', e);

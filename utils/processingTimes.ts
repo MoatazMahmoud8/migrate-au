@@ -18,6 +18,7 @@ import {
   PROCESSING_TIMES,
   ProcessingTime,
 } from '../constants/processingTimes';
+import { validateProcessingTimesSnapshot } from './remoteSchema';
 // Schema: { snapshotDate: string, items: ProcessingTime[] }
 export const PROCESSING_TIMES_REMOTE_URL =
   'https://migrateau.jsmglobal.xyz/processing-times.json';
@@ -25,6 +26,8 @@ export const PROCESSING_TIMES_REMOTE_URL =
 const CACHE_KEY = '@migrate_au_processing_times';
 const LAST_CHECK_KEY = '@migrate_au_processing_times_last_check';
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+const MIN_FORCE_INTERVAL_MS = 30 * 1000;
+const FETCH_TIMEOUT_MS = 15 * 1000;
 
 interface Snapshot {
   snapshotDate: string;
@@ -73,20 +76,32 @@ export async function refreshProcessingTimes(
   changes: ProcessingTimeChange[];
 }> {
   const last = await getLastCheckedAt();
-  if (!opts.force && last) {
+  if (last) {
     const age = Date.now() - new Date(last).getTime();
-    if (age < ONE_DAY_MS) {
+    if (!opts.force && age < ONE_DAY_MS) {
+      return { updated: false, snapshot: await getProcessingTimes(), changes: [] };
+    }
+    if (opts.force && age < MIN_FORCE_INTERVAL_MS) {
       return { updated: false, snapshot: await getProcessingTimes(), changes: [] };
     }
   }
 
   try {
-    const res = await fetch(PROCESSING_TIMES_REMOTE_URL, { method: 'GET' });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const remote = (await res.json()) as Snapshot;
-    if (!remote?.snapshotDate || !Array.isArray(remote.items)) {
-      throw new Error('Invalid snapshot shape');
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
+    let res: Response;
+    try {
+      res = await fetch(PROCESSING_TIMES_REMOTE_URL, { method: 'GET', signal: ctrl.signal });
+    } finally {
+      clearTimeout(timer);
     }
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const contentLength = Number(res.headers.get('content-length') ?? 0);
+    if (contentLength && contentLength > 2 * 1024 * 1024) {
+      throw new Error('payload too large');
+    }
+    const json = await res.json();
+    const remote = validateProcessingTimesSnapshot(json);
 
     const current = await getProcessingTimes();
     await AsyncStorage.setItem(LAST_CHECK_KEY, new Date().toISOString());
