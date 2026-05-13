@@ -13,13 +13,15 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { Stack, useRouter } from 'expo-router';
+import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Spacing, Radius, FontSize, FontWeight } from '../constants/theme';
 import {
   SkilledOccupation,
   SkillList,
   SKILL_LISTS,
+  StateCode,
+  STATE_CODES,
 } from '../constants/skilledOccupations';
 import {
   getSkilledOccupations,
@@ -30,12 +32,24 @@ import {
 import { tap as hapticTap } from '../utils/haptics';
 
 type ListFilter = 'All' | SkillList;
+type JurisdictionFilter = 'All' | 'Federal' | StateCode;
 
 const LIST_COLORS: Record<SkillList, string> = {
   CSOL: Colors.accent,
   MLTSSL: Colors.success,
   STSOL: Colors.warning,
   ROL: Colors.accentPurple,
+};
+
+const STATE_COLORS: Record<StateCode, string> = {
+  NSW: '#4F8EF7',
+  VIC: '#00C2FF',
+  QLD: '#FF6B8A',
+  WA: '#FFCD00',
+  SA: '#FF7043',
+  TAS: '#00D68F',
+  ACT: '#A78BFA',
+  NT: '#FFB800',
 };
 
 function timeAgo(iso: string | null): string {
@@ -64,6 +78,7 @@ function formatSnapshot(date: string): string {
 export default function OccupationsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const params = useLocalSearchParams<{ state?: string }>();
 
   const [items, setItems] = useState<SkilledOccupation[]>([]);
   const [snapshotDate, setSnapshotDate] = useState<string>('');
@@ -71,6 +86,10 @@ export default function OccupationsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<ListFilter>('All');
+  const [jurisdiction, setJurisdiction] = useState<JurisdictionFilter>(() => {
+    const p = (params.state ?? '').toString().toUpperCase();
+    return (STATE_CODES as string[]).includes(p) ? (p as StateCode) : 'All';
+  });
   const [selected, setSelected] = useState<SkilledOccupation | null>(null);
 
   useEffect(() => {
@@ -93,11 +112,25 @@ export default function OccupationsScreen() {
   };
 
   const filtered = useMemo(() => {
-    const base = filter === 'All' ? items : items.filter((o) => o.lists.includes(filter));
+    let base = items;
+    // Jurisdiction filter
+    if (jurisdiction !== 'All') {
+      if (jurisdiction === 'Federal') {
+        base = base.filter((o) => o.lists.length > 0);
+      } else {
+        base = base.filter((o) => o.states && (o.states as any)[jurisdiction]);
+      }
+    }
+    // List filter (only meaningful for Federal scope)
+    if (filter !== 'All') {
+      base = base.filter((o) => o.lists.includes(filter));
+    }
     return searchOccupations(base, query, 300);
-  }, [items, filter, query]);
+  }, [items, filter, jurisdiction, query]);
 
   const FILTERS: ListFilter[] = ['All', ...SKILL_LISTS];
+  const JURISDICTIONS: JurisdictionFilter[] = ['All', 'Federal', ...STATE_CODES];
+  const showListFilter = jurisdiction === 'All' || jurisdiction === 'Federal';
 
   return (
     <>
@@ -125,7 +158,7 @@ export default function OccupationsScreen() {
 
           <Text style={styles.title}>Skilled Occupations</Text>
           <Text style={styles.subtitle}>
-            Search the full ANZSCO list across CSOL, MLTSSL, STSOL and ROL.
+            Search every federal and state-nominated list in one place.
           </Text>
 
           <View style={styles.searchWrap}>
@@ -162,30 +195,67 @@ export default function OccupationsScreen() {
           </View>
         </LinearGradient>
 
-        {/* Filter pills */}
+        {/* Jurisdiction pills */}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.filterRow}
         >
-          {FILTERS.map((f) => {
-            const active = filter === f;
-            const tint = f === 'All' ? Colors.accent : LIST_COLORS[f as SkillList];
+          {JURISDICTIONS.map((j) => {
+            const active = jurisdiction === j;
+            const tint =
+              j === 'All' || j === 'Federal'
+                ? Colors.accent
+                : STATE_COLORS[j as StateCode];
             return (
               <TouchableOpacity
-                key={f}
+                key={j}
                 style={[
                   styles.pill,
                   active && { backgroundColor: `${tint}22`, borderColor: tint },
                 ]}
-                onPress={() => { hapticTap(); setFilter(f); }}
+                onPress={() => {
+                  hapticTap();
+                  setJurisdiction(j);
+                  // Reset list filter when switching to a state (lists are federal-only)
+                  if (j !== 'All' && j !== 'Federal') setFilter('All');
+                }}
                 activeOpacity={0.8}
               >
-                <Text style={[styles.pillText, active && { color: tint }]}>{f}</Text>
+                <Text style={[styles.pillText, active && { color: tint, fontWeight: FontWeight.bold }]}>
+                  {j}
+                </Text>
               </TouchableOpacity>
             );
           })}
         </ScrollView>
+
+        {/* Federal list pills (hidden when a state is selected) */}
+        {showListFilter && (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={[styles.filterRow, styles.filterRowSecondary]}
+          >
+            {FILTERS.map((f) => {
+              const active = filter === f;
+              const tint = f === 'All' ? Colors.textSecondary : LIST_COLORS[f as SkillList];
+              return (
+                <TouchableOpacity
+                  key={f}
+                  style={[
+                    styles.pillSm,
+                    active && { backgroundColor: `${tint}22`, borderColor: tint },
+                  ]}
+                  onPress={() => { hapticTap(); setFilter(f); }}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[styles.pillTextSm, active && { color: tint }]}>{f}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        )}
 
         {/* List */}
         <FlatList
@@ -226,6 +296,13 @@ export default function OccupationsScreen() {
                       <Text style={[styles.listChipText, { color: LIST_COLORS[l] }]}>{l}</Text>
                     </View>
                   ))}
+                  {jurisdiction !== 'All' && jurisdiction !== 'Federal' && item.states?.[jurisdiction as StateCode] && (
+                    <View style={[styles.listChip, { backgroundColor: `${STATE_COLORS[jurisdiction as StateCode]}22`, borderColor: STATE_COLORS[jurisdiction as StateCode] }]}>
+                      <Text style={[styles.listChipText, { color: STATE_COLORS[jurisdiction as StateCode] }]}>
+                        {jurisdiction} {(item.states[jurisdiction as StateCode] ?? []).join('/')}
+                      </Text>
+                    </View>
+                  )}
                 </View>
                 <Text style={styles.visasText} numberOfLines={1}>
                   {item.visas.map((v) => `SC ${v}`).join(' · ')}
@@ -279,7 +356,7 @@ export default function OccupationsScreen() {
                     ))}
                   </View>
 
-                  <Text style={styles.sectionLabel}>Eligible visas</Text>
+                  <Text style={styles.sectionLabel}>Eligible visas (federal)</Text>
                   <View style={styles.chipRow}>
                     {selected.visas.map((v) => (
                       <View key={v} style={styles.visaChip}>
@@ -287,6 +364,43 @@ export default function OccupationsScreen() {
                       </View>
                     ))}
                   </View>
+
+                  <Text style={styles.sectionLabel}>State / territory eligibility</Text>
+                  {selected.states && Object.keys(selected.states).length > 0 ? (
+                    <View style={styles.stateGrid}>
+                      {STATE_CODES.map((s) => {
+                        const visas = selected.states?.[s];
+                        const available = !!visas && visas.length > 0;
+                        return (
+                          <View
+                            key={s}
+                            style={[
+                              styles.stateCell,
+                              available
+                                ? { backgroundColor: `${STATE_COLORS[s]}1A`, borderColor: STATE_COLORS[s] }
+                                : { opacity: 0.35 },
+                            ]}
+                          >
+                            <Text
+                              style={[
+                                styles.stateCellCode,
+                                { color: available ? STATE_COLORS[s] : Colors.textMuted },
+                              ]}
+                            >
+                              {s}
+                            </Text>
+                            <Text style={styles.stateCellVisas}>
+                              {available ? visas!.map((v) => v).join(' · ') : '—'}
+                            </Text>
+                          </View>
+                        );
+                      })}
+                    </View>
+                  ) : (
+                    <Text style={styles.bodyMuted}>
+                      Not currently on any state nomination list.
+                    </Text>
+                  )}
 
                   {selected.assessingAuthority && (
                     <>
@@ -381,6 +495,10 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.md,
     gap: 8,
   },
+  filterRowSecondary: {
+    paddingVertical: 0,
+    paddingBottom: Spacing.md,
+  },
   pill: {
     paddingHorizontal: 14,
     paddingVertical: 7,
@@ -391,6 +509,16 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   pillText: { fontSize: FontSize.xs, color: Colors.textSecondary, fontWeight: FontWeight.semiBold },
+  pillSm: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: Radius.full,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: 'transparent',
+    marginRight: 6,
+  },
+  pillTextSm: { fontSize: 10, color: Colors.textMuted, fontWeight: FontWeight.semiBold, letterSpacing: 0.4 },
 
   /* List */
   list: { paddingHorizontal: Spacing.lg, paddingBottom: 100 },
@@ -466,6 +594,7 @@ const styles = StyleSheet.create({
     marginTop: Spacing.lg, marginBottom: Spacing.sm,
   },
   bodyText: { color: Colors.textPrimary, fontSize: FontSize.sm },
+  bodyMuted: { color: Colors.textMuted, fontSize: FontSize.sm, fontStyle: 'italic' },
   visaChip: {
     paddingHorizontal: 10, paddingVertical: 5,
     borderRadius: Radius.sm,
@@ -473,6 +602,25 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: Colors.border,
   },
   visaChipText: { color: Colors.textPrimary, fontSize: FontSize.xs, fontWeight: FontWeight.semiBold },
+
+  /* State grid (modal) */
+  stateGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  stateCell: {
+    width: '23%',
+    paddingVertical: 8,
+    paddingHorizontal: 6,
+    borderRadius: Radius.md,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.glass,
+    alignItems: 'center',
+  },
+  stateCellCode: { fontSize: FontSize.xs, fontWeight: FontWeight.bold, letterSpacing: 0.4 },
+  stateCellVisas: { fontSize: 9, color: Colors.textSecondary, marginTop: 2 },
 
   modalCta: {
     marginTop: Spacing.xl,

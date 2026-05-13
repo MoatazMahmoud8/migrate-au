@@ -17,19 +17,31 @@
  */
 export type SkillList = 'CSOL' | 'MLTSSL' | 'STSOL' | 'ROL';
 
+/** Australian state / territory codes used for state-nominated visa lists. */
+export type StateCode = 'NSW' | 'VIC' | 'QLD' | 'WA' | 'SA' | 'TAS' | 'ACT' | 'NT';
+
+export const STATE_CODES: StateCode[] = ['NSW', 'VIC', 'QLD', 'WA', 'SA', 'TAS', 'ACT', 'NT'];
+
 export interface SkilledOccupation {
   /** ANZSCO 6-digit code. */
   anzsco: string;
   /** Occupation title as published by DHA. */
   name: string;
-  /** Lists the occupation appears on. */
+  /** Federal lists the occupation appears on. */
   lists: SkillList[];
-  /** Visa subclasses for which this occupation is eligible. */
+  /** Federal visa subclasses for which this occupation is eligible. */
   visas: string[];
   /** Skills assessing authority (free text, e.g. "VETASSESS", "Engineers Australia"). */
   assessingAuthority?: string;
   /** ANZSCO major group label (Manager / Professional / Trade / Tech / Clerical / Sales / Operator / Labourer). */
   group: string;
+  /**
+   * State / territory eligibility for state-nominated visas (190, 491).
+   * Map of state code → eligible subclasses. Omit a state to indicate the
+   * occupation isn't currently on that state's list. The scraper keeps this
+   * authoritative; the seed below reflects commonly-known coverage.
+   */
+  states?: Partial<Record<StateCode, string[]>>;
 }
 
 export const SKILL_OCCUPATIONS_SNAPSHOT_DATE = '2026-05-01';
@@ -219,4 +231,45 @@ export const SKILLED_OCCUPATIONS: SkilledOccupation[] = [
 /** Stable identity key for an occupation row (ANZSCO is globally unique). */
 export function occupationKey(o: SkilledOccupation): string {
   return o.anzsco;
+}
+
+/**
+ * Default state coverage seed — applied to every entry that doesn't already
+ * specify `states` explicitly. Reflects the most commonly-observed state
+ * eligibility patterns; the scraper will replace this with each state's
+ * authoritative list at runtime.
+ *
+ * Heuristic:
+ *  - MLTSSL occupations are typically eligible for both 190 and 491 across
+ *    all 8 states/territories.
+ *  - CSOL-only occupations (no MLTSSL) are usually only on regional (491)
+ *    lists and limited to a subset of states.
+ *  - Healthcare / nursing / aged care / teaching is eligible everywhere.
+ */
+const HEALTH_GROUPS = new Set(['Community & Personal Service']);
+const CRITICAL_KEYWORDS = ['Nurse', 'Doctor', 'Midwife', 'Teacher', 'Carer', 'Care', 'Chef', 'Electrician'];
+
+function defaultStateCoverage(o: SkilledOccupation): Partial<Record<StateCode, string[]>> {
+  const isMLTSSL = o.lists.includes('MLTSSL');
+  const isCritical =
+    HEALTH_GROUPS.has(o.group) ||
+    o.group === 'Professionals' && /Nurse|Teacher|Midwife|Doctor|General Practitioner|Psychologist|Therapist|Physio|Speech|Dental|Pharma/i.test(o.name) ||
+    CRITICAL_KEYWORDS.some((k) => o.name.includes(k));
+
+  if (isMLTSSL || isCritical) {
+    return STATE_CODES.reduce((acc, s) => {
+      acc[s] = ['190', '491'];
+      return acc;
+    }, {} as Partial<Record<StateCode, string[]>>);
+  }
+
+  // CSOL-only → regional 491 in lower-population states (more common pattern)
+  return {
+    SA: ['491'], TAS: ['491'], NT: ['491'], ACT: ['491'], WA: ['491'],
+  };
+}
+
+// Decorate the exported seed with default state coverage.
+for (const o of SKILLED_OCCUPATIONS) {
+  if (!o.states) o.states = defaultStateCoverage(o);
 }

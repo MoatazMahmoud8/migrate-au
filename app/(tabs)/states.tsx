@@ -12,6 +12,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, Radius, FontSize, FontWeight } from '../../constants/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { getProfile, saveProfile } from '../../utils/storage';
 import { tap as hapticTap } from '../../utils/haptics';
 
@@ -78,6 +79,7 @@ export default function StatesScreen() {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [pinned, setPinned] = useState<string[]>([]);
   const insets = useSafeAreaInsets();
+  const router = useRouter();
 
   useEffect(() => {
     getProfile().then((p) => setPinned(p.pinnedStates ?? []));
@@ -189,7 +191,10 @@ export default function StatesScreen() {
                       {/* Occupation List */}
                       <TouchableOpacity
                         style={[styles.linkBtn, { borderColor: state.color + '40' }]}
-                        onPress={() => Linking.openURL(state.occupationUrl)}
+                        onPress={() => {
+                          hapticTap();
+                          router.push({ pathname: '/occupations', params: { state: state.code } });
+                        }}
                       >
                         <LinearGradient
                           colors={[state.color + '20', state.color + '0A']}
@@ -199,7 +204,7 @@ export default function StatesScreen() {
                         >
                           <Ionicons name="list-outline" size={16} color={state.color} />
                           <Text style={[styles.linkText, { color: state.color }]}>
-                            Occupation List
+                            {state.code} Occupation List
                           </Text>
                           <Ionicons name="arrow-forward" size={14} color={state.color} />
                         </LinearGradient>

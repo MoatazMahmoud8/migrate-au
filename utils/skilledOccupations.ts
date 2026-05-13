@@ -122,7 +122,7 @@ export async function refreshSkilledOccupations(
       }
     }
 
-    // Updated (lists or visas changed)
+    // Updated (lists, visas, or state coverage changed)
     for (const [key, next] of remoteMap) {
       const prev = currentMap.get(key);
       if (!prev) continue;
@@ -130,13 +130,36 @@ export async function refreshSkilledOccupations(
         prev.lists.slice().sort().join(',') !== next.lists.slice().sort().join(',');
       const visasChanged =
         prev.visas.slice().sort().join(',') !== next.visas.slice().sort().join(',');
-      if (listsChanged || visasChanged) {
+
+      // State coverage diff — compare each state's eligible visa array
+      const stateChanges: string[] = [];
+      const prevStates = prev.states ?? {};
+      const nextStates = next.states ?? {};
+      const allCodes = new Set([
+        ...Object.keys(prevStates),
+        ...Object.keys(nextStates),
+      ]);
+      for (const code of allCodes) {
+        const a = (prevStates as any)[code] as string[] | undefined;
+        const b = (nextStates as any)[code] as string[] | undefined;
+        const aKey = (a ?? []).slice().sort().join('/');
+        const bKey = (b ?? []).slice().sort().join('/');
+        if (aKey === bKey) continue;
+        if (!a && b) stateChanges.push(`${code} added (${b.join('/')})`);
+        else if (a && !b) stateChanges.push(`${code} removed`);
+        else stateChanges.push(`${code}: ${aKey || '—'} → ${bKey || '—'}`);
+      }
+
+      if (listsChanged || visasChanged || stateChanges.length > 0) {
         const parts: string[] = [];
         if (listsChanged) {
           parts.push(`lists: ${prev.lists.join('/')} → ${next.lists.join('/')}`);
         }
         if (visasChanged) {
           parts.push(`visas: ${prev.visas.join(',')} → ${next.visas.join(',')}`);
+        }
+        if (stateChanges.length > 0) {
+          parts.push(`states: ${stateChanges.join(', ')}`);
         }
         changes.push({
           type: 'updated',
