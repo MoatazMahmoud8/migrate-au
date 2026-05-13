@@ -325,7 +325,6 @@ export default function ProfileScreen() {
             onPress={() => router.push('/occupations')}
             showArrow
           />
-          <SettingRow icon="notifications-outline" label="State migration news" badge="Soon" />
           <SettingRow
             icon="alert-circle-outline"
             label="Occupation list changes"
