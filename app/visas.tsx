@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ScrollView,
   View,
@@ -17,6 +17,11 @@ import {
   VISA_CATEGORY_META,
   VisaPathway,
 } from '../constants/visaPathways';
+import { ProcessingTime } from '../constants/processingTimes';
+import {
+  getProcessingTimes,
+  getTimesForCode,
+} from '../utils/processingTimes';
 import { tap as hapticTap } from '../utils/haptics';
 
 type Category = VisaPathway['category'];
@@ -49,6 +54,11 @@ export default function VisasScreen() {
   const [filter, setFilter] = useState<Filter>(initial);
   const [expanded, setExpanded] = useState<string | null>(null);
   const filterRef = useRef<ScrollView>(null);
+  const [snapshot, setSnapshot] = useState<{ items: ProcessingTime[] }>({ items: [] });
+
+  useEffect(() => {
+    getProcessingTimes().then(setSnapshot);
+  }, []);
 
   const groups = useMemo(() => {
     const visas =
@@ -150,6 +160,9 @@ export default function VisasScreen() {
                 <View style={styles.cardList}>
                   {items.map((v) => {
                     const open = expanded === `${category}-${v.code}`;
+                    const times = getTimesForCode(snapshot, v.code);
+                    // Pick the fastest stream's p50 for the collapsed badge
+                    const fastestTime = times.length > 0 ? times[0] : null;
                     return (
                       <View key={v.code} style={styles.card}>
                         <TouchableOpacity
@@ -173,9 +186,20 @@ export default function VisasScreen() {
                               </View>
                             </View>
                             <Text style={styles.cardName}>{v.name}</Text>
-                            <Text style={styles.cardStreamsHint} numberOfLines={1}>
-                              {v.subclasses.length} stream{v.subclasses.length > 1 ? 's' : ''} · {v.conditions.length} conditions
-                            </Text>
+                            {fastestTime && (
+                              <View style={styles.timeBadgeRow}>
+                                <Ionicons name="time-outline" size={11} color={meta.color} />
+                                <Text style={[styles.timeBadgeText, { color: meta.color }]}>
+                                  {times.length > 1
+                                    ? `${fastestTime.p50} – ${times[times.length - 1].p50}`
+                                    : fastestTime.p50}
+                                  {' '}median
+                                </Text>
+                                {times.length > 1 && (
+                                  <Text style={styles.timeBadgeStreams}>({times.length} streams)</Text>
+                                )}
+                              </View>
+                            )}
                           </View>
                           <Ionicons
                             name={open ? 'chevron-up' : 'chevron-down'}
@@ -186,7 +210,32 @@ export default function VisasScreen() {
 
                         {open && (
                           <View style={styles.cardBody}>
-                            <Text style={styles.bodyLabel}>Streams</Text>
+                            {/* Processing time stats */}
+                            {times.length > 0 && (
+                              <View style={styles.timesSection}>
+                                <Text style={styles.bodyLabel}>Processing Times</Text>
+                                {times.map((t) => (
+                                  <View key={`${t.subclass}|${t.stream ?? ''}`} style={styles.timeRow}>
+                                    {t.stream && (
+                                      <Text style={styles.timeStream}>{t.stream}</Text>
+                                    )}
+                                    <View style={styles.timeStats}>
+                                      <View style={styles.timeStat}>
+                                        <Text style={styles.timeStatLabel}>Median (50%)</Text>
+                                        <Text style={[styles.timeStatValue, { color: meta.color }]}>{t.p50}</Text>
+                                      </View>
+                                      <View style={styles.timeStatDivider} />
+                                      <View style={styles.timeStat}>
+                                        <Text style={styles.timeStatLabel}>90% within</Text>
+                                        <Text style={styles.timeStatValue}>{t.p90}</Text>
+                                      </View>
+                                    </View>
+                                  </View>
+                                ))}
+                              </View>
+                            )}
+
+                            <Text style={[styles.bodyLabel, times.length > 0 ? { marginTop: Spacing.md } : {}]}>Streams</Text>
                             <View style={styles.streamList}>
                               {v.subclasses.map((s) => (
                                 <View key={s} style={[styles.streamChip, { borderColor: meta.color + '40' }]}>
@@ -333,7 +382,11 @@ const styles = StyleSheet.create({
   typeTextPerm: { color: Colors.success },
   typeTextTemp: { color: Colors.accent },
   cardName: { fontSize: FontSize.sm, fontWeight: FontWeight.semiBold as any, color: Colors.textPrimary },
-  cardStreamsHint: { fontSize: 11, color: Colors.textMuted, marginTop: 2 },
+
+  /* Processing time inline badge (collapsed) */
+  timeBadgeRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 3 },
+  timeBadgeText: { fontSize: 11, fontWeight: '700' },
+  timeBadgeStreams: { fontSize: 10, color: Colors.textMuted },
 
   /* Expanded body */
   cardBody: {
@@ -346,6 +399,21 @@ const styles = StyleSheet.create({
     color: Colors.textMuted, textTransform: 'uppercase', letterSpacing: 0.5,
     marginTop: Spacing.md, marginBottom: Spacing.sm,
   },
+
+  /* Processing time stats (expanded) */
+  timesSection: { gap: 8 },
+  timeRow: {
+    backgroundColor: Colors.background,
+    borderRadius: Radius.md,
+    padding: Spacing.sm,
+    gap: 6,
+  },
+  timeStream: { fontSize: 11, fontWeight: '700', color: Colors.textSecondary },
+  timeStats: { flexDirection: 'row', alignItems: 'center' },
+  timeStat: { flex: 1, alignItems: 'center' },
+  timeStatLabel: { fontSize: 9, color: Colors.textMuted, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 3 },
+  timeStatValue: { fontSize: FontSize.md, fontWeight: FontWeight.bold as any, color: Colors.textPrimary },
+  timeStatDivider: { width: 1, height: 22, backgroundColor: Colors.divider, marginHorizontal: Spacing.sm },
   streamList: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   streamChip: {
     paddingHorizontal: 10, paddingVertical: 5,

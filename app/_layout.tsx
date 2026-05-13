@@ -87,19 +87,22 @@ export default function RootLayout() {
         if (!changes.length) return;
         try {
           const Notifications = await import('expo-notifications');
-          const summary =
-            changes.length === 1
-              ? `${changes[0].name} now ${changes[0].after.p50} (was ${changes[0].before.p50})`
-              : `${changes.length} visas updated — tap to see new timeframes`;
-          await Notifications.scheduleNotificationAsync({
-            content: {
-              title: 'Processing times updated',
-              body: summary,
-              data: { route: '/processing-times' },
-              sound: 'default',
-            },
-            trigger: null,
-          });
+          for (const change of changes) {
+            const label = change.stream
+              ? `${change.name} — ${change.stream}`
+              : change.name;
+            const direction =
+              change.after.p50 < change.before.p50 ? '↓ Faster' : '↑ Slower';
+            await Notifications.scheduleNotificationAsync({
+              content: {
+                title: `SC ${change.subclass} processing time changed`,
+                body: `${label}: ${direction} — now ${change.after.p50} (was ${change.before.p50})`,
+                data: { route: '/processing-times' },
+                sound: 'default',
+              },
+              trigger: null,
+            });
+          }
         } catch (e) {
           console.warn('[processing-times] notify failed:', e);
         }

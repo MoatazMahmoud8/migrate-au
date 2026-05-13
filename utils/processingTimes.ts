@@ -18,8 +18,6 @@ import {
   PROCESSING_TIMES,
   ProcessingTime,
 } from '../constants/processingTimes';
-
-// Replace with your published JSON URL once the scraper is deployed.
 // Schema: { snapshotDate: string, items: ProcessingTime[] }
 export const PROCESSING_TIMES_REMOTE_URL =
   'https://migrateau.jsmglobal.xyz/processing-times.json';
@@ -120,4 +118,22 @@ export async function refreshProcessingTimes(
     console.warn('[processingTimes] refresh failed:', err);
     return { updated: false, snapshot: await getProcessingTimes(), changes: [] };
   }
+}
+
+/**
+ * Given a visa pathway code (e.g. '482', '820 / 801', '309/100'),
+ * return all matching ProcessingTime entries from the current snapshot.
+ *
+ * Matching is done by extracting each numeric code segment and comparing
+ * against the subclass field (ignoring spacing and slash variants).
+ */
+export function getTimesForCode(
+  snapshot: { items: ProcessingTime[] },
+  code: string
+): ProcessingTime[] {
+  // Extract individual subclass numbers: '820 / 801' → ['820', '801']
+  const codes = code.split(/[\/\s–-]+/).map((c) => c.trim()).filter(Boolean);
+  return snapshot.items.filter((p) =>
+    codes.some((c) => p.subclass.replace(/[\/\s]/g, '').startsWith(c))
+  );
 }
