@@ -16,10 +16,11 @@ import { getProfile, saveProfile } from '../../utils/storage';
 import { UserProfile } from '../../constants/types';
 import { Colors, Spacing, Radius, FontSize, FontWeight } from '../../constants/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { checkRenewalStatus } from '../../utils/billing';
 import { restorePurchases, getRevenueCatUserId, syncSubscriptionStatus } from '../../utils/iap';
 import PaywallModal from '../../components/PaywallModal';
-import { success as hapticSuccess, tap as hapticTap } from '../../utils/haptics';
+import { tap as hapticTap } from '../../utils/haptics';\nimport { SKILLED_OCCUPATIONS } from '../../constants/skilledOccupations';
 
 const JOURNEY_STAGES = [
   { key: 'assess', label: 'Assess',   desc: 'Skills assessment & English test preparation' },
@@ -48,6 +49,7 @@ export default function ProfileScreen() {
   const [rcUserId, setRcUserId] = useState<string>('');
   const [restoring, setRestoring] = useState(false);
   const insets = useSafeAreaInsets();
+  const router = useRouter();
 
   useEffect(() => {
     getProfile().then((p) => {
@@ -310,12 +312,26 @@ export default function ProfileScreen() {
           <SettingRow
             icon="briefcase-outline"
             label="ANZSCO Occupation"
-            value={profile.isPremium ? (profile.anzscoCode || 'Not set') : 'Premium only'}
-            locked={!profile.isPremium}
-            onPress={profile.isPremium ? undefined : handleUpgrade}
+            value={
+              profile.anzscoCode
+                ? (() => {
+                    const occ = SKILLED_OCCUPATIONS.find((o) => o.anzsco === profile.anzscoCode);
+                    return occ ? `${profile.anzscoCode} · ${occ.name}` : profile.anzscoCode;
+                  })()
+                : 'Search occupation lists'
+            }
+            onPress={() => router.push('/occupations')}
+            showArrow
           />
           <SettingRow icon="notifications-outline" label="State migration news" badge="Soon" />
-          <SettingRow icon="alert-circle-outline" label="Occupation list changes" badge="Soon" last />
+          <SettingRow
+            icon="alert-circle-outline"
+            label="Occupation list changes"
+            value="Active"
+            onPress={() => router.push('/occupations')}
+            showArrow
+            last
+          />
         </View>
       </View>
 
@@ -339,7 +355,7 @@ export default function ProfileScreen() {
           <SettingRow
             icon="list-outline"
             label="Skills Occupation List"
-            onPress={() => Linking.openURL('https://immi.homeaffairs.gov.au/visas/working-in-australia/skill-occupation-list')}
+            onPress={() => router.push('/occupations')}
             showArrow
             last
           />

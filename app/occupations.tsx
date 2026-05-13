@@ -29,7 +29,8 @@ import {
   refreshSkilledOccupations,
   searchOccupations,
 } from '../utils/skilledOccupations';
-import { tap as hapticTap } from '../utils/haptics';
+import { tap as hapticTap, success as hapticSuccess } from '../utils/haptics';
+import { getProfile, saveProfile } from '../utils/storage';
 
 type ListFilter = 'All' | SkillList;
 type JurisdictionFilter = 'All' | 'Federal' | StateCode;
@@ -91,6 +92,7 @@ export default function OccupationsScreen() {
     return (STATE_CODES as string[]).includes(p) ? (p as StateCode) : 'All';
   });
   const [selected, setSelected] = useState<SkilledOccupation | null>(null);
+  const [savedAnzsco, setSavedAnzsco] = useState<string>('');
 
   useEffect(() => {
     (async () => {
@@ -98,8 +100,17 @@ export default function OccupationsScreen() {
       setItems(snap.items);
       setSnapshotDate(snap.snapshotDate);
       setLastChecked(await getOccupationsLastCheckedAt());
+      const p = await getProfile();
+      setSavedAnzsco(p.anzscoCode ?? '');
     })();
   }, []);
+
+  const handleSetOccupation = async (o: SkilledOccupation) => {
+    const code = savedAnzsco === o.anzsco ? '' : o.anzsco;
+    await saveProfile({ anzscoCode: code });
+    setSavedAnzsco(code);
+    hapticSuccess();
+  };
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -272,7 +283,7 @@ export default function OccupationsScreen() {
           keyboardShouldPersistTaps="handled"
           renderItem={({ item }) => (
             <TouchableOpacity
-              style={styles.card}
+              style={[styles.card, savedAnzsco === item.anzsco && styles.cardSaved]}
               activeOpacity={0.85}
               onPress={() => { hapticTap(); setSelected(item); }}
             >
@@ -284,7 +295,10 @@ export default function OccupationsScreen() {
                   <Text style={styles.cardName} numberOfLines={2}>{item.name}</Text>
                   <Text style={styles.cardGroup}>{item.group}</Text>
                 </View>
-                <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} />
+                {savedAnzsco === item.anzsco
+                  ? <Ionicons name="checkmark-circle" size={18} color={Colors.success} />
+                  : <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} />
+                }
               </View>
               <View style={styles.cardFoot}>
                 <View style={styles.chipRow}>
@@ -409,8 +423,27 @@ export default function OccupationsScreen() {
                     </>
                   )}
 
+                  {/* Set as my occupation */}
                   <TouchableOpacity
-                    style={styles.modalCta}
+                    style={[
+                      styles.modalCta,
+                      savedAnzsco === selected.anzsco && styles.modalCtaSaved,
+                    ]}
+                    activeOpacity={0.85}
+                    onPress={() => handleSetOccupation(selected)}
+                  >
+                    <Ionicons
+                      name={savedAnzsco === selected.anzsco ? 'checkmark-circle' : 'bookmark-outline'}
+                      size={14}
+                      color={savedAnzsco === selected.anzsco ? Colors.primaryDark : Colors.primaryDark}
+                    />
+                    <Text style={styles.modalCtaText}>
+                      {savedAnzsco === selected.anzsco ? 'My occupation ✓' : 'Set as my occupation'}
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.modalCta, styles.modalCtaSecondary]}
                     activeOpacity={0.85}
                     onPress={() =>
                       Linking.openURL(
@@ -418,8 +451,8 @@ export default function OccupationsScreen() {
                       )
                     }
                   >
-                    <Ionicons name="open-outline" size={14} color={Colors.primaryDark} />
-                    <Text style={styles.modalCtaText}>View on DHA</Text>
+                    <Ionicons name="open-outline" size={14} color={Colors.textSecondary} />
+                    <Text style={[styles.modalCtaText, { color: Colors.textSecondary }]}>View on DHA</Text>
                   </TouchableOpacity>
                 </ScrollView>
               </>
@@ -530,6 +563,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.border,
   },
+  cardSaved: {
+    borderColor: Colors.success,
+    backgroundColor: `${Colors.success}0D`,
+  },
   cardHead: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   codePill: {
     paddingHorizontal: 8, paddingVertical: 4,
@@ -631,6 +668,15 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: Radius.md,
     backgroundColor: Colors.secondary,
+  },
+  modalCtaSaved: {
+    backgroundColor: Colors.success,
+  },
+  modalCtaSecondary: {
+    marginTop: Spacing.sm,
+    backgroundColor: Colors.glass,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
   modalCtaText: { color: Colors.primaryDark, fontWeight: FontWeight.bold, fontSize: FontSize.sm },
 });
