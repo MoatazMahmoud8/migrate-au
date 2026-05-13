@@ -18,36 +18,6 @@ import SearchModal from '../../components/SearchModal';
 
 const { width, height } = Dimensions.get('window');
 
-const VISA_CARDS = [
-  {
-    subclass: '189',
-    name: 'Skilled Independent',
-    desc: 'No sponsorship. Apply anywhere.',
-    minPts: 65,
-    gradient: ['#0047AB', '#002D62'] as [string, string],
-    icon: 'globe-outline',
-    type: 'Skilled',
-  },
-  {
-    subclass: '190',
-    name: 'Skilled Nominated',
-    desc: 'State sponsorship. +5 points.',
-    minPts: 65,
-    gradient: ['#005C99', '#003366'] as [string, string],
-    icon: 'location-outline',
-    type: 'Skilled',
-  },
-  {
-    subclass: '491',
-    name: 'Work Regional',
-    desc: 'Regional sponsorship. +15 points.',
-    minPts: 65,
-    gradient: ['#006080', '#003344'] as [string, string],
-    icon: 'map-outline',
-    type: 'Skilled',
-  },
-];
-
 const QUICK_TILES = [
   { icon: 'book-outline',     label: 'English Tests', route: '/(tabs)/english-tests', color: Colors.success,   bg: 'rgba(0,214,143,0.12)' },
   { icon: 'list-outline',     label: 'Skills List',   route: '/occupations', color: Colors.accent, bg: 'rgba(0,194,255,0.12)' },
@@ -401,63 +371,6 @@ export default function HomeScreen() {
         ))}
       </View>
 
-      {/* Visa Pathway Cards */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Visa Pathways</Text>
-          <View style={styles.sectionPill}>
-            <Text style={styles.sectionPillText}>3 options</Text>
-          </View>
-        </View>
-
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.cardsScroll}
-          decelerationRate="fast"
-          snapToInterval={width * 0.75 + Spacing.md}
-          snapToAlignment="start"
-        >
-          {VISA_CARDS.map((v) => (
-            <PressableCard
-              key={v.subclass}
-              onPress={() => router.push('/(tabs)/calculator')}
-            >
-              <LinearGradient
-                colors={v.gradient}
-                style={styles.visaCard}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-              >
-                <View style={styles.cardShine} />
-
-                <View style={styles.visaTop}>
-                  <View style={styles.visaIconWrap}>
-                    <Ionicons name={v.icon as any} size={22} color="rgba(255,255,255,0.9)" />
-                  </View>
-                  <View style={styles.visaBadge}>
-                    <Text style={styles.visaBadgeText}>SC {v.subclass}</Text>
-                  </View>
-                </View>
-
-                <Text style={styles.visaName}>{v.name}</Text>
-                <Text style={styles.visaDesc}>{v.desc}</Text>
-
-                <View style={styles.visaFooter}>
-                  <View>
-                    <Text style={styles.visaPtsLabel}>Min. points</Text>
-                    <Text style={styles.visaPtsNum}>{v.minPts}</Text>
-                  </View>
-                  <View style={styles.visaArrow}>
-                    <Ionicons name="arrow-forward" size={16} color="rgba(255,255,255,0.7)" />
-                  </View>
-                </View>
-              </LinearGradient>
-            </PressableCard>
-          ))}
-        </ScrollView>
-      </View>
-
       {/* Processing Times */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
@@ -678,53 +591,6 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   sectionPillText: { fontSize: FontSize.xs, color: Colors.textMuted },
-
-  cardsScroll: { gap: Spacing.md, paddingRight: Spacing.lg },
-  visaCard: {
-    width: width * 0.75,
-    borderRadius: Radius.xl,
-    padding: Spacing.xl,
-    overflow: 'hidden',
-  },
-  cardShine: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: '50%',
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderTopLeftRadius: Radius.xl,
-    borderTopRightRadius: Radius.xl,
-  },
-  visaTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: Spacing.xl },
-  visaIconWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: Radius.md,
-    backgroundColor: 'rgba(255,255,255,0.12)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  visaBadge: {
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs,
-    borderRadius: Radius.full,
-  },
-  visaBadgeText: { color: Colors.white, fontSize: FontSize.xs, fontWeight: FontWeight.bold },
-  visaName: { color: Colors.white, fontSize: FontSize.lg, fontWeight: FontWeight.bold, marginBottom: Spacing.xs },
-  visaDesc: { color: 'rgba(255,255,255,0.65)', fontSize: FontSize.sm, lineHeight: 20, marginBottom: Spacing.xl },
-  visaFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' },
-  visaPtsLabel: { color: 'rgba(255,255,255,0.5)', fontSize: FontSize.xs },
-  visaPtsNum: { color: Colors.secondary, fontSize: FontSize.xxl, fontWeight: FontWeight.extraBold },
-  visaArrow: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255,255,255,0.12)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
 
   // English Tests card
   englishCard: {

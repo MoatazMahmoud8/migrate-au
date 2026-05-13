@@ -52,6 +52,11 @@ Notifications.setNotificationHandler({
 // ─── Initialisation (call once on app start) ─────────────────────────────────
 
 export async function initNotifications(subscribedStates: string[] = []) {
+  // Native-only: @react-native-firebase/messaging has no web implementation.
+  if (Platform.OS === 'web') {
+    console.log('[notifications] skipped on web');
+    return false;
+  }
   try {
     // 1. Request permission
     const granted = await requestPermission();
@@ -209,6 +214,11 @@ export function subscribeToFeed(
   onUpdate: (notifications: AppNotification[]) => void,
   limit = 30
 ): () => void {
+  // Native-only: @react-native-firebase/firestore has no web implementation.
+  if (Platform.OS === 'web') {
+    onUpdate([]);
+    return () => {};
+  }
   return firestore()
     .collection('notifications')
     .orderBy('timestamp', 'desc')
@@ -227,6 +237,7 @@ export function subscribeToFeed(
 
 /** Mark a notification as read in Firestore */
 export async function markAsRead(notificationId: string) {
+  if (Platform.OS === 'web') return;
   await firestore()
     .collection('notifications')
     .doc(notificationId)
@@ -235,6 +246,7 @@ export async function markAsRead(notificationId: string) {
 
 /** Count unread notifications */
 export async function getUnreadCount(): Promise<number> {
+  if (Platform.OS === 'web') return 0;
   const snap = await firestore()
     .collection('notifications')
     .where('read', '==', false)

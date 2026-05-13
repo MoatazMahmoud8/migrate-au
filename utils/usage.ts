@@ -5,6 +5,7 @@
  * Enforces limits and provides upgrade prompts
  */
 
+import { Platform } from 'react-native';
 import firestore from '@react-native-firebase/firestore';
 import { UserSubscription, UsageLimit, SubscriptionTier } from '../types/subscription';
 
@@ -33,6 +34,7 @@ const USAGE_LIMITS: Record<SubscriptionTier, UsageLimit> = {
  * Get current subscription & usage for a user
  */
 export async function getSubscription(userId: string): Promise<UserSubscription | null> {
+  if (Platform.OS === 'web') return null;
   const snap = await firestore()
     .collection('subscriptions')
     .doc(userId)
@@ -49,6 +51,7 @@ export async function recordUsage(
   userId: string,
   feature: 'calculation' | 'ai_message' | 'export' | 'anzsco_search'
 ): Promise<boolean> {
+  if (Platform.OS === 'web') return true;
   const sub = await getSubscription(userId);
   if (!sub) {
     // First-time user → create free subscription
@@ -91,6 +94,7 @@ export async function getRemainingUsage(
   userId: string,
   feature: 'calculation' | 'ai_message' | 'export' | 'anzsco_search'
 ): Promise<{ remaining: number; limit: number; tier: SubscriptionTier }> {
+  if (Platform.OS === 'web') return { remaining: Infinity, limit: Infinity, tier: 'pro' };
   const sub = await getSubscription(userId);
   if (!sub) {
     // New user = free tier limits
@@ -131,6 +135,7 @@ export async function canUseFeature(
   reason?: 'free_tier' | 'limit_reached';
   upgrade?: boolean;
 }> {
+  if (Platform.OS === 'web') return { allowed: true };
   const sub = await getSubscription(userId);
   if (!sub) return { allowed: feature === 'calculator', reason: 'free_tier' };
 
@@ -178,6 +183,7 @@ async function initializeSubscription(userId: string) {
  * Reset monthly usage counters if month has changed
  */
 export async function resetMonthlyUsageIfNeeded(userId: string) {
+  if (Platform.OS === 'web') return;
   const sub = await getSubscription(userId);
   if (!sub) return;
 
