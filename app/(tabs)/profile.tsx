@@ -14,22 +14,58 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { getProfile, saveProfile } from '../../utils/storage';
-import { UserProfile } from '../../constants/types';
+import { UserProfile, JourneyEntry, JourneyStageKey, JourneyVisaType } from '../../constants/types';
 import { Colors, Spacing, Radius, FontSize, FontWeight } from '../../constants/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { checkRenewalStatus } from '../../utils/billing';
 import { restorePurchases, getRevenueCatUserId, syncSubscriptionStatus } from '../../utils/iap';
 import PaywallModal from '../../components/PaywallModal';
-import { tap as hapticTap } from '../../utils/haptics';\nimport { SKILLED_OCCUPATIONS } from '../../constants/skilledOccupations';
+import { tap as hapticTap, success as hapticSuccess } from '../../utils/haptics';
+import { SKILLED_OCCUPATIONS } from '../../constants/skilledOccupations';
 
-const JOURNEY_STAGES = [
-  { key: 'assess', label: 'Assess',   desc: 'Skills assessment & English test preparation' },
-  { key: 'eoi',    label: 'EOI',      desc: 'Submit Expression of Interest on SkillSelect' },
-  { key: 'invite', label: 'Invite',   desc: 'Received Invitation to Apply (ITA)' },
-  { key: 'apply',  label: 'Apply',    desc: 'Lodge visa application with Home Affairs' },
-  { key: 'grant',  label: 'Granted',  desc: '🎉 Visa granted — welcome to Australia!' },
+const JOURNEY_STAGES: Array<{ key: JourneyStageKey; label: string; desc: string }> = [
+  { key: 'assess', label: 'Skills Assessment', desc: 'Skills assessment & English test preparation' },
+  { key: 'eoi',    label: 'EOI Submitted',     desc: 'Expression of Interest on SkillSelect' },
+  { key: 'invite', label: 'Invited (ITA)',      desc: 'Received Invitation to Apply' },
+  { key: 'apply',  label: 'Application Lodged', desc: 'Lodge visa application with Home Affairs' },
+  { key: 'grant',  label: 'Visa Granted',       desc: '\uD83C\uDF89 Visa granted \u2014 welcome to Australia!' },
 ];
+
+const VISA_TYPES: JourneyVisaType[] = ['189', '190', '491', '186', '482', '408', 'Other'];
+const STATE_OPTS = ['Federal', 'NSW', 'VIC', 'QLD', 'WA', 'SA', 'TAS', 'ACT', 'NT'];
+
+const VISA_COLORS: Record<string, string> = {
+  '189': '#00C2FF', '190': '#00D68F', '491': '#FFB800',
+  '186': '#FF6B8A', '482': '#A78BFA', '408': '#FF7043', 'Other': '#94A3B8',
+};
+function visaColor(v: string) { return VISA_COLORS[v] ?? '#94A3B8'; }
+
+function formatJourneyDate(iso: string): string {
+  try {
+    return new Date(iso).toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' });
+  } catch { return iso; }
+}
+function parseInputDate(input: string): string | null {
+  const m = input.trim().match(/^(\d{1,2})[/\-](\d{1,2})[/\-](\d{4})$/);
+  if (!m) return null;
+  const d = new Date(+m[3], +m[2] - 1, +m[1]);
+  return isNaN(d.getTime()) ? null : d.toISOString().split('T')[0];
+}
+function dateToInput(iso: string): string {
+  try {
+    const d = new Date(iso);
+    return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+  } catch { return iso; }
+}
+function daysBetween(a: string, b: string): number {
+  return Math.round(Math.abs(new Date(b).getTime() - new Date(a).getTime()) / 86400000);
+}
+function daysLabel(n: number): string {
+  if (n < 31) return `${n}d`;
+  if (n < 365) return `${Math.round(n / 30.5)}mo`;
+  return `${(n / 365).toFixed(1)}yr`;
+}
 
 export default function ProfileScreen() {
   const [profile, setProfile] = useState<UserProfile>({
@@ -39,6 +75,7 @@ export default function ProfileScreen() {
     subscribedStates: [],
     subscribedOccupation: '',
     journeyStage: 0,
+    journeyEntries: [],
     pinnedStates: [],
     onboardingComplete: false,
   });
@@ -50,12 +87,23 @@ export default function ProfileScreen() {
   const [rcUserId, setRcUserId] = useState<string>('');
   const [restoring, setRestoring] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
-  const insets = useSafeAreaInsets();
+  // Journey
+  const [journeyEntries, setJourneyEntries] = useState<JourneyEntry[]>([]);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [showAddJourney, setShowAddJourney] = useState(false);
+  const [newVisa, setNewVisa] = useState<JourneyVisaType>('189');
+  const [newState, setNewState] = useState('Federal');
+  const [newAnzsco, setNewAnzsco] = useState('');
+  const [showDateModal, setShowDateModal] = useState(false);
+  const [dateTarget, setDateTarget] = useState<{ entryId: string; stageKey: JourneyStageKey } | null>(null);
+  const [dateInput, setDateInput] = useState('');
   const router = useRouter();
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     getProfile().then((p) => {
       setProfile(p);
+      setJourneyEntries(p.journeyEntries ?? []);
       if (p.isPremium) {
         getRevenueCatUserId().then((uid) => {
           checkRenewalStatus(uid).then((res) => {
@@ -83,6 +131,83 @@ export default function ProfileScreen() {
 
   const handleUpgrade = () => setShowPaywall(true);
 
+  // Journey helpers
+  const addJourneyEntry = async () => {
+    const trimmed = newAnzsco.trim();
+    const occ = trimmed
+      ? SKILLED_OCCUPATIONS.find(
+          (o) => o.anzsco === trimmed ||
+            o.name.toLowerCase().includes(trimmed.toLowerCase())
+        )
+      : undefined;
+    const entry: JourneyEntry = {
+      id: Date.now().toString(),
+      visaType: newVisa,
+      anzscoCode: occ?.anzsco || (trimmed || undefined),
+      occupationName: occ?.name || undefined,
+      state: newState === 'Federal' ? undefined : newState,
+      currentStage: 0,
+      stageDates: {},
+      createdAt: new Date().toISOString(),
+    };
+    const updated = [...journeyEntries, entry];
+    setJourneyEntries(updated);
+    await saveProfile({ journeyEntries: updated });
+    setShowAddJourney(false);
+    setNewVisa('189'); setNewState('Federal'); setNewAnzsco('');
+    setExpandedId(entry.id);
+    hapticSuccess();
+  };
+
+  const deleteJourneyEntry = (id: string) => {
+    Alert.alert('Remove Journey', 'Remove this visa application journey?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Remove', style: 'destructive', onPress: async () => {
+          const updated = journeyEntries.filter((e) => e.id !== id);
+          setJourneyEntries(updated);
+          await saveProfile({ journeyEntries: updated });
+          if (expandedId === id) setExpandedId(null);
+        },
+      },
+    ]);
+  };
+
+  const advanceStage = async (entryId: string, stage: number) => {
+    const updated = journeyEntries.map((e) =>
+      e.id === entryId ? { ...e, currentStage: stage } : e
+    );
+    setJourneyEntries(updated);
+    await saveProfile({ journeyEntries: updated });
+    hapticSuccess();
+  };
+
+  const openDateModal = (entryId: string, stageKey: JourneyStageKey) => {
+    const entry = journeyEntries.find((e) => e.id === entryId);
+    const existing = entry?.stageDates?.[stageKey];
+    setDateTarget({ entryId, stageKey });
+    setDateInput(existing ? dateToInput(existing) : '');
+    setShowDateModal(true);
+  };
+
+  const saveStageDateInput = async () => {
+    if (!dateTarget) return;
+    const iso = parseInputDate(dateInput);
+    if (!iso && dateInput.trim()) {
+      Alert.alert('Invalid date', 'Please enter the date as DD/MM/YYYY');
+      return;
+    }
+    const updated = journeyEntries.map((e) =>
+      e.id === dateTarget.entryId
+        ? { ...e, stageDates: { ...e.stageDates, [dateTarget.stageKey]: iso ?? undefined } }
+        : e
+    );
+    setJourneyEntries(updated);
+    await saveProfile({ journeyEntries: updated });
+    setShowDateModal(false);
+    hapticSuccess();
+  };
+
   const handleRestore = async () => {
     setRestoring(true);
     try {
@@ -95,13 +220,6 @@ export default function ProfileScreen() {
     } finally {
       setRestoring(false);
     }
-  };
-
-  const handleJourneyStage = async (stage: number) => {
-    const updated = { ...profile, journeyStage: stage };
-    await saveProfile({ journeyStage: stage });
-    setProfile(updated);
-    hapticSuccess();
   };
 
   const initials = profile.name
@@ -167,52 +285,131 @@ export default function ProfileScreen() {
 
       {/* My Journey */}
       <View style={styles.section}>
-        <Text style={styles.sectionLabel}>My Journey</Text>
-        <View style={styles.journeyCard}>
-          <Text style={styles.journeyHint}>Tap your current stage to update progress</Text>
-          <View style={styles.journeyTrack}>
-            {JOURNEY_STAGES.map((stage, index) => {
-              const isCompleted = index < (profile.journeyStage ?? 0);
-              const isCurrent   = index === (profile.journeyStage ?? 0);
-              return (
-                <React.Fragment key={stage.key}>
-                  <TouchableOpacity
-                    style={styles.journeyStep}
-                    onPress={() => handleJourneyStage(index)}
-                    activeOpacity={0.7}
-                  >
-                    <View style={[
-                      styles.journeyDot,
-                      isCompleted && styles.journeyDotDone,
-                      isCurrent   && styles.journeyDotActive,
-                    ]}>
-                      {isCompleted
-                        ? <Ionicons name="checkmark" size={12} color={Colors.primaryDark} />
-                        : <Text style={[styles.journeyDotNum, isCurrent && { color: Colors.primaryDark }]}>{index + 1}</Text>
-                      }
-                    </View>
-                    <Text style={[
-                      styles.journeyLabel,
-                      isCurrent   && styles.journeyLabelActive,
-                      isCompleted && styles.journeyLabelDone,
-                    ]}>{stage.label}</Text>
-                  </TouchableOpacity>
-                  {index < JOURNEY_STAGES.length - 1 && (
-                    <View style={[styles.journeyLine, isCompleted && styles.journeyLineDone]} />
-                  )}
-                </React.Fragment>
-              );
-            })}
-          </View>
-          <View style={styles.journeyDetail}>
-            <Text style={styles.journeyDetailTitle}>
-              {JOURNEY_STAGES[profile.journeyStage ?? 0].label}
-            </Text>
-            <Text style={styles.journeyDetailSub}>
-              {JOURNEY_STAGES[profile.journeyStage ?? 0].desc}
-            </Text>
-          </View>
+        <View style={jStyles.sectionHeader}>
+          <Text style={styles.sectionLabel}>My Journey</Text>
+          <TouchableOpacity style={jStyles.addBtn} onPress={() => setShowAddJourney(true)} activeOpacity={0.8}>
+            <Ionicons name="add" size={15} color={Colors.primaryDark} />
+            <Text style={jStyles.addBtnText}>Add</Text>
+          </TouchableOpacity>
         </View>
+
+        {journeyEntries.length === 0 && (
+          <TouchableOpacity style={jStyles.emptyCard} onPress={() => setShowAddJourney(true)} activeOpacity={0.8}>
+            <Ionicons name="map-outline" size={28} color={Colors.textMuted} />
+            <Text style={jStyles.emptyTitle}>Track your visa journey</Text>
+            <Text style={jStyles.emptyDesc}>Add a visa application to track your progress and key milestone dates</Text>
+          </TouchableOpacity>
+        )}
+
+        {journeyEntries.map((entry) => {
+          const isOpen = expandedId === entry.id;
+          const color = visaColor(entry.visaType);
+          return (
+            <View key={entry.id} style={[jStyles.entryCard, isOpen && { borderColor: color }]}>
+              {/* Card header */}
+              <TouchableOpacity
+                style={jStyles.entryHeader}
+                onPress={() => { hapticTap(); setExpandedId(isOpen ? null : entry.id); }}
+                activeOpacity={0.8}
+              >
+                <View style={[jStyles.visaBadge, { backgroundColor: `${color}22`, borderColor: color }]}>
+                  <Text style={[jStyles.visaBadgeText, { color }]}>SC {entry.visaType}</Text>
+                </View>
+                {entry.state && (
+                  <View style={jStyles.stateBadge}>
+                    <Text style={jStyles.stateBadgeText}>{entry.state}</Text>
+                  </View>
+                )}
+                <View style={{ flex: 1 }}>
+                  {(entry.anzscoCode || entry.occupationName) && (
+                    <Text style={jStyles.entryAnzsco} numberOfLines={1}>
+                      {entry.anzscoCode}{entry.occupationName ? ` · ${entry.occupationName}` : ''}
+                    </Text>
+                  )}
+                  <Text style={[jStyles.entryStage, { color: isOpen ? color : Colors.textSecondary }]} numberOfLines={1}>
+                    {JOURNEY_STAGES[entry.currentStage]?.label ?? 'Skills Assessment'}
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  onPress={() => deleteJourneyEntry(entry.id)}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                >
+                  <Ionicons name="trash-outline" size={15} color={Colors.error} />
+                </TouchableOpacity>
+                <Ionicons name={isOpen ? 'chevron-up' : 'chevron-down'} size={16} color={Colors.textMuted} />
+              </TouchableOpacity>
+
+              {/* Expanded stage list */}
+              {isOpen && (
+                <View style={jStyles.stageList}>
+                  {JOURNEY_STAGES.map((stage, idx) => {
+                    const isCompleted = idx < entry.currentStage;
+                    const isCurrent   = idx === entry.currentStage;
+                    const date    = entry.stageDates?.[stage.key];
+                    const prevKey = idx > 0 ? JOURNEY_STAGES[idx - 1].key : null;
+                    const prevDate = prevKey ? entry.stageDates?.[prevKey] : null;
+                    const gap = date && prevDate ? daysBetween(prevDate, date) : null;
+                    return (
+                      <View key={stage.key} style={jStyles.stageRow}>
+                        {/* Dot + line connector */}
+                        <View style={jStyles.stageConnector}>
+                          <View style={[
+                            jStyles.stageDot,
+                            isCompleted && { backgroundColor: Colors.success, borderColor: Colors.success },
+                            isCurrent   && { backgroundColor: color,          borderColor: color },
+                          ]}>
+                            {isCompleted
+                              ? <Ionicons name="checkmark" size={10} color="#fff" />
+                              : <Text style={[jStyles.stageDotNum, isCurrent && { color: '#fff' }]}>{idx + 1}</Text>
+                            }
+                          </View>
+                          {idx < JOURNEY_STAGES.length - 1 && (
+                            <View style={[jStyles.stageLine, isCompleted && { backgroundColor: Colors.success }]} />
+                          )}
+                        </View>
+
+                        {/* Stage content */}
+                        <View style={jStyles.stageInfo}>
+                          <TouchableOpacity
+                            style={jStyles.stageNameRow}
+                            onPress={() => advanceStage(entry.id, idx)}
+                            activeOpacity={0.75}
+                          >
+                            <Text style={[
+                              jStyles.stageName,
+                              isCompleted && { color: Colors.success },
+                              isCurrent   && { color, fontWeight: FontWeight.bold },
+                            ]}>{stage.label}</Text>
+                            {isCurrent && (
+                              <View style={[jStyles.currentBadge, { backgroundColor: `${color}22`, borderColor: color }]}>
+                                <Text style={[jStyles.currentBadgeText, { color }]}>Current</Text>
+                              </View>
+                            )}
+                          </TouchableOpacity>
+                          <TouchableOpacity onPress={() => openDateModal(entry.id, stage.key)} activeOpacity={0.7}>
+                            {date ? (
+                              <View style={jStyles.datePill}>
+                                <Ionicons name="calendar-outline" size={11} color={Colors.accent} />
+                                <Text style={jStyles.datePillText}>{formatJourneyDate(date)}</Text>
+                                {gap !== null && (
+                                  <View style={jStyles.gapPill}>
+                                    <Text style={jStyles.gapText}>+{daysLabel(gap)}</Text>
+                                  </View>
+                                )}
+                              </View>
+                            ) : (
+                              <Text style={jStyles.addDateText}>+ Add date</Text>
+                            )}
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    );
+                  })}
+                </View>
+              )}
+            </View>
+          );
+        })}
       </View>
 
       {/* Subscription card */}
@@ -322,14 +519,14 @@ export default function ProfileScreen() {
                   })()
                 : 'Search occupation lists'
             }
-            onPress={() => router.push('/occupations')}
+            onPress={() => router.push('/occupations' as any)}
             showArrow
           />
           <SettingRow
             icon="alert-circle-outline"
             label="Occupation list changes"
             value="Active"
-            onPress={() => router.push('/occupations')}
+            onPress={() => router.push('/occupations' as any)}
             showArrow
             last
           />
@@ -356,7 +553,7 @@ export default function ProfileScreen() {
           <SettingRow
             icon="list-outline"
             label="Skills Occupation List"
-            onPress={() => router.push('/occupations')}
+            onPress={() => router.push('/occupations' as any)}
             showArrow
             last
           />
@@ -422,6 +619,134 @@ export default function ProfileScreen() {
         animationType="slide"
         onRequestClose={() => setShowFeedback(false)}
       >
+
+      {/* Add Journey modal */}
+      <Modal
+        visible={showAddJourney}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowAddJourney(false)}
+      >
+        <View style={jStyles.modalBackdrop}>
+          <View style={[jStyles.modalSheet, { paddingBottom: insets.bottom + 24 }]}>
+            <View style={jStyles.modalHandle} />
+            <Text style={jStyles.modalTitle}>New Visa Journey</Text>
+            <Text style={jStyles.modalSub}>Track progress and dates for one application</Text>
+
+            <Text style={jStyles.fieldLabel}>Visa subclass</Text>
+            <View style={jStyles.pillRow}>
+              {VISA_TYPES.map((v) => {
+                const active = newVisa === v;
+                const c = visaColor(v);
+                return (
+                  <TouchableOpacity
+                    key={v}
+                    style={[jStyles.pill, active && { backgroundColor: `${c}22`, borderColor: c }]}
+                    onPress={() => setNewVisa(v)}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={[jStyles.pillText, active && { color: c }]}>SC {v}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            <Text style={jStyles.fieldLabel}>State / jurisdiction</Text>
+            <View style={jStyles.pillRow}>
+              {STATE_OPTS.map((s) => {
+                const active = newState === s;
+                return (
+                  <TouchableOpacity
+                    key={s}
+                    style={[jStyles.pill, active && { backgroundColor: `${Colors.accent}22`, borderColor: Colors.accent }]}
+                    onPress={() => setNewState(s)}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={[jStyles.pillText, active && { color: Colors.accent }]}>{s}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            <Text style={jStyles.fieldLabel}>ANZSCO code or occupation name <Text style={jStyles.fieldOptional}>(optional)</Text></Text>
+            <TextInput
+              style={jStyles.textInput}
+              value={newAnzsco}
+              onChangeText={setNewAnzsco}
+              placeholder="e.g. 261313 or Software Engineer"
+              placeholderTextColor={Colors.textMuted}
+              returnKeyType="done"
+              autoCapitalize="words"
+            />
+
+            <TouchableOpacity style={jStyles.saveBtn} onPress={addJourneyEntry} activeOpacity={0.85}>
+              <Text style={jStyles.saveBtnText}>Add Journey</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={jStyles.cancelBtn} onPress={() => setShowAddJourney(false)}>
+              <Text style={jStyles.cancelBtnText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Date picker modal */}
+      <Modal
+        visible={showDateModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowDateModal(false)}
+      >
+        <View style={jStyles.dateBackdrop}>
+          <View style={jStyles.dateSheet}>
+            <Text style={jStyles.modalTitle}>
+              {dateTarget ? JOURNEY_STAGES.find(s => s.key === dateTarget.stageKey)?.label : 'Date'}
+            </Text>
+            <Text style={jStyles.modalSub}>Enter the date for this milestone</Text>
+            <TextInput
+              style={[jStyles.textInput, { textAlign: 'center', fontSize: FontSize.lg, letterSpacing: 2 }]}
+              value={dateInput}
+              onChangeText={setDateInput}
+              placeholder="DD/MM/YYYY"
+              placeholderTextColor={Colors.textMuted}
+              keyboardType="numeric"
+              maxLength={10}
+              autoFocus
+              returnKeyType="done"
+              onSubmitEditing={saveStageDateInput}
+            />
+            <View style={jStyles.dateActions}>
+              <TouchableOpacity
+                style={[jStyles.saveBtn, { flex: 1 }]}
+                onPress={saveStageDateInput}
+                activeOpacity={0.85}
+              >
+                <Text style={jStyles.saveBtnText}>Save</Text>
+              </TouchableOpacity>
+              {dateInput.trim() !== '' && (
+                <TouchableOpacity
+                  style={[jStyles.cancelBtn, { flex: 1, marginTop: 0, marginLeft: Spacing.sm }]}
+                  onPress={async () => {
+                    if (!dateTarget) return;
+                    const updated = journeyEntries.map((e) =>
+                      e.id === dateTarget.entryId
+                        ? { ...e, stageDates: { ...e.stageDates, [dateTarget.stageKey]: undefined } }
+                        : e
+                    );
+                    setJourneyEntries(updated);
+                    await saveProfile({ journeyEntries: updated });
+                    setShowDateModal(false);
+                  }}
+                >
+                  <Text style={[jStyles.cancelBtnText, { color: Colors.error }]}>Clear</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+            <TouchableOpacity onPress={() => setShowDateModal(false)} style={{ marginTop: Spacing.sm, alignItems: 'center' }}>
+              <Text style={jStyles.cancelBtnText}>Dismiss</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
         <View style={feedbackStyles.backdrop}>
           <View style={[feedbackStyles.sheet, { paddingBottom: insets.bottom + 24 }]}>
             <View style={feedbackStyles.handle} />
@@ -614,6 +939,122 @@ const feedbackStyles = StyleSheet.create({
   cancelText: { fontSize: FontSize.md, color: Colors.textSecondary, fontWeight: FontWeight.semiBold },
 });
 
+const jStyles = StyleSheet.create({
+  sectionHeader: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: Spacing.sm,
+  },
+  addBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    backgroundColor: Colors.secondary, borderRadius: Radius.full,
+    paddingHorizontal: Spacing.md, paddingVertical: 5,
+  },
+  addBtnText: { fontSize: FontSize.xs, fontWeight: FontWeight.bold, color: Colors.primaryDark },
+
+  emptyCard: {
+    backgroundColor: Colors.surface, borderRadius: Radius.xl,
+    padding: Spacing.xl, borderWidth: 1, borderColor: Colors.border,
+    alignItems: 'center', gap: Spacing.sm,
+  },
+  emptyTitle: { fontSize: FontSize.md, fontWeight: FontWeight.semiBold, color: Colors.textPrimary },
+  emptyDesc:  { fontSize: FontSize.sm, color: Colors.textMuted, textAlign: 'center', lineHeight: 18 },
+
+  entryCard: {
+    backgroundColor: Colors.surface, borderRadius: Radius.xl,
+    borderWidth: 1, borderColor: Colors.border, marginBottom: Spacing.sm, overflow: 'hidden',
+  },
+  entryHeader: {
+    flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
+    paddingHorizontal: Spacing.md, paddingVertical: Spacing.md,
+  },
+  visaBadge: {
+    paddingHorizontal: 8, paddingVertical: 3, borderRadius: Radius.full,
+    borderWidth: 1,
+  },
+  visaBadgeText: { fontSize: FontSize.xs, fontWeight: FontWeight.bold },
+  stateBadge: {
+    paddingHorizontal: 7, paddingVertical: 3,
+    backgroundColor: Colors.glassStrong, borderRadius: Radius.full,
+    borderWidth: 1, borderColor: Colors.border,
+  },
+  stateBadgeText: { fontSize: FontSize.xs, color: Colors.textSecondary, fontWeight: FontWeight.semiBold },
+  entryAnzsco: { fontSize: 10, color: Colors.textMuted },
+  entryStage: { fontSize: FontSize.sm, fontWeight: FontWeight.semiBold },
+
+  stageList: { paddingHorizontal: Spacing.md, paddingBottom: Spacing.md },
+
+  stageRow: { flexDirection: 'row', minHeight: 64 },
+  stageConnector: { width: 32, alignItems: 'center' },
+  stageDot: {
+    width: 24, height: 24, borderRadius: 12,
+    backgroundColor: Colors.background, borderWidth: 2, borderColor: Colors.border,
+    alignItems: 'center', justifyContent: 'center', zIndex: 1,
+  },
+  stageDotNum: { fontSize: 9, fontWeight: '700' as const, color: Colors.textMuted },
+  stageLine: { width: 2, flex: 1, backgroundColor: Colors.border, marginTop: 1, marginBottom: 1 },
+
+  stageInfo: { flex: 1, paddingLeft: Spacing.sm, paddingBottom: Spacing.md },
+  stageNameRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, flexWrap: 'wrap' },
+  stageName: { fontSize: FontSize.sm, color: Colors.textSecondary },
+  currentBadge: {
+    borderRadius: Radius.full, borderWidth: 1,
+    paddingHorizontal: 6, paddingVertical: 1,
+  },
+  currentBadgeText: { fontSize: 9, fontWeight: FontWeight.bold },
+  datePill: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 3, flexWrap: 'wrap' },
+  datePillText: { fontSize: FontSize.xs, color: Colors.accent },
+  gapPill: {
+    backgroundColor: `${Colors.warning}22`, borderRadius: Radius.full,
+    paddingHorizontal: 6, paddingVertical: 1, borderWidth: 1, borderColor: `${Colors.warning}55`,
+  },
+  gapText: { fontSize: 9, color: Colors.warning, fontWeight: FontWeight.bold },
+  addDateText: { fontSize: FontSize.xs, color: Colors.textMuted, marginTop: 3 },
+
+  /* Modals */
+  modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.65)', justifyContent: 'flex-end' },
+  modalSheet: {
+    backgroundColor: Colors.surface, borderTopLeftRadius: Radius.xl, borderTopRightRadius: Radius.xl,
+    paddingHorizontal: Spacing.lg, paddingTop: Spacing.md,
+  },
+  modalHandle: {
+    width: 36, height: 4, borderRadius: 2, backgroundColor: Colors.border,
+    alignSelf: 'center', marginBottom: Spacing.lg,
+  },
+  modalTitle: { fontSize: FontSize.lg, fontWeight: FontWeight.bold, color: Colors.textPrimary },
+  modalSub: { fontSize: FontSize.sm, color: Colors.textMuted, marginTop: 4, marginBottom: Spacing.lg },
+  fieldLabel: { fontSize: FontSize.xs, fontWeight: FontWeight.semiBold, color: Colors.textMuted, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: Spacing.sm },
+  fieldOptional: { fontSize: FontSize.xs, fontWeight: FontWeight.regular ?? '400', color: Colors.textMuted, textTransform: 'none' },
+  pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: Spacing.lg },
+  pill: {
+    paddingHorizontal: 10, paddingVertical: 5, borderRadius: Radius.full,
+    backgroundColor: Colors.glass, borderWidth: 1, borderColor: Colors.border,
+  },
+  pillText: { fontSize: FontSize.xs, color: Colors.textSecondary, fontWeight: FontWeight.semiBold },
+  textInput: {
+    backgroundColor: Colors.background, borderRadius: Radius.md, padding: Spacing.md,
+    fontSize: FontSize.md, color: Colors.textPrimary, borderWidth: 1, borderColor: Colors.border,
+    marginBottom: Spacing.lg,
+  },
+  saveBtn: {
+    backgroundColor: Colors.secondary, borderRadius: Radius.md,
+    paddingVertical: 13, alignItems: 'center', justifyContent: 'center',
+    marginBottom: Spacing.sm,
+  },
+  saveBtnText: { color: Colors.primaryDark, fontWeight: FontWeight.bold, fontSize: FontSize.md },
+  cancelBtn: {
+    backgroundColor: Colors.glass, borderRadius: Radius.md,
+    paddingVertical: 12, alignItems: 'center', justifyContent: 'center',
+    borderWidth: 1, borderColor: Colors.border, marginTop: Spacing.xs,
+  },
+  cancelBtnText: { color: Colors.textSecondary, fontWeight: FontWeight.semiBold, fontSize: FontSize.md },
+
+  dateBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.65)', justifyContent: 'center', paddingHorizontal: Spacing.xl },
+  dateSheet: {
+    backgroundColor: Colors.surface, borderRadius: Radius.xl, padding: Spacing.xl,
+    borderWidth: 1, borderColor: Colors.border,
+  },
+  dateActions: { flexDirection: 'row', gap: Spacing.sm },
+});
+
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
 
@@ -767,83 +1208,21 @@ const styles = StyleSheet.create({
   disclaimerText: { flex: 1, fontSize: FontSize.xs, color: Colors.textMuted, lineHeight: 16 },
   disclaimerLink: { color: Colors.accent, textDecorationLine: 'underline' },
 
-  /* My Journey tracker */
-  journeyCard: {
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.xl,
-    padding: Spacing.lg,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  journeyHint: {
-    fontSize: FontSize.xs,
-    color: Colors.textMuted,
-    textAlign: 'center',
-    marginBottom: Spacing.lg,
-  },
-  journeyTrack: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: Spacing.lg,
-  },
-  journeyStep: {
-    alignItems: 'center',
-    gap: Spacing.xs,
-  },
-  journeyDot: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: Colors.background,
-    borderWidth: 2,
-    borderColor: Colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  journeyDotActive: {
-    backgroundColor: Colors.secondary,
-    borderColor: Colors.secondary,
-  },
-  journeyDotDone: {
-    backgroundColor: Colors.success,
-    borderColor: Colors.success,
-  },
-  journeyDotNum: {
-    fontSize: 10,
-    fontWeight: '700' as const,
-    color: Colors.textMuted,
-  },
-  journeyLabel: {
-    fontSize: 9,
-    fontWeight: '600' as const,
-    color: Colors.textMuted,
-    letterSpacing: 0.2,
-  },
-  journeyLabelActive: { color: Colors.secondary },
-  journeyLabelDone:   { color: Colors.success },
-  journeyLine: {
-    flex: 1,
-    height: 2,
-    backgroundColor: Colors.border,
-    marginBottom: 18,
-  },
-  journeyLineDone: { backgroundColor: Colors.success },
-  journeyDetail: {
-    backgroundColor: Colors.background,
-    borderRadius: Radius.md,
-    padding: Spacing.md,
-    borderWidth: 1,
-    borderColor: Colors.divider,
-  },
-  journeyDetailTitle: {
-    fontSize: FontSize.sm,
-    fontWeight: FontWeight.bold,
-    color: Colors.textPrimary,
-    marginBottom: 3,
-  },
-  journeyDetailSub: {
-    fontSize: FontSize.xs,
-    color: Colors.textSecondary,
-    lineHeight: 16,
-  },
+  /* Journey NEW styles */
+  journeyCard: { backgroundColor: Colors.surface },
+  journeyHint: { display: 'none' },
+  journeyTrack: { display: 'none' },
+  journeyStep: { display: 'none' },
+  journeyDot: { display: 'none' },
+  journeyDotActive: {},
+  journeyDotDone: {},
+  journeyDotNum: {},
+  journeyLabel: {},
+  journeyLabelActive: {},
+  journeyLabelDone: {},
+  journeyLine: { display: 'none' },
+  journeyLineDone: {},
+  journeyDetail: { display: 'none' },
+  journeyDetailTitle: {},
+  journeyDetailSub: {},
 });

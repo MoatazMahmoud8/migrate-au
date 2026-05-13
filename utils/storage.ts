@@ -10,6 +10,7 @@ const defaultProfile: UserProfile = {
   subscribedStates: [],
   subscribedOccupation: '',
   journeyStage: 0,
+  journeyEntries: [],
   pinnedStates: [],
   onboardingComplete: false,
 };

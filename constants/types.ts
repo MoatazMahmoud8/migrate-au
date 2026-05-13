@@ -52,6 +52,21 @@ export interface ChatMessage {
   timestamp: Date;
 }
 
+// Journey tracker
+export type JourneyStageKey = 'assess' | 'eoi' | 'invite' | 'apply' | 'grant';
+export type JourneyVisaType = '189' | '190' | '491' | '186' | '482' | '408' | 'Other';
+
+export interface JourneyEntry {
+  id: string;
+  visaType: JourneyVisaType;
+  anzscoCode?: string;
+  occupationName?: string;
+  state?: string;            // state code e.g. 'NSW', or undefined for federal
+  currentStage: number;     // 0–4 index into JOURNEY_STAGES
+  stageDates: Partial<Record<JourneyStageKey, string>>; // ISO date strings
+  createdAt: string;
+}
+
 // Profile
 export interface UserProfile {
   name: string;
@@ -60,6 +75,7 @@ export interface UserProfile {
   subscribedStates: string[];
   subscribedOccupation: string;
   journeyStage: number;
+  journeyEntries: JourneyEntry[];
   pinnedStates: string[];
   onboardingComplete: boolean;
 }
