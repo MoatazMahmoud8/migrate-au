@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   ScrollView,
   View,
@@ -6,6 +6,8 @@ import {
   TouchableOpacity,
   StyleSheet,
   Switch,
+  TextInput,
+  Linking,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -136,6 +138,310 @@ function ScoreRing({ score, eligible }: { score: number; eligible: boolean }) {
     </View>
   );
 }
+
+// ─── Visa Pathways data & component ──────────────────────────────────────────
+
+type VisaCategory = 'Skilled' | 'Employer' | 'Graduate' | 'Working Holiday' | 'Family' | 'Student' | 'Visitor' | 'Humanitarian';
+
+interface VisaEntry {
+  code: string;
+  name: string;
+  icon: string;
+  type: 'Permanent' | 'Temporary';
+  category: VisaCategory;
+  subclasses: string[];
+  conditions: string[];
+  url: string;
+}
+
+const ALL_VISAS: VisaEntry[] = [
+  // ── SKILLED ──────────────────────────────────────────────────────
+  {
+    code: '189', name: 'Skilled Independent', icon: 'globe-outline', type: 'Permanent', category: 'Skilled',
+    subclasses: ['189 - Points-tested stream', '189 - New Zealand stream'],
+    conditions: ['No sponsorship required', 'Occupation on MLTSSL', 'Points score ≥ 65', 'Age under 45'],
+    url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skilled-independent-189',
+  },
+  {
+    code: '190', name: 'Skilled Nominated', icon: 'location-outline', type: 'Permanent', category: 'Skilled',
+    subclasses: ['190 - State/Territory Nominated'],
+    conditions: ['Nominated by a state or territory', 'Occupation on state occupation list', 'Points score ≥ 65 (+5 nomination bonus)', 'Must live & work in nominating state for 2 years'],
+    url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skilled-nominated-190',
+  },
+  {
+    code: '491', name: 'Skilled Work Regional (Prov)', icon: 'map-outline', type: 'Temporary', category: 'Skilled',
+    subclasses: ['491 - State/Territory Nominated', '491 - Family Sponsored (regional)'],
+    conditions: ['Live & work in designated regional area', '+15 points for nomination/family sponsorship', 'Pathway to permanent 191 after 3 years', 'Occupation on MLTSSL/STSOL/ROL'],
+    url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skilled-work-regional-provisional-491',
+  },
+  {
+    code: '191', name: 'Permanent Residence (Regional)', icon: 'home-outline', type: 'Permanent', category: 'Skilled',
+    subclasses: ['191 - Permanent from 491/494'],
+    conditions: ['Hold 491 or 494 for at least 3 years', 'Lived & worked in regional Australia', 'Meet income threshold requirement', 'No pathway without a 491/494 first'],
+    url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/permanent-residence-skilled-regional-191',
+  },
+  // ── EMPLOYER-SPONSORED ──────────────────────────────────────────
+  {
+    code: '482', name: 'Skills in Demand (Temp)', icon: 'briefcase-outline', type: 'Temporary', category: 'Employer',
+    subclasses: ['482 - Core Skills Stream', '482 - Specialist Skills Stream', '482 - Labour Agreement Stream'],
+    conditions: ['Sponsored by an approved employer', 'Occupation on eligible skills list', 'Meet English language requirements', 'Skills assessment for most occupations'],
+    url: 'https://immi.homeaffairs.gov.au/visas/working-in-australia/skills-in-demand-visa-subclass-482',
+  },
+  {
+    code: '186', name: 'Employer Nominated (Perm)', icon: 'briefcase-outline', type: 'Permanent', category: 'Employer',
+    subclasses: ['186 - Direct Entry', '186 - Temporary Residence Transition', '186 - Labour Agreement'],
+    conditions: ['Nominated by Australian employer', 'Occupation on eligible list', 'Skills & qualification assessment', 'Age under 45 (most streams)'],
+    url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/employer-nomination-scheme-186',
+  },
+  {
+    code: '494', name: 'Skilled Employer Regional (Prov)', icon: 'location-outline', type: 'Temporary', category: 'Employer',
+    subclasses: ['494 - Employer Sponsored', '494 - Labour Agreement'],
+    conditions: ['Sponsored by regional employer', 'Occupation on RSMS occupation list', 'Live & work in specified regional area', 'Pathway to permanent residence (191)'],
+    url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skilled-employer-sponsored-regional-provisional-494',
+  },
+  {
+    code: '407', name: 'Training Visa', icon: 'school-outline', type: 'Temporary', category: 'Employer',
+    subclasses: ['407 - Occupational Training', '407 - Professional Development'],
+    conditions: ['Sponsored by approved Australian organisation', 'Training must improve skills in current occupation', 'Not for general employment'],
+    url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/training-407',
+  },
+  // ── GRADUATE ────────────────────────────────────────────────────
+  {
+    code: '485', name: 'Temporary Graduate', icon: 'ribbon-outline', type: 'Temporary', category: 'Graduate',
+    subclasses: ['485 - Graduate Work', '485 - Post-Study Work'],
+    conditions: ['Completed eligible Australian study', 'Applied within 6 months of completing study', 'Meet English requirements (IELTS 6+)', 'Post-Study stream: bachelor or higher degree'],
+    url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/temporary-graduate-485',
+  },
+  // ── WORKING HOLIDAY ─────────────────────────────────────────────
+  {
+    code: '417', name: 'Working Holiday', icon: 'sunny-outline', type: 'Temporary', category: 'Working Holiday',
+    subclasses: ['417 - First Working Holiday', '417 - Second (3 months regional)', '417 - Third (6 months regional)'],
+    conditions: ['Passport from eligible country', 'Aged 18–30 (up to 35 for some countries)', 'Not accompanied by dependent children', 'Sufficient funds (AUD 5,000+)'],
+    url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/working-holiday-417',
+  },
+  {
+    code: '462', name: 'Work and Holiday', icon: 'globe-outline', type: 'Temporary', category: 'Working Holiday',
+    subclasses: ['462 - Work and Holiday'],
+    conditions: ['Passport from participating country (e.g., USA, China)', 'Aged 18–30', 'Meet education/language requirements', 'Supported by home country government'],
+    url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/work-holiday-462',
+  },
+  // ── FAMILY ──────────────────────────────────────────────────────
+  {
+    code: '820/801', name: 'Partner (Onshore)', icon: 'heart-outline', type: 'Permanent', category: 'Family',
+    subclasses: ['820 - Temporary (initial grant)', '801 - Permanent (after 2 years)'],
+    conditions: ['Spouse or de facto partner of Australian citizen/PR', 'Genuine, committed relationship', 'Onshore application (in Australia)', 'Health & character requirements'],
+    url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/partner-820-801',
+  },
+  {
+    code: '309/100', name: 'Partner (Offshore)', icon: 'heart-circle-outline', type: 'Permanent', category: 'Family',
+    subclasses: ['309 - Temporary (offshore)', '100 - Permanent'],
+    conditions: ['Spouse or de facto of Australian citizen/PR', 'Applied from outside Australia', 'Genuine & committed relationship'],
+    url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/partner-309-100',
+  },
+  {
+    code: '300', name: 'Prospective Marriage', icon: 'diamond-outline', type: 'Temporary', category: 'Family',
+    subclasses: ['300 - Fiancé(e) Visa'],
+    conditions: ['Intend to marry Australian citizen/PR', 'Must marry within 9 months of entry', 'Both parties must be free to marry'],
+    url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/prospective-marriage-300',
+  },
+  {
+    code: '103/143', name: 'Parent Visa', icon: 'people-outline', type: 'Permanent', category: 'Family',
+    subclasses: ['103 - Parent', '143 - Contributory Parent', '173 - Contributory Temp'],
+    conditions: ['Child who is Australian citizen/PR/eligible NZ citizen', 'Pass the balance of family test', '143 requires significant financial contribution', 'Long waiting periods (103: 30+ yrs; 143: 5–10 yrs)'],
+    url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/parent-103',
+  },
+  {
+    code: '101/445', name: 'Child Visa', icon: 'person-add-outline', type: 'Permanent', category: 'Family',
+    subclasses: ['101 - Child (offshore)', '445 - Dependent Child', '102 - Adopted Child'],
+    conditions: ['Child of Australian citizen/PR', 'Under 18, or 18–25 if full-time student', 'Single & dependent if 18+'],
+    url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/child-101',
+  },
+  // ── STUDENT ─────────────────────────────────────────────────────
+  {
+    code: '500', name: 'Student Visa', icon: 'book-outline', type: 'Temporary', category: 'Student',
+    subclasses: ['500 - Full-time Study', '590 - Student Guardian'],
+    conditions: ['Enrolled in CRICOS-registered course (CoE)', 'Hold Overseas Student Health Cover (OSHC)', 'Genuine Temporary Entrant (GTE)', 'Sufficient financial means'],
+    url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/student-500',
+  },
+  // ── VISITOR ─────────────────────────────────────────────────────
+  {
+    code: '600', name: 'Visitor Visa', icon: 'airplane-outline', type: 'Temporary', category: 'Visitor',
+    subclasses: ['600 - Tourist', '600 - Business Visitor', '600 - Family Sponsored', '600 - Approved Destination Status'],
+    conditions: ['Genuine temporary visit intention', 'Sufficient funds for stay & departure ticket', 'Meet health & character requirements', 'Sponsored stream requires Australian sponsor'],
+    url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/visitor-600',
+  },
+  {
+    code: '408', name: 'Temporary Activity', icon: 'flash-outline', type: 'Temporary', category: 'Visitor',
+    subclasses: ['408 - Entertainment', '408 - Sports', '408 - Religious', '408 - Research', '408 - Domestic Worker'],
+    conditions: ['Sponsored by Australian organisation', 'Specific short-term activity', 'Not a general work visa'],
+    url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/temporary-activity-408',
+  },
+  // ── HUMANITARIAN ────────────────────────────────────────────────
+  {
+    code: '200–204', name: 'Refugee & Humanitarian', icon: 'shield-outline', type: 'Permanent', category: 'Humanitarian',
+    subclasses: ['200 - Refugee', '201 - In-Country Special', '202 - Global Special', '203 - Emergency Rescue', '204 - Woman at Risk', '866 - Protection (onshore)'],
+    conditions: ['Referred by UNHCR or Australian Embassy', 'Assessed to be a refugee under UN convention', 'Not applicable for individual applications (offshore)', '866 - Protection visa for onshore applicants'],
+    url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/refugee-200',
+  },
+];
+
+const CATEGORY_META: Record<VisaCategory, { color: string; bg: string; icon: string }> = {
+  Skilled:         { color: Colors.accent,        bg: 'rgba(0,194,255,0.12)',   icon: 'star-outline' },
+  Employer:        { color: Colors.secondary,      bg: 'rgba(255,205,0,0.12)',   icon: 'briefcase-outline' },
+  Graduate:        { color: '#A78BFA',             bg: 'rgba(167,139,250,0.12)', icon: 'ribbon-outline' },
+  'Working Holiday': { color: Colors.success,      bg: 'rgba(0,214,143,0.12)',   icon: 'sunny-outline' },
+  Family:          { color: '#FF6B8A',             bg: 'rgba(255,107,154,0.12)', icon: 'heart-outline' },
+  Student:         { color: Colors.warning,        bg: 'rgba(255,184,0,0.12)',   icon: 'school-outline' },
+  Visitor:         { color: Colors.textSecondary,  bg: 'rgba(255,255,255,0.08)', icon: 'airplane-outline' },
+  Humanitarian:    { color: Colors.error,          bg: 'rgba(255,71,87,0.12)',   icon: 'shield-outline' },
+};
+
+const ALL_CATEGORIES: VisaCategory[] = ['Skilled', 'Employer', 'Graduate', 'Working Holiday', 'Family', 'Student', 'Visitor', 'Humanitarian'];
+
+function VisaPathwaysSection() {
+  const [query, setQuery] = useState('');
+  const [activeCategory, setActiveCategory] = useState<VisaCategory | 'All'>('All');
+  const [expandedCode, setExpandedCode] = useState<string | null>(null);
+
+  const filtered = useMemo(() => {
+    let list = ALL_VISAS;
+    if (activeCategory !== 'All') list = list.filter((v) => v.category === activeCategory);
+    if (query.trim()) {
+      const q = query.trim().toLowerCase();
+      list = list.filter(
+        (v) =>
+          v.code.toLowerCase().includes(q) ||
+          v.name.toLowerCase().includes(q) ||
+          v.subclasses.some((s) => s.toLowerCase().includes(q))
+      );
+    }
+    return list;
+  }, [query, activeCategory]);
+
+  return (
+    <View style={[styles.card, { marginTop: Spacing.lg }]}>
+      {/* Header */}
+      <View style={styles.cardHeader}>
+        <Ionicons name="map-outline" size={18} color={Colors.accent} />
+        <Text style={styles.cardTitle}>Visa Pathways</Text>
+        <View style={[styles.cardBadge, { backgroundColor: Colors.accent + '20' }]}>
+          <Text style={[styles.cardBadgeText, { color: Colors.accent }]}>{filtered.length}</Text>
+        </View>
+      </View>
+
+      {/* Search */}
+      <View style={vp.searchRow}>
+        <Ionicons name="search-outline" size={15} color={Colors.textMuted} style={{ marginRight: 8 }} />
+        <TextInput
+          style={vp.searchInput}
+          placeholder="Search visa number or name…"
+          placeholderTextColor={Colors.textMuted}
+          value={query}
+          onChangeText={setQuery}
+          autoCorrect={false}
+          clearButtonMode="while-editing"
+        />
+        {query.length > 0 && (
+          <TouchableOpacity onPress={() => setQuery('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <Ionicons name="close-circle" size={16} color={Colors.textMuted} />
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {/* Category chips */}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: Spacing.md }}>
+        <View style={vp.chipRow}>
+          {(['All', ...ALL_CATEGORIES] as Array<VisaCategory | 'All'>).map((cat) => {
+            const active = activeCategory === cat;
+            const meta = cat === 'All' ? null : CATEGORY_META[cat];
+            const tint = meta ? meta.color : Colors.textSecondary;
+            return (
+              <TouchableOpacity
+                key={cat}
+                style={[vp.chip, active && { backgroundColor: tint + '22', borderColor: tint }]}
+                onPress={() => setActiveCategory(cat)}
+                activeOpacity={0.8}
+              >
+                {meta && <Ionicons name={meta.icon as any} size={12} color={active ? tint : Colors.textMuted} style={{ marginRight: 4 }} />}
+                <Text style={[vp.chipText, active && { color: tint, fontWeight: FontWeight.bold }]}>{cat}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      </ScrollView>
+
+      {/* Visa list */}
+      {filtered.length === 0 ? (
+        <Text style={vp.empty}>No visas match "{query}"</Text>
+      ) : (
+        filtered.map((visa) => {
+          const expanded = expandedCode === visa.code;
+          const meta = CATEGORY_META[visa.category];
+          return (
+            <View key={visa.code} style={vp.visaCard}>
+              <TouchableOpacity
+                style={vp.visaHeader}
+                onPress={() => setExpandedCode(expanded ? null : visa.code)}
+                activeOpacity={0.8}
+              >
+                <View style={[vp.visaIconBox, { backgroundColor: meta.bg }]}>
+                  <Ionicons name={visa.icon as any} size={16} color={meta.color} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <Text style={vp.visaCode}>SC {visa.code}</Text>
+                    <View style={[vp.typePill, visa.type === 'Permanent' ? vp.typePerm : vp.typeTemp]}>
+                      <Text style={[vp.typeText, visa.type === 'Permanent' ? { color: Colors.success } : { color: Colors.warning }]}>
+                        {visa.type === 'Permanent' ? 'Perm' : 'Temp'}
+                      </Text>
+                    </View>
+                    <View style={[vp.catPill, { backgroundColor: meta.bg }]}>
+                      <Text style={[vp.catText, { color: meta.color }]}>{visa.category}</Text>
+                    </View>
+                  </View>
+                  <Text style={vp.visaName}>{visa.name}</Text>
+                </View>
+                <Ionicons name={expanded ? 'chevron-up' : 'chevron-down'} size={16} color={Colors.textMuted} />
+              </TouchableOpacity>
+
+              {expanded && (
+                <View style={vp.visaBody}>
+                  {/* Subclasses */}
+                  <Text style={vp.detailLabel}>Streams / Subclasses</Text>
+                  {visa.subclasses.map((s) => (
+                    <View key={s} style={vp.bulletRow}>
+                      <View style={[vp.bullet, { backgroundColor: meta.color }]} />
+                      <Text style={vp.bulletText}>{s}</Text>
+                    </View>
+                  ))}
+                  {/* Key conditions */}
+                  <Text style={[vp.detailLabel, { marginTop: Spacing.md }]}>Key Requirements</Text>
+                  {visa.conditions.map((c) => (
+                    <View key={c} style={vp.bulletRow}>
+                      <Ionicons name="checkmark-outline" size={13} color={Colors.success} style={{ marginRight: 6 }} />
+                      <Text style={vp.bulletText}>{c}</Text>
+                    </View>
+                  ))}
+                  {/* DHA link */}
+                  <TouchableOpacity
+                    style={vp.dhaBtn}
+                    onPress={() => Linking.openURL(visa.url)}
+                    activeOpacity={0.8}
+                  >
+                    <Ionicons name="open-outline" size={13} color={Colors.accent} />
+                    <Text style={vp.dhaBtnText}>View on DHA website</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
+          );
+        })
+      )}
+    </View>
+  );
+}
+
+// ─── Calculator screen ───────────────────────────────────────────────────────
 
 export default function CalculatorScreen() {
   const [input, setInput] = useState<PointsInput>(defaultInput);
@@ -410,6 +716,9 @@ export default function CalculatorScreen() {
           </View>
         );
       })()}
+
+      <VisaPathwaysSection />
+
     </ScrollView>
 
     <PaywallModal
@@ -588,4 +897,124 @@ const styles = StyleSheet.create({
     borderColor: Colors.success + '40',
   },
   gapPts: { fontSize: FontSize.sm, fontWeight: FontWeight.bold, color: Colors.success },
+});
+
+const vp = StyleSheet.create({
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.background,
+    borderRadius: Radius.md,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    marginBottom: Spacing.md,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: FontSize.sm,
+    color: Colors.textPrimary,
+    paddingVertical: 0,
+  },
+  chipRow: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingRight: Spacing.lg,
+  },
+  chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: Radius.full,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.background,
+  },
+  chipText: { fontSize: 11, color: Colors.textSecondary, fontWeight: FontWeight.semiBold },
+  empty: { color: Colors.textMuted, fontSize: FontSize.sm, textAlign: 'center', paddingVertical: Spacing.xl },
+
+  visaCard: {
+    borderRadius: Radius.lg,
+    backgroundColor: Colors.background,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    marginBottom: Spacing.sm,
+    overflow: 'hidden',
+  },
+  visaHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: Spacing.md,
+    gap: Spacing.md,
+  },
+  visaIconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: Radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  visaCode: { fontSize: FontSize.sm, fontWeight: FontWeight.bold, color: Colors.textPrimary },
+  visaName: { fontSize: FontSize.xs, color: Colors.textSecondary, marginTop: 2 },
+  typePill: {
+    borderRadius: Radius.full,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderWidth: 1,
+  },
+  typePerm: { backgroundColor: Colors.success + '15', borderColor: Colors.success + '40' },
+  typeTemp: { backgroundColor: Colors.warning + '15', borderColor: Colors.warning + '40' },
+  typeText: { fontSize: 9, fontWeight: FontWeight.bold },
+  catPill: {
+    borderRadius: Radius.full,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  catText: { fontSize: 9, fontWeight: FontWeight.bold },
+
+  visaBody: {
+    paddingHorizontal: Spacing.md,
+    paddingBottom: Spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: Colors.divider,
+  },
+  detailLabel: {
+    fontSize: FontSize.xs,
+    color: Colors.textMuted,
+    fontWeight: FontWeight.semiBold,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+    marginTop: Spacing.md,
+    marginBottom: Spacing.xs,
+  },
+  bulletRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 4,
+  },
+  bullet: {
+    width: 5,
+    height: 5,
+    borderRadius: 3,
+    marginTop: 5,
+    marginRight: 8,
+    flexShrink: 0,
+  },
+  bulletText: { fontSize: FontSize.sm, color: Colors.textSecondary, flex: 1, lineHeight: 18 },
+  dhaBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: Spacing.md,
+    alignSelf: 'flex-start',
+    backgroundColor: Colors.accent + '15',
+    borderRadius: Radius.full,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs,
+    borderWidth: 1,
+    borderColor: Colors.accent + '30',
+  },
+  dhaBtnText: { fontSize: FontSize.xs, color: Colors.accent, fontWeight: FontWeight.semiBold },
 });
