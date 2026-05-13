@@ -551,7 +551,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
     marginRight: 6,
   },
-  pillTextSm: { fontSize: 10, color: Colors.textMuted, fontWeight: FontWeight.semiBold, letterSpacing: 0.4 },
+  pillTextSm: { fontSize: 11, color: Colors.textSecondary, fontWeight: FontWeight.semiBold, letterSpacing: 0.4 },
 
   /* List */
   list: { paddingHorizontal: Spacing.lg, paddingBottom: 100 },
