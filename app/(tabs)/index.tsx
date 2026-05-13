@@ -469,7 +469,7 @@ export default function HomeScreen() {
         </View>
         <TouchableOpacity
           activeOpacity={0.8}
-          onPress={() => Linking.openURL('https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-processing-times')}
+          onPress={() => router.push('/processing-times' as any)}
           style={styles.processingCard}
         >
           <LinearGradient
@@ -482,10 +482,10 @@ export default function HomeScreen() {
               <Ionicons name="calendar-outline" size={18} color={Colors.accent} />
               <View style={{ flex: 1 }}>
                 <Text style={styles.processingTitle}>Check Current Processing Times</Text>
-                <Text style={styles.processingSub}>View official DHA timeframes by visa subclass</Text>
+                <Text style={styles.processingSub}>Median & 90th percentile timeframes — in-app</Text>
               </View>
             </View>
-            <Ionicons name="open-outline" size={14} color={Colors.accent} />
+            <Ionicons name="arrow-forward" size={14} color={Colors.accent} />
           </LinearGradient>
         </TouchableOpacity>
       </View>

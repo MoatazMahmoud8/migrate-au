@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import {
   ScrollView,
   View,
@@ -12,27 +12,54 @@ import { Ionicons } from '@expo/vector-icons';
 import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Spacing, Radius, FontSize, FontWeight } from '../constants/theme';
-import { VISA_PATHWAYS, VISA_CATEGORY_META, VisaPathway } from '../constants/visaPathways';
+import {
+  VISA_PATHWAYS,
+  VISA_CATEGORY_META,
+  VisaPathway,
+} from '../constants/visaPathways';
 import { tap as hapticTap } from '../utils/haptics';
 
-const FILTERS: Array<'All' | VisaPathway['category']> = [
-  'All', 'Employer', 'Graduate', 'Family', 'Student', 'Working Holiday', 'Visitor', 'Humanitarian', 'Training',
+type Category = VisaPathway['category'];
+type Filter = 'All' | Category;
+
+const CATEGORY_ORDER: Category[] = [
+  'Employer', 'Graduate', 'Family', 'Student', 'Working Holiday', 'Visitor', 'Humanitarian', 'Training',
 ];
+
+const FILTERS: Filter[] = ['All', ...CATEGORY_ORDER];
+
+/** Group visas by category in display order */
+function groupByCategory(visas: VisaPathway[]): Array<{ category: Category; items: VisaPathway[] }> {
+  const map = new Map<Category, VisaPathway[]>();
+  for (const v of visas) {
+    if (!map.has(v.category)) map.set(v.category, []);
+    map.get(v.category)!.push(v);
+  }
+  return CATEGORY_ORDER.filter((c) => map.has(c)).map((c) => ({ category: c, items: map.get(c)! }));
+}
 
 export default function VisasScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ category?: string }>();
-  const initial = (params.category as any) && FILTERS.includes(params.category as any)
-    ? (params.category as VisaPathway['category'])
-    : 'All';
-  const [filter, setFilter] = useState<'All' | VisaPathway['category']>(initial);
+  const initial: Filter =
+    params.category && FILTERS.includes(params.category as Filter)
+      ? (params.category as Filter)
+      : 'All';
+  const [filter, setFilter] = useState<Filter>(initial);
   const [expanded, setExpanded] = useState<string | null>(null);
+  const filterRef = useRef<ScrollView>(null);
 
-  const filtered = useMemo(() => {
-    if (filter === 'All') return VISA_PATHWAYS;
-    return VISA_PATHWAYS.filter((v) => v.category === filter);
+  const groups = useMemo(() => {
+    const visas =
+      filter === 'All' ? VISA_PATHWAYS : VISA_PATHWAYS.filter((v) => v.category === filter);
+    return groupByCategory(visas);
   }, [filter]);
+
+  const totalCount = useMemo(
+    () => groups.reduce((s, g) => s + g.items.length, 0),
+    [groups]
+  );
 
   return (
     <>
@@ -44,104 +71,154 @@ export default function VisasScreen() {
           style={[styles.header, { paddingTop: insets.top + 16 }]}
         >
           <View style={styles.headerTopRow}>
-            <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+            <TouchableOpacity
+              onPress={() => router.back()}
+              style={styles.backBtn}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
               <Ionicons name="chevron-back" size={22} color={Colors.textPrimary} />
             </TouchableOpacity>
             <View style={styles.headerBadge}>
               <Ionicons name="layers-outline" size={12} color={Colors.accent} />
-              <Text style={styles.headerBadgeText}>{VISA_PATHWAYS.length} visas</Text>
+              <Text style={styles.headerBadgeText}>{totalCount} visas</Text>
             </View>
             <View style={{ width: 32 }} />
           </View>
-
           <Text style={styles.title}>Visa Pathways</Text>
           <Text style={styles.subtitle}>
-            Browse every Australian visa subclass with eligibility conditions — no need to leave the app.
+            All Australian visa subclasses organised by category — streams, conditions and official links in one place.
           </Text>
         </LinearGradient>
 
-        {/* Filter pills */}
+        {/* Category tab bar */}
         <ScrollView
+          ref={filterRef}
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.filterRow}
+          contentContainerStyle={styles.tabBar}
         >
           {FILTERS.map((f) => {
             const active = filter === f;
+            const meta = f !== 'All' ? VISA_CATEGORY_META[f] : null;
+            const count =
+              f === 'All'
+                ? VISA_PATHWAYS.length
+                : VISA_PATHWAYS.filter((v) => v.category === f).length;
             return (
               <TouchableOpacity
                 key={f}
-                style={[styles.pill, active && styles.pillActive]}
-                onPress={() => { hapticTap(); setFilter(f); }}
+                style={[styles.tab, active && styles.tabActive, meta && active ? { borderColor: meta.color + '80' } : null]}
+                onPress={() => { hapticTap(); setFilter(f); setExpanded(null); }}
                 activeOpacity={0.8}
               >
-                <Text style={[styles.pillText, active && styles.pillTextActive]}>{f}</Text>
+                {meta && (
+                  <Ionicons
+                    name={meta.icon as any}
+                    size={13}
+                    color={active ? meta.color : Colors.textMuted}
+                  />
+                )}
+                <Text style={[styles.tabText, active && styles.tabTextActive, meta && active ? { color: meta.color } : null]}>
+                  {f}
+                </Text>
+                <View style={[styles.tabCount, active && meta ? { backgroundColor: meta.color + '20' } : null]}>
+                  <Text style={[styles.tabCountText, active && meta ? { color: meta.color } : null]}>{count}</Text>
+                </View>
               </TouchableOpacity>
             );
           })}
         </ScrollView>
 
-        {/* List */}
-        <View style={styles.list}>
-          {filtered.map((v) => {
-            const meta = VISA_CATEGORY_META[v.category];
-            const open = expanded === v.code;
+        {/* Grouped sections */}
+        <View style={styles.body}>
+          {groups.map(({ category, items }) => {
+            const meta = VISA_CATEGORY_META[category];
             return (
-              <View key={v.code} style={styles.card}>
-                <TouchableOpacity
-                  style={styles.cardHead}
-                  activeOpacity={0.85}
-                  onPress={() => { hapticTap(); setExpanded(open ? null : v.code); }}
-                >
-                  <View style={[styles.iconWrap, { backgroundColor: meta.bg }]}>
-                    <Ionicons name={v.icon as any} size={20} color={meta.color} />
+              <View key={category} style={styles.section}>
+                {/* Section header */}
+                <View style={[styles.sectionHeader, { borderLeftColor: meta.color }]}>
+                  <View style={[styles.sectionIcon, { backgroundColor: meta.bg }]}>
+                    <Ionicons name={meta.icon as any} size={16} color={meta.color} />
                   </View>
-                  <View style={{ flex: 1 }}>
-                    <View style={styles.codeRow}>
-                      <Text style={styles.cardCode}>SC {v.code}</Text>
-                      <View style={[styles.typeBadge, v.type === 'Permanent' ? styles.typePerm : styles.typeTemp]}>
-                        <Text style={[styles.typeText, v.type === 'Permanent' ? styles.typeTextPerm : styles.typeTextTemp]}>
-                          {v.type}
-                        </Text>
+                  <Text style={styles.sectionTitle}>{category}</Text>
+                  <View style={[styles.sectionCount, { backgroundColor: meta.bg }]}>
+                    <Text style={[styles.sectionCountText, { color: meta.color }]}>{items.length}</Text>
+                  </View>
+                </View>
+
+                {/* Visa cards */}
+                <View style={styles.cardList}>
+                  {items.map((v) => {
+                    const open = expanded === `${category}-${v.code}`;
+                    return (
+                      <View key={v.code} style={styles.card}>
+                        <TouchableOpacity
+                          style={styles.cardHead}
+                          activeOpacity={0.85}
+                          onPress={() => {
+                            hapticTap();
+                            setExpanded(open ? null : `${category}-${v.code}`);
+                          }}
+                        >
+                          {/* Left accent strip */}
+                          <View style={[styles.cardStrip, { backgroundColor: meta.color }]} />
+
+                          <View style={styles.cardHeadContent}>
+                            <View style={styles.codeRow}>
+                              <Text style={styles.cardCode}>SC {v.code}</Text>
+                              <View style={[styles.typeBadge, v.type === 'Permanent' ? styles.typePerm : styles.typeTemp]}>
+                                <Text style={[styles.typeText, v.type === 'Permanent' ? styles.typeTextPerm : styles.typeTextTemp]}>
+                                  {v.type}
+                                </Text>
+                              </View>
+                            </View>
+                            <Text style={styles.cardName}>{v.name}</Text>
+                            <Text style={styles.cardStreamsHint} numberOfLines={1}>
+                              {v.subclasses.length} stream{v.subclasses.length > 1 ? 's' : ''} · {v.conditions.length} conditions
+                            </Text>
+                          </View>
+                          <Ionicons
+                            name={open ? 'chevron-up' : 'chevron-down'}
+                            size={16}
+                            color={Colors.textMuted}
+                          />
+                        </TouchableOpacity>
+
+                        {open && (
+                          <View style={styles.cardBody}>
+                            <Text style={styles.bodyLabel}>Streams</Text>
+                            <View style={styles.streamList}>
+                              {v.subclasses.map((s) => (
+                                <View key={s} style={[styles.streamChip, { borderColor: meta.color + '40' }]}>
+                                  <Text style={[styles.streamText, { color: meta.color }]}>{s}</Text>
+                                </View>
+                              ))}
+                            </View>
+
+                            <Text style={[styles.bodyLabel, { marginTop: Spacing.md }]}>Key conditions</Text>
+                            <View style={styles.condList}>
+                              {v.conditions.map((c) => (
+                                <View key={c} style={styles.condRow}>
+                                  <View style={[styles.condDot, { backgroundColor: meta.color }]} />
+                                  <Text style={styles.condText}>{c}</Text>
+                                </View>
+                              ))}
+                            </View>
+
+                            <TouchableOpacity
+                              style={[styles.dhaBtn, { borderColor: meta.color + '40', backgroundColor: meta.bg }]}
+                              onPress={() => Linking.openURL(v.url)}
+                              activeOpacity={0.8}
+                            >
+                              <Ionicons name="open-outline" size={13} color={meta.color} />
+                              <Text style={[styles.dhaBtnText, { color: meta.color }]}>Read full guide on DHA</Text>
+                            </TouchableOpacity>
+                          </View>
+                        )}
                       </View>
-                    </View>
-                    <Text style={styles.cardName}>{v.name}</Text>
-                    <Text style={[styles.cardCat, { color: meta.color }]}>{v.category}</Text>
-                  </View>
-                  <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={18} color={Colors.textMuted} />
-                </TouchableOpacity>
-
-                {open && (
-                  <View style={styles.cardBody}>
-                    <Text style={styles.sectionLabel}>Streams</Text>
-                    <View style={styles.streamList}>
-                      {v.subclasses.map((s) => (
-                        <View key={s} style={styles.streamChip}>
-                          <Text style={styles.streamText}>{s}</Text>
-                        </View>
-                      ))}
-                    </View>
-
-                    <Text style={[styles.sectionLabel, { marginTop: Spacing.md }]}>Key conditions</Text>
-                    <View style={styles.condList}>
-                      {v.conditions.map((c) => (
-                        <View key={c} style={styles.condRow}>
-                          <View style={[styles.condDot, { backgroundColor: meta.color }]} />
-                          <Text style={styles.condText}>{c}</Text>
-                        </View>
-                      ))}
-                    </View>
-
-                    <TouchableOpacity
-                      style={styles.dhaBtn}
-                      onPress={() => Linking.openURL(v.url)}
-                      activeOpacity={0.8}
-                    >
-                      <Ionicons name="open-outline" size={14} color={Colors.accent} />
-                      <Text style={styles.dhaBtnText}>Read full guide on DHA</Text>
-                    </TouchableOpacity>
-                  </View>
-                )}
+                    );
+                  })}
+                </View>
               </View>
             );
           })}
@@ -164,6 +241,7 @@ export default function VisasScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
 
+  /* Header */
   header: { paddingHorizontal: Spacing.lg, paddingBottom: Spacing.lg },
   headerTopRow: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
@@ -185,28 +263,64 @@ const styles = StyleSheet.create({
   title: { fontSize: FontSize.xxl, fontWeight: FontWeight.bold as any, color: Colors.textPrimary, marginBottom: 6 },
   subtitle: { fontSize: FontSize.sm, color: Colors.textMuted, lineHeight: 20 },
 
-  filterRow: { paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md },
-  pill: {
-    paddingHorizontal: 14, paddingVertical: 7,
+  /* Tab bar */
+  tabBar: {
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+    gap: 0,
+  },
+  tab: {
+    flexDirection: 'row', alignItems: 'center', gap: 5,
+    paddingHorizontal: 12, paddingVertical: 8,
     borderRadius: Radius.full,
     borderWidth: 1, borderColor: Colors.border,
     backgroundColor: Colors.surface,
     marginRight: 8,
   },
-  pillActive: { backgroundColor: 'rgba(255,205,0,0.12)', borderColor: Colors.secondary },
-  pillText: { fontSize: FontSize.xs, fontWeight: '600', color: Colors.textMuted },
-  pillTextActive: { color: Colors.secondary },
+  tabActive: { backgroundColor: 'rgba(255,255,255,0.05)', borderColor: Colors.secondary + '80' },
+  tabText: { fontSize: 12, fontWeight: '600', color: Colors.textMuted },
+  tabTextActive: { color: Colors.textPrimary, fontWeight: '700' },
+  tabCount: {
+    paddingHorizontal: 6, paddingVertical: 1,
+    borderRadius: Radius.full,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    minWidth: 18, alignItems: 'center',
+  },
+  tabCountText: { fontSize: 10, fontWeight: '700', color: Colors.textMuted },
 
-  list: { paddingHorizontal: Spacing.lg, gap: 10 },
+  /* Body */
+  body: { paddingHorizontal: Spacing.lg, paddingTop: Spacing.sm, gap: Spacing.xl },
+
+  /* Section */
+  section: { gap: Spacing.sm },
+  sectionHeader: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    paddingLeft: 12,
+    borderLeftWidth: 3,
+  },
+  sectionIcon: {
+    width: 30, height: 30, borderRadius: Radius.sm,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  sectionTitle: { flex: 1, fontSize: FontSize.md, fontWeight: FontWeight.bold as any, color: Colors.textPrimary },
+  sectionCount: {
+    paddingHorizontal: 8, paddingVertical: 3,
+    borderRadius: Radius.full,
+  },
+  sectionCountText: { fontSize: 11, fontWeight: '700' },
+
+  /* Card list */
+  cardList: { gap: 8 },
   card: {
     backgroundColor: Colors.surface,
     borderRadius: Radius.lg,
     borderWidth: 1, borderColor: Colors.border,
     overflow: 'hidden',
   },
-  cardHead: { flexDirection: 'row', alignItems: 'center', padding: Spacing.md, gap: Spacing.md },
-  iconWrap: { width: 40, height: 40, borderRadius: Radius.md, alignItems: 'center', justifyContent: 'center' },
-  codeRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 2 },
+  cardHead: { flexDirection: 'row', alignItems: 'center', paddingVertical: Spacing.md, paddingRight: Spacing.md, gap: Spacing.sm },
+  cardStrip: { width: 3, alignSelf: 'stretch', borderRadius: 0 },
+  cardHeadContent: { flex: 1, paddingLeft: Spacing.sm },
+  codeRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 3 },
   cardCode: {
     fontSize: 10, fontWeight: '800', color: Colors.textPrimary,
     paddingHorizontal: 8, paddingVertical: 2,
@@ -219,13 +333,15 @@ const styles = StyleSheet.create({
   typeTextPerm: { color: Colors.success },
   typeTextTemp: { color: Colors.accent },
   cardName: { fontSize: FontSize.sm, fontWeight: FontWeight.semiBold as any, color: Colors.textPrimary },
-  cardCat: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5, marginTop: 2 },
+  cardStreamsHint: { fontSize: 11, color: Colors.textMuted, marginTop: 2 },
 
+  /* Expanded body */
   cardBody: {
     paddingHorizontal: Spacing.md, paddingBottom: Spacing.md, paddingTop: 0,
     borderTopWidth: 1, borderTopColor: Colors.divider,
+    marginLeft: 3, // align under strip
   },
-  sectionLabel: {
+  bodyLabel: {
     fontSize: 10, fontWeight: '700',
     color: Colors.textMuted, textTransform: 'uppercase', letterSpacing: 0.5,
     marginTop: Spacing.md, marginBottom: Spacing.sm,
@@ -235,9 +351,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10, paddingVertical: 5,
     backgroundColor: Colors.background,
     borderRadius: Radius.full,
-    borderWidth: 1, borderColor: Colors.border,
+    borderWidth: 1,
   },
-  streamText: { fontSize: 11, color: Colors.textSecondary, fontWeight: '600' },
+  streamText: { fontSize: 11, fontWeight: '600' },
   condList: { gap: 6 },
   condRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
   condDot: { width: 5, height: 5, borderRadius: 3, marginTop: 7 },
@@ -247,11 +363,11 @@ const styles = StyleSheet.create({
     marginTop: Spacing.md,
     paddingVertical: Spacing.sm,
     borderRadius: Radius.md,
-    borderWidth: 1, borderColor: 'rgba(0,194,255,0.25)',
-    backgroundColor: 'rgba(0,194,255,0.08)',
+    borderWidth: 1,
   },
-  dhaBtnText: { fontSize: FontSize.xs, fontWeight: '700', color: Colors.accent },
+  dhaBtnText: { fontSize: FontSize.xs, fontWeight: '700' },
 
+  /* Footer */
   footer: {
     flexDirection: 'row', alignItems: 'flex-start', gap: 8,
     paddingHorizontal: Spacing.lg,
