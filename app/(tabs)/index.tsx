@@ -50,7 +50,7 @@ const VISA_CARDS = [
 
 const QUICK_TILES = [
   { icon: 'book-outline',     label: 'English Tests', route: '/(tabs)/english-tests', color: Colors.success,   bg: 'rgba(0,214,143,0.12)' },
-  { icon: 'list-outline',     label: 'Skills List',   url: 'https://immi.homeaffairs.gov.au/visas/working-in-australia/skill-occupation-list', color: Colors.accent, bg: 'rgba(0,194,255,0.12)' },
+  { icon: 'list-outline',     label: 'Skills List',   route: '/occupations', color: Colors.accent, bg: 'rgba(0,194,255,0.12)' },
   { icon: 'map-outline',      label: 'States',        route: '/(tabs)/states',        color: Colors.secondary, bg: 'rgba(255,205,0,0.12)' },
   { icon: 'time-outline',     label: 'Processing',    route: '/processing-times', color: '#FF6B8A', bg: 'rgba(255,107,154,0.12)' },
 ];

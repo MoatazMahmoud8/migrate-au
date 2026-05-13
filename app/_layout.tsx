@@ -13,6 +13,7 @@ import { selection } from '../utils/haptics';
 import { getProfile, saveProfile } from '../utils/storage';
 import OnboardingModal from '../components/OnboardingModal';
 import { refreshProcessingTimes } from '../utils/processingTimes';
+import { refreshSkilledOccupations } from '../utils/skilledOccupations';
 
 SplashScreen.hideAsync();
 
@@ -105,6 +106,60 @@ export default function RootLayout() {
           }
         } catch (e) {
           console.warn('[processing-times] notify failed:', e);
+        }
+      })
+      .catch(() => {});
+
+    // Once-per-day skilled occupations refresh (CSOL / MLTSSL / STSOL / ROL)
+    refreshSkilledOccupations()
+      .then(async ({ changes }) => {
+        if (!changes.length) return;
+        try {
+          const Notifications = await import('expo-notifications');
+          const added = changes.filter((c) => c.type === 'added');
+          const removed = changes.filter((c) => c.type === 'removed');
+          const updated = changes.filter((c) => c.type === 'updated');
+
+          // Notify individually for small batches; otherwise send a summary.
+          if (changes.length <= 4) {
+            for (const c of changes) {
+              const icon = c.type === 'added' ? '+' : c.type === 'removed' ? '−' : '~';
+              const verb =
+                c.type === 'added'
+                  ? 'added to'
+                  : c.type === 'removed'
+                  ? 'removed from'
+                  : 'updated on';
+              const lists = c.lists?.join('/') ?? '';
+              await Notifications.scheduleNotificationAsync({
+                content: {
+                  title: `${icon} ${c.name} (${c.anzsco})`,
+                  body: c.detail
+                    ? `${verb} ${lists} · ${c.detail}`
+                    : `${verb} ${lists}`,
+                  data: { route: '/occupations' },
+                  sound: 'default',
+                },
+                trigger: null,
+              });
+            }
+          } else {
+            const parts: string[] = [];
+            if (added.length) parts.push(`${added.length} added`);
+            if (removed.length) parts.push(`${removed.length} removed`);
+            if (updated.length) parts.push(`${updated.length} updated`);
+            await Notifications.scheduleNotificationAsync({
+              content: {
+                title: 'Skilled Occupation List updated',
+                body: `${parts.join(' · ')} — tap to view`,
+                data: { route: '/occupations' },
+                sound: 'default',
+              },
+              trigger: null,
+            });
+          }
+        } catch (e) {
+          console.warn('[skilled-occupations] notify failed:', e);
         }
       })
       .catch(() => {});
@@ -250,6 +305,14 @@ export default function RootLayout() {
           name="visas"
           options={{
             title: 'Visa Pathways',
+            href: null,
+            headerShown: false,
+          }}
+        />
+        <Tabs.Screen
+          name="occupations"
+          options={{
+            title: 'Skilled Occupations',
             href: null,
             headerShown: false,
           }}
