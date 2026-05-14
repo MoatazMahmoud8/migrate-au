@@ -292,6 +292,16 @@ export default function RootLayout() {
           }}
         />
         <Tabs.Screen
+          name="occupations"
+          options={{
+            title: 'Occupations',
+            headerShown: false,
+            tabBarIcon: ({ color, focused }) => (
+              <TabIcon name={focused ? 'list' : 'list-outline'} color={color} focused={focused} />
+            ),
+          }}
+        />
+        <Tabs.Screen
           name="(tabs)/states"
           options={{
             title: 'States',
@@ -301,11 +311,41 @@ export default function RootLayout() {
           }}
         />
         <Tabs.Screen
+          name="(tabs)/english-tests"
+          options={{
+            title: 'English',
+            headerShown: false,
+            tabBarIcon: ({ color, focused }) => (
+              <TabIcon name={focused ? 'book' : 'book-outline'} color={color} focused={focused} />
+            ),
+          }}
+        />
+        <Tabs.Screen
           name="(tabs)/ai"
           options={{
             title: '',
             tabBarIcon: ({ focused }) => <AriaFab focused={focused} />,
             tabBarLabelStyle: { height: 0 },
+          }}
+        />
+        <Tabs.Screen
+          name="(tabs)/skill-assessment"
+          options={{
+            title: 'Assess',
+            headerShown: false,
+            tabBarIcon: ({ color, focused }) => (
+              <TabIcon name={focused ? 'ribbon' : 'ribbon-outline'} color={color} focused={focused} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="(tabs)/rounds"
+          options={{
+            title: 'Rounds',
+            headerShown: false,
+            tabBarIcon: ({ color, focused }) => (
+              <TabIcon name={focused ? 'trophy' : 'trophy-outline'} color={color} focused={focused} />
+            ),
           }}
         />
         <Tabs.Screen
@@ -340,14 +380,7 @@ export default function RootLayout() {
             href: null,
           }}
         />
-        <Tabs.Screen
-          name="(tabs)/english-tests"
-          options={{
-            title: 'English Tests',
-            href: null,
-            headerShown: false,
-          }}
-        />
+        {/* english-tests and skill-assessment are visible tabs — defined above */}
         <Tabs.Screen
           name="processing-times"
           options={{
@@ -360,14 +393,6 @@ export default function RootLayout() {
           name="visas"
           options={{
             title: 'Visa Pathways',
-            href: null,
-            headerShown: false,
-          }}
-        />
-        <Tabs.Screen
-          name="occupations"
-          options={{
-            title: 'Skilled Occupations',
             href: null,
             headerShown: false,
           }}

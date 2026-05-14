@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import {
   ScrollView,
   View,
@@ -12,283 +12,118 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Colors, Spacing, Radius, FontSize, FontWeight } from '../../constants/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import SearchModal from '../../components/SearchModal';
+import { ALL_VISAS, CATEGORY_META, ALL_CATEGORIES } from '../../constants/visaData';
 
 const { width, height } = Dimensions.get('window');
 
-const QUICK_TILES = [
-  { icon: 'book-outline',     label: 'English Tests', route: '/(tabs)/english-tests', color: Colors.success,   bg: 'rgba(0,214,143,0.12)' },
-  { icon: 'list-outline',     label: 'Skills List',   route: '/occupations', color: Colors.accent, bg: 'rgba(0,194,255,0.12)' },
-  { icon: 'map-outline',      label: 'States',        route: '/(tabs)/states',        color: Colors.secondary, bg: 'rgba(255,205,0,0.12)' },
-  { icon: 'time-outline',     label: 'Processing',    route: '/processing-times', color: '#FF6B8A', bg: 'rgba(255,107,154,0.12)' },
+// ─── Visa Finder Data ─────────────────────────────────────────────────────────
+
+const VISA_PURPOSES = [
+  {
+    id: 'skilled',
+    icon: 'briefcase-outline' as const,
+    label: 'Skilled Work',
+    hint: 'Points-tested PR',
+    color: Colors.accent,
+    bg: 'rgba(0,194,255,0.12)',
+    visas: [
+      { code: '189', name: 'Skilled Independent',  why: 'Points-tested permanent visa — no employer or state sponsor needed.' },
+      { code: '190', name: 'State Nominated',       why: 'Earn 5 extra points with a state nomination. Popular choice.' },
+      { code: '491', name: 'Regional Sponsored',    why: 'Live & work regionally for 3 years, then apply for PR via 191.' },
+    ],
+  },
+  {
+    id: 'family',
+    icon: 'people-outline' as const,
+    label: 'Join Family',
+    hint: 'Partner, parent, child',
+    color: '#F472B6',
+    bg: 'rgba(244,114,182,0.12)',
+    visas: [
+      { code: '820/801', name: 'Partner Visa',   why: 'For partners of Australian citizens or PRs — temporary then permanent.' },
+      { code: '103',     name: 'Parent Visa',     why: 'Join your child who is an Australian citizen or permanent resident.' },
+      { code: '101',     name: 'Child Visa',       why: 'Permanent visa for children of Australian citizens or PRs.' },
+    ],
+  },
+  {
+    id: 'study',
+    icon: 'school-outline' as const,
+    label: 'Study',
+    hint: 'Student & graduate',
+    color: Colors.success,
+    bg: 'rgba(0,214,143,0.12)',
+    visas: [
+      { code: '500', name: 'Student Visa',        why: 'Study full-time at any registered Australian institution.' },
+      { code: '485', name: 'Temporary Graduate',  why: 'Stay and work in Australia after completing your degree.' },
+    ],
+  },
+  {
+    id: 'business',
+    icon: 'trending-up-outline' as const,
+    label: 'Business / Invest',
+    hint: 'Innovation & investment',
+    color: Colors.secondary,
+    bg: 'rgba(255,205,0,0.12)',
+    visas: [
+      { code: '188', name: 'Business Innovation', why: 'For business owners, investors and entrepreneurs with strong track records.' },
+      { code: '888',  name: 'Business Talent PR',  why: 'Permanent residency after demonstrating successful business outcomes.' },
+    ],
+  },
+  {
+    id: 'holiday',
+    icon: 'airplane-outline' as const,
+    label: 'Working Holiday',
+    hint: 'Travel & work',
+    color: '#34D399',
+    bg: 'rgba(52,211,153,0.12)',
+    visas: [
+      { code: '417', name: 'Working Holiday',   why: 'Live and work in Australia for up to a year (UK, Ireland, most of Europe).' },
+      { code: '462', name: 'Work and Holiday',  why: 'Similar to 417 but for different nationalities including USA and China.' },
+    ],
+  },
+  {
+    id: 'employer',
+    icon: 'business-outline' as const,
+    label: 'Employer Sponsored',
+    hint: 'Your employer sponsors',
+    color: '#A78BFA',
+    bg: 'rgba(167,139,250,0.12)',
+    visas: [
+      { code: '482', name: 'TSS Visa',   why: 'Temporary 2–4 year work visa sponsored by an approved Australian employer.' },
+      { code: '186', name: 'ENS Visa',   why: 'Permanent residency sponsored directly by your Australian employer.' },
+      { code: '494', name: 'SESR Visa',  why: 'Employer-sponsored regional visa — leads to PR after 3 years.' },
+    ],
+  },
+] as const;
+
+type PurposeId = typeof VISA_PURPOSES[number]['id'];
+
+// ─── Checklist Data ───────────────────────────────────────────────────────────
+
+const CHECKLIST_ITEMS = [
+  { id: 'calc',   label: 'Calculate your points score',   icon: 'calculator-outline' as const, route: '/(tabs)/calculator', color: Colors.accent     },
+  { id: 'occ',    label: 'Check your occupation',          icon: 'briefcase-outline'  as const, route: '/occupations',        color: '#A78BFA'          },
+  { id: 'state',  label: 'Compare state requirements',     icon: 'map-outline'        as const, route: '/(tabs)/states',      color: Colors.success     },
+  { id: 'rounds', label: 'Check invitation rounds',        icon: 'trophy-outline'     as const, route: '/(tabs)/rounds',      color: Colors.secondary   },
 ];
 
-const VISA_CATEGORIES = [
-  { label: 'Employer',        icon: 'briefcase-outline', color: Colors.accent,        bg: 'rgba(0,194,255,0.10)',   url: 'https://immi.homeaffairs.gov.au/visas/working-in-australia' },
-  { label: 'Family',          icon: 'heart-outline',     color: '#FF6B8A',            bg: 'rgba(255,107,154,0.10)', url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/family' },
-  { label: 'Student',         icon: 'school-outline',    color: Colors.success,       bg: 'rgba(0,214,143,0.10)',   url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/studying' },
-  { label: 'Working Holiday', icon: 'sunny-outline',     color: Colors.secondary,     bg: 'rgba(255,205,0,0.10)',   url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/working-holiday' },
-  { label: 'Graduate',        icon: 'ribbon-outline',    color: '#A78BFA',            bg: 'rgba(167,139,250,0.10)', url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/temporary-graduate-485' },
-  { label: 'Visitor',         icon: 'airplane-outline',  color: Colors.textSecondary, bg: 'rgba(255,255,255,0.06)', url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/visitor-600' },
-  { label: 'Humanitarian',    icon: 'shield-outline',    color: Colors.error,         bg: 'rgba(255,59,48,0.10)',   url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/humanitarian' },
-];
+const STORAGE_PURPOSE  = 'home_visa_purpose_v1';
+const STORAGE_CHECKLIST = 'home_checklist_done_v1';
 
-const OTHER_VISAS_DATA = [
-  // ── EMPLOYER-SPONSORED ──────────────────────────────────────────
-  {
-    code: '482',
-    name: 'Skills in Demand (Temp)',
-    icon: 'hourglass-outline',
-    type: 'Temporary',
-    subclasses: ['482 - Core Skills Stream', '482 - Specialist Skills Stream', '482 - Labour Agreement Stream'],
-    conditions: [
-      'Sponsored by an approved employer',
-      'Occupation on eligible skills list',
-      'Meet English language requirements',
-      'Skills assessment for most occupations',
-    ],
-    url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skills-in-demand-visa-subclass-482',
-  },
-  {
-    code: '186',
-    name: 'Employer Nominated (Perm)',
-    icon: 'briefcase-outline',
-    type: 'Permanent',
-    subclasses: ['186 - Direct Entry', '186 - Temporary Residence Transition', '186 - Labour Agreement'],
-    conditions: [
-      'Nominated by Australian employer',
-      'Occupation on eligible list',
-      'Skills & qualification assessment',
-      'Age under 45 (most streams)',
-    ],
-    url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/employer-nomination-scheme-186',
-  },
-  {
-    code: '494',
-    name: 'Skilled Employer Regional (Prov)',
-    icon: 'location-outline',
-    type: 'Temporary',
-    subclasses: ['494 - Employer Sponsored', '494 - Labour Agreement'],
-    conditions: [
-      'Sponsored by regional employer',
-      'Occupation on RSMS occupation list',
-      'Live & work in specified regional area',
-      'Pathway to permanent residence (191)',
-    ],
-    url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skilled-employer-sponsored-regional-provisional-494',
-  },
-  {
-    code: '407',
-    name: 'Training Visa',
-    icon: 'school-outline',
-    type: 'Temporary',
-    subclasses: ['407 - Occupational Training', '407 - Professional Development'],
-    conditions: [
-      'Sponsored by approved Australian organisation',
-      'Training must improve skills in current occupation',
-      'Not for general employment',
-    ],
-    url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/training-407',
-  },
-  // ── GRADUATE & POST-STUDY ────────────────────────────────────────
-  {
-    code: '485',
-    name: 'Temporary Graduate',
-    icon: 'ribbon-outline',
-    type: 'Temporary',
-    subclasses: ['485 - Graduate Work', '485 - Post-Study Work'],
-    conditions: [
-      'Completed eligible Australian study',
-      'Applied within 6 months of completing study',
-      'Meet English requirements (IELTS 6+)',
-      'Post-Study stream: bachelor or higher degree',
-    ],
-    url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/temporary-graduate-485',
-  },
-  // ── WORKING HOLIDAY ──────────────────────────────────────────────
-  {
-    code: '417',
-    name: 'Working Holiday',
-    icon: 'sunny-outline',
-    type: 'Temporary',
-    subclasses: ['417 - First Working Holiday', '417 - Second (3 months regional)', '417 - Third (6 months regional)'],
-    conditions: [
-      'Passport from eligible country',
-      'Aged 18–30 (up to 35 for some countries)',
-      'Not accompanied by dependent children',
-      'Sufficient funds (AUD 5,000+)',
-    ],
-    url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/working-holiday-417',
-  },
-  {
-    code: '462',
-    name: 'Work and Holiday',
-    icon: 'globe-outline',
-    type: 'Temporary',
-    subclasses: ['462 - Work and Holiday'],
-    conditions: [
-      'Passport from participating country (e.g., USA, China)',
-      'Aged 18–30',
-      'Meet education/language requirements',
-      'Supported by home country government',
-    ],
-    url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/work-holiday-462',
-  },
-  // ── FAMILY ──────────────────────────────────────────────────────
-  {
-    code: '820 / 801',
-    name: 'Partner (Onshore)',
-    icon: 'heart-outline',
-    type: 'Permanent',
-    subclasses: ['820 - Temporary (initial grant)', '801 - Permanent (after 2 years)'],
-    conditions: [
-      'Spouse or de facto partner of Australian citizen/PR',
-      'Genuine, committed relationship',
-      'Onshore application (in Australia)',
-      'Health & character requirements',
-    ],
-    url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/partner-820-801',
-  },
-  {
-    code: '309 / 100',
-    name: 'Partner (Offshore)',
-    icon: 'heart-circle-outline',
-    type: 'Permanent',
-    subclasses: ['309 - Temporary (offshore)', '100 - Permanent'],
-    conditions: [
-      'Spouse or de facto of Australian citizen/PR',
-      'Applied from outside Australia',
-      'Genuine & committed relationship',
-    ],
-    url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/partner-309-100',
-  },
-  {
-    code: '300',
-    name: 'Prospective Marriage',
-    icon: 'diamond-outline',
-    type: 'Temporary',
-    subclasses: ['300 - Fiancé(e) Visa'],
-    conditions: [
-      'Intend to marry Australian citizen/PR',
-      'Must marry within 9 months of entry',
-      'Both parties must be free to marry',
-    ],
-    url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/prospective-marriage-300',
-  },
-  {
-    code: '103 / 143',
-    name: 'Parent Visa',
-    icon: 'people-outline',
-    type: 'Permanent',
-    subclasses: ['103 - Parent', '143 - Contributory Parent', '173 - Contributory Temp'],
-    conditions: [
-      'Child who is Australian citizen/PR/eligible NZ citizen',
-      'Pass the balance of family test',
-      '143 requires significant financial contribution',
-      'Long waiting periods (103: 30+ years; 143: 5–10 years)',
-    ],
-    url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/parent-103',
-  },
-  {
-    code: '101 / 445',
-    name: 'Child Visa',
-    icon: 'person-add-outline',
-    type: 'Permanent',
-    subclasses: ['101 - Child (offshore)', '445 - Dependent Child', '102 - Adopted Child'],
-    conditions: [
-      'Child of Australian citizen/PR',
-      'Under 18, or 18–25 if full-time student',
-      'Single & dependent if 18+',
-    ],
-    url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/child-101',
-  },
-  // ── STUDENT ──────────────────────────────────────────────────────
-  {
-    code: '500',
-    name: 'Student Visa',
-    icon: 'book-outline',
-    type: 'Temporary',
-    subclasses: ['500 - Full-time Study', '590 - Student Guardian'],
-    conditions: [
-      'Enrolled in CRICOS-registered course (CoE)',
-      'Hold Overseas Student Health Cover (OSHC)',
-      'Genuine Temporary Entrant (GTE)',
-      'Sufficient financial means',
-    ],
-    url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/student-500',
-  },
-  // ── VISITOR & BUSINESS ──────────────────────────────────────────
-  {
-    code: '600',
-    name: 'Visitor Visa',
-    icon: 'airplane-outline',
-    type: 'Temporary',
-    subclasses: ['600 - Tourist', '600 - Business Visitor', '600 - Family Sponsored', '600 - Approved Destination Status'],
-    conditions: [
-      'Genuine temporary visit intention',
-      'Sufficient funds for stay & departure ticket',
-      'Meet health & character requirements',
-      'Sponsored stream requires Australian sponsor',
-    ],
-    url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/visitor-600',
-  },
-  {
-    code: '408',
-    name: 'Temporary Activity',
-    icon: 'flash-outline',
-    type: 'Temporary',
-    subclasses: ['408 - Entertainment', '408 - Sports', '408 - Religious', '408 - Research', '408 - Domestic Worker'],
-    conditions: [
-      'Sponsored by Australian organisation',
-      'Specific short-term activity',
-      'Not a general work visa',
-    ],
-    url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/temporary-activity-408',
-  },
-  // ── HUMANITARIAN ─────────────────────────────────────────────────
-  {
-    code: '200 – 204',
-    name: 'Refugee & Humanitarian',
-    icon: 'shield-outline',
-    type: 'Permanent',
-    subclasses: ['200 - Refugee', '201 - In-Country Special', '202 - Global Special', '203 - Emergency Rescue', '204 - Woman at Risk'],
-    conditions: [
-      'Referred by UNHCR or Australian Embassy',
-      'Assessed to be a refugee under UN convention',
-      'Not applicable for individual applications (offshore)',
-      '866 - Protection visa for onshore applicants',
-    ],
-    url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/refugee-200',
-  },
-];
-
-function PressableCard({ children, onPress, style }: any) {
-  const scale = useRef(new Animated.Value(1)).current;
-  const press = () => {
-    Animated.sequence([
-      Animated.timing(scale, { toValue: 0.96, duration: 80, useNativeDriver: true }),
-      Animated.timing(scale, { toValue: 1, duration: 120, useNativeDriver: true }),
-    ]).start();
-    onPress?.();
-  };
-  return (
-    <Animated.View style={[{ transform: [{ scale }] }, style]}>
-      <TouchableOpacity onPress={press} activeOpacity={1}>
-        {children}
-      </TouchableOpacity>
-    </Animated.View>
-  );
-}
+// ─── Shared sub-components ────────────────────────────────────────────────────
 
 function FadeInView({ children, delay = 0, style }: any) {
-  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const fadeAnim  = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(15)).current;
 
   React.useEffect(() => {
     Animated.parallel([
-      Animated.timing(fadeAnim, { toValue: 1, duration: 400, delay, useNativeDriver: true }),
+      Animated.timing(fadeAnim,  { toValue: 1, duration: 400, delay, useNativeDriver: true }),
       Animated.timing(slideAnim, { toValue: 0, duration: 400, delay, useNativeDriver: true }),
     ]).start();
   }, [delay]);
@@ -300,10 +135,195 @@ function FadeInView({ children, delay = 0, style }: any) {
   );
 }
 
+// ─── Visa Finder ──────────────────────────────────────────────────────────────
+
+function VisaFinder() {
+  const router = useRouter();
+  const [selected, setSelected] = useState<PurposeId | null>(null);
+  const recAnim = useRef(new Animated.Value(0)).current;
+
+  // Persist selection
+  useEffect(() => {
+    AsyncStorage.getItem(STORAGE_PURPOSE).then((v) => {
+      if (v) setSelected(v as PurposeId);
+    });
+  }, []);
+
+  const handleSelect = (id: PurposeId) => {
+    const next = selected === id ? null : id;
+    setSelected(next);
+    AsyncStorage.setItem(STORAGE_PURPOSE, next ?? '');
+    Animated.spring(recAnim, {
+      toValue: next ? 1 : 0,
+      useNativeDriver: true,
+      tension: 80,
+      friction: 10,
+    }).start();
+  };
+
+  const purpose = VISA_PURPOSES.find((p) => p.id === selected) ?? null;
+
+  return (
+    <View style={styles.finderSection}>
+      <View style={styles.finderHeader}>
+        <Ionicons name="compass-outline" size={18} color={Colors.accent} />
+        <Text style={styles.finderTitle}>What brings you to Australia?</Text>
+      </View>
+      <Text style={styles.finderSub}>Tap your goal and we'll suggest the right visa.</Text>
+
+      {/* 3-column purpose grid */}
+      <View style={styles.purposeGrid}>
+        {VISA_PURPOSES.map((p) => {
+          const active = selected === p.id;
+          return (
+            <TouchableOpacity
+              key={p.id}
+              style={[
+                styles.purposeBtn,
+                { backgroundColor: active ? p.bg : 'rgba(255,255,255,0.04)' },
+                active && { borderColor: p.color + '60' },
+              ]}
+              onPress={() => handleSelect(p.id)}
+              activeOpacity={0.75}
+            >
+              <View style={[styles.purposeIconWrap, { backgroundColor: p.bg }]}>
+                <Ionicons name={p.icon} size={18} color={p.color} />
+              </View>
+              <Text style={[styles.purposeLabel, active && { color: p.color }]}>{p.label}</Text>
+              <Text style={styles.purposeHint}>{p.hint}</Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
+      {/* Recommendation panel */}
+      {purpose && (
+        <Animated.View
+          style={[
+            styles.recPanel,
+            { borderColor: purpose.color + '40' },
+            {
+              opacity: recAnim,
+              transform: [{ translateY: recAnim.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }],
+            },
+          ]}
+        >
+          <View style={styles.recHeader}>
+            <View style={[styles.recIconWrap, { backgroundColor: purpose.bg }]}>
+              <Ionicons name={purpose.icon} size={16} color={purpose.color} />
+            </View>
+            <Text style={[styles.recTitle, { color: purpose.color }]}>
+              Recommended for "{purpose.label}"
+            </Text>
+          </View>
+
+          {purpose.visas.map((v) => (
+            <TouchableOpacity
+              key={v.code}
+              style={styles.recRow}
+              onPress={() => router.push('/visas' as any)}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.recCode, { backgroundColor: purpose.color + '20' }]}>
+                <Text style={[styles.recCodeText, { color: purpose.color }]}>SC {v.code}</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.recName}>{v.name}</Text>
+                <Text style={styles.recWhy}>{v.why}</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={14} color={Colors.textMuted} />
+            </TouchableOpacity>
+          ))}
+
+          <TouchableOpacity
+            style={styles.recViewAll}
+            onPress={() => router.push('/visas' as any)}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.recViewAllText}>Explore all visa subclasses</Text>
+            <Ionicons name="arrow-forward" size={13} color={Colors.accent} />
+          </TouchableOpacity>
+        </Animated.View>
+      )}
+    </View>
+  );
+}
+
+// ─── Migration Checklist ──────────────────────────────────────────────────────
+
+function MigrationChecklist() {
+  const router = useRouter();
+  const [done, setDone] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    AsyncStorage.getItem(STORAGE_CHECKLIST).then((v) => {
+      if (v) setDone(new Set(JSON.parse(v)));
+    });
+  }, []);
+
+  const handleTap = async (item: typeof CHECKLIST_ITEMS[number]) => {
+    const next = new Set(done);
+    next.add(item.id);
+    setDone(next);
+    await AsyncStorage.setItem(STORAGE_CHECKLIST, JSON.stringify([...next]));
+    router.push(item.route as any);
+  };
+
+  const count = done.size;
+  const total = CHECKLIST_ITEMS.length;
+  const progress = count / total;
+
+  return (
+    <View style={styles.checklistSection}>
+      <View style={styles.checklistHeader}>
+        <View>
+          <Text style={styles.checklistTitle}>Your Migration Journey</Text>
+          <Text style={styles.checklistSub}>{count} of {total} steps completed</Text>
+        </View>
+        {count === total && (
+          <View style={styles.checklistBadge}>
+            <Ionicons name="checkmark-circle" size={14} color={Colors.success} />
+            <Text style={styles.checklistBadgeText}>All done!</Text>
+          </View>
+        )}
+      </View>
+
+      {/* Progress bar */}
+      <View style={styles.progressTrack}>
+        <Animated.View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
+      </View>
+
+      {/* Items */}
+      {CHECKLIST_ITEMS.map((item) => {
+        const ticked = done.has(item.id);
+        return (
+          <TouchableOpacity
+            key={item.id}
+            style={[styles.checkItem, ticked && styles.checkItemDone]}
+            onPress={() => handleTap(item)}
+            activeOpacity={0.7}
+          >
+            <View style={[styles.checkIconWrap, { backgroundColor: item.color + '18' }]}>
+              <Ionicons name={item.icon} size={16} color={ticked ? Colors.success : item.color} />
+            </View>
+            <Text style={[styles.checkLabel, ticked && styles.checkLabelDone]}>{item.label}</Text>
+            <View style={[styles.checkbox, ticked && styles.checkboxDone]}>
+              {ticked && <Ionicons name="checkmark" size={11} color="#fff" />}
+            </View>
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  );
+}
+
+// ─── Home Screen ──────────────────────────────────────────────────────────────
+
 export default function HomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [searchVisible, setSearchVisible] = useState(false);
+
   return (
     <ScrollView
       style={styles.container}
@@ -315,7 +335,6 @@ export default function HomeScreen() {
         <View style={styles.orb1} />
         <View style={styles.orb2} />
 
-        {/* Search button — top-right of hero */}
         <TouchableOpacity
           style={[styles.heroSearchBtn, { top: insets.top + 12 }]}
           onPress={() => setSearchVisible(true)}
@@ -333,15 +352,16 @@ export default function HomeScreen() {
           <Text style={styles.heroTitle}>Your Path to{'\n'}Australia Starts Here</Text>
 
           <Text style={styles.heroSub}>
-            Calculate points, explore states, and get instant AI guidance from Aria.
+            Find your visa, calculate your points, and get instant AI guidance from Aria.
           </Text>
 
           <TouchableOpacity
             style={styles.heroCta}
-            onPress={() => router.push('/(tabs)/calculator')}
+            onPress={() => router.push('/(tabs)/calculator' as any)}
+            activeOpacity={0.85}
           >
             <LinearGradient
-              colors={[Colors.secondary, '#FFB800']}
+              colors={[Colors.accent, '#0099CC']}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={styles.heroCtaGrad}
@@ -353,87 +373,120 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      {/* Quick tiles */}
-      <View style={styles.tilesRow}>
-        {QUICK_TILES.map((tile) => (
-          <PressableCard
-            key={tile.label}
-            onPress={() => (tile as any).url ? Linking.openURL((tile as any).url) : router.push((tile as any).route as any)}
-            style={styles.tilePressable}
-          >
-            <View style={[styles.tile, { backgroundColor: tile.bg }]}>
-              <View style={[styles.tileIcon, { borderColor: tile.color + '40' }]}>
-                <Ionicons name={tile.icon as any} size={22} color={tile.color} />
-              </View>
-              <Text style={styles.tileLabel}>{tile.label}</Text>
-            </View>
-          </PressableCard>
-        ))}
-      </View>
+      {/* Visa Finder */}
+      <FadeInView delay={60}>
+        <VisaFinder />
+      </FadeInView>
 
-      {/* Processing Times */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Processing Times</Text>
-          <View style={[styles.sectionPill, { backgroundColor: 'rgba(0,214,143,0.1)', flexDirection: 'row', alignItems: 'center' }]}>
-            <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: Colors.success, marginRight: 6 }} />
-            <Text style={[styles.sectionPillText, { color: Colors.success, fontWeight: '600' }]}>DHA Live Data</Text>
-          </View>
-        </View>
-        <TouchableOpacity
-          activeOpacity={0.8}
-          onPress={() => router.push('/processing-times' as any)}
-          style={styles.processingCard}
-        >
-          <LinearGradient
-            colors={['#0D2137', '#0A3050']}
-            style={styles.processingGrad}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          >
-            <View style={styles.processingLeft}>
-              <Ionicons name="calendar-outline" size={18} color={Colors.accent} />
-              <View style={{ flex: 1 }}>
-                <Text style={styles.processingTitle}>Check Current Processing Times</Text>
-                <Text style={styles.processingSub}>Median & 90th percentile timeframes — in-app</Text>
-              </View>
-            </View>
-            <Ionicons name="arrow-forward" size={14} color={Colors.accent} />
-          </LinearGradient>
-        </TouchableOpacity>
-      </View>
+      {/* Migration Checklist */}
+      <FadeInView delay={140}>
+        <MigrationChecklist />
+      </FadeInView>
 
-      {/* Other Visa Pathways */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Other Visa Pathways</Text>
-          <View style={styles.sectionPill}>
-            <Text style={styles.sectionPillText}>{OTHER_VISAS_DATA.length} options</Text>
-          </View>
-        </View>
-        <Text style={styles.sectionSub}>Not eligible for skilled migration? Explore other routes:</Text>
-        <View style={styles.visaCategoryGrid}>
-          {VISA_CATEGORIES.map((cat) => (
-            <TouchableOpacity
-              key={cat.label}
-              style={[styles.visaCategoryChip, { backgroundColor: cat.bg }]}
-              onPress={() => router.push({ pathname: '/visas', params: { category: cat.label } } as any)}
-              activeOpacity={0.7}
-            >
-              <Ionicons name={cat.icon as any} size={13} color={cat.color} />
-              <Text style={[styles.visaCategoryText, { color: cat.color }]}>{cat.label}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+      {/* Visa Pathways */}
+      <FadeInView delay={200} style={styles.section}>
         <TouchableOpacity
-          style={styles.browseAllBtn}
+          style={styles.sectionHeader}
           onPress={() => router.push('/visas' as any)}
-          activeOpacity={0.8}
+          activeOpacity={0.7}
         >
-          <Text style={styles.browseAllText}>Browse All Visa Subclasses</Text>
-          <Ionicons name="arrow-forward" size={14} color={Colors.accent} />
+          <Text style={styles.sectionTitle}>Visa Pathways</Text>
+          <View style={{ flex: 1 }} />
+          <Text style={styles.sectionViewAll}>{ALL_VISAS.length} subclasses</Text>
+          <Ionicons name="chevron-forward" size={14} color={Colors.accent} />
         </TouchableOpacity>
-      </View>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.visaChipScroll}
+        >
+          {ALL_CATEGORIES.map((cat) => {
+            const meta = CATEGORY_META[cat];
+            return (
+              <TouchableOpacity
+                key={cat}
+                style={[styles.visaCategoryChip, { backgroundColor: meta.bg }]}
+                onPress={() => router.push({ pathname: '/visas', params: { category: cat } } as any)}
+                activeOpacity={0.7}
+              >
+                <Ionicons name={meta.icon as any} size={13} color={meta.color} />
+                <Text style={[styles.visaCategoryText, { color: meta.color }]}>{cat}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+      </FadeInView>
+
+      {/* Latest SkillSelect Round */}
+      <FadeInView delay={260} style={styles.section}>
+        <TouchableOpacity
+          style={styles.sectionHeader}
+          onPress={() => router.push('/(tabs)/rounds' as any)}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.sectionTitle}>SkillSelect Rounds</Text>
+          <View style={{ flex: 1 }} />
+          <Text style={styles.sectionViewAll}>May 2026</Text>
+          <Ionicons name="chevron-forward" size={14} color={Colors.accent} />
+        </TouchableOpacity>
+        <View style={styles.roundsCard}>
+          <View style={styles.roundsRow}>
+            {([
+              { sub: '189', label: 'Skilled Indep.',     pts: '65',  color: Colors.success },
+              { sub: '190', label: 'State Nominated',    pts: '65+', color: Colors.accent  },
+              { sub: '491', label: 'Regional Sponsored', pts: '65',  color: '#A78BFA'      },
+            ] as const).map((r, i, arr) => (
+              <View
+                key={r.sub}
+                style={[
+                  styles.roundsPill,
+                  i < arr.length - 1 && { borderRightWidth: 1, borderRightColor: Colors.divider },
+                ]}
+              >
+                <Text style={[styles.roundsPillSub, { color: r.color }]}>SC {r.sub}</Text>
+                <Text style={styles.roundsPillPts}>{r.pts}</Text>
+                <Text style={styles.roundsPillPtsUnit}>pts min</Text>
+                <Text style={styles.roundsPillLabel}>{r.label}</Text>
+              </View>
+            ))}
+          </View>
+          <TouchableOpacity
+            style={styles.roundsViewAll}
+            onPress={() => router.push('/(tabs)/rounds' as any)}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.roundsViewAllText}>View all rounds &amp; occupation breakdowns</Text>
+            <Ionicons name="arrow-forward" size={13} color={Colors.accent} />
+          </TouchableOpacity>
+        </View>
+      </FadeInView>
+
+      {/* Aria AI */}
+      <FadeInView delay={320} style={styles.section}>
+        <TouchableOpacity
+          style={styles.ariaCard}
+          onPress={() => router.push('/(tabs)/ai' as any)}
+          activeOpacity={0.85}
+        >
+          <View style={styles.ariaCardShine} />
+          <View style={styles.ariaLeft}>
+            <View style={styles.ariaAvatarSmall}>
+              <Ionicons name="sparkles" size={22} color={Colors.secondary} />
+            </View>
+            <View>
+              <Text style={styles.ariaTitle}>Ask Aria</Text>
+              <Text style={styles.ariaSub}>AI migration guide · instant answers</Text>
+            </View>
+          </View>
+          <View style={styles.ariaChips}>
+            {['Am I eligible for PR?', 'Best visa for my job?', 'Which state to nominate?'].map((q) => (
+              <View key={q} style={styles.ariaChip}>
+                <Text style={styles.ariaChipText}>{q}</Text>
+              </View>
+            ))}
+          </View>
+        </TouchableOpacity>
+      </FadeInView>
 
       {/* Disclaimer */}
       <View style={styles.disclaimer}>
@@ -450,7 +503,6 @@ export default function HomeScreen() {
         </Text>
       </View>
 
-      {/* Independent guide banner */}
       <View style={styles.independentBanner}>
         <Ionicons name="information-circle-outline" size={14} color={Colors.accent} />
         <Text style={styles.independentText}>
@@ -463,11 +515,14 @@ export default function HomeScreen() {
   );
 }
 
+// ─── Styles ───────────────────────────────────────────────────────────────────
+
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
 
+  // Hero
   hero: {
-    minHeight: height * 0.44,
+    minHeight: height * 0.42,
     backgroundColor: Colors.primaryDark,
     overflow: 'hidden',
     paddingHorizontal: Spacing.xl,
@@ -475,405 +530,252 @@ const styles = StyleSheet.create({
   },
   orb1: {
     position: 'absolute',
-    width: 280,
-    height: 280,
-    borderRadius: 140,
+    width: 280, height: 280, borderRadius: 140,
     backgroundColor: '#003A8C',
-    top: -80,
-    right: -80,
-    opacity: 0.6,
+    top: -80, right: -80, opacity: 0.6,
   },
   orb2: {
     position: 'absolute',
-    width: 180,
-    height: 180,
-    borderRadius: 90,
+    width: 180, height: 180, borderRadius: 90,
     backgroundColor: '#FFCD00',
-    bottom: -60,
-    left: -40,
-    opacity: 0.07,
+    bottom: -60, left: -40, opacity: 0.07,
   },
   heroContent: { zIndex: 2 },
   heroSearchBtn: {
-    position: 'absolute',
-    right: Spacing.lg,
-    zIndex: 3,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    position: 'absolute', right: Spacing.lg, zIndex: 3,
+    width: 40, height: 40, borderRadius: 20,
     backgroundColor: 'rgba(255,255,255,0.08)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.15)',
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)',
+    alignItems: 'center', justifyContent: 'center',
   },
   badge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
+    flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start',
     backgroundColor: 'rgba(255,205,0,0.12)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,205,0,0.25)',
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs,
-    borderRadius: Radius.full,
-    marginBottom: Spacing.lg,
-    gap: Spacing.xs,
+    borderWidth: 1, borderColor: 'rgba(255,205,0,0.25)',
+    paddingHorizontal: Spacing.md, paddingVertical: Spacing.xs,
+    borderRadius: Radius.full, marginBottom: Spacing.lg, gap: Spacing.xs,
   },
   badgeDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: Colors.success },
   badgeText: { color: Colors.secondary, fontSize: FontSize.sm, fontWeight: FontWeight.semiBold },
   heroTitle: {
-    color: Colors.textPrimary,
-    fontSize: FontSize.display,
-    fontWeight: FontWeight.extraBold,
-    lineHeight: 44,
-    marginBottom: Spacing.md,
-    letterSpacing: -0.5,
+    color: Colors.textPrimary, fontSize: FontSize.display,
+    fontWeight: FontWeight.extraBold, lineHeight: 44,
+    marginBottom: Spacing.md, letterSpacing: -0.5,
   },
   heroSub: {
-    color: Colors.textSecondary,
-    fontSize: FontSize.md,
-    lineHeight: 22,
-    marginBottom: Spacing.xl,
+    color: Colors.textSecondary, fontSize: FontSize.md,
+    lineHeight: 22, marginBottom: Spacing.xl,
   },
   heroCta: { alignSelf: 'flex-start', borderRadius: Radius.full, overflow: 'hidden' },
   heroCtaGrad: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.sm,
-    paddingHorizontal: Spacing.xl,
-    paddingVertical: 14,
+    flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
+    paddingHorizontal: Spacing.xl, paddingVertical: 14,
   },
-  heroCtaText: {
-    color: Colors.primaryDark,
-    fontSize: FontSize.md,
-    fontWeight: FontWeight.bold,
-  },
+  heroCtaText: { color: Colors.primaryDark, fontSize: FontSize.md, fontWeight: FontWeight.bold },
 
-  tilesRow: {
-    flexDirection: 'row',
-    paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.xl,
-    gap: Spacing.md,
-  },
-  tilePressable: { flex: 1 },
-  tile: {
-    borderRadius: Radius.xl,
-    paddingVertical: Spacing.lg,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
-    gap: Spacing.sm,
-  },
-  tileIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: Radius.lg,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.04)',
-  },
-  tileLabel: {
-    fontSize: FontSize.xs,
-    fontWeight: FontWeight.semiBold,
-    color: Colors.textSecondary,
-    letterSpacing: 0.2,
-  },
-
-  section: { paddingHorizontal: Spacing.lg, paddingTop: Spacing.xl },
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginBottom: Spacing.md },
-  sectionTitle: { fontSize: FontSize.lg, fontWeight: FontWeight.bold, color: Colors.textPrimary },
-  sectionPill: {
+  // Visa Finder
+  finderSection: {
+    marginHorizontal: Spacing.lg,
+    marginTop: Spacing.xl,
     backgroundColor: Colors.surface,
-    borderRadius: Radius.full,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 2,
-  },
-  sectionPillText: { fontSize: FontSize.xs, color: Colors.textMuted },
-
-  // English Tests card
-  englishCard: {
     borderRadius: Radius.xl,
     padding: Spacing.xl,
-    overflow: 'hidden',
-    backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: 'rgba(0,214,143,0.18)',
-  },
-  englishLeft: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, marginBottom: Spacing.lg },
-  englishIconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(0,214,143,0.15)',
-    borderWidth: 1,
-    borderColor: 'rgba(0,214,143,0.3)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  englishTitle: { color: Colors.textPrimary, fontSize: FontSize.md, fontWeight: FontWeight.bold },
-  englishSub: { color: Colors.textSecondary, fontSize: FontSize.xs, marginTop: 2 },
-  englishChips: { flexDirection: 'row', gap: Spacing.sm, flexWrap: 'wrap' },
-  englishChip: {
-    backgroundColor: 'rgba(0,214,143,0.12)',
-    borderWidth: 1,
-    borderColor: 'rgba(0,214,143,0.25)',
-    borderRadius: Radius.full,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: 5,
-  },
-  englishChipText: { color: Colors.success, fontSize: FontSize.xs, fontWeight: FontWeight.semiBold },
-
-  // Processing Times card
-  processingCard: {
-    borderRadius: Radius.xl,
-    overflow: 'hidden',
-  },
-  processingGrad: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: Spacing.lg,
-    borderRadius: Radius.xl,
     borderWidth: 1,
     borderColor: Colors.border,
   },
-  processingLeft: {
+  finderHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginBottom: Spacing.xs },
+  finderTitle: { fontSize: FontSize.lg, fontWeight: FontWeight.bold, color: Colors.textPrimary },
+  finderSub: { fontSize: FontSize.sm, color: Colors.textMuted, marginBottom: Spacing.lg },
+  purposeGrid: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.sm,
+  },
+  purposeBtn: {
+    width: (width - Spacing.lg * 2 - Spacing.xl * 2 - Spacing.sm * 2) / 3,
+    borderRadius: Radius.lg,
+    padding: Spacing.md,
     alignItems: 'center',
-    gap: Spacing.md,
-    flex: 1,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.07)',
+    gap: 4,
   },
-  processingTitle: {
-    fontSize: FontSize.md,
-    fontWeight: FontWeight.semiBold,
-    color: Colors.textPrimary,
-    marginBottom: 2,
+  purposeIconWrap: {
+    width: 36, height: 36, borderRadius: 18,
+    alignItems: 'center', justifyContent: 'center',
+    marginBottom: 4,
   },
-  processingSub: {
-    fontSize: FontSize.xs,
-    color: Colors.textSecondary,
+  purposeLabel: {
+    fontSize: FontSize.xs, fontWeight: FontWeight.semiBold,
+    color: Colors.textPrimary, textAlign: 'center',
+  },
+  purposeHint: {
+    fontSize: 9, color: Colors.textMuted,
+    textAlign: 'center', lineHeight: 12,
   },
 
-  ariaCard: {
+  // Recommendation panel
+  recPanel: {
+    marginTop: Spacing.lg,
+    backgroundColor: Colors.primaryDark,
+    borderRadius: Radius.lg,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  recHeader: {
+    flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
+    paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md,
+    borderBottomWidth: 1, borderBottomColor: Colors.divider,
+  },
+  recIconWrap: {
+    width: 28, height: 28, borderRadius: 14,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  recTitle: { fontSize: FontSize.sm, fontWeight: FontWeight.bold },
+  recRow: {
+    flexDirection: 'row', alignItems: 'center', gap: Spacing.md,
+    paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md,
+    borderBottomWidth: 1, borderBottomColor: Colors.divider,
+  },
+  recCode: {
+    paddingHorizontal: Spacing.sm, paddingVertical: 4,
+    borderRadius: Radius.sm, minWidth: 52, alignItems: 'center',
+  },
+  recCodeText: { fontSize: FontSize.xs, fontWeight: FontWeight.bold },
+  recName: { fontSize: FontSize.sm, fontWeight: FontWeight.semiBold, color: Colors.textPrimary },
+  recWhy: { fontSize: FontSize.xs, color: Colors.textMuted, marginTop: 2, lineHeight: 15 },
+  recViewAll: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: Spacing.xs, paddingVertical: Spacing.md,
+  },
+  recViewAllText: { fontSize: FontSize.sm, color: Colors.accent, fontWeight: FontWeight.semiBold },
+
+  // Checklist
+  checklistSection: {
+    marginHorizontal: Spacing.lg,
+    marginTop: Spacing.xl,
+    backgroundColor: Colors.surface,
     borderRadius: Radius.xl,
     padding: Spacing.xl,
-    overflow: 'hidden',
-    backgroundColor: Colors.surface,
     borderWidth: 1,
-    borderColor: 'rgba(167,139,250,0.18)',
-    position: 'relative',
+    borderColor: Colors.border,
+  },
+  checklistHeader: {
+    flexDirection: 'row', alignItems: 'center',
+    justifyContent: 'space-between', marginBottom: Spacing.sm,
+  },
+  checklistTitle: { fontSize: FontSize.lg, fontWeight: FontWeight.bold, color: Colors.textPrimary },
+  checklistSub: { fontSize: FontSize.xs, color: Colors.textMuted, marginTop: 2 },
+  checklistBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    backgroundColor: 'rgba(0,214,143,0.12)',
+    paddingHorizontal: Spacing.sm, paddingVertical: 4,
+    borderRadius: Radius.full,
+  },
+  checklistBadgeText: { fontSize: FontSize.xs, color: Colors.success, fontWeight: FontWeight.semiBold },
+  progressTrack: {
+    height: 4, backgroundColor: Colors.divider,
+    borderRadius: 2, marginBottom: Spacing.lg, overflow: 'hidden',
+  },
+  progressFill: {
+    height: 4, backgroundColor: Colors.success,
+    borderRadius: 2,
+  },
+  checkItem: {
+    flexDirection: 'row', alignItems: 'center', gap: Spacing.md,
+    paddingVertical: Spacing.md,
+    borderBottomWidth: 1, borderBottomColor: Colors.divider,
+  },
+  checkItemDone: { opacity: 0.6 },
+  checkIconWrap: {
+    width: 34, height: 34, borderRadius: 17,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  checkLabel: { flex: 1, fontSize: FontSize.sm, color: Colors.textPrimary, fontWeight: FontWeight.medium },
+  checkLabelDone: { textDecorationLine: 'line-through', color: Colors.textMuted },
+  checkbox: {
+    width: 22, height: 22, borderRadius: 11,
+    borderWidth: 2, borderColor: Colors.border,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  checkboxDone: { backgroundColor: Colors.success, borderColor: Colors.success },
+
+  // Shared section
+  section: { paddingHorizontal: Spacing.lg, paddingTop: Spacing.xl },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginBottom: Spacing.md },
+  sectionViewAll: { fontSize: FontSize.xs, color: Colors.accent, fontWeight: FontWeight.semiBold },
+  sectionTitle: { fontSize: FontSize.lg, fontWeight: FontWeight.bold, color: Colors.textPrimary },
+
+  // Visa category chips
+  visaChipScroll: { flexDirection: 'row', gap: Spacing.sm, paddingRight: Spacing.lg },
+  visaCategoryChip: {
+    flexDirection: 'row', alignItems: 'center', gap: 5,
+    paddingHorizontal: Spacing.md, paddingVertical: Spacing.xs + 2,
+    borderRadius: Radius.full, borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+  },
+  visaCategoryText: { fontSize: FontSize.xs, fontWeight: FontWeight.semiBold },
+
+  // SkillSelect Rounds card
+  roundsCard: {
+    backgroundColor: Colors.surface, borderRadius: Radius.xl,
+    borderWidth: 1, borderColor: Colors.border, overflow: 'hidden',
+  },
+  roundsRow: { flexDirection: 'row' },
+  roundsPill: { flex: 1, alignItems: 'center', paddingVertical: Spacing.lg, paddingHorizontal: Spacing.xs },
+  roundsPillSub: { fontSize: FontSize.sm, fontWeight: FontWeight.bold },
+  roundsPillPts: { fontSize: FontSize.xxxl, fontWeight: FontWeight.extraBold, color: Colors.textPrimary, lineHeight: 38 },
+  roundsPillPtsUnit: { fontSize: FontSize.xs, color: Colors.textMuted, marginTop: -2 },
+  roundsPillLabel: { fontSize: FontSize.xs, color: Colors.textMuted, marginTop: Spacing.xs, textAlign: 'center' },
+  roundsViewAll: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: Spacing.xs, paddingVertical: Spacing.md,
+    borderTopWidth: 1, borderTopColor: Colors.divider,
+  },
+  roundsViewAllText: { fontSize: FontSize.sm, color: Colors.accent, fontWeight: FontWeight.semiBold },
+
+  // Aria card
+  ariaCard: {
+    borderRadius: Radius.xl, padding: Spacing.xl, overflow: 'hidden',
+    backgroundColor: Colors.surface, borderWidth: 1,
+    borderColor: 'rgba(167,139,250,0.18)', position: 'relative',
   },
   ariaCardShine: {
-    position: 'absolute',
-    top: 0, right: 0,
-    width: 120, height: 120,
-    borderRadius: 60,
+    position: 'absolute', top: 0, right: 0,
+    width: 120, height: 120, borderRadius: 60,
     backgroundColor: 'rgba(167,139,250,0.15)',
   },
   ariaLeft: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, marginBottom: Spacing.lg },
   ariaAvatarSmall: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 44, height: 44, borderRadius: 22,
     backgroundColor: 'rgba(255,205,0,0.15)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,205,0,0.3)',
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderWidth: 1, borderColor: 'rgba(255,205,0,0.3)',
+    alignItems: 'center', justifyContent: 'center',
   },
   ariaTitle: { color: Colors.textPrimary, fontSize: FontSize.lg, fontWeight: FontWeight.bold },
   ariaSub: { color: Colors.textSecondary, fontSize: FontSize.sm, marginTop: 2 },
   ariaChips: { flexDirection: 'row', gap: Spacing.sm, flexWrap: 'wrap' },
   ariaChip: {
     backgroundColor: 'rgba(255,255,255,0.08)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
     borderRadius: Radius.full,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs + 2,
+    paddingHorizontal: Spacing.md, paddingVertical: Spacing.xs + 2,
   },
   ariaChipText: { color: Colors.textSecondary, fontSize: FontSize.xs },
 
+  // Footer
   disclaimer: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: Spacing.sm,
-    marginHorizontal: Spacing.lg,
-    marginTop: Spacing.xl,
-    padding: Spacing.md,
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.md,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.sm,
+    marginHorizontal: Spacing.lg, marginTop: Spacing.xl,
+    padding: Spacing.md, backgroundColor: Colors.surface,
+    borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.border,
   },
   disclaimerText: { flex: 1, fontSize: FontSize.xs, color: Colors.textMuted, lineHeight: 16 },
   disclaimerLink: { color: Colors.accent, textDecorationLine: 'underline' },
-
   independentBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: Spacing.xs,
-    marginHorizontal: Spacing.lg,
-    marginTop: Spacing.md,
-    paddingVertical: Spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: Colors.divider,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: Spacing.xs, marginHorizontal: Spacing.lg, marginTop: Spacing.md,
+    paddingVertical: Spacing.sm, borderTopWidth: 1, borderTopColor: Colors.divider,
   },
-  independentText: {
-    fontSize: FontSize.xs,
-    color: Colors.accent,
-    opacity: 0.7,
-    textAlign: 'center',
-  },
-
-  // Expandable Visa Cards
-  visaCardExpand: {
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: Radius.lg,
-    marginBottom: Spacing.md,
-    overflow: 'hidden',
-    backgroundColor: 'rgba(0,194,255,0.04)',
-  },
-  visaCardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.md,
-    gap: Spacing.md,
-  },
-  visaCardIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: Radius.md,
-    backgroundColor: 'rgba(0,194,255,0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  visaCardInfo: {
-    flex: 1,
-  },
-  visaCode: {
-    fontSize: FontSize.sm,
-    fontWeight: FontWeight.bold,
-    color: Colors.accent,
-  },
-  visaTitle: {
-    fontSize: FontSize.md,
-    fontWeight: FontWeight.semiBold,
-    color: Colors.textPrimary,
-    marginTop: 2,
-  },
-  visaTypeTag: {
-    backgroundColor: Colors.accent + '20',
-    borderRadius: Radius.full,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 3,
-  },
-  visaTypeText: {
-    fontSize: FontSize.xs,
-    fontWeight: FontWeight.semiBold,
-    color: Colors.accent,
-  },
-  visaExpandedContent: {
-    paddingHorizontal: Spacing.md,
-    paddingBottom: Spacing.md,
-    backgroundColor: Colors.primaryDark + '40',
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
-  },
-  visaSubsection: {
-    marginBottom: Spacing.md,
-  },
-  visaSubtitle: {
-    fontSize: FontSize.sm,
-    fontWeight: FontWeight.semiBold,
-    color: Colors.secondary,
-    marginBottom: Spacing.xs,
-  },
-  visaListItem: {
-    fontSize: FontSize.sm,
-    color: Colors.textSecondary,
-    marginBottom: 6,
-    lineHeight: 18,
-  },
-  visaLinkButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: Spacing.sm,
-    paddingVertical: Spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
-    paddingTop: Spacing.md,
-  },
-  visaLinkButtonText: {
-    fontSize: FontSize.sm,
-    fontWeight: FontWeight.semiBold,
-    color: Colors.accent,
-  },
-  showAllBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: Spacing.xs,
-    paddingVertical: Spacing.md,
-    marginTop: Spacing.xs,
-    backgroundColor: 'rgba(0,194,255,0.05)',
-    borderRadius: Radius.lg,
-    borderWidth: 1,
-    borderColor: 'rgba(0,194,255,0.15)',
-  },
-  showAllBtnText: {
-    color: Colors.accent,
-    fontSize: FontSize.sm,
-    fontWeight: FontWeight.semiBold,
-  },
-
-  /* Visa category chips */
-  sectionSub: {
-    fontSize: FontSize.xs,
-    color: Colors.textMuted,
-    marginBottom: Spacing.md,
-    lineHeight: 18,
-  },
-  visaCategoryGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacing.sm,
-    marginBottom: Spacing.md,
-  },
-  visaCategoryChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs + 2,
-    borderRadius: Radius.full,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
-  },
-  visaCategoryText: {
-    fontSize: FontSize.xs,
-    fontWeight: FontWeight.semiBold,
-  },
-  browseAllBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: Spacing.sm,
-    paddingVertical: Spacing.md,
-    backgroundColor: 'rgba(0,194,255,0.05)',
-    borderRadius: Radius.lg,
-    borderWidth: 1,
-    borderColor: 'rgba(0,194,255,0.15)',
-  },
-  browseAllText: {
-    color: Colors.accent,
-    fontSize: FontSize.sm,
-    fontWeight: FontWeight.semiBold,
-  },
+  independentText: { fontSize: FontSize.xs, color: Colors.accent, opacity: 0.7, textAlign: 'center' },
 });

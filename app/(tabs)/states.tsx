@@ -16,13 +16,39 @@ import { useRouter } from 'expo-router';
 import { getProfile, saveProfile } from '../../utils/storage';
 import { tap as hapticTap } from '../../utils/haptics';
 
-const STATES = [
+interface StateVisa { sub: string; label: string; desc: string }
+interface StateVisaGroup { category: string; icon: string; visas: StateVisa[] }
+interface StateEntry {
+  code: string; name: string; color: string;
+  portalUrl: string; occupationUrl: string;
+  visas: string[]; // kept for occupations.tsx grid compatibility
+  desc: string;
+  visaGroups: StateVisaGroup[];
+}
+
+const STATES: StateEntry[] = [
   {
     code: 'NSW', name: 'New South Wales', color: '#4F8EF7',
     portalUrl: 'https://www.nsw.gov.au/visas-and-migration',
     occupationUrl: 'https://www.nsw.gov.au/visas-and-migration/skilled-visas',
     visas: ['190', '491'],
     desc: 'NSW Skilled Visa nomination — 190 & 491',
+    visaGroups: [
+      {
+        category: 'Skilled Nomination', icon: 'ribbon-outline', visas: [
+          { sub: '190', label: 'Skilled Nominated', desc: 'Permanent · points-tested' },
+          { sub: '491', label: 'Skilled Work Regional', desc: 'Provisional 5yr → PR pathway' },
+        ],
+      },
+      {
+        category: 'Business & Investment', icon: 'briefcase-outline', visas: [
+          { sub: '188A', label: 'Business Innovation', desc: 'Established business history' },
+          { sub: '188B', label: 'Investor', desc: '$1.5M+ designated state investment' },
+          { sub: '188C', label: 'Significant Investor', desc: '$5M complying investment' },
+          { sub: '132',  label: 'Business Talent', desc: 'Significant business history or VC' },
+        ],
+      },
+    ],
   },
   {
     code: 'VIC', name: 'Victoria', color: '#00C2FF',
@@ -30,6 +56,21 @@ const STATES = [
     occupationUrl: 'https://liveinmelbourne.vic.gov.au/migrate/visas-and-immigrating/visa-nomination',
     visas: ['190', '491'],
     desc: 'Victorian Skilled Migration Program (VSMP)',
+    visaGroups: [
+      {
+        category: 'Skilled Nomination', icon: 'ribbon-outline', visas: [
+          { sub: '190', label: 'Skilled Nominated', desc: 'Permanent · points-tested' },
+          { sub: '491', label: 'Skilled Work Regional', desc: 'Provisional 5yr → PR pathway' },
+        ],
+      },
+      {
+        category: 'Business & Investment', icon: 'briefcase-outline', visas: [
+          { sub: '188A', label: 'Business Innovation', desc: 'Established business history' },
+          { sub: '188B', label: 'Investor', desc: '$1.5M+ designated state investment' },
+          { sub: '188C', label: 'Significant Investor', desc: '$5M complying investment' },
+        ],
+      },
+    ],
   },
   {
     code: 'QLD', name: 'Queensland', color: '#FF6B8A',
@@ -37,6 +78,21 @@ const STATES = [
     occupationUrl: 'https://migration.qld.gov.au/visa-options/skilled/',
     visas: ['190', '491'],
     desc: 'Queensland Skilled Visa program',
+    visaGroups: [
+      {
+        category: 'Skilled Nomination', icon: 'ribbon-outline', visas: [
+          { sub: '190', label: 'Skilled Nominated', desc: 'Permanent · points-tested' },
+          { sub: '491', label: 'Skilled Work Regional', desc: 'Provisional 5yr → PR pathway' },
+        ],
+      },
+      {
+        category: 'Business & Investment', icon: 'briefcase-outline', visas: [
+          { sub: '188A', label: 'Business Innovation', desc: 'Established business history' },
+          { sub: '188B', label: 'Investor', desc: '$1.5M+ designated state investment' },
+          { sub: '188C', label: 'Significant Investor', desc: '$5M complying investment' },
+        ],
+      },
+    ],
   },
   {
     code: 'SA', name: 'South Australia', color: '#FF7043',
@@ -44,6 +100,22 @@ const STATES = [
     occupationUrl: 'https://migration.sa.gov.au/skilled-migrants/occupation-lists',
     visas: ['190', '491'],
     desc: 'SA Skilled & Business Migration',
+    visaGroups: [
+      {
+        category: 'Skilled Nomination', icon: 'ribbon-outline', visas: [
+          { sub: '190', label: 'Skilled Nominated', desc: 'Permanent · points-tested' },
+          { sub: '491', label: 'Skilled Work Regional', desc: 'Provisional 5yr → PR pathway' },
+        ],
+      },
+      {
+        category: 'Business & Investment', icon: 'briefcase-outline', visas: [
+          { sub: '188A', label: 'Business Innovation', desc: 'Established business history' },
+          { sub: '188B', label: 'Investor', desc: '$1.5M+ designated state investment' },
+          { sub: '188C', label: 'Significant Investor', desc: '$5M complying investment' },
+          { sub: '132',  label: 'Business Talent', desc: 'Significant business history' },
+        ],
+      },
+    ],
   },
   {
     code: 'WA', name: 'Western Australia', color: '#FFCD00',
@@ -51,6 +123,22 @@ const STATES = [
     occupationUrl: 'https://migration.wa.gov.au/our-services-support/state-nominated-migration-program',
     visas: ['190', '491'],
     desc: 'WA State Nominated Migration Program',
+    visaGroups: [
+      {
+        category: 'Skilled Nomination', icon: 'ribbon-outline', visas: [
+          { sub: '190', label: 'Skilled Nominated', desc: 'Permanent · points-tested' },
+          { sub: '491', label: 'Skilled Work Regional', desc: 'Provisional 5yr → PR pathway' },
+        ],
+      },
+      {
+        category: 'Business & Investment', icon: 'briefcase-outline', visas: [
+          { sub: '188A', label: 'Business Innovation', desc: 'Established business history' },
+          { sub: '188B', label: 'Investor', desc: '$1.5M+ designated state investment' },
+          { sub: '188C', label: 'Significant Investor', desc: '$5M complying investment' },
+          { sub: '132',  label: 'Business Talent', desc: 'Significant business history or VC' },
+        ],
+      },
+    ],
   },
   {
     code: 'TAS', name: 'Tasmania', color: '#00D68F',
@@ -58,6 +146,21 @@ const STATES = [
     occupationUrl: 'https://www.migration.tas.gov.au/skilled_migration',
     visas: ['190', '491'],
     desc: 'Tasmanian Skilled Migration program',
+    visaGroups: [
+      {
+        category: 'Skilled Nomination', icon: 'ribbon-outline', visas: [
+          { sub: '190', label: 'Skilled Nominated', desc: 'Permanent · points-tested' },
+          { sub: '491', label: 'Skilled Work Regional', desc: 'Provisional 5yr → PR pathway' },
+        ],
+      },
+      {
+        category: 'Business & Investment', icon: 'briefcase-outline', visas: [
+          { sub: '188A', label: 'Business Innovation', desc: 'Established business history' },
+          { sub: '188B', label: 'Investor', desc: '$1.5M+ designated state investment' },
+          { sub: '188C', label: 'Significant Investor', desc: '$5M complying investment' },
+        ],
+      },
+    ],
   },
   {
     code: 'ACT', name: 'Australian Capital Territory', color: '#A78BFA',
@@ -65,6 +168,20 @@ const STATES = [
     occupationUrl: 'https://www.act.gov.au/migration/skilled-migrants',
     visas: ['190', '491'],
     desc: 'ACT Canberra Matrix — Skilled Nomination',
+    visaGroups: [
+      {
+        category: 'Skilled Nomination', icon: 'ribbon-outline', visas: [
+          { sub: '190', label: 'Skilled Nominated', desc: 'Canberra Matrix — permanent' },
+          { sub: '491', label: 'Skilled Work Regional', desc: 'Provisional 5yr → PR pathway' },
+        ],
+      },
+      {
+        category: 'Business & Investment', icon: 'briefcase-outline', visas: [
+          { sub: '188B', label: 'Investor', desc: '$1.5M+ designated ACT investment' },
+          { sub: '188C', label: 'Significant Investor', desc: '$5M complying investment' },
+        ],
+      },
+    ],
   },
   {
     code: 'NT', name: 'Northern Territory', color: '#FFB800',
@@ -72,6 +189,21 @@ const STATES = [
     occupationUrl: 'https://australiasnorthernterritory.com.au/move/work/migrate-to-the-nt',
     visas: ['190', '491'],
     desc: 'NT Skilled & Business migration',
+    visaGroups: [
+      {
+        category: 'Skilled Nomination', icon: 'ribbon-outline', visas: [
+          { sub: '190', label: 'Skilled Nominated', desc: 'Permanent · points-tested' },
+          { sub: '491', label: 'Skilled Work Regional', desc: 'Provisional 5yr → PR pathway' },
+        ],
+      },
+      {
+        category: 'Business & Investment', icon: 'briefcase-outline', visas: [
+          { sub: '188A', label: 'Business Innovation', desc: 'Established business history' },
+          { sub: '188B', label: 'Investor', desc: '$1.5M+ designated NT investment' },
+          { sub: '188C', label: 'Significant Investor', desc: '$5M complying investment' },
+        ],
+      },
+    ],
   },
 ];
 
@@ -179,14 +311,26 @@ export default function StatesScreen() {
                     <View style={styles.cardBody}>
                       <View style={styles.divider} />
 
-                      {/* Visa subclass chips */}
-                      <View style={styles.visaChips}>
-                        {state.visas.map((v) => (
-                          <View key={v} style={[styles.visaChip, { backgroundColor: state.color + '18', borderColor: state.color + '35' }]}>
-                            <Text style={[styles.visaChipText, { color: state.color }]}>SC {v}</Text>
+                      {/* Visa groups */}
+                      {state.visaGroups.map((group, gi) => (
+                        <View key={group.category} style={[styles.visaGroup, gi > 0 && { marginTop: Spacing.sm }]}>
+                          <View style={styles.visaGroupHeader}>
+                            <Ionicons name={group.icon as any} size={12} color={state.color} />
+                            <Text style={[styles.visaGroupLabel, { color: state.color }]}>{group.category}</Text>
                           </View>
-                        ))}
-                      </View>
+                          {group.visas.map((v) => (
+                            <View key={v.sub} style={[styles.visaRow, { borderColor: state.color + '25' }]}>
+                              <View style={[styles.visaSubBadge, { backgroundColor: state.color + '20', borderColor: state.color + '40' }]}>
+                                <Text style={[styles.visaSubText, { color: state.color }]}>SC {v.sub}</Text>
+                              </View>
+                              <View style={{ flex: 1 }}>
+                                <Text style={styles.visaRowName}>{v.label}</Text>
+                                <Text style={styles.visaRowDesc}>{v.desc}</Text>
+                              </View>
+                            </View>
+                          ))}
+                        </View>
+                      ))}
 
                       {/* Occupation List */}
                       <TouchableOpacity
@@ -356,6 +500,42 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   visaChipText: { fontSize: FontSize.xs, fontWeight: FontWeight.bold, letterSpacing: 0.5 },
+
+  visaGroup: { marginBottom: Spacing.sm },
+  visaGroupHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginBottom: 6,
+  },
+  visaGroupLabel: {
+    fontSize: 10,
+    fontWeight: FontWeight.bold,
+    letterSpacing: 0.6,
+    textTransform: 'uppercase',
+  },
+  visaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    paddingVertical: 7,
+    paddingHorizontal: 8,
+    borderRadius: Radius.sm,
+    borderWidth: 1,
+    marginBottom: 4,
+    backgroundColor: Colors.glass,
+  },
+  visaSubBadge: {
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: Radius.sm,
+    borderWidth: 1,
+    minWidth: 52,
+    alignItems: 'center',
+  },
+  visaSubText: { fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.4 },
+  visaRowName: { fontSize: FontSize.xs, fontWeight: FontWeight.semiBold, color: Colors.textPrimary },
+  visaRowDesc: { fontSize: 10, color: Colors.textMuted, marginTop: 1 },
 
   linkBtn: {
     borderRadius: Radius.lg,

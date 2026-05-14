@@ -21,12 +21,15 @@ import {
   SkillList,
   SKILL_LISTS,
   StateCode,
+  StateRequirement,
   STATE_CODES,
 } from '../constants/skilledOccupations';
 import {
   getSkilledOccupations,
   getOccupationsLastCheckedAt,
   refreshSkilledOccupations,
+  refreshStateRequirements,
+  mergeStateRequirements,
   searchOccupations,
 } from '../utils/skilledOccupations';
 import { tap as hapticTap, success as hapticSuccess } from '../utils/haptics';
@@ -42,6 +45,14 @@ const LIST_COLORS: Record<SkillList, string> = {
   ROL: Colors.accentPurple,
 };
 
+const LIST_DESCRIPTIONS: Record<'All' | SkillList, string> = {
+  All:   'All federal lists',
+  CSOL:  'SC 482 Core Skills stream',
+  MLTSSL:'SC 189 · 190 · 491 · 485',
+  STSOL: 'SC 482 Short-term (legacy)',
+  ROL:   'SC 491 · 494 Regional',
+};
+
 const STATE_COLORS: Record<StateCode, string> = {
   NSW: '#4F8EF7',
   VIC: '#00C2FF',
@@ -51,6 +62,220 @@ const STATE_COLORS: Record<StateCode, string> = {
   TAS: '#00D68F',
   ACT: '#A78BFA',
   NT: '#FFB800',
+};
+
+// ─── English requirements per visa subclass ───────────────────────────────
+interface EnglishReq {
+  level: string;
+  description: string;
+  ielts: string;        // e.g. "6.0 each band"
+  pte: string;
+  toefl: string;
+  color: string;
+}
+const VISA_ENGLISH: Record<string, EnglishReq> = {
+  '189': {
+    level: 'Competent English',
+    description: 'Required to sit the skills assessment and earn points.',
+    ielts: '6.0 each band', pte: '50 each component', toefl: '12 L · 13 R · 21 W · 18 S',
+    color: Colors.accent,
+  },
+  '190': {
+    level: 'Competent English',
+    description: 'Must be met at time of invitation.',
+    ielts: '6.0 each band', pte: '50 each component', toefl: '12 L · 13 R · 21 W · 18 S',
+    color: Colors.accent,
+  },
+  '491': {
+    level: 'Competent English',
+    description: 'Required for all applicants.',
+    ielts: '6.0 each band', pte: '50 each component', toefl: '12 L · 13 R · 21 W · 18 S',
+    color: Colors.accent,
+  },
+  '482': {
+    level: 'Proficient English (Core Skills)',
+    description: 'Short-term stream occupations need Vocational; Core Skills and Specialist need Proficient.',
+    ielts: '7.0 each band', pte: '65 each component', toefl: '24 L · 24 R · 27 W · 23 S',
+    color: Colors.success,
+  },
+  '186': {
+    level: 'Competent English',
+    description: 'Required for Direct Entry and Agreement streams.',
+    ielts: '6.0 each band', pte: '50 each component', toefl: '12 L · 13 R · 21 W · 18 S',
+    color: Colors.accent,
+  },
+  '485': {
+    level: 'Competent English',
+    description: 'Required unless you studied in Australia for 2+ years.',
+    ielts: '6.0 each band', pte: '50 each component', toefl: '12 L · 13 R · 21 W · 18 S',
+    color: Colors.accent,
+  },
+  '494': {
+    level: 'Competent English',
+    description: 'Required at time of application.',
+    ielts: '6.0 each band', pte: '50 each component', toefl: '12 L · 13 R · 21 W · 18 S',
+    color: Colors.accent,
+  },
+};
+
+// ─── Assessing authority details ──────────────────────────────────────────
+interface AuthorityInfo {
+  name: string;
+  assesses: string;
+  website: string;
+  typicalTime: string;
+  notes: string[];
+}
+const AUTHORITY_INFO: Record<string, AuthorityInfo> = {
+  'VETASSESS': {
+    name: 'VETASSESS',
+    assesses: 'General professionals (management, health, science, education, legal, and more)',
+    website: 'https://www.vetassess.com.au',
+    typicalTime: '8–12 weeks',
+    notes: [
+      'Requires evidence of qualifications and employment history',
+      'Some occupations require a Technical Interview',
+      'Assessment result valid for 3 years',
+    ],
+  },
+  'ACS': {
+    name: 'ACS (Australian Computer Society)',
+    assesses: 'ICT / Information Technology professionals',
+    website: 'https://www.acs.org.au/msa',
+    typicalTime: '4–8 weeks',
+    notes: [
+      'Assesses ICT qualifications and relevant work experience',
+      'RPL (Recognition of Prior Learning) pathway available',
+      'Result valid for 3 years',
+    ],
+  },
+  'Engineers Australia': {
+    name: 'Engineers Australia',
+    assesses: 'Engineering professionals (civil, mechanical, electrical, software, etc.)',
+    website: 'https://www.engineersaustralia.org.au/msa',
+    typicalTime: '10–16 weeks',
+    notes: [
+      'Must demonstrate competency against Stage 1 competency standards',
+      'CDR (Competency Demonstration Report) required for most pathways',
+      'Fast-track option may be available for chartered engineers',
+    ],
+  },
+  'ANMAC': {
+    name: 'ANMAC (Australian Nursing & Midwifery Accreditation Council)',
+    assesses: 'Registered nurses, enrolled nurses, and midwives',
+    website: 'https://www.anmac.org.au',
+    typicalTime: '3–6 months',
+    notes: [
+      'Must also register with AHPRA after migration',
+      'English requirement: OET B in all 4 components or IELTS 7.0',
+      'Assessment valid for 2 years',
+    ],
+  },
+  'AASW': {
+    name: 'AASW (Australian Association of Social Workers)',
+    assesses: 'Social workers',
+    website: 'https://www.aasw.asn.au',
+    typicalTime: '8–12 weeks',
+    notes: ['Must hold a qualifying social work degree'],
+  },
+  'TRA': {
+    name: 'TRA (Trades Recognition Australia)',
+    assesses: 'Trade occupations (electricians, plumbers, motor mechanics, etc.)',
+    website: 'https://www.tra.gov.au',
+    typicalTime: '3–6 months',
+    notes: [
+      'Practical skills assessment (on-the-job) may be required',
+      'Outcome is an AQF Certificate III or equivalent',
+      'State licensing required separately after migration',
+    ],
+  },
+  'CPAA': {
+    name: 'CPA Australia',
+    assesses: 'Accountants and finance professionals',
+    website: 'https://www.cpaaustralia.com.au',
+    typicalTime: '4–8 weeks',
+    notes: ['Recognised for SC 189/190/491 skills assessment'],
+  },
+  'CAANZ': {
+    name: 'Chartered Accountants Australia & New Zealand',
+    assesses: 'Accountants (CA/ACA pathway)',
+    website: 'https://www.charteredaccountantsanz.com',
+    typicalTime: '4–8 weeks',
+    notes: [],
+  },
+  'IPA': {
+    name: 'IPA (Institute of Public Accountants)',
+    assesses: 'Accountants',
+    website: 'https://www.publicaccountants.org.au',
+    typicalTime: '4–8 weeks',
+    notes: [],
+  },
+  'AITSL': {
+    name: 'AITSL (Australian Institute for Teaching and School Leadership)',
+    assesses: 'Teachers (primary and secondary)',
+    website: 'https://www.aitsl.edu.au',
+    typicalTime: '3–4 months',
+    notes: [
+      'Must demonstrate qualification is comparable to Australian teaching standards',
+      'State teacher registration required separately',
+    ],
+  },
+  'AHPRA': {
+    name: 'AHPRA (Australian Health Practitioner Regulation Agency)',
+    assesses: 'Medical doctors, dentists, physiotherapists, psychologists, pharmacists, and other regulated health professions',
+    website: 'https://www.ahpra.gov.au',
+    typicalTime: '3–6 months',
+    notes: [
+      'Covers 16 regulated health professions',
+      'Registration required to practise in Australia',
+      'Assessment and registration are handled together',
+    ],
+  },
+  'AACA': {
+    name: 'AACA (Architects Accreditation Council of Australia)',
+    assesses: 'Architects',
+    website: 'https://www.aaca.org.au',
+    typicalTime: '8–16 weeks',
+    notes: [
+      'Overseas architects must pass the OAA (Overseas Architects Assessment)',
+      'State Board registration required to practise',
+    ],
+  },
+  'NAATI': {
+    name: 'NAATI (National Accreditation Authority for Translators and Interpreters)',
+    assesses: 'Translators and interpreters',
+    website: 'https://www.naati.com.au',
+    typicalTime: '4–8 weeks',
+    notes: ['Credential Recognition for translators/interpreters', 'NAATI points bonus available on points test'],
+  },
+  'AIQS': {
+    name: 'AIQS (Australian Institute of Quantity Surveyors)',
+    assesses: 'Quantity surveyors and construction economists',
+    website: 'https://www.aiqs.com.au',
+    typicalTime: '6–10 weeks',
+    notes: [],
+  },
+  'ACECQA': {
+    name: 'ACECQA (Australian Children\'s Education & Care Quality Authority)',
+    assesses: 'Early childhood educators and childcare workers',
+    website: 'https://www.acecqa.gov.au',
+    typicalTime: '6–10 weeks',
+    notes: [],
+  },
+  'SPA': {
+    name: 'SPA (Surveying and Spatial Sciences Institute)',
+    assesses: 'Surveyors and spatial scientists',
+    website: 'https://www.sssi.org.au',
+    typicalTime: '6–10 weeks',
+    notes: [],
+  },
+  'AIPM': {
+    name: 'AIPM (Australian Institute of Project Management)',
+    assesses: 'Project managers and program managers',
+    website: 'https://www.aipm.com.au',
+    typicalTime: '4–8 weeks',
+    notes: [],
+  },
 };
 
 function timeAgo(iso: string | null): string {
@@ -93,11 +318,14 @@ export default function OccupationsScreen() {
   });
   const [selected, setSelected] = useState<SkilledOccupation | null>(null);
   const [savedAnzsco, setSavedAnzsco] = useState<string>('');
+  const [expandedState, setExpandedState] = useState<StateCode | null>(null);
 
   useEffect(() => {
     (async () => {
       const snap = await getSkilledOccupations();
-      setItems(snap.items);
+      const reqSnap = await refreshStateRequirements();
+      const merged = mergeStateRequirements(snap.items, reqSnap.snapshot);
+      setItems(merged);
       setSnapshotDate(snap.snapshotDate);
       setLastChecked(await getOccupationsLastCheckedAt());
       const p = await getProfile();
@@ -115,8 +343,11 @@ export default function OccupationsScreen() {
   const onRefresh = async () => {
     setRefreshing(true);
     hapticTap();
-    const { snapshot } = await refreshSkilledOccupations({ force: true });
-    setItems(snapshot.items);
+    const [{ snapshot }, reqResult] = await Promise.all([
+      refreshSkilledOccupations({ force: true }),
+      refreshStateRequirements({ force: true }),
+    ]);
+    setItems(mergeStateRequirements(snapshot.items, reqResult.snapshot));
     setSnapshotDate(snapshot.snapshotDate);
     setLastChecked(await getOccupationsLastCheckedAt());
     setRefreshing(false);
@@ -211,6 +442,7 @@ export default function OccupationsScreen() {
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.filterRow}
+          style={styles.filterScroll}
         >
           {JURISDICTIONS.map((j) => {
             const active = jurisdiction === j;
@@ -247,6 +479,7 @@ export default function OccupationsScreen() {
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={[styles.filterRow, styles.filterRowSecondary]}
+            style={styles.filterScroll}
           >
             {FILTERS.map((f) => {
               const active = filter === f;
@@ -262,6 +495,9 @@ export default function OccupationsScreen() {
                   activeOpacity={0.8}
                 >
                   <Text style={[styles.pillTextSm, active && { color: tint }]}>{f}</Text>
+                  <Text style={[styles.pillDescSm, active && { color: tint, opacity: 0.75 }]}>
+                    {LIST_DESCRIPTIONS[f]}
+                  </Text>
                 </TouchableOpacity>
               );
             })}
@@ -285,7 +521,7 @@ export default function OccupationsScreen() {
             <TouchableOpacity
               style={[styles.card, savedAnzsco === item.anzsco && styles.cardSaved]}
               activeOpacity={0.85}
-              onPress={() => { hapticTap(); setSelected(item); }}
+              onPress={() => { hapticTap(); setSelected(item); setExpandedState(null); }}
             >
               <View style={styles.cardHead}>
                 <View style={styles.codePill}>
@@ -381,47 +617,251 @@ export default function OccupationsScreen() {
 
                   <Text style={styles.sectionLabel}>State / territory eligibility</Text>
                   {selected.states && Object.keys(selected.states).length > 0 ? (
-                    <View style={styles.stateGrid}>
-                      {STATE_CODES.map((s) => {
-                        const visas = selected.states?.[s];
-                        const available = !!visas && visas.length > 0;
-                        return (
-                          <View
-                            key={s}
-                            style={[
-                              styles.stateCell,
-                              available
-                                ? { backgroundColor: `${STATE_COLORS[s]}1A`, borderColor: STATE_COLORS[s] }
-                                : { opacity: 0.35 },
-                            ]}
-                          >
-                            <Text
+                    <>
+                      <View style={styles.stateGrid}>
+                        {STATE_CODES.map((s) => {
+                          const visas = selected.states?.[s];
+                          const available = !!visas && visas.length > 0;
+                          const hasReqs = !!selected.stateRequirements?.[s];
+                          const isOpen = expandedState === s;
+                          return (
+                            <TouchableOpacity
+                              key={s}
+                              activeOpacity={available ? 0.75 : 1}
+                              disabled={!available}
+                              onPress={() => {
+                                setExpandedState(isOpen ? null : s);
+                                hapticTap();
+                              }}
                               style={[
-                                styles.stateCellCode,
-                                { color: available ? STATE_COLORS[s] : Colors.textMuted },
+                                styles.stateCell,
+                                available
+                                  ? { backgroundColor: `${STATE_COLORS[s]}1A`, borderColor: isOpen ? STATE_COLORS[s] : `${STATE_COLORS[s]}88` }
+                                  : { opacity: 0.35 },
                               ]}
                             >
-                              {s}
-                            </Text>
-                            <Text style={styles.stateCellVisas}>
-                              {available ? visas!.map((v) => v).join(' · ') : '—'}
-                            </Text>
+                              <Text style={[styles.stateCellCode, { color: available ? STATE_COLORS[s] : Colors.textMuted }]}>
+                                {s}
+                              </Text>
+                              <Text style={styles.stateCellVisas}>
+                                {available ? visas!.join(' · ') : '—'}
+                              </Text>
+                              {available && hasReqs && (
+                                <Ionicons
+                                  name={isOpen ? 'chevron-up' : 'information-circle-outline'}
+                                  size={10}
+                                  color={STATE_COLORS[s]}
+                                  style={{ marginTop: 2 }}
+                                />
+                              )}
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </View>
+
+                      {/* Expanded state requirements panel */}
+                      {expandedState && selected.stateRequirements?.[expandedState] && (() => {
+                        const req = selected.stateRequirements[expandedState]!;
+                        const col = STATE_COLORS[expandedState];
+                        return (
+                          <View style={[styles.stateReqPanel, { borderColor: `${col}40` }]}>
+                            <View style={styles.stateReqHeader}>
+                              <View style={[styles.stateReqDot, { backgroundColor: col }]} />
+                              <Text style={[styles.stateReqTitle, { color: col }]}>
+                                {expandedState} — Special Requirements
+                              </Text>
+                              {!req.open && (
+                                <View style={styles.closedBadge}>
+                                  <Text style={styles.closedBadgeText}>Closed</Text>
+                                </View>
+                              )}
+                            </View>
+
+                            <View style={styles.stateReqRows}>
+                              {req.minSalary != null && (
+                                <View style={styles.stateReqRow}>
+                                  <Ionicons name="cash-outline" size={13} color={Colors.textMuted} />
+                                  <Text style={styles.stateReqKey}>Min. salary</Text>
+                                  <Text style={[styles.stateReqVal, { color: col }]}>
+                                    ${req.minSalary.toLocaleString('en-AU')} AUD/yr
+                                  </Text>
+                                </View>
+                              )}
+                              {req.minExperienceYears != null && (
+                                <View style={styles.stateReqRow}>
+                                  <Ionicons name="briefcase-outline" size={13} color={Colors.textMuted} />
+                                  <Text style={styles.stateReqKey}>Min. experience</Text>
+                                  <Text style={[styles.stateReqVal, { color: col }]}>
+                                    {req.minExperienceYears} year{req.minExperienceYears !== 1 ? 's' : ''}
+                                  </Text>
+                                </View>
+                              )}
+                              {req.minPoints != null && (
+                                <View style={styles.stateReqRow}>
+                                  <Ionicons name="stats-chart-outline" size={13} color={Colors.textMuted} />
+                                  <Text style={styles.stateReqKey}>Min. EOI points</Text>
+                                  <Text style={[styles.stateReqVal, { color: col }]}>{req.minPoints} pts</Text>
+                                </View>
+                              )}
+                              {req.maxAge != null && (
+                                <View style={styles.stateReqRow}>
+                                  <Ionicons name="person-outline" size={13} color={Colors.textMuted} />
+                                  <Text style={styles.stateReqKey}>Max. age</Text>
+                                  <Text style={[styles.stateReqVal, { color: col }]}>{req.maxAge}</Text>
+                                </View>
+                              )}
+                              <View style={styles.stateReqRow}>
+                                <Ionicons name="checkmark-circle-outline" size={13} color={Colors.textMuted} />
+                                <Text style={styles.stateReqKey}>Skills assessment</Text>
+                                <Text style={[styles.stateReqVal, { color: req.skillsAssessmentRequired ? Colors.warning : Colors.success }]}>
+                                  {req.skillsAssessmentRequired ? 'Required' : 'Check with state'}
+                                </Text>
+                              </View>
+                              <View style={styles.stateReqRow}>
+                                <Ionicons name="document-text-outline" size={13} color={Colors.textMuted} />
+                                <Text style={styles.stateReqKey}>Job offer</Text>
+                                <Text style={[styles.stateReqVal, { color: req.jobOfferRequired ? Colors.warning : Colors.success }]}>
+                                  {req.jobOfferRequired ? 'Required' : 'Not required'}
+                                </Text>
+                              </View>
+                              {req.residencyRequired && (
+                                <View style={styles.stateReqRow}>
+                                  <Ionicons name="home-outline" size={13} color={Colors.textMuted} />
+                                  <Text style={styles.stateReqKey}>State residency</Text>
+                                  <Text style={[styles.stateReqVal, { color: Colors.warning }]}>Required</Text>
+                                </View>
+                              )}
+                            </View>
+
+                            {req.notes.length > 0 && (
+                              <View style={styles.stateReqNotes}>
+                                {req.notes.map((n, i) => (
+                                  <View key={i} style={styles.stateReqNoteRow}>
+                                    <View style={[styles.stateReqNoteDot, { backgroundColor: col }]} />
+                                    <Text style={styles.stateReqNoteText}>{n}</Text>
+                                  </View>
+                                ))}
+                              </View>
+                            )}
+
+                            <TouchableOpacity
+                              style={[styles.stateReqLink, { borderColor: `${col}40` }]}
+                              onPress={() => Linking.openURL(req.sourceUrl)}
+                              activeOpacity={0.8}
+                            >
+                              <Ionicons name="open-outline" size={12} color={col} />
+                              <Text style={[styles.stateReqLinkText, { color: col }]}>View {expandedState} nomination page</Text>
+                              <Text style={styles.stateReqUpdated}>Updated {req.updatedAt}</Text>
+                            </TouchableOpacity>
                           </View>
                         );
-                      })}
-                    </View>
+                      })()}
+                    </>
                   ) : (
                     <Text style={styles.bodyMuted}>
                       Not currently on any state nomination list.
                     </Text>
                   )}
 
-                  {selected.assessingAuthority && (
-                    <>
-                      <Text style={styles.sectionLabel}>Assessing authority</Text>
-                      <Text style={styles.bodyText}>{selected.assessingAuthority}</Text>
-                    </>
-                  )}
+                  {/* ─── English Requirements ─────────────────────────── */}
+                  {selected.visas.length > 0 && (() => {
+                    const uniqueVisas = [...new Set(selected.visas)];
+                    const reqs = uniqueVisas.map(v => ({ visa: v, req: VISA_ENGLISH[v] })).filter(x => x.req);
+                    if (reqs.length === 0) return null;
+                    // deduplicate by level
+                    const seen = new Set<string>();
+                    const deduped = reqs.filter(({ req }) => {
+                      if (seen.has(req!.level)) return false;
+                      seen.add(req!.level);
+                      return true;
+                    });
+                    return (
+                      <>
+                        <Text style={styles.sectionLabel}>English requirements</Text>
+                        {deduped.map(({ req }) => (
+                          <View key={req!.level} style={[styles.engCard, { borderLeftColor: req!.color }]}>
+                            <View style={styles.engCardTop}>
+                              <View style={[styles.engLevelBadge, { backgroundColor: `${req!.color}20` }]}>
+                                <Ionicons name="language-outline" size={12} color={req!.color} />
+                                <Text style={[styles.engLevelText, { color: req!.color }]}>{req!.level}</Text>
+                              </View>
+                            </View>
+                            <Text style={styles.engDesc}>{req!.description}</Text>
+                            <View style={styles.engScores}>
+                              <View style={styles.engScore}>
+                                <Text style={styles.engScoreLabel}>IELTS</Text>
+                                <Text style={styles.engScoreVal}>{req!.ielts}</Text>
+                              </View>
+                              <View style={styles.engDivider} />
+                              <View style={styles.engScore}>
+                                <Text style={styles.engScoreLabel}>PTE Academic</Text>
+                                <Text style={styles.engScoreVal}>{req!.pte}</Text>
+                              </View>
+                              <View style={styles.engDivider} />
+                              <View style={styles.engScore}>
+                                <Text style={styles.engScoreLabel}>TOEFL iBT</Text>
+                                <Text style={styles.engScoreVal}>{req!.toefl}</Text>
+                              </View>
+                            </View>
+                          </View>
+                        ))}
+                      </>
+                    );
+                  })()}
+
+                  {/* ─── Skills Assessment ────────────────────────────── */}
+                  {selected.assessingAuthority && (() => {
+                    const authorityKey = Object.keys(AUTHORITY_INFO).find(k =>
+                      selected.assessingAuthority!.toLowerCase().includes(k.toLowerCase())
+                    );
+                    const info = authorityKey ? AUTHORITY_INFO[authorityKey] : null;
+                    return (
+                      <>
+                        <Text style={styles.sectionLabel}>Skills assessment</Text>
+                        <View style={styles.authCard}>
+                          <View style={styles.authHeader}>
+                            <View style={styles.authIcon}>
+                              <Ionicons name="shield-checkmark-outline" size={16} color={Colors.accent} />
+                            </View>
+                            <View style={{ flex: 1 }}>
+                              <Text style={styles.authName}>{info ? info.name : selected.assessingAuthority}</Text>
+                              {info && <Text style={styles.authAssesses}>{info.assesses}</Text>}
+                            </View>
+                          </View>
+
+                          {info && (
+                            <>
+                              <View style={styles.authRow}>
+                                <Ionicons name="time-outline" size={13} color={Colors.textMuted} />
+                                <Text style={styles.authRowKey}>Typical time</Text>
+                                <Text style={styles.authRowVal}>{info.typicalTime}</Text>
+                              </View>
+
+                              {info.notes.length > 0 && (
+                                <View style={styles.authNotes}>
+                                  {info.notes.map((n, i) => (
+                                    <View key={i} style={styles.authNoteRow}>
+                                      <View style={styles.authNoteDot} />
+                                      <Text style={styles.authNoteText}>{n}</Text>
+                                    </View>
+                                  ))}
+                                </View>
+                              )}
+
+                              <TouchableOpacity
+                                style={styles.authLink}
+                                activeOpacity={0.8}
+                                onPress={() => Linking.openURL(info.website)}
+                              >
+                                <Ionicons name="open-outline" size={12} color={Colors.accent} />
+                                <Text style={styles.authLinkText}>Visit {info.name} website</Text>
+                              </TouchableOpacity>
+                            </>
+                          )}
+                        </View>
+                      </>
+                    );
+                  })()}
 
                   {/* Set as my occupation */}
                   <TouchableOpacity
@@ -523,6 +963,7 @@ const styles = StyleSheet.create({
   metaText: { fontSize: 10, color: Colors.textSecondary, fontWeight: FontWeight.semiBold },
 
   /* Filter pills */
+  filterScroll: { flexShrink: 0 },
   filterRow: {
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
@@ -543,15 +984,95 @@ const styles = StyleSheet.create({
   },
   pillText: { fontSize: FontSize.xs, color: Colors.textSecondary, fontWeight: FontWeight.semiBold },
   pillSm: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: Radius.full,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: Radius.lg,
     borderWidth: 1,
     borderColor: Colors.border,
     backgroundColor: 'transparent',
     marginRight: 6,
+    alignItems: 'center',
   },
-  pillTextSm: { fontSize: 11, color: Colors.textSecondary, fontWeight: FontWeight.semiBold, letterSpacing: 0.4 },
+  pillTextSm: { fontSize: 11, color: Colors.textSecondary, fontWeight: FontWeight.bold, letterSpacing: 0.5 },
+  pillDescSm: { fontSize: 9, color: Colors.textMuted, marginTop: 1, letterSpacing: 0.2 },
+
+  /* English card */
+  engCard: {
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.md,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderLeftWidth: 3,
+    marginBottom: Spacing.sm,
+    padding: Spacing.md,
+  },
+  engCardTop: { flexDirection: 'row', alignItems: 'center', marginBottom: Spacing.xs },
+  engLevelBadge: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 8, paddingVertical: 3, borderRadius: Radius.sm },
+  engLevelText: { fontSize: FontSize.xs, fontWeight: FontWeight.bold, letterSpacing: 0.4 },
+  engDesc: { fontSize: FontSize.xs, color: Colors.textMuted, marginBottom: Spacing.sm, lineHeight: 16 },
+  engScores: { flexDirection: 'row', alignItems: 'flex-start', gap: 0 },
+  engScore: { flex: 1, alignItems: 'center', paddingVertical: 6 },
+  engScoreLabel: { fontSize: 9, color: Colors.textMuted, fontWeight: FontWeight.semiBold, marginBottom: 2, letterSpacing: 0.4 },
+  engScoreVal: { fontSize: 9.5, color: Colors.textPrimary, fontWeight: FontWeight.bold, textAlign: 'center', lineHeight: 13 },
+  engDivider: { width: 1, backgroundColor: Colors.divider, alignSelf: 'stretch', marginVertical: 4 },
+
+  /* Skills assessment card */
+  authCard: {
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.md,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    marginBottom: Spacing.sm,
+    overflow: 'hidden',
+  },
+  authHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacing.sm,
+    padding: Spacing.md,
+    backgroundColor: `${Colors.accent}0D`,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  authIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: `${Colors.accent}20`,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 1,
+  },
+  authName: { fontSize: FontSize.sm, fontWeight: FontWeight.bold, color: Colors.textPrimary, marginBottom: 2 },
+  authAssesses: { fontSize: FontSize.xs, color: Colors.textMuted, lineHeight: 16 },
+  authRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.divider,
+  },
+  authRowKey: { flex: 1, fontSize: FontSize.xs, color: Colors.textMuted },
+  authRowVal: { fontSize: FontSize.xs, fontWeight: FontWeight.semiBold, color: Colors.textPrimary },
+  authNotes: { paddingHorizontal: Spacing.md, paddingTop: Spacing.sm },
+  authNoteRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 6, marginBottom: 6 },
+  authNoteDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: Colors.accent, marginTop: 4 },
+  authNoteText: { flex: 1, fontSize: FontSize.xs, color: Colors.textSecondary, lineHeight: 16 },
+  authLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    margin: Spacing.md,
+    paddingVertical: 7,
+    paddingHorizontal: Spacing.md,
+    borderRadius: Radius.sm,
+    borderWidth: 1,
+    borderColor: `${Colors.accent}40`,
+    backgroundColor: `${Colors.accent}0D`,
+  },
+  authLinkText: { fontSize: FontSize.xs, fontWeight: FontWeight.semiBold, color: Colors.accent, flex: 1 },
 
   /* List */
   list: { paddingHorizontal: Spacing.lg, paddingBottom: 100 },
@@ -658,6 +1179,61 @@ const styles = StyleSheet.create({
   },
   stateCellCode: { fontSize: FontSize.xs, fontWeight: FontWeight.bold, letterSpacing: 0.4 },
   stateCellVisas: { fontSize: 9, color: Colors.textSecondary, marginTop: 2 },
+
+  // State requirements panel
+  stateReqPanel: {
+    marginTop: Spacing.sm,
+    borderRadius: Radius.md,
+    borderWidth: 1,
+    backgroundColor: Colors.surface,
+    overflow: 'hidden',
+  },
+  stateReqHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    padding: Spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.divider,
+  },
+  stateReqDot: { width: 8, height: 8, borderRadius: 4 },
+  stateReqTitle: { flex: 1, fontSize: FontSize.xs, fontWeight: FontWeight.bold },
+  closedBadge: {
+    backgroundColor: 'rgba(239,68,68,0.15)',
+    borderRadius: Radius.full,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+  },
+  closedBadgeText: { fontSize: 10, color: '#EF4444', fontWeight: FontWeight.bold },
+  stateReqRows: { paddingHorizontal: Spacing.md, paddingTop: Spacing.sm },
+  stateReqRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    paddingVertical: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.divider,
+  },
+  stateReqKey: { flex: 1, fontSize: FontSize.xs, color: Colors.textMuted },
+  stateReqVal: { fontSize: FontSize.xs, fontWeight: FontWeight.semiBold },
+  stateReqNotes: {
+    paddingHorizontal: Spacing.md,
+    paddingTop: Spacing.sm,
+    paddingBottom: Spacing.sm,
+    gap: Spacing.xs,
+  },
+  stateReqNoteRow: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.sm },
+  stateReqNoteDot: { width: 5, height: 5, borderRadius: 3, marginTop: 5 },
+  stateReqNoteText: { flex: 1, fontSize: FontSize.xs, color: Colors.textSecondary, lineHeight: 16 },
+  stateReqLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+    padding: Spacing.md,
+    borderTopWidth: 1,
+  },
+  stateReqLinkText: { fontSize: FontSize.xs, fontWeight: FontWeight.semiBold, flex: 1 },
+  stateReqUpdated: { fontSize: 10, color: Colors.textMuted },
 
   modalCta: {
     marginTop: Spacing.xl,

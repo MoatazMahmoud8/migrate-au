@@ -42,6 +42,43 @@ export interface SkilledOccupation {
    * authoritative; the seed below reflects commonly-known coverage.
    */
   states?: Partial<Record<StateCode, string[]>>;
+  /**
+   * State / territory-specific nomination requirements for this occupation.
+   * Fetched daily from the state requirements endpoint and merged at runtime.
+   */
+  stateRequirements?: Partial<Record<StateCode, StateRequirement>>;
+}
+
+/**
+ * Special requirements a state / territory may impose for nominating a
+ * particular occupation — over and above the federal visa requirements.
+ * Populated by the daily state-requirements scraper.
+ */
+export interface StateRequirement {
+  /** Eligible visa subclasses under this state's program. */
+  visas: string[];
+  /** Whether the nomination round is currently open. */
+  open: boolean;
+  /** Minimum annual salary (AUD) required by this state for this occupation. */
+  minSalary?: number;
+  /** Minimum years of relevant work experience. */
+  minExperienceYears?: number;
+  /** Whether a formal skills assessment must be lodged before nomination. */
+  skillsAssessmentRequired?: boolean;
+  /** Whether a job offer in the state is required. */
+  jobOfferRequired?: boolean;
+  /** Whether the applicant must live / work in the state at time of application. */
+  residencyRequired?: boolean;
+  /** Points threshold (EOI score) set by the state for this occupation, if any. */
+  minPoints?: number;
+  /** Age limit (max age) set by the state for this occupation, if any. */
+  maxAge?: number;
+  /** Free-text notes — one bullet point per entry. */
+  notes: string[];
+  /** Canonical URL for this state's nomination page for this occupation. */
+  sourceUrl: string;
+  /** ISO date this record was last updated by the scraper. */
+  updatedAt: string;
 }
 
 export const SKILL_OCCUPATIONS_SNAPSHOT_DATE = '2026-05-01';
@@ -226,6 +263,321 @@ export const SKILLED_OCCUPATIONS: SkilledOccupation[] = [
   // ── Machinery Operators & Drivers ───────────────────────────────────────
   { anzsco: '733111', name: 'Truck Driver (General)', lists: ['CSOL'], visas: ['482', '494'], assessingAuthority: 'TRA', group: 'Machinery Operators & Drivers' },
   { anzsco: '721311', name: 'Excavator Operator', lists: ['CSOL'], visas: ['482', '494'], assessingAuthority: 'TRA', group: 'Machinery Operators & Drivers' },
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // EXTENDED OCCUPATIONS — Full MLTSSL / CSOL coverage
+  // ══════════════════════════════════════════════════════════════════════════
+
+  // ── Additional Managers ──────────────────────────────────────────────────
+  { anzsco: '111211', name: 'Corporate General Manager', lists: ['CSOL'], visas: ['482', '186', '494'], assessingAuthority: 'VETASSESS', group: 'Managers' },
+  { anzsco: '111212', name: 'Defence Force Senior Officer', lists: ['CSOL'], visas: ['482', '186'], assessingAuthority: 'VETASSESS', group: 'Managers' },
+  { anzsco: '121111', name: 'Aquaculture Farmer', lists: ['CSOL', 'ROL'], visas: ['491', '494'], assessingAuthority: 'VETASSESS', group: 'Managers' },
+  { anzsco: '121211', name: 'Cotton Grower', lists: ['CSOL', 'ROL'], visas: ['491', '494'], assessingAuthority: 'VETASSESS', group: 'Managers' },
+  { anzsco: '121213', name: 'Grain, Oilseed or Pasture Grower (Aus)', lists: ['CSOL', 'ROL'], visas: ['491', '494'], assessingAuthority: 'VETASSESS', group: 'Managers' },
+  { anzsco: '121214', name: 'Grape Grower', lists: ['CSOL', 'ROL'], visas: ['491', '494'], assessingAuthority: 'VETASSESS', group: 'Managers' },
+  { anzsco: '121215', name: 'Mixed Crop Farmer', lists: ['CSOL', 'ROL'], visas: ['491', '494'], assessingAuthority: 'VETASSESS', group: 'Managers' },
+  { anzsco: '121216', name: 'Sugar Cane Grower', lists: ['CSOL', 'ROL'], visas: ['491', '494'], assessingAuthority: 'VETASSESS', group: 'Managers' },
+  { anzsco: '121311', name: 'Beef Cattle Farmer', lists: ['CSOL', 'ROL'], visas: ['491', '494'], assessingAuthority: 'VETASSESS', group: 'Managers' },
+  { anzsco: '121312', name: 'Dairy Cattle Farmer', lists: ['CSOL', 'ROL'], visas: ['491', '494'], assessingAuthority: 'VETASSESS', group: 'Managers' },
+  { anzsco: '121321', name: 'Pig Farmer', lists: ['CSOL', 'ROL'], visas: ['491', '494'], assessingAuthority: 'VETASSESS', group: 'Managers' },
+  { anzsco: '121322', name: 'Poultry Farmer', lists: ['CSOL', 'ROL'], visas: ['491', '494'], assessingAuthority: 'VETASSESS', group: 'Managers' },
+  { anzsco: '121411', name: 'Apiarist', lists: ['CSOL', 'ROL'], visas: ['491', '494'], assessingAuthority: 'VETASSESS', group: 'Managers' },
+  { anzsco: '121511', name: 'Mixed Crop and Livestock Farmer', lists: ['CSOL', 'ROL'], visas: ['491', '494'], assessingAuthority: 'VETASSESS', group: 'Managers' },
+  { anzsco: '131111', name: 'Advertising Manager', lists: ['CSOL'], visas: ['482', '186', '494'], assessingAuthority: 'VETASSESS', group: 'Managers' },
+  { anzsco: '131112', name: 'Marketing Manager', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'VETASSESS', group: 'Managers' },
+  { anzsco: '131113', name: 'Public Relations Manager', lists: ['CSOL'], visas: ['482', '186', '494'], assessingAuthority: 'VETASSESS', group: 'Managers' },
+  { anzsco: '132311', name: 'Human Resource Manager', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'VETASSESS', group: 'Managers' },
+  { anzsco: '132511', name: 'Research and Development Manager', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'VETASSESS', group: 'Managers' },
+  { anzsco: '133311', name: 'Real Estate Principal', lists: ['CSOL'], visas: ['482', '186', '494'], assessingAuthority: 'VETASSESS', group: 'Managers' },
+  { anzsco: '133411', name: 'ICT Business Development Manager', lists: ['CSOL'], visas: ['482', '186', '494'], assessingAuthority: 'ACS', group: 'Managers' },
+  { anzsco: '133512', name: 'Production Manager (Forestry)', lists: ['CSOL', 'ROL'], visas: ['491', '494'], assessingAuthority: 'VETASSESS', group: 'Managers' },
+  { anzsco: '133513', name: 'Production Manager (Manufacturing)', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'Engineers Australia', group: 'Managers' },
+  { anzsco: '133514', name: 'Production Manager (Mining)', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'Engineers Australia', group: 'Managers' },
+  { anzsco: '134213', name: 'Medical Administrator', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'VETASSESS', group: 'Managers' },
+  { anzsco: '134214', name: 'Pharmacy Manager', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'APC', group: 'Managers' },
+
+  // ── Additional ICT Professionals ─────────────────────────────────────────
+  { anzsco: '261211', name: 'Multimedia Specialist', lists: ['CSOL', 'STSOL'], visas: ['190', '491', '482', '485'], assessingAuthority: 'ACS', group: 'Professionals' },
+  { anzsco: '261214', name: 'UI/UX Designer', lists: ['CSOL'], visas: ['482', '186', '494'], assessingAuthority: 'ACS', group: 'Professionals' },
+  { anzsco: '261299', name: 'ICT and Telecommunications Technicians nec', lists: ['CSOL'], visas: ['482', '494'], assessingAuthority: 'ACS', group: 'Professionals' },
+  { anzsco: '262211', name: 'ICT Systems Architect', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'ACS', group: 'Professionals' },
+  { anzsco: '262214', name: 'Cloud Computing Architect', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'ACS', group: 'Professionals' },
+  { anzsco: '263113', name: 'Network Analyst', lists: ['CSOL', 'STSOL'], visas: ['190', '491', '482', '485'], assessingAuthority: 'ACS', group: 'Professionals' },
+  { anzsco: '271299', name: 'ICT Trainer', lists: ['CSOL'], visas: ['482', '494'], assessingAuthority: 'ACS', group: 'Professionals' },
+  { anzsco: '299999', name: 'Data Scientist', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'ACS', group: 'Professionals' },
+  { anzsco: '262112', name: 'ICT Security Specialist', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'ACS', group: 'Professionals' },
+
+  // ── Additional Engineering Professionals ─────────────────────────────────
+  { anzsco: '233311', name: 'Electrical Engineer', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'Engineers Australia', group: 'Professionals' },
+  { anzsco: '233999', name: 'Engineering Professionals nec', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'Engineers Australia', group: 'Professionals' },
+  { anzsco: '312199', name: 'Civil Engineering Draftsperson or Technician nec', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'Engineers Australia', group: 'Professionals' },
+  { anzsco: '312211', name: 'Electrical Engineering Draftsperson', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'Engineers Australia', group: 'Professionals' },
+  { anzsco: '312212', name: 'Electrical Engineering Technician', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'Engineers Australia', group: 'Professionals' },
+  { anzsco: '312311', name: 'Electronic Engineering Draftsperson', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'Engineers Australia', group: 'Professionals' },
+  { anzsco: '312312', name: 'Electronic Engineering Technician', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'Engineers Australia', group: 'Professionals' },
+  { anzsco: '312411', name: 'Electronic / Instrument Trades Worker (Special Class)', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'Engineers Australia', group: 'Professionals' },
+  { anzsco: '312412', name: 'Instrument Technician', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'Engineers Australia', group: 'Professionals' },
+  { anzsco: '312511', name: 'Mechanical Engineering Draftsperson', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'Engineers Australia', group: 'Professionals' },
+  { anzsco: '312512', name: 'Mechanical Engineering Technician', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'Engineers Australia', group: 'Professionals' },
+  { anzsco: '312611', name: 'Safety Inspector', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'Engineers Australia', group: 'Professionals' },
+  { anzsco: '312912', name: 'Industrial Engineering Technician', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'Engineers Australia', group: 'Professionals' },
+  { anzsco: '313111', name: 'ICT Customer Support Officer', lists: ['CSOL'], visas: ['482', '494'], assessingAuthority: 'ACS', group: 'Professionals' },
+  { anzsco: '313112', name: 'Help Desk Operator', lists: ['CSOL'], visas: ['482', '494'], assessingAuthority: 'ACS', group: 'Professionals' },
+  { anzsco: '313199', name: 'ICT Support Technicians nec', lists: ['CSOL'], visas: ['482', '494'], assessingAuthority: 'ACS', group: 'Professionals' },
+  { anzsco: '313211', name: 'Telecommunications Cable Jointer', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'Engineers Australia', group: 'Professionals' },
+  { anzsco: '313212', name: 'Telecommunications Field Engineer', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'Engineers Australia', group: 'Professionals' },
+  { anzsco: '313213', name: 'Telecommunications Network Planner', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'Engineers Australia', group: 'Professionals' },
+  { anzsco: '313214', name: 'Telecommunications Technical Officer', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'Engineers Australia', group: 'Professionals' },
+
+  // ── Additional Medical Specialists ───────────────────────────────────────
+  { anzsco: '253312', name: 'Cardiologist', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186'], assessingAuthority: 'Medical Board of Australia', group: 'Professionals' },
+  { anzsco: '253313', name: 'Clinical Haematologist', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186'], assessingAuthority: 'Medical Board of Australia', group: 'Professionals' },
+  { anzsco: '253314', name: 'Medical Oncologist', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186'], assessingAuthority: 'Medical Board of Australia', group: 'Professionals' },
+  { anzsco: '253315', name: 'Endocrinologist', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186'], assessingAuthority: 'Medical Board of Australia', group: 'Professionals' },
+  { anzsco: '253316', name: 'Gastroenterologist', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186'], assessingAuthority: 'Medical Board of Australia', group: 'Professionals' },
+  { anzsco: '253317', name: 'Intensive Care Specialist', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186'], assessingAuthority: 'Medical Board of Australia', group: 'Professionals' },
+  { anzsco: '253318', name: 'Neurologist', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186'], assessingAuthority: 'Medical Board of Australia', group: 'Professionals' },
+  { anzsco: '253321', name: 'Paediatrician', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186'], assessingAuthority: 'Medical Board of Australia', group: 'Professionals' },
+  { anzsco: '253322', name: 'Renal Medicine Specialist', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186'], assessingAuthority: 'Medical Board of Australia', group: 'Professionals' },
+  { anzsco: '253323', name: 'Rheumatologist', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186'], assessingAuthority: 'Medical Board of Australia', group: 'Professionals' },
+  { anzsco: '253324', name: 'Thoracic Medicine Specialist', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186'], assessingAuthority: 'Medical Board of Australia', group: 'Professionals' },
+  { anzsco: '253399', name: 'Specialist Physicians nec', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186'], assessingAuthority: 'Medical Board of Australia', group: 'Professionals' },
+  { anzsco: '253412', name: 'Psychogeriatrician', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186'], assessingAuthority: 'Medical Board of Australia', group: 'Professionals' },
+  { anzsco: '253512', name: 'Cardiothoracic Surgeon', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186'], assessingAuthority: 'Medical Board of Australia', group: 'Professionals' },
+  { anzsco: '253513', name: 'Neurosurgeon', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186'], assessingAuthority: 'Medical Board of Australia', group: 'Professionals' },
+  { anzsco: '253514', name: 'Orthopaedic Surgeon', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186'], assessingAuthority: 'Medical Board of Australia', group: 'Professionals' },
+  { anzsco: '253515', name: 'Otorhinolaryngologist', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186'], assessingAuthority: 'Medical Board of Australia', group: 'Professionals' },
+  { anzsco: '253516', name: 'Paediatric Surgeon', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186'], assessingAuthority: 'Medical Board of Australia', group: 'Professionals' },
+  { anzsco: '253517', name: 'Plastic and Reconstructive Surgeon', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186'], assessingAuthority: 'Medical Board of Australia', group: 'Professionals' },
+  { anzsco: '253518', name: 'Urological Surgeon', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186'], assessingAuthority: 'Medical Board of Australia', group: 'Professionals' },
+  { anzsco: '253521', name: 'Vascular Surgeon', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186'], assessingAuthority: 'Medical Board of Australia', group: 'Professionals' },
+  { anzsco: '253911', name: 'Dermatologist', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186'], assessingAuthority: 'Medical Board of Australia', group: 'Professionals' },
+  { anzsco: '253912', name: 'Emergency Medicine Specialist', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186'], assessingAuthority: 'Medical Board of Australia', group: 'Professionals' },
+  { anzsco: '253913', name: 'Obstetrician and Gynaecologist', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186'], assessingAuthority: 'Medical Board of Australia', group: 'Professionals' },
+  { anzsco: '253914', name: 'Ophthalmologist', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186'], assessingAuthority: 'Medical Board of Australia', group: 'Professionals' },
+  { anzsco: '253915', name: 'Pathologist', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186'], assessingAuthority: 'Medical Board of Australia', group: 'Professionals' },
+  { anzsco: '253917', name: 'Diagnostic and Interventional Radiologist', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186'], assessingAuthority: 'Medical Board of Australia', group: 'Professionals' },
+  { anzsco: '253918', name: 'Radiation Oncologist', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186'], assessingAuthority: 'Medical Board of Australia', group: 'Professionals' },
+  { anzsco: '253999', name: 'Medical Practitioners nec', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186'], assessingAuthority: 'Medical Board of Australia', group: 'Professionals' },
+  // Dental specialists
+  { anzsco: '252312', name: 'Dental Specialist', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186'], assessingAuthority: 'ADC', group: 'Professionals' },
+  { anzsco: '252314', name: 'Endodontist', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186'], assessingAuthority: 'ADC', group: 'Professionals' },
+  { anzsco: '252315', name: 'Oral Pathologist', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186'], assessingAuthority: 'ADC', group: 'Professionals' },
+  { anzsco: '252316', name: 'Orthodontist', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186'], assessingAuthority: 'ADC', group: 'Professionals' },
+  { anzsco: '252317', name: 'Paediatric Dentist', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186'], assessingAuthority: 'ADC', group: 'Professionals' },
+  { anzsco: '252318', name: 'Periodontist', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186'], assessingAuthority: 'ADC', group: 'Professionals' },
+  { anzsco: '252321', name: 'Prosthodontist', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186'], assessingAuthority: 'ADC', group: 'Professionals' },
+  // More Allied Health
+  { anzsco: '251211', name: 'Medical Diagnostic Radiographer', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'AHPRA', group: 'Professionals' },
+  { anzsco: '251212', name: 'Medical Radiation Therapist', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'AHPRA', group: 'Professionals' },
+  { anzsco: '251213', name: 'Nuclear Medicine Technologist', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'AHPRA', group: 'Professionals' },
+  { anzsco: '251214', name: 'Sonographer', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'AHPRA', group: 'Professionals' },
+  { anzsco: '251311', name: 'Environmental Health Officer', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'VETASSESS', group: 'Professionals' },
+  { anzsco: '251312', name: 'Occupational Health and Safety Adviser', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'VETASSESS', group: 'Professionals' },
+  { anzsco: '251511', name: 'Hospital Pharmacist', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'APC', group: 'Professionals' },
+  { anzsco: '251512', name: 'Industrial Pharmacist', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'APC', group: 'Professionals' },
+  { anzsco: '251999', name: 'Health Diagnostic and Promotion Professionals nec', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'VETASSESS', group: 'Professionals' },
+  { anzsco: '252211', name: 'Diabetes Educator', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'VETASSESS', group: 'Professionals' },
+  { anzsco: '252212', name: 'Nurse Educator', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'ANMAC', group: 'Professionals' },
+  { anzsco: '252311', name: 'Dentist', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'ADC', group: 'Professionals' },
+  { anzsco: '252412', name: 'Music Therapist', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'VETASSESS', group: 'Professionals' },
+  { anzsco: '252511', name: 'Physiotherapist', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'AHPRA', group: 'Professionals' },
+  { anzsco: '252611', name: 'Podiatrist', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'AHPRA', group: 'Professionals' },
+  { anzsco: '252711', name: 'Audiologist', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'Audiology Australia', group: 'Professionals' },
+  { anzsco: '252713', name: 'Audiometrist', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'Audiology Australia', group: 'Professionals' },
+  { anzsco: '252999', name: 'Health and Welfare Service Managers nec', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'VETASSESS', group: 'Professionals' },
+  { anzsco: '253111', name: 'General Medical Practitioner', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '494'], assessingAuthority: 'Medical Board of Australia', group: 'Professionals' },
+  { anzsco: '272411', name: 'Counsellor', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'VETASSESS', group: 'Professionals' },
+  { anzsco: '272412', name: 'Relationship Counsellor', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'VETASSESS', group: 'Professionals' },
+  { anzsco: '272413', name: 'Sexual Health Counsellor', lists: ['CSOL'], visas: ['482', '186', '494'], assessingAuthority: 'VETASSESS', group: 'Professionals' },
+  { anzsco: '272499', name: 'Counsellors nec', lists: ['CSOL'], visas: ['482', '186', '494'], assessingAuthority: 'VETASSESS', group: 'Professionals' },
+
+  // ── Additional Education & Social Work ───────────────────────────────────
+  { anzsco: '241112', name: 'Special Education Teacher (Early Childhood)', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'AITSL', group: 'Professionals' },
+  { anzsco: '241211', name: 'Secondary Education Teacher', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'AITSL', group: 'Professionals' },
+  { anzsco: '241311', name: 'Teacher of the Hearing Impaired', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'AITSL', group: 'Professionals' },
+  { anzsco: '241399', name: 'Special Education Teachers nec', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'AITSL', group: 'Professionals' },
+  { anzsco: '242211', name: 'Vocational Education Teacher (Aus)', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'VETASSESS', group: 'Professionals' },
+  { anzsco: '249111', name: 'Education Adviser', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'VETASSESS', group: 'Professionals' },
+  { anzsco: '249211', name: 'Librarian', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'ALIA', group: 'Professionals' },
+  { anzsco: '272199', name: 'Social Professionals nec', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'VETASSESS', group: 'Professionals' },
+  { anzsco: '272312', name: 'Counselling Psychologist', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'AHPRA', group: 'Professionals' },
+  { anzsco: '272313', name: 'Educational Psychologist', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'AHPRA', group: 'Professionals' },
+  { anzsco: '272399', name: 'Psychologists nec', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'AHPRA', group: 'Professionals' },
+
+  // ── Additional Accounting, Finance & Business ─────────────────────────────
+  { anzsco: '221211', name: 'Company Secretary', lists: ['CSOL'], visas: ['482', '186', '494'], assessingAuthority: 'VETASSESS', group: 'Professionals' },
+  { anzsco: '221214', name: 'Tax Consultant', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'CPA / CAANZ / IPA', group: 'Professionals' },
+  { anzsco: '222111', name: 'Commodities Trader', lists: ['CSOL'], visas: ['482', '186', '494'], assessingAuthority: 'VETASSESS', group: 'Professionals' },
+  { anzsco: '222112', name: 'Finance Broker', lists: ['CSOL'], visas: ['482', '186', '494'], assessingAuthority: 'VETASSESS', group: 'Professionals' },
+  { anzsco: '222113', name: 'Insurance Broker', lists: ['CSOL'], visas: ['482', '186', '494'], assessingAuthority: 'VETASSESS', group: 'Professionals' },
+  { anzsco: '222211', name: 'Financial Market Dealer', lists: ['CSOL'], visas: ['482', '186', '494'], assessingAuthority: 'VETASSESS', group: 'Professionals' },
+  { anzsco: '222299', name: 'Financial Dealers nec', lists: ['CSOL'], visas: ['482', '186', '494'], assessingAuthority: 'VETASSESS', group: 'Professionals' },
+  { anzsco: '222312', name: 'Financial Investment Manager', lists: ['CSOL'], visas: ['482', '186', '494'], assessingAuthority: 'VETASSESS', group: 'Professionals' },
+  { anzsco: '223111', name: 'Human Resource Adviser', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'VETASSESS', group: 'Professionals' },
+  { anzsco: '223211', name: 'ICT Trainer', lists: ['CSOL'], visas: ['482', '186', '494'], assessingAuthority: 'ACS', group: 'Professionals' },
+  { anzsco: '223311', name: 'Industrial Relations Officer', lists: ['CSOL'], visas: ['482', '186', '494'], assessingAuthority: 'VETASSESS', group: 'Professionals' },
+  { anzsco: '224211', name: 'Marketing Research Analyst', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'VETASSESS', group: 'Professionals' },
+  { anzsco: '224311', name: 'Supply Chain Manager', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'VETASSESS', group: 'Professionals' },
+  { anzsco: '224411', name: 'Intelligence Officer', lists: ['CSOL'], visas: ['482', '186'], assessingAuthority: 'VETASSESS', group: 'Professionals' },
+  { anzsco: '224912', name: 'Recruitment Consultant', lists: ['CSOL'], visas: ['482', '186', '494'], assessingAuthority: 'VETASSESS', group: 'Professionals' },
+  { anzsco: '224913', name: 'Workplace Relations Adviser', lists: ['CSOL'], visas: ['482', '186', '494'], assessingAuthority: 'VETASSESS', group: 'Professionals' },
+  { anzsco: '225111', name: 'ICT Account Manager', lists: ['CSOL'], visas: ['482', '186', '494'], assessingAuthority: 'ACS', group: 'Professionals' },
+  { anzsco: '225113', name: 'Technical Sales Representative', lists: ['CSOL'], visas: ['482', '186', '494'], assessingAuthority: 'VETASSESS', group: 'Professionals' },
+  { anzsco: '225211', name: 'Conference and Event Organiser', lists: ['CSOL'], visas: ['482', '186', '494'], assessingAuthority: 'VETASSESS', group: 'Professionals' },
+  { anzsco: '225311', name: 'Fashion Designer', lists: ['CSOL'], visas: ['482', '186', '494'], assessingAuthority: 'VETASSESS', group: 'Professionals' },
+  { anzsco: '225312', name: 'Graphic Designer', lists: ['CSOL'], visas: ['482', '186', '494'], assessingAuthority: 'VETASSESS', group: 'Professionals' },
+  { anzsco: '225313', name: 'Illustrator', lists: ['CSOL'], visas: ['482', '186', '494'], assessingAuthority: 'VETASSESS', group: 'Professionals' },
+  { anzsco: '225314', name: 'Industrial Designer', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'VETASSESS', group: 'Professionals' },
+  { anzsco: '225315', name: 'Interior Designer', lists: ['CSOL'], visas: ['482', '186', '494'], assessingAuthority: 'VETASSESS', group: 'Professionals' },
+  { anzsco: '225411', name: 'Journalist', lists: ['CSOL'], visas: ['482', '186', '494'], assessingAuthority: 'VETASSESS', group: 'Professionals' },
+  { anzsco: '225499', name: 'Authors, and Related Professionals nec', lists: ['CSOL'], visas: ['482', '186', '494'], assessingAuthority: 'VETASSESS', group: 'Professionals' },
+  { anzsco: '225511', name: 'ICT Business Analyst', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'ACS', group: 'Professionals' },
+
+  // ── Additional Architecture, Planning & Science ──────────────────────────
+  { anzsco: '232213', name: 'Cadastral Surveyor', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'SSSI', group: 'Professionals' },
+  { anzsco: '232311', name: 'Urban and Regional Planner', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'PIA', group: 'Professionals' },
+  { anzsco: '234112', name: 'Agricultural Scientist', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'VETASSESS', group: 'Professionals' },
+  { anzsco: '234211', name: 'Chemist', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'VETASSESS', group: 'Professionals' },
+  { anzsco: '234212', name: 'Food Technologist', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'VETASSESS', group: 'Professionals' },
+  { anzsco: '234311', name: 'Environmental Consultant', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'VETASSESS', group: 'Professionals' },
+  { anzsco: '234312', name: 'Environmental Research Scientist', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'VETASSESS', group: 'Professionals' },
+  { anzsco: '234411', name: 'Geologist', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'VETASSESS', group: 'Professionals' },
+  { anzsco: '234412', name: 'Geophysicist', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'VETASSESS', group: 'Professionals' },
+  { anzsco: '234413', name: 'Hydrogeologist', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'VETASSESS', group: 'Professionals' },
+  { anzsco: '234512', name: 'Biochemist', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'VETASSESS', group: 'Professionals' },
+  { anzsco: '234513', name: 'Biotechnologist', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'VETASSESS', group: 'Professionals' },
+  { anzsco: '234514', name: 'Botanist', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'VETASSESS', group: 'Professionals' },
+  { anzsco: '234515', name: 'Marine Biologist', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'VETASSESS', group: 'Professionals' },
+  { anzsco: '234516', name: 'Microbiologist', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'VETASSESS', group: 'Professionals' },
+  { anzsco: '234517', name: 'Zoologist', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'VETASSESS', group: 'Professionals' },
+  { anzsco: '234611', name: 'Medical Laboratory Scientist', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'AIMS', group: 'Professionals' },
+  { anzsco: '234711', name: 'Veterinarian', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'AVBC', group: 'Professionals' },
+  { anzsco: '234811', name: 'Mathematician', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'VETASSESS', group: 'Professionals' },
+  { anzsco: '234812', name: 'Statistician', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'VETASSESS', group: 'Professionals' },
+  { anzsco: '234911', name: 'Conservator', lists: ['CSOL'], visas: ['482', '186', '494'], assessingAuthority: 'VETASSESS', group: 'Professionals' },
+  { anzsco: '234912', name: 'Metallurgist', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'Engineers Australia', group: 'Professionals' },
+  { anzsco: '234913', name: 'Meteorologist', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'VETASSESS', group: 'Professionals' },
+  { anzsco: '234914', name: 'Physicist', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'VETASSESS', group: 'Professionals' },
+  { anzsco: '234999', name: 'Natural and Physical Science Professionals nec', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'VETASSESS', group: 'Professionals' },
+
+  // ── Additional Technicians & Trades ─────────────────────────────────────
+  { anzsco: '311111', name: 'Agricultural Technician', lists: ['CSOL', 'ROL'], visas: ['491', '494'], assessingAuthority: 'VETASSESS', group: 'Technicians & Trades' },
+  { anzsco: '311211', name: 'Medical Technician', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'AIMS', group: 'Technicians & Trades' },
+  { anzsco: '311212', name: 'Pathology Collector', lists: ['CSOL'], visas: ['482', '494'], assessingAuthority: 'AIMS', group: 'Technicians & Trades' },
+  { anzsco: '311299', name: 'Medical Technicians nec', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'AIMS', group: 'Technicians & Trades' },
+  { anzsco: '311411', name: 'Chemistry Technician', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'VETASSESS', group: 'Technicians & Trades' },
+  { anzsco: '311412', name: 'Earth Science Technician', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'VETASSESS', group: 'Technicians & Trades' },
+  { anzsco: '311413', name: 'Life Science Technician', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'VETASSESS', group: 'Technicians & Trades' },
+  { anzsco: '311499', name: 'Science Technicians nec', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'VETASSESS', group: 'Technicians & Trades' },
+  { anzsco: '312111', name: 'Civil Engineering Draftsperson', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'Engineers Australia', group: 'Technicians & Trades' },
+  { anzsco: '312112', name: 'Civil Engineering Technician', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'Engineers Australia', group: 'Technicians & Trades' },
+  { anzsco: '321213', name: 'Motorcycle Mechanic', lists: ['CSOL'], visas: ['482', '494'], assessingAuthority: 'TRA', group: 'Technicians & Trades' },
+  { anzsco: '321214', name: 'Small Engine Mechanic', lists: ['CSOL'], visas: ['482', '494'], assessingAuthority: 'TRA', group: 'Technicians & Trades' },
+  { anzsco: '321215', name: 'Vehicle Body Builder', lists: ['CSOL'], visas: ['482', '494'], assessingAuthority: 'TRA', group: 'Technicians & Trades' },
+  { anzsco: '321216', name: 'Vehicle Painter', lists: ['CSOL'], visas: ['482', '494'], assessingAuthority: 'TRA', group: 'Technicians & Trades' },
+  { anzsco: '322111', name: 'Blacksmith', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'TRA', group: 'Technicians & Trades' },
+  { anzsco: '322112', name: 'Farrier', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'TRA', group: 'Technicians & Trades' },
+  { anzsco: '322211', name: 'Sheetmetal Trades Worker', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'TRA', group: 'Technicians & Trades' },
+  { anzsco: '322312', name: 'Pressure Welder', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'TRA', group: 'Technicians & Trades' },
+  { anzsco: '323112', name: 'Fitter and Turner', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'TRA', group: 'Technicians & Trades' },
+  { anzsco: '323113', name: 'Fitter-Welder', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'TRA', group: 'Technicians & Trades' },
+  { anzsco: '323212', name: 'Textile, Clothing and Footwear Mechanic', lists: ['CSOL'], visas: ['482', '494'], assessingAuthority: 'TRA', group: 'Technicians & Trades' },
+  { anzsco: '323311', name: 'Agricultural Machinery Operator', lists: ['CSOL', 'ROL'], visas: ['491', '494'], assessingAuthority: 'TRA', group: 'Technicians & Trades' },
+  { anzsco: '323312', name: 'Earth Moving Plant Operator', lists: ['CSOL'], visas: ['482', '494'], assessingAuthority: 'TRA', group: 'Technicians & Trades' },
+  { anzsco: '323411', name: 'Locksmith', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'TRA', group: 'Technicians & Trades' },
+  { anzsco: '331111', name: 'Bricklayer', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'TRA', group: 'Technicians & Trades' },
+  { anzsco: '332111', name: 'Floor Finisher', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'TRA', group: 'Technicians & Trades' },
+  { anzsco: '332112', name: 'Parquetry Layer', lists: ['CSOL'], visas: ['482', '494'], assessingAuthority: 'TRA', group: 'Technicians & Trades' },
+  { anzsco: '333111', name: 'Fibrous Plasterer', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'TRA', group: 'Technicians & Trades' },
+  { anzsco: '333112', name: 'Solid Plasterer', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'TRA', group: 'Technicians & Trades' },
+  { anzsco: '333211', name: 'Wall and Ceiling Lining Trades Worker', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'TRA', group: 'Technicians & Trades' },
+  { anzsco: '334112', name: 'Air-Conditioning and Mechanical Services Plumber', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'TRA', group: 'Technicians & Trades' },
+  { anzsco: '334114', name: 'Gasfitter', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'TRA', group: 'Technicians & Trades' },
+  { anzsco: '334116', name: 'Sprinkler Irrigation Installer', lists: ['CSOL'], visas: ['482', '494'], assessingAuthority: 'TRA', group: 'Technicians & Trades' },
+  { anzsco: '334199', name: 'Plumbers nec', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'TRA', group: 'Technicians & Trades' },
+  { anzsco: '341113', name: 'Lift Mechanic', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'TRA', group: 'Technicians & Trades' },
+  { anzsco: '341114', name: 'Electrician in Training', lists: ['CSOL'], visas: ['482', '494'], assessingAuthority: 'TRA', group: 'Technicians & Trades' },
+  { anzsco: '342112', name: 'Electrical Appliance Servicer', lists: ['CSOL'], visas: ['482', '494'], assessingAuthority: 'TRA', group: 'Technicians & Trades' },
+  { anzsco: '342311', name: 'Electrical Instrument Trades Worker', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'TRA', group: 'Technicians & Trades' },
+  { anzsco: '342312', name: 'Electronic Equipment Trades Worker', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'TRA', group: 'Technicians & Trades' },
+  { anzsco: '342314', name: 'Refrigeration and Air Conditioning Mechanic', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'TRA', group: 'Technicians & Trades' },
+  { anzsco: '351211', name: 'Butcher or Smallgoods Maker', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'TRA', group: 'Technicians & Trades' },
+  { anzsco: '351212', name: 'Smallgoods Maker', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'TRA', group: 'Technicians & Trades' },
+  { anzsco: '351311', name: 'Chef', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'TRA', group: 'Technicians & Trades' },
+  { anzsco: '361311', name: 'Dog Handler / Trainer', lists: ['CSOL', 'ROL'], visas: ['491', '494'], assessingAuthority: 'VETASSESS', group: 'Technicians & Trades' },
+  { anzsco: '361111', name: 'Animal Attendant', lists: ['CSOL', 'ROL'], visas: ['491', '494'], assessingAuthority: 'VETASSESS', group: 'Technicians & Trades' },
+  { anzsco: '362211', name: 'Landscape Gardener', lists: ['CSOL', 'ROL'], visas: ['491', '494'], assessingAuthority: 'VETASSESS', group: 'Technicians & Trades' },
+  { anzsco: '362212', name: 'Nurseryperson', lists: ['CSOL', 'ROL'], visas: ['491', '494'], assessingAuthority: 'VETASSESS', group: 'Technicians & Trades' },
+  { anzsco: '362311', name: 'Arborist', lists: ['CSOL', 'ROL'], visas: ['491', '494'], assessingAuthority: 'VETASSESS', group: 'Technicians & Trades' },
+  { anzsco: '362411', name: 'Florist', lists: ['CSOL'], visas: ['482', '494'], assessingAuthority: 'VETASSESS', group: 'Technicians & Trades' },
+
+  // ── Community & Personal Service (extended) ──────────────────────────────
+  { anzsco: '411112', name: 'Intensive Care Ambulance Paramedic', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'VETASSESS', group: 'Community & Personal Service' },
+  { anzsco: '411199', name: 'Ambulance Officers and Paramedics nec', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'VETASSESS', group: 'Community & Personal Service' },
+  { anzsco: '411212', name: 'Dental Prosthetist', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'AHPRA', group: 'Community & Personal Service' },
+  { anzsco: '411213', name: 'Dental Technician', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'AHPRA', group: 'Community & Personal Service' },
+  { anzsco: '411311', name: 'Diversional Therapist', lists: ['CSOL'], visas: ['482', '494'], assessingAuthority: 'VETASSESS', group: 'Community & Personal Service' },
+  { anzsco: '411412', name: 'Mothercraft Nurse', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'ANMAC', group: 'Community & Personal Service' },
+  { anzsco: '411511', name: 'Aboriginal and Torres Strait Islander Health Worker', lists: ['CSOL'], visas: ['482', '494'], assessingAuthority: 'VETASSESS', group: 'Community & Personal Service' },
+  { anzsco: '411611', name: 'Massage Therapist', lists: ['CSOL'], visas: ['482', '494'], assessingAuthority: 'VETASSESS', group: 'Community & Personal Service' },
+  { anzsco: '411711', name: 'Community Worker', lists: ['CSOL'], visas: ['482', '494'], assessingAuthority: 'VETASSESS', group: 'Community & Personal Service' },
+  { anzsco: '412211', name: 'Early Childhood Worker', lists: ['CSOL'], visas: ['482', '494'], assessingAuthority: 'TRA', group: 'Community & Personal Service' },
+  { anzsco: '422111', name: 'Hostel Parent', lists: ['CSOL'], visas: ['482', '494'], assessingAuthority: 'VETASSESS', group: 'Community & Personal Service' },
+  { anzsco: '422116', name: 'Residential Care Officer', lists: ['CSOL'], visas: ['482', '494'], assessingAuthority: 'VETASSESS', group: 'Community & Personal Service' },
+  { anzsco: '431111', name: 'Bar Attendant', lists: ['CSOL'], visas: ['482', '494'], assessingAuthority: 'TRA', group: 'Community & Personal Service' },
+  { anzsco: '431211', name: 'Waiter', lists: ['CSOL'], visas: ['482', '494'], assessingAuthority: 'TRA', group: 'Community & Personal Service' },
+  { anzsco: '431511', name: 'Hotel Service Manager', lists: ['CSOL'], visas: ['482', '186', '494'], assessingAuthority: 'VETASSESS', group: 'Community & Personal Service' },
+  { anzsco: '431911', name: 'Sommelier', lists: ['CSOL'], visas: ['482', '494'], assessingAuthority: 'TRA', group: 'Community & Personal Service' },
+  { anzsco: '451111', name: 'Arts Administrator or Manager', lists: ['CSOL'], visas: ['482', '186', '494'], assessingAuthority: 'VETASSESS', group: 'Community & Personal Service' },
+  { anzsco: '451211', name: 'Driving Instructor', lists: ['CSOL'], visas: ['482', '494'], assessingAuthority: 'VETASSESS', group: 'Community & Personal Service' },
+  { anzsco: '451311', name: 'Fitness Instructor', lists: ['CSOL'], visas: ['482', '494'], assessingAuthority: 'VETASSESS', group: 'Community & Personal Service' },
+  { anzsco: '451411', name: 'Gallery or Museum Curator', lists: ['CSOL'], visas: ['482', '186', '494'], assessingAuthority: 'VETASSESS', group: 'Community & Personal Service' },
+  { anzsco: '451511', name: 'Sports Development Officer', lists: ['CSOL'], visas: ['482', '494'], assessingAuthority: 'VETASSESS', group: 'Community & Personal Service' },
+  { anzsco: '451611', name: 'Outdoor Adventure Instructor', lists: ['CSOL'], visas: ['482', '494'], assessingAuthority: 'VETASSESS', group: 'Community & Personal Service' },
+  { anzsco: '451711', name: 'Funeral Director', lists: ['CSOL'], visas: ['482', '494'], assessingAuthority: 'VETASSESS', group: 'Community & Personal Service' },
+  { anzsco: '452111', name: 'Footballer', lists: ['CSOL'], visas: ['482'], assessingAuthority: 'VETASSESS', group: 'Community & Personal Service' },
+  { anzsco: '452411', name: 'Sports Coach', lists: ['CSOL'], visas: ['482', '494'], assessingAuthority: 'VETASSESS', group: 'Community & Personal Service' },
+  { anzsco: '452511', name: 'Dive Instructor (Open Water)', lists: ['CSOL'], visas: ['482', '494'], assessingAuthority: 'VETASSESS', group: 'Community & Personal Service' },
+  { anzsco: '452513', name: 'Swimming Coach or Instructor', lists: ['CSOL'], visas: ['482', '494'], assessingAuthority: 'VETASSESS', group: 'Community & Personal Service' },
+
+  // ── Clerical & Administrative ─────────────────────────────────────────────
+  { anzsco: '511111', name: 'Contract Administrator', lists: ['CSOL'], visas: ['482', '186', '494'], assessingAuthority: 'VETASSESS', group: 'Clerical & Administrative' },
+  { anzsco: '511112', name: 'Program or Project Administrator', lists: ['CSOL'], visas: ['482', '186', '494'], assessingAuthority: 'VETASSESS', group: 'Clerical & Administrative' },
+  { anzsco: '521211', name: 'Court Clerk', lists: ['CSOL'], visas: ['482', '186'], assessingAuthority: 'VETASSESS', group: 'Clerical & Administrative' },
+  { anzsco: '521212', name: 'Legal Secretary', lists: ['CSOL'], visas: ['482', '494'], assessingAuthority: 'VETASSESS', group: 'Clerical & Administrative' },
+  { anzsco: '531111', name: 'Customs Officer', lists: ['CSOL'], visas: ['482', '186'], assessingAuthority: 'VETASSESS', group: 'Clerical & Administrative' },
+  { anzsco: '531112', name: 'Immigration Officer', lists: ['CSOL'], visas: ['482', '186'], assessingAuthority: 'VETASSESS', group: 'Clerical & Administrative' },
+  { anzsco: '531113', name: 'Motor Vehicle Licence Examiner', lists: ['CSOL'], visas: ['482', '494'], assessingAuthority: 'VETASSESS', group: 'Clerical & Administrative' },
+  { anzsco: '532111', name: 'Office Manager', lists: ['CSOL'], visas: ['482', '186', '494'], assessingAuthority: 'VETASSESS', group: 'Clerical & Administrative' },
+  { anzsco: '541111', name: 'Call or Contact Centre Operator', lists: ['CSOL'], visas: ['482', '494'], assessingAuthority: 'VETASSESS', group: 'Clerical & Administrative' },
+  { anzsco: '591111', name: 'Accounting Clerk', lists: ['CSOL'], visas: ['482', '494'], assessingAuthority: 'VETASSESS', group: 'Clerical & Administrative' },
+  { anzsco: '591112', name: 'Cost Clerk', lists: ['CSOL'], visas: ['482', '494'], assessingAuthority: 'VETASSESS', group: 'Clerical & Administrative' },
+  { anzsco: '599411', name: 'Payroll Clerk', lists: ['CSOL'], visas: ['482', '494'], assessingAuthority: 'VETASSESS', group: 'Clerical & Administrative' },
+
+  // ── Additional Machinery Operators & Drivers ─────────────────────────────
+  { anzsco: '712111', name: 'Crane, Hoist or Lift Operator', lists: ['CSOL'], visas: ['482', '494'], assessingAuthority: 'TRA', group: 'Machinery Operators & Drivers' },
+  { anzsco: '712211', name: 'Bulldozer Operator', lists: ['CSOL'], visas: ['482', '494'], assessingAuthority: 'TRA', group: 'Machinery Operators & Drivers' },
+  { anzsco: '712212', name: 'Grader Operator', lists: ['CSOL'], visas: ['482', '494'], assessingAuthority: 'TRA', group: 'Machinery Operators & Drivers' },
+  { anzsco: '712213', name: 'Scraper Operator', lists: ['CSOL'], visas: ['482', '494'], assessingAuthority: 'TRA', group: 'Machinery Operators & Drivers' },
+  { anzsco: '721112', name: 'Front End Loader Operator', lists: ['CSOL'], visas: ['482', '494'], assessingAuthority: 'TRA', group: 'Machinery Operators & Drivers' },
+  { anzsco: '721211', name: 'Agricultural and Horticultural Mobile Plant Operator', lists: ['CSOL', 'ROL'], visas: ['491', '494'], assessingAuthority: 'TRA', group: 'Machinery Operators & Drivers' },
+  { anzsco: '721411', name: 'Aircraft Ground Equipment Operator', lists: ['CSOL'], visas: ['482', '494'], assessingAuthority: 'TRA', group: 'Machinery Operators & Drivers' },
+  { anzsco: '731111', name: 'Automobile Driver', lists: ['CSOL'], visas: ['482', '494'], assessingAuthority: 'TRA', group: 'Machinery Operators & Drivers' },
+  { anzsco: '731211', name: 'Bus and Coach Driver', lists: ['CSOL'], visas: ['482', '494'], assessingAuthority: 'TRA', group: 'Machinery Operators & Drivers' },
+  { anzsco: '733311', name: 'Courier', lists: ['CSOL'], visas: ['482', '494'], assessingAuthority: 'TRA', group: 'Machinery Operators & Drivers' },
+  { anzsco: '741111', name: 'Train Driver', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'TRA', group: 'Machinery Operators & Drivers' },
+  { anzsco: '741211', name: 'Train Controller', lists: ['CSOL'], visas: ['482', '494'], assessingAuthority: 'TRA', group: 'Machinery Operators & Drivers' },
+
+  // ── Labourers ─────────────────────────────────────────────────────────────
+  { anzsco: '821111', name: 'Driller', lists: ['CSOL', 'ROL'], visas: ['491', '494'], assessingAuthority: 'TRA', group: 'Labourers' },
+  { anzsco: '821112', name: 'Shotfirer', lists: ['CSOL', 'ROL'], visas: ['491', '494'], assessingAuthority: 'TRA', group: 'Labourers' },
+  { anzsco: '821211', name: 'Building and Plumbing Labourers nec', lists: ['CSOL', 'ROL'], visas: ['491', '494'], assessingAuthority: 'TRA', group: 'Labourers' },
+  { anzsco: '831111', name: 'Agricultural and Horticultural Labourers nec', lists: ['CSOL', 'ROL'], visas: ['491', '494'], assessingAuthority: 'TRA', group: 'Labourers' },
+  { anzsco: '841111', name: 'Baker\'s Assistant', lists: ['CSOL'], visas: ['482', '494'], assessingAuthority: 'TRA', group: 'Labourers' },
+  { anzsco: '841211', name: 'Butcher\'s Assistant', lists: ['CSOL'], visas: ['482', '494'], assessingAuthority: 'TRA', group: 'Labourers' },
+  { anzsco: '851311', name: 'Checkout Operator', lists: ['CSOL'], visas: ['482', '494'], assessingAuthority: 'VETASSESS', group: 'Labourers' },
+  { anzsco: '851411', name: 'Delivery Driver', lists: ['CSOL'], visas: ['482', '494'], assessingAuthority: 'TRA', group: 'Labourers' },
 ];
 
 /** Stable identity key for an occupation row (ANZSCO is globally unique). */

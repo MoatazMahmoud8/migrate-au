@@ -12,6 +12,8 @@ import {
   SKILLED_OCCUPATIONS,
   SKILL_OCCUPATIONS_SNAPSHOT_DATE,
   SkilledOccupation,
+  StateCode,
+  StateRequirement,
   occupationKey,
 } from '../constants/skilledOccupations';
 import { validateOccupationsSnapshot } from './remoteSchema';
@@ -20,8 +22,14 @@ import { validateOccupationsSnapshot } from './remoteSchema';
 export const SKILL_OCCUPATIONS_REMOTE_URL =
   'https://migrateau.jsmglobal.xyz/skilled-occupations.json';
 
+/** Schema: { snapshotDate: string, requirements: { [anzsco]: { [StateCode]: StateRequirement } } } */
+export const STATE_REQUIREMENTS_REMOTE_URL =
+  'https://migrateau.jsmglobal.xyz/state-occupation-requirements.json';
+
 const CACHE_KEY = '@migrate_au_skilled_occupations';
 const LAST_CHECK_KEY = '@migrate_au_skilled_occupations_last_check';
+const STATE_REQ_CACHE_KEY = '@migrate_au_state_requirements';
+const STATE_REQ_LAST_CHECK_KEY = '@migrate_au_state_requirements_last_check';
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 const MIN_FORCE_INTERVAL_MS = 30 * 1000; // throttle pull-to-refresh
 const FETCH_TIMEOUT_MS = 15 * 1000;
@@ -233,4 +241,94 @@ export function searchOccupations(
     return tokens.every((t) => haystack.includes(t));
   });
   return matches.slice(0, limit);
+}
+
+// ─── State Requirements ───────────────────────────────────────────────────
+
+export interface StateRequirementsSnapshot {
+  snapshotDate: string;
+  /** Map of ANZSCO code → state code → requirements */
+  requirements: Record<string, Partial<Record<StateCode, StateRequirement>>>;
+}
+
+/**
+ * Return the cached state requirements snapshot, or an empty one if
+ * nothing is cached yet.
+ */
+export async function getStateRequirements(): Promise<StateRequirementsSnapshot> {
+  try {
+    const raw = await AsyncStorage.getItem(STATE_REQ_CACHE_KEY);
+    if (raw) return JSON.parse(raw) as StateRequirementsSnapshot;
+  } catch {}
+  return { snapshotDate: '', requirements: {} };
+}
+
+/**
+ * Fetch the latest state requirements from the remote endpoint (at most
+ * once per day unless force=true) and cache them locally.
+ * Returns the merged list of SkilledOccupations with stateRequirements
+ * injected from the remote data.
+ */
+export async function refreshStateRequirements(
+  opts: { force?: boolean } = {}
+): Promise<{ updated: boolean; snapshot: StateRequirementsSnapshot }> {
+  const last = await AsyncStorage.getItem(STATE_REQ_LAST_CHECK_KEY).catch(() => null);
+  if (last) {
+    const age = Date.now() - new Date(last).getTime();
+    if (!opts.force && age < ONE_DAY_MS) {
+      return { updated: false, snapshot: await getStateRequirements() };
+    }
+    if (opts.force && age < MIN_FORCE_INTERVAL_MS) {
+      return { updated: false, snapshot: await getStateRequirements() };
+    }
+  }
+
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
+    let res: Response;
+    try {
+      res = await fetch(STATE_REQUIREMENTS_REMOTE_URL, { method: 'GET', signal: ctrl.signal });
+    } finally {
+      clearTimeout(timer);
+    }
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const contentLength = Number(res.headers.get('content-length') ?? 0);
+    if (contentLength && contentLength > 5 * 1024 * 1024) {
+      throw new Error('state-requirements payload too large');
+    }
+    const json = (await res.json()) as StateRequirementsSnapshot;
+    if (
+      typeof json !== 'object' ||
+      typeof json.snapshotDate !== 'string' ||
+      typeof json.requirements !== 'object'
+    ) {
+      throw new Error('invalid state-requirements schema');
+    }
+
+    await AsyncStorage.setItem(STATE_REQ_LAST_CHECK_KEY, new Date().toISOString());
+    await AsyncStorage.setItem(STATE_REQ_CACHE_KEY, JSON.stringify(json));
+    return { updated: true, snapshot: json };
+  } catch (err) {
+    console.warn('[stateRequirements] refresh failed:', err);
+    return { updated: false, snapshot: await getStateRequirements() };
+  }
+}
+
+/**
+ * Merge a StateRequirementsSnapshot into an array of SkilledOccupations,
+ * injecting `stateRequirements` per occupation in-place (returns new array).
+ */
+export function mergeStateRequirements(
+  occupations: SkilledOccupation[],
+  snapshot: StateRequirementsSnapshot
+): SkilledOccupation[] {
+  if (!snapshot.requirements || Object.keys(snapshot.requirements).length === 0) {
+    return occupations;
+  }
+  return occupations.map((occ) => {
+    const reqs = snapshot.requirements[occ.anzsco];
+    if (!reqs) return occ;
+    return { ...occ, stateRequirements: reqs };
+  });
 }

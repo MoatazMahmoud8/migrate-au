@@ -13,10 +13,11 @@ import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Spacing, Radius, FontSize, FontWeight } from '../constants/theme';
 import {
-  VISA_PATHWAYS,
-  VISA_CATEGORY_META,
-  VisaPathway,
-} from '../constants/visaPathways';
+  ALL_VISAS,
+  CATEGORY_META,
+  ALL_CATEGORIES,
+  VisaCategory,
+} from '../constants/visaData';
 import { ProcessingTime } from '../constants/processingTimes';
 import {
   getProcessingTimes,
@@ -24,17 +25,15 @@ import {
 } from '../utils/processingTimes';
 import { tap as hapticTap } from '../utils/haptics';
 
-type Category = VisaPathway['category'];
+type Category = VisaCategory;
 type Filter = 'All' | Category;
 
-const CATEGORY_ORDER: Category[] = [
-  'Employer', 'Graduate', 'Family', 'Student', 'Working Holiday', 'Visitor', 'Humanitarian', 'Training',
-];
+const CATEGORY_ORDER: Category[] = ALL_CATEGORIES;
 
 const FILTERS: Filter[] = ['All', ...CATEGORY_ORDER];
 
 /** Group visas by category in display order */
-function groupByCategory(visas: VisaPathway[]): Array<{ category: Category; items: VisaPathway[] }> {
+function groupByCategory(visas: typeof ALL_VISAS): Array<{ category: Category; items: typeof ALL_VISAS }> {
   const map = new Map<Category, VisaPathway[]>();
   for (const v of visas) {
     if (!map.has(v.category)) map.set(v.category, []);
@@ -62,7 +61,7 @@ export default function VisasScreen() {
 
   const groups = useMemo(() => {
     const visas =
-      filter === 'All' ? VISA_PATHWAYS : VISA_PATHWAYS.filter((v) => v.category === filter);
+      filter === 'All' ? ALL_VISAS : ALL_VISAS.filter((v) => v.category === filter);
     return groupByCategory(visas);
   }, [filter]);
 
@@ -109,11 +108,11 @@ export default function VisasScreen() {
         >
           {FILTERS.map((f) => {
             const active = filter === f;
-            const meta = f !== 'All' ? VISA_CATEGORY_META[f] : null;
+            const meta = f !== 'All' ? CATEGORY_META[f] : null;
             const count =
               f === 'All'
-                ? VISA_PATHWAYS.length
-                : VISA_PATHWAYS.filter((v) => v.category === f).length;
+                ? ALL_VISAS.length
+                : ALL_VISAS.filter((v) => v.category === f).length;
             return (
               <TouchableOpacity
                 key={f}
@@ -142,7 +141,7 @@ export default function VisasScreen() {
         {/* Grouped sections */}
         <View style={styles.body}>
           {groups.map(({ category, items }) => {
-            const meta = VISA_CATEGORY_META[category];
+            const meta = CATEGORY_META[category];
             return (
               <View key={category} style={styles.section}>
                 {/* Section header */}
@@ -155,6 +154,31 @@ export default function VisasScreen() {
                     <Text style={[styles.sectionCountText, { color: meta.color }]}>{items.length}</Text>
                   </View>
                 </View>
+
+                {/* Points calculator shortcut — only shown under Skilled */}
+                {category === 'Skilled' && (
+                  <TouchableOpacity
+                    style={styles.calcCard}
+                    onPress={() => router.push('/(tabs)/calculator' as any)}
+                    activeOpacity={0.85}
+                  >
+                    <LinearGradient
+                      colors={['rgba(255,205,0,0.12)', 'rgba(255,184,0,0.06)']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                      style={styles.calcCardGrad}
+                    >
+                      <View style={styles.calcCardIcon}>
+                        <Ionicons name="calculator-outline" size={18} color={Colors.secondary} />
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.calcCardTitle}>Calculate Your Points</Text>
+                        <Text style={styles.calcCardSub}>See if you reach the 65-point threshold</Text>
+                      </View>
+                      <Ionicons name="chevron-forward" size={16} color={Colors.secondary} />
+                    </LinearGradient>
+                  </TouchableOpacity>
+                )}
 
                 {/* Visa cards */}
                 <View style={styles.cardList}>
@@ -179,8 +203,8 @@ export default function VisasScreen() {
                           <View style={styles.cardHeadContent}>
                             <View style={styles.codeRow}>
                               <Text style={styles.cardCode}>SC {v.code}</Text>
-                              <View style={[styles.typeBadge, v.type === 'Permanent' ? styles.typePerm : styles.typeTemp]}>
-                                <Text style={[styles.typeText, v.type === 'Permanent' ? styles.typeTextPerm : styles.typeTextTemp]}>
+                              <View style={[styles.typeBadge, v.type === 'Permanent' ? styles.typePerm : v.type === 'Repealed' ? styles.typeRepealed : styles.typeTemp]}>
+                                <Text style={[styles.typeText, v.type === 'Permanent' ? styles.typeTextPerm : v.type === 'Repealed' ? styles.typeTextRepealed : styles.typeTextTemp]}>
                                   {v.type}
                                 </Text>
                               </View>
@@ -378,9 +402,11 @@ const styles = StyleSheet.create({
   typeBadge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: Radius.full },
   typePerm: { backgroundColor: 'rgba(0,214,143,0.15)' },
   typeTemp: { backgroundColor: 'rgba(0,194,255,0.15)' },
+  typeRepealed: { backgroundColor: 'rgba(107,114,128,0.15)' },
   typeText: { fontSize: 9, fontWeight: '700', letterSpacing: 0.4 },
   typeTextPerm: { color: Colors.success },
   typeTextTemp: { color: Colors.accent },
+  typeTextRepealed: { color: '#9CA3AF' },
   cardName: { fontSize: FontSize.sm, fontWeight: FontWeight.semiBold as any, color: Colors.textPrimary },
 
   /* Processing time inline badge (collapsed) */
@@ -434,6 +460,29 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   dhaBtnText: { fontSize: FontSize.xs, fontWeight: '700' },
+
+  /* Points calculator card (Skilled section) */
+  calcCard: {
+    borderRadius: Radius.lg,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,205,0,0.25)',
+    marginBottom: Spacing.sm,
+  },
+  calcCardGrad: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.md,
+  },
+  calcCardIcon: {
+    width: 36, height: 36, borderRadius: Radius.md,
+    backgroundColor: 'rgba(255,205,0,0.15)',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  calcCardTitle: { fontSize: FontSize.sm, fontWeight: FontWeight.bold as any, color: Colors.secondary },
+  calcCardSub: { fontSize: FontSize.xs, color: Colors.textMuted, marginTop: 2 },
 
   /* Footer */
   footer: {

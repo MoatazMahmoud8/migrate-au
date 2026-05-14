@@ -404,6 +404,24 @@ export const ALL_VISAS: VisaEntry[] = [
     conditions: ['For people who need to resolve immigration status', 'May include people in the community awaiting removal', 'No work rights by default', 'No travel outside Australia'],
     url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/bridging-visa-e-050-051',
   },
+  {
+    code: '040', name: 'Bridging Visa D (BVD)', icon: 'timer-outline', type: 'Temporary', category: 'Bridging',
+    subclasses: ['040 – Bridging Visa D'],
+    conditions: ['Automatically granted to certain people who apply for another visa onshore', 'Short-term bridging status (typically 5 days)', 'Allows time to apply for a Bridging Visa A', 'No travel outside Australia'],
+    url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/bridging-visa-d-040',
+  },
+  {
+    code: '060', name: 'Bridging Visa F (BVF)', icon: 'timer-outline', type: 'Temporary', category: 'Bridging',
+    subclasses: ['060 – Bridging Visa F'],
+    conditions: ['Issued to victims of human trafficking or people at risk', 'Allows lawful stay while considering options', 'Work and study rights may be granted', 'Access to support services through the Australian Federal Police'],
+    url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/bridging-visa-f-060',
+  },
+  {
+    code: 'BVR', name: 'Bridging Visa R (BVR)', icon: 'timer-outline', type: 'Temporary', category: 'Bridging',
+    subclasses: ['BVR – Bridging visa for removal'],
+    conditions: ['Issued when a removal order is being organised for the holder', 'Very limited rights and conditions', 'Holder must comply with reporting conditions', 'Cannot travel internationally'],
+    url: 'https://immi.homeaffairs.gov.au/visas/already-have-a-visa/check-visa-details-and-conditions/see-your-visa-conditions',
+  },
 
   // ─────────────────────────────────────────────────────────────────
   // OTHER SPECIAL VISAS
