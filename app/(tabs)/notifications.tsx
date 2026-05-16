@@ -190,7 +190,9 @@ export default function NotificationsScreen() {
         </View>
       ) : filteredFeed.length === 0 ? (
         <View style={styles.empty}>
-          <Ionicons name="newspaper-outline" size={48} color={Colors.textMuted} />
+          <View style={styles.emptyIconBadge}>
+            <Ionicons name="newspaper-outline" size={40} color={Colors.accent} />
+          </View>
           <Text style={styles.emptyText}>{feed.length === 0 ? 'No updates yet' : 'No updates for this filter'}</Text>
           <Text style={styles.emptySubtext}>
             {feed.length === 0
@@ -325,6 +327,17 @@ const styles = StyleSheet.create({
     paddingTop: 80,
     paddingHorizontal: Spacing.xl,
     gap: 12,
+  },
+  emptyIconBadge: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    backgroundColor: 'rgba(0, 122, 255, 0.10)',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 122, 255, 0.25)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
   },
   emptyText: {
     fontSize: FontSize.lg,

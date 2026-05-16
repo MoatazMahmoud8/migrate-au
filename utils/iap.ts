@@ -234,6 +234,15 @@ export async function getCustomerInfo(): Promise<CustomerInfo | null> {
  * Updates local isPremium flag if entitlement found
  */
 export async function restorePurchases(): Promise<{ restored: boolean; message: string }> {
+  if (Platform.OS === 'web') {
+    return { restored: false, message: 'Restore is only available in the mobile app.' };
+  }
+  if (!REVENUECAT_API_KEY_ANDROID && !REVENUECAT_API_KEY_IOS) {
+    return { restored: false, message: 'Billing is not configured in this build. Please reinstall the latest version.' };
+  }
+  if (!rcInitialized) {
+    await initRevenueCat();
+  }
   try {
     const customerInfo = await Purchases.restorePurchases();
     const hasEntitlement = customerInfo.entitlements.active[ENTITLEMENT_ID] != null;
@@ -245,9 +254,12 @@ export async function restorePurchases(): Promise<{ restored: boolean; message: 
     }
 
     return { restored: false, message: 'No active subscription found for this account.' };
-  } catch (err) {
+  } catch (err: any) {
     console.warn('[IAP] Restore error:', err);
-    return { restored: false, message: 'Restore failed. Please check your internet connection and try again.' };
+    return {
+      restored: false,
+      message: err?.message || 'Restore failed. Please check your internet connection and try again.',
+    };
   }
 }
 
