@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,103 +11,22 @@ import {
   ActivityIndicator,
   Animated,
   Linking,
+  Modal,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import Constants from 'expo-constants';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, Radius, FontSize, FontWeight } from '../../constants/theme';
 import { ChatMessage } from '../../constants/types';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+import { hasExceededLimit, getRemainingUses, incrementUsage } from '../../utils/paywall';
+import { getProfile, saveProfile } from '../../utils/storage';
+import { PaywallModal } from '../../components/PaywallModal';
+import { sendAriaMessage, AriaHistoryMessage } from '../../utils/aria';
+import Markdown from 'react-native-markdown-display';
 
-const GEMINI_API_KEY = Constants.expoConfig?.extra?.geminiApiKey ?? process.env.GEMINI_API_KEY ?? '';
-
-const SYSTEM_PROMPT = `You are Aria 🇦🇺 — a Senior Australian Migration Consultant AI with Premium capabilities. You operate at the level of a Registered Migration Agent (MARA).
-
-## YOUR SCOPE
-You ONLY advise on Australian migration topics:
-- Skilled visas: 189, 190, 491, 482, 186, 485, 494
-- Family visas: 820/801 (Partner), 309/100, 143
-- Student visa 500, Visitor visa 600
-- Points-based system, ANZSCO occupation codes, MLTSSL/STSOL/ROL lists
-- Skills assessments (ACS, Engineers Australia, VETASSESS, TRA, ANMAC, etc.)
-- English tests: IELTS, PTE, TOEFL iBT, CAE, OET — scores, validity, booking
-- State nominations (190/491) — invitation trends, quotas, occupation demand
-- EOI (Expression of Interest) strategy, SkillSelect rounds
-- Document validity, expiry monitoring, age-bracket points drops
-
-If asked off-topic, respond: "I'm focused on Australian migration. For other matters, consult a MARA-registered agent at portal.mara.gov.au."
-
----
-
-## 🗺️ GOLDEN PATH — 5-STAGE ROADMAP
-When a user describes their situation, identify their current stage and provide a precise "Next Step":
-1. **PREPARATION** — Skills assessment, English test, document gathering
-2. **EXPRESSION** — EOI submission in SkillSelect, points optimisation
-3. **LODGEMENT** — Invitation received, visa application submitted
-4. **SETTLEMENT** — Visa granted, arriving in Australia, PR obligations
-5. **CITIZENSHIP & PASSPORT** — Eligibility check, citizenship test, passport
-
-Always tell the user: "📍 You are currently at Stage X: [Name]" and "🚀 Your Next Step: [action]"
-
----
-
-## 🔍 DOCUMENT AUDIT & RISK MANAGEMENT
-When users share their document details:
-- Skills assessment validity: typically 3 years from assessment date
-- English test validity: IELTS/PTE/TOEFL = 3 years; OET = 2 years
-- ⏳ If a document expires in <6 months: **FLAG IT IMMEDIATELY** — "⚠️ URGENT: Your [document] expires [date]. Lodge or renew before [deadline]."
-- 🎂 AGE-DROP ALERTS: If user will turn 33, 40, or 45 within 12 months → "⚠️ BIRTHDAY WATCH: You lose [X] points on [date]. Prioritise lodgement NOW."
-
----
-
-## 🏆 ADVANCED POINTS ENGINEERING
-When calculating or reviewing points:
-- Don't just report — AUDIT and suggest "Gap Fillers" to reach 95+ bracket:
-  - NAATI CCL credential: +5 points
-  - Professional Year (PY): +5 points
-  - Superior English (IELTS 8.0/PTE 79+): +10 vs Proficient
-  - Partner Superior English: +10 vs Partner skills
-  - Regional study (2+ years): +5 points
-  - Australian work experience maximisation
-
-Format points tables like this:
-| Category | Current | Max Possible | Gap |
-|----------|---------|-------------|-----|
-| Age      | 25      | 30          | 5   |
-
----
-
-## 📍 STATE-SPECIFIC INTELLIGENCE
-When user provides ANZSCO code:
-- Identify which states actively nominate that occupation
-- Note current quotas, caps, and invitation score trends
-- Recommend highest-probability state for 190/491 nomination
-- Example format: "For ANZSCO 261313 (Software Engineer): NSW, VIC, SA are actively inviting. Latest NSW 190 invitations went to scores of 90+."
-
----
-
-## 📊 PROFESSIONAL REPORTING
-When asked for a report or audit:
-Generate a **Premium Migration Audit Report** with:
-- Executive Summary
-- Current points table (Markdown)
-- Stage on the Golden Path
-- Document validity status
-- Gap analysis with action items
-- Recommended states
-- Risk alerts (age drops, expiries)
-- Recommended timeline
-
-Use bold headers, emoji milestones (🇦🇺 🚀 ⏳ 🏆), and structured Markdown tables.
-
----
-
-## TONE & STYLE
-- Senior consultant level: authoritative, strategic, precise
-- Use Markdown formatting: **bold**, tables, bullet points
-- Always cite official sources: immi.homeaffairs.gov.au, mara.gov.au
-- End complex responses with: "⚖️ *This is general guidance. Consult a MARA agent for formal advice: portal.mara.gov.au*"`;
+// System prompt and Gemini key live on the server (functions/index.js).
+// The client only forwards the conversation history.
 
 const SUGGESTIONS = [
   '🗺️ Map my Golden Path — I have 85 points',
@@ -120,25 +39,34 @@ export default function AiScreen() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [profile, setProfile] = useState<any>(null);
+  const [remaining, setRemaining] = useState<number | null>(null);
+  const [showPaywall, setShowPaywall] = useState(false);
   const flatListRef = useRef<FlatList>(null);
-  const chatRef = useRef<any>(null);
+  const tabBarHeight = useBottomTabBarHeight();
 
-  const initChat = () => {
-    if (!GEMINI_API_KEY) return null;
-    const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
-    return model.startChat({
-      history: [],
-      systemInstruction: SYSTEM_PROMPT,
-    });
-  };
+  // Load profile on mount
+  useEffect(() => {
+    (async () => {
+      const p = await getProfile();
+      setProfile(p);
+      const rem = getRemainingUses('aiMessages', p);
+      setRemaining(rem);
+    })();
+  }, []);
 
   const send = async (text: string) => {
     const trimmed = text.trim();
     if (!trimmed || loading) return;
 
-    if (!GEMINI_API_KEY) {
-      alert('Gemini API key not configured. Set GEMINI_API_KEY in your environment.');
+    if (!profile) {
+      alert('Loading profile... Please try again.');
+      return;
+    }
+
+    // Check if user has exceeded AI message limit
+    if (hasExceededLimit('aiMessages', profile)) {
+      setShowPaywall(true);
       return;
     }
 
@@ -149,14 +77,18 @@ export default function AiScreen() {
       timestamp: new Date(),
     };
 
+    // Snapshot prior conversation for the server (last 20 turns sanitized server-side)
+    const history: AriaHistoryMessage[] = messages.map((m) => ({
+      role: m.role,
+      text: m.text,
+    }));
+
     setMessages((prev) => [...prev, userMsg]);
     setInput('');
     setLoading(true);
 
     try {
-      if (!chatRef.current) chatRef.current = initChat();
-      const result = await chatRef.current.sendMessage(trimmed);
-      const responseText = result.response.text();
+      const responseText = await sendAriaMessage(trimmed, history);
 
       const aiMsg: ChatMessage = {
         id: (Date.now() + 1).toString(),
@@ -165,12 +97,19 @@ export default function AiScreen() {
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, aiMsg]);
+
+      // Increment usage after successful message
+      const updated = incrementUsage('aiMessages', profile);
+      setProfile(updated);
+      await saveProfile(updated);
+      const rem = getRemainingUses('aiMessages', updated);
+      setRemaining(rem);
     } catch (e: any) {
-      console.error('Aria error:', e?.message, e?.code);
+      console.error('Aria error:', e?.message);
       const errMsg: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'model',
-        text: `Sorry, I encountered an error: ${e?.message || 'Unknown error'}. Please check your internet connection and try again.`,
+        text: `Sorry, I encountered an error: ${e?.message || 'Unknown error'}`,
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, errMsg]);
@@ -197,7 +136,7 @@ export default function AiScreen() {
               <Text style={styles.userText}>{item.text}</Text>
             </LinearGradient>
           ) : (
-            <Text style={styles.bubbleText}>{item.text}</Text>
+            <Markdown style={markdownStyles}>{item.text}</Markdown>
           )}
         </View>
       </View>
@@ -281,7 +220,22 @@ export default function AiScreen() {
         </Text>
       </View>
 
-      <View style={styles.inputRow}>
+      {/* Remaining uses badge */}
+      {profile && remaining !== null && !profile.isPremium && (
+        <View style={styles.remainingBadge}>
+          <Ionicons name="lightning-outline" size={14} color={Colors.secondary} />
+          <Text style={styles.remainingText}>
+            {remaining > 0 ? `${remaining} free message${remaining === 1 ? '' : 's'} left` : 'Free messages used up'}
+          </Text>
+          {remaining === 0 && (
+            <TouchableOpacity onPress={() => setShowPaywall(true)}>
+              <Text style={styles.remainingUpgrade}>Upgrade →</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
+
+      <View style={[styles.inputRow, { marginBottom: tabBarHeight }]}>
         <TextInput
           style={styles.input}
           value={input}
@@ -304,12 +258,47 @@ export default function AiScreen() {
           </LinearGradient>
         </TouchableOpacity>
       </View>
+
+      <PaywallModal
+        visible={showPaywall}
+        onClose={() => setShowPaywall(false)}
+        userId={profile?.userId || 'local_user'}
+        title="Unlock Aria AI Premium"
+        message="You've used your 3 free AI messages for this month. Upgrade to Pro for unlimited access to your personal migration consultant."
+        feature="aiMessages"
+      />
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
+
+  remainingBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginHorizontal: Spacing.lg,
+    marginBottom: Spacing.md,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    backgroundColor: Colors.secondary + '10',
+    borderRadius: Radius.md,
+    borderLeftWidth: 3,
+    borderLeftColor: Colors.secondary,
+  },
+  remainingText: {
+    flex: 1,
+    fontSize: FontSize.sm,
+    color: Colors.secondary,
+    fontWeight: FontWeight.semiBold,
+    marginLeft: Spacing.sm,
+  },
+  remainingUpgrade: {
+    fontSize: FontSize.sm,
+    color: Colors.secondary,
+    fontWeight: FontWeight.bold,
+  },
 
   // Empty state
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: Spacing.xl },
@@ -435,4 +424,48 @@ const styles = StyleSheet.create({
   sendBtn: { width: 44, height: 44, borderRadius: 22, overflow: 'hidden' },
   sendBtnGrad: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   sendBtnDisabled: {},
+});
+
+const markdownStyles = StyleSheet.create({
+  body: { color: Colors.textPrimary, fontSize: FontSize.md, lineHeight: 22 },
+  paragraph: { marginTop: 0, marginBottom: 8, color: Colors.textPrimary },
+  heading1: { fontSize: FontSize.lg, fontWeight: '700', color: Colors.textPrimary, marginTop: 8, marginBottom: 6 },
+  heading2: { fontSize: FontSize.md, fontWeight: '700', color: Colors.textPrimary, marginTop: 8, marginBottom: 4 },
+  heading3: { fontSize: FontSize.md, fontWeight: '600', color: Colors.textPrimary, marginTop: 6, marginBottom: 4 },
+  strong: { fontWeight: '700', color: Colors.textPrimary },
+  em: { fontStyle: 'italic' },
+  bullet_list: { marginVertical: 4 },
+  ordered_list: { marginVertical: 4 },
+  list_item: { marginBottom: 4 },
+  link: { color: Colors.accent, textDecorationLine: 'underline' },
+  code_inline: {
+    backgroundColor: Colors.background,
+    borderRadius: 4,
+    paddingHorizontal: 4,
+    color: Colors.accent,
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    fontSize: FontSize.sm,
+  },
+  fence: {
+    backgroundColor: Colors.background,
+    borderRadius: 6,
+    padding: 8,
+    color: Colors.textPrimary,
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    fontSize: FontSize.sm,
+    marginVertical: 6,
+  },
+  blockquote: {
+    backgroundColor: Colors.background,
+    borderLeftWidth: 3,
+    borderLeftColor: Colors.accent,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    marginVertical: 6,
+  },
+  table: { borderWidth: 1, borderColor: Colors.border, borderRadius: 6, marginVertical: 6 },
+  thead: { backgroundColor: Colors.background },
+  th: { padding: 6, fontWeight: '700', color: Colors.textPrimary },
+  td: { padding: 6, color: Colors.textPrimary },
+  hr: { backgroundColor: Colors.border, height: 1, marginVertical: 8 },
 });

@@ -25,6 +25,7 @@ import PaywallModal from '../../components/PaywallModal';
 import { tap as hapticTap, success as hapticSuccess } from '../../utils/haptics';
 import { SKILLED_OCCUPATIONS } from '../../constants/skilledOccupations';
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
+import { canAddJourneyEntry, canAddStateSubscription } from '../../utils/paywall';
 
 const JOURNEY_STAGES: Array<{ key: JourneyStageKey; label: string; desc: string }> = [
   { key: 'assess', label: 'Skills Assessment', desc: 'Skills assessment & English test preparation' },
@@ -69,6 +70,51 @@ function daysLabel(n: number): string {
   return `${(n / 365).toFixed(1)}yr`;
 }
 
+// Age Bracket Alerts (v1.0 — local-only storage, no Firebase sync yet)
+function calculateAgeBracketAlert(birthDateISO: string | undefined): {
+  currentAge: number;
+  nextMilestone: number;
+  daysUntilMilestone: number;
+  alert: string | null;
+} | null {
+  if (!birthDateISO) return null;
+  
+  try {
+    const birthDate = new Date(birthDateISO);
+    const today = new Date();
+    const thisYearBirthday = new Date(today.getFullYear(), birthDate.getMonth(), birthDate.getDate());
+    
+    let currentAge = today.getFullYear() - birthDate.getFullYear();
+    if (today < thisYearBirthday) currentAge--;
+    
+    // Critical milestones: 33, 40, 45
+    const milestones = [33, 40, 45];
+    let nextMilestone = milestones.find(m => m > currentAge) || 45;
+    
+    // Calculate next milestone birthday
+    const nextMilestoneBirthday = new Date(
+      currentAge === nextMilestone - 1 ? today.getFullYear() : today.getFullYear() + (nextMilestone - currentAge),
+      birthDate.getMonth(),
+      birthDate.getDate()
+    );
+    
+    const daysUntil = Math.ceil((nextMilestoneBirthday.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    
+    let alert: string | null = null;
+    if (currentAge >= 45) {
+      alert = 'ℹ️ Age 45+ milestone reached';
+    } else if (daysUntil <= 30) {
+      alert = `⚠️ Turning ${nextMilestone} in ${daysLabel(daysUntil)}`;
+    } else if (daysUntil <= 90) {
+      alert = `📌 Age ${nextMilestone} milestone in ${daysLabel(daysUntil)}`;
+    }
+    
+    return { currentAge, nextMilestone, daysUntilMilestone: daysUntil, alert };
+  } catch {
+    return null;
+  }
+}
+
 export default function ProfileScreen() {
   const [profile, setProfile] = useState<UserProfile>({
     name: '',
@@ -99,6 +145,8 @@ export default function ProfileScreen() {
   const [showDateModal, setShowDateModal] = useState(false);
   const [dateTarget, setDateTarget] = useState<{ entryId: string; stageKey: JourneyStageKey } | null>(null);
   const [dateInput, setDateInput] = useState('');
+  const [showBirthDatePicker, setShowBirthDatePicker] = useState(false);
+  const [birthDateInput, setBirthDateInput] = useState('');
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
@@ -106,6 +154,9 @@ export default function ProfileScreen() {
     getProfile().then((p) => {
       setProfile(p);
       setJourneyEntries(p.journeyEntries ?? []);
+      if (p.birthDate) {
+        setBirthDateInput(dateToInput(p.birthDate));
+      }
       if (p.isPremium) {
         getRevenueCatUserId().then((uid) => {
           checkRenewalStatus(uid).then((res) => {
@@ -135,6 +186,12 @@ export default function ProfileScreen() {
 
   // Journey helpers
   const addJourneyEntry = async () => {
+    // Check if user has exceeded journey entry limit
+    if (!canAddJourneyEntry(profile)) {
+      setShowPaywall(true);
+      return;
+    }
+
     const trimmed = newAnzsco.trim();
     const occ = trimmed
       ? SKILLED_OCCUPATIONS.find(
@@ -237,6 +294,36 @@ export default function ProfileScreen() {
     setShowDateModal(false);
   };
 
+  const saveBirthDate = async (inputStr: string) => {
+    if (!inputStr.trim()) {
+      // Clear birthdate
+      const updated = { ...profile, birthDate: undefined };
+      setProfile(updated);
+      await saveProfile({ birthDate: undefined });
+      setBirthDateInput('');
+      setShowBirthDatePicker(false);
+      return;
+    }
+
+    const iso = parseInputDate(inputStr);
+    if (!iso) {
+      Alert.alert('Invalid date', 'Please enter a valid date (DD/MM/YYYY)');
+      return;
+    }
+
+    // Verify it's a past date
+    if (new Date(iso) > new Date()) {
+      Alert.alert('Invalid date', 'Birth date must be in the past');
+      return;
+    }
+
+    const updated = { ...profile, birthDate: iso };
+    setProfile(updated);
+    await saveProfile({ birthDate: iso });
+    setBirthDateInput(dateToInput(iso));
+    setShowBirthDatePicker(false);
+  };
+
   const handleRestore = async () => {
     setRestoring(true);
     try {
@@ -256,10 +343,12 @@ export default function ProfileScreen() {
     : '?';
 
   return (
+    <View style={{ flex: 1, backgroundColor: Colors.background }}>
     <ScrollView
       style={styles.container}
       showsVerticalScrollIndicator={false}
       contentContainerStyle={{ paddingBottom: 100 }}
+      keyboardShouldPersistTaps="handled"
     >
       {/* Header with avatar */}
       <LinearGradient
@@ -307,7 +396,18 @@ export default function ProfileScreen() {
         <View style={styles.planBadge}>
           {profile.isPremium
             ? <><Ionicons name="star" size={12} color={Colors.secondary} /><Text style={styles.planText}>Premium Member</Text></>
-            : <><Ionicons name="person-outline" size={12} color={Colors.textMuted} /><Text style={[styles.planText, { color: Colors.textMuted }]}>Free Plan</Text></>
+            : <>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.xs }}>
+                  <Ionicons name="person-outline" size={12} color={Colors.textMuted} />
+                  <Text style={[styles.planText, { color: Colors.textMuted }]}>Free Plan</Text>
+                </View>
+                <TouchableOpacity
+                  onPress={handleUpgrade}
+                  style={styles.subscribeNowBtn}
+                >
+                  <Text style={styles.subscribeNowText}>Upgrade Now</Text>
+                </TouchableOpacity>
+              </>
           }
         </View>
       </LinearGradient>
@@ -441,6 +541,60 @@ export default function ProfileScreen() {
         })}
       </View>
 
+      {/* Age Bracket Alerts (v1.0 — local-only, premium feature) */}
+      {profile.isPremium && (
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>Age Bracket Alerts</Text>
+          <View style={styles.card}>
+            {profile.birthDate ? (() => {
+              const bracketAlert = calculateAgeBracketAlert(profile.birthDate);
+              if (!bracketAlert) return <Text style={styles.sectionLabel}>Invalid birth date</Text>;
+
+              return (
+                <>
+                  <View style={jStyles.bracketRow}>
+                    <View>
+                      <Text style={jStyles.bracketLabel}>Current Age</Text>
+                      <Text style={jStyles.bracketValue}>{bracketAlert.currentAge}</Text>
+                    </View>
+                    <View>
+                      <Text style={jStyles.bracketLabel}>Next Milestone</Text>
+                      <Text style={jStyles.bracketValue}>{bracketAlert.nextMilestone}</Text>
+                    </View>
+                    <View>
+                      <Text style={jStyles.bracketLabel}>Days Until</Text>
+                      <Text style={jStyles.bracketValue}>{daysLabel(bracketAlert.daysUntilMilestone)}</Text>
+                    </View>
+                  </View>
+                  {bracketAlert.alert && (
+                    <View style={jStyles.bracketAlert}>
+                      <Text style={jStyles.bracketAlertText}>{bracketAlert.alert}</Text>
+                    </View>
+                  )}
+                  <TouchableOpacity
+                    onPress={() => {
+                      setBirthDateInput(dateToInput(profile.birthDate!));
+                      setShowBirthDatePicker(true);
+                    }}
+                    style={jStyles.editBirthDateBtn}
+                  >
+                    <Text style={jStyles.editBirthDateText}>Edit Birth Date</Text>
+                  </TouchableOpacity>
+                </>
+              );
+            })() : (
+              <TouchableOpacity
+                onPress={() => setShowBirthDatePicker(true)}
+                style={jStyles.addBirthDateBtn}
+              >
+                <Ionicons name="calendar-outline" size={16} color={Colors.secondary} />
+                <Text style={jStyles.addBirthDateText}>Add your birth date to track age milestones</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+      )}
+
       {/* Subscription card */}
       {profile.isPremium ? (
         <View style={styles.section}>
@@ -479,32 +633,7 @@ export default function ProfileScreen() {
             </TouchableOpacity>
           </LinearGradient>
         </View>
-      ) : (
-        <View style={styles.section}>
-          <TouchableOpacity onPress={handleUpgrade} activeOpacity={0.9}>
-            <LinearGradient
-              colors={['#2D1B6E', '#4C1D95']}
-              style={styles.premiumCard}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              <View style={styles.premiumGlow} />
-              <View style={styles.premiumLeft}>
-                <View style={styles.premiumIcon}>
-                  <Ionicons name="star" size={20} color={Colors.secondary} />
-                </View>
-                <View>
-                  <Text style={styles.premiumTitle}>Upgrade to Premium</Text>
-                  <Text style={styles.premiumSub}>Unlock occupation tracking, custom alerts & more</Text>
-                </View>
-              </View>
-              <View style={styles.premiumArrow}>
-                <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,0.6)" />
-              </View>
-            </LinearGradient>
-          </TouchableOpacity>
-        </View>
-      )}
+      ) : null}
 
       {/* Settings rows */}
       <View style={styles.section}>
@@ -512,7 +641,7 @@ export default function ProfileScreen() {
         <View style={styles.card}>
           <SettingRow
             icon={profile.isPremium ? 'star' : 'star-outline'}
-            label="Plan"
+            label="Current Plan"
             value={profile.isPremium ? 'Premium' : 'Free'}
           />
           {profile.isPremium && (
@@ -534,33 +663,7 @@ export default function ProfileScreen() {
         </View>
       </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionLabel}>Preferences</Text>
-        <View style={styles.card}>
-          <SettingRow
-            icon="briefcase-outline"
-            label="ANZSCO Occupation"
-            value={
-              profile.anzscoCode
-                ? (() => {
-                    const occ = SKILLED_OCCUPATIONS.find((o) => o.anzsco === profile.anzscoCode);
-                    return occ ? `${profile.anzscoCode} · ${occ.name}` : profile.anzscoCode;
-                  })()
-                : 'Search occupation lists'
-            }
-            onPress={() => router.push('/occupations' as any)}
-            showArrow
-          />
-          <SettingRow
-            icon="alert-circle-outline"
-            label="Occupation list changes"
-            value="Active"
-            onPress={() => router.push('/occupations' as any)}
-            showArrow
-            last
-          />
-        </View>
-      </View>
+
 
       <View style={styles.section}>
         <Text style={styles.sectionLabel}>Resources</Text>
@@ -577,12 +680,6 @@ export default function ProfileScreen() {
             label="Find a MARA Agent"
             value="portal.mara.gov.au"
             onPress={() => Linking.openURL('https://portal.mara.gov.au')}
-            showArrow
-          />
-          <SettingRow
-            icon="list-outline"
-            label="Skills Occupation List"
-            onPress={() => router.push('/occupations' as any)}
             showArrow
             last
           />
@@ -613,7 +710,6 @@ export default function ProfileScreen() {
             onPress={() => Linking.openURL('https://jsmglobal.xyz/migration-privacy.html')}
             showArrow
           />
-          <SettingRow icon="logo-github" label="By JSM Global" value="jsmglobal.xyz" />
           <SettingRow icon="key-outline" label="Account ID" value={rcUserId ? rcUserId.slice(0, 18) + '…' : '—'} last />
         </View>
       </View>
@@ -641,13 +737,82 @@ export default function ProfileScreen() {
         feature="premium"
       />
 
-      {/* Feedback sheet */}
+    </ScrollView>
+
+      {/* Birth Date Picker Modal */}
       <Modal
-        visible={showFeedback}
+        visible={showBirthDatePicker}
         transparent
-        animationType="slide"
-        onRequestClose={() => setShowFeedback(false)}
+        animationType="fade"
+        onRequestClose={() => setShowBirthDatePicker(false)}
       >
+        <View style={jStyles.dateBackdrop}>
+          <View style={jStyles.dateSheet}>
+            <Text style={jStyles.modalTitle}>Birth Date</Text>
+            <Text style={jStyles.modalSub}>For age bracket milestone alerts</Text>
+
+            {Platform.OS === 'web' ? (
+              <input
+                type="date"
+                value={birthDateInput.split('/').reverse().join('-') || ''}
+                max={new Date().toISOString().split('T')[0]}
+                onChange={(e) => {
+                  if (e.target.value) {
+                    const [y, m, d] = e.target.value.split('-');
+                    setBirthDateInput(`${d}/${m}/${y}`);
+                  }
+                }}
+                style={{
+                  padding: '12px',
+                  borderRadius: '10px',
+                  borderWidth: 1,
+                  borderColor: Colors.border,
+                  fontSize: '16px',
+                  color: Colors.textPrimary,
+                  backgroundColor: Colors.background,
+                  marginBottom: Spacing.lg,
+                  cursor: 'pointer',
+                } as any}
+              />
+            ) : (
+              <DateTimePicker
+                value={(() => {
+                  const iso = parseInputDate(birthDateInput);
+                  return iso ? new Date(iso) : new Date();
+                })()}
+                mode="date"
+                display="spinner"
+                maximumDate={new Date()}
+                onChange={(_, selected) => {
+                  if (selected) setBirthDateInput(dateToInput(selected.toISOString()));
+                }}
+                style={{ alignSelf: 'stretch' }}
+              />
+            )}
+
+            <View style={jStyles.dateActions}>
+              <TouchableOpacity
+                style={[jStyles.saveBtn, { flex: 1 }]}
+                onPress={() => saveBirthDate(birthDateInput)}
+                activeOpacity={0.85}
+              >
+                <Text style={jStyles.saveBtnText}>Save</Text>
+              </TouchableOpacity>
+              {profile.birthDate && (
+                <TouchableOpacity
+                  style={[jStyles.cancelBtn, { flex: 1, marginTop: 0, marginLeft: Spacing.sm }]}
+                  onPress={() => saveBirthDate('')}
+                >
+                  <Text style={[jStyles.cancelBtnText, { color: Colors.error }]}>Clear</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+            <TouchableOpacity onPress={() => setShowBirthDatePicker(false)} style={{ marginTop: Spacing.sm, alignItems: 'center' }}>
+              <Text style={jStyles.cancelBtnText}>Dismiss</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
       {/* Add Journey modal */}
       <Modal
@@ -731,19 +896,45 @@ export default function ProfileScreen() {
               {dateTarget ? JOURNEY_STAGES.find(s => s.key === dateTarget.stageKey)?.label : 'Date'}
             </Text>
             <Text style={jStyles.modalSub}>Pick the date for this milestone</Text>
-            <DateTimePicker
-              value={(() => {
-                const iso = parseInputDate(dateInput);
-                return iso ? new Date(iso) : new Date();
-              })()}
-              mode="date"
-              display="spinner"
-              maximumDate={new Date()}
-              onChange={(_, selected) => {
-                if (selected) setDateInput(dateToInput(selected.toISOString()));
-              }}
-              style={{ alignSelf: 'stretch' }}
-            />
+            
+            {Platform.OS === 'web' ? (
+              <input
+                type="date"
+                value={dateInput.split('/').reverse().join('-') || ''}
+                max={new Date().toISOString().split('T')[0]}
+                onChange={(e) => {
+                  if (e.target.value) {
+                    const [y, m, d] = e.target.value.split('-');
+                    setDateInput(`${d}/${m}/${y}`);
+                  }
+                }}
+                style={{
+                  padding: '12px',
+                  borderRadius: '10px',
+                  borderWidth: 1,
+                  borderColor: Colors.border,
+                  fontSize: '16px',
+                  color: Colors.textPrimary,
+                  backgroundColor: Colors.background,
+                  marginBottom: Spacing.lg,
+                  cursor: 'pointer',
+                } as any}
+              />
+            ) : (
+              <DateTimePicker
+                value={(() => {
+                  const iso = parseInputDate(dateInput);
+                  return iso ? new Date(iso) : new Date();
+                })()}
+                mode="date"
+                display="spinner"
+                maximumDate={new Date()}
+                onChange={(_, selected) => {
+                  if (selected) setDateInput(dateToInput(selected.toISOString()));
+                }}
+                style={{ alignSelf: 'stretch' }}
+              />
+            )}
             <View style={jStyles.dateActions}>
               <TouchableOpacity
                 style={[jStyles.saveBtn, { flex: 1 }]}
@@ -777,6 +968,14 @@ export default function ProfileScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Feedback sheet */}
+      <Modal
+        visible={showFeedback}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowFeedback(false)}
+      >
         <View style={feedbackStyles.backdrop}>
           <View style={[feedbackStyles.sheet, { paddingBottom: insets.bottom + 24 }]}>
             <View style={feedbackStyles.handle} />
@@ -844,7 +1043,7 @@ export default function ProfileScreen() {
           </View>
         </View>
       </Modal>
-    </ScrollView>
+    </View>
   );
 }
 
@@ -1083,6 +1282,33 @@ const jStyles = StyleSheet.create({
     borderWidth: 1, borderColor: Colors.border,
   },
   dateActions: { flexDirection: 'row', gap: Spacing.sm },
+
+  // Age Bracket Alerts
+  bracketRow: {
+    flexDirection: 'row', justifyContent: 'space-around', paddingVertical: Spacing.lg,
+    borderBottomWidth: 1, borderBottomColor: Colors.divider, marginBottom: Spacing.lg,
+  },
+  bracketLabel: { fontSize: FontSize.xs, color: Colors.textMuted, fontWeight: FontWeight.semiBold, marginBottom: 4 },
+  bracketValue: { fontSize: FontSize.lg, fontWeight: FontWeight.bold, color: Colors.secondary },
+  bracketAlert: {
+    backgroundColor: `${Colors.secondary}18`,
+    borderLeftWidth: 3,
+    borderLeftColor: Colors.secondary,
+    padding: Spacing.md,
+    borderRadius: Radius.md,
+    marginBottom: Spacing.lg,
+  },
+  bracketAlertText: { fontSize: FontSize.sm, color: Colors.textPrimary, fontWeight: FontWeight.semiBold },
+  editBirthDateBtn: {
+    paddingVertical: Spacing.sm,
+    alignItems: 'center',
+  },
+  editBirthDateText: { fontSize: FontSize.xs, color: Colors.accent, fontWeight: FontWeight.semiBold },
+  addBirthDateBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
+    paddingVertical: Spacing.lg, justifyContent: 'center',
+  },
+  addBirthDateText: { fontSize: FontSize.sm, color: Colors.secondary, fontWeight: FontWeight.semiBold },
 });
 
 const styles = StyleSheet.create({
@@ -1172,6 +1398,14 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.1)',
   },
   planText: { fontSize: FontSize.sm, fontWeight: FontWeight.semiBold, color: Colors.secondary },
+  subscribeNowBtn: {
+    backgroundColor: Colors.secondary,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs,
+    borderRadius: Radius.full,
+    marginTop: Spacing.xs,
+  },
+  subscribeNowText: { fontSize: FontSize.xs, fontWeight: FontWeight.bold, color: Colors.primaryDark },
 
   section: { paddingHorizontal: Spacing.lg, paddingTop: Spacing.xl },
   sectionLabel: { fontSize: FontSize.xs, fontWeight: FontWeight.semiBold, color: Colors.textMuted, letterSpacing: 1, textTransform: 'uppercase', marginBottom: Spacing.sm },

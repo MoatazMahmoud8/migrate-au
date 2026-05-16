@@ -8,15 +8,20 @@ import {
   Switch,
   TextInput,
   Linking,
+  Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { calculatePoints } from '../../utils/pointsCalculator';
-import { getRemainingUsage, resetMonthlyUsageIfNeeded } from '../../utils/usage';
+import { hasExceededLimit, getRemainingUses, incrementUsage } from '../../utils/paywall';
+import { getProfile, saveProfile } from '../../utils/storage';
 import { PaywallModal } from '../../components/PaywallModal';
 import { PointsInput, VisaSubclass, EnglishLevel } from '../../constants/types';
 import { Colors, Spacing, Radius, FontSize, FontWeight } from '../../constants/theme';
 import { ALL_VISAS, CATEGORY_META, ALL_CATEGORIES, VisaCategory } from '../../constants/visaData';
+
+const CALC_STORAGE_KEY = 'calc_input_v1';
 
 const defaultInput: PointsInput = {
   age: 28,
@@ -290,17 +295,52 @@ function VisaPathwaysSection() {
 export default function CalculatorScreen() {
   const [input, setInput] = useState<PointsInput>(defaultInput);
   const [showPaywall, setShowPaywall] = useState(false);
+  const [profile, setProfile] = useState<any>(null);
   const [remaining, setRemaining] = useState<number | null>(null);
   const breakdown = calculatePoints(input);
 
-  const PLACEHOLDER_USER_ID = 'local_user'; // replace with real auth uid when auth is wired
-
+  // Load profile and usage on mount
   useEffect(() => {
-    resetMonthlyUsageIfNeeded(PLACEHOLDER_USER_ID);
-    getRemainingUsage(PLACEHOLDER_USER_ID, 'calculation').then((u) => setRemaining(u.remaining));
+    (async () => {
+      const p = await getProfile();
+      setProfile(p);
+      const rem = getRemainingUses('calculator', p);
+      setRemaining(rem);
+    })();
+
+    AsyncStorage.getItem(CALC_STORAGE_KEY).then((json) => {
+      if (json) {
+        try { setInput((p) => ({ ...p, ...JSON.parse(json) })); } catch {}
+      }
+    });
   }, []);
 
+  // Persist input whenever it changes
+  useEffect(() => {
+    AsyncStorage.setItem(CALC_STORAGE_KEY, JSON.stringify(input));
+  }, [input]);
+
   const set = (patch: Partial<PointsInput>) => setInput((p) => ({ ...p, ...patch }));
+
+  const handleShowResults = async () => {
+    if (!profile) return;
+
+    // Check if user has exceeded limit
+    if (hasExceededLimit('calculator', profile)) {
+      setShowPaywall(true);
+      return;
+    }
+
+    // Increment usage for free users
+    const updated = incrementUsage('calculator', profile);
+    setProfile(updated);
+    await saveProfile(updated);
+    const rem = getRemainingUses('calculator', updated);
+    setRemaining(rem);
+
+    // Scroll to breakdown (you could use a ref here if needed)
+    Alert.alert('Score calculated', `Your visa points: ${breakdown.total}`);
+  };
 
   const BREAKDOWN_ITEMS = [
     { label: 'Age', pts: breakdown.age, icon: 'person-outline' },
@@ -322,6 +362,21 @@ export default function CalculatorScreen() {
       showsVerticalScrollIndicator={false}
       contentContainerStyle={{ paddingBottom: 100, paddingTop: 60 }}
     >
+      {/* Remaining Uses Badge */}
+      {profile && remaining !== null && !profile.isPremium && (
+        <View style={styles.remainingBadge}>
+          <Ionicons name="lightning-outline" size={14} color={Colors.secondary} />
+          <Text style={styles.remainingText}>
+            {remaining > 0 ? `${remaining} free calculation${remaining === 1 ? '' : 's'} left` : 'Free calculations used up'}
+          </Text>
+          {remaining === 0 && (
+            <TouchableOpacity onPress={() => setShowPaywall(true)}>
+              <Text style={styles.remainingUpgrade}>Upgrade →</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
+
       <ScoreRing score={breakdown.total} eligible={breakdown.likelyEligible} />
 
       {/* Visa Type */}
@@ -568,9 +623,9 @@ export default function CalculatorScreen() {
     <PaywallModal
       visible={showPaywall}
       onClose={() => setShowPaywall(false)}
-      userId={PLACEHOLDER_USER_ID}
-      title="Unlimited Calculations Await"
-      message="You've used your free calculations for this month. Upgrade to Pro for unlimited access."
+      userId={profile?.userId || 'local_user'}
+      title="Unlock Unlimited Calculations"
+        message="You've used your 3 free calculations for this month. Upgrade to Pro for unlimited access and start planning your visa strategy without limits."
       feature="calculator"
     />
     </>
@@ -639,6 +694,33 @@ const seg = StyleSheet.create({
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
+
+  remainingBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginHorizontal: Spacing.lg,
+    marginTop: Spacing.md,
+    marginBottom: Spacing.md,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    backgroundColor: Colors.secondary + '10',
+    borderRadius: Radius.md,
+    borderLeftWidth: 3,
+    borderLeftColor: Colors.secondary,
+  },
+  remainingText: {
+    flex: 1,
+    fontSize: FontSize.sm,
+    color: Colors.secondary,
+    fontWeight: FontWeight.semiBold,
+    marginLeft: Spacing.sm,
+  },
+  remainingUpgrade: {
+    fontSize: FontSize.sm,
+    color: Colors.secondary,
+    fontWeight: FontWeight.bold,
+  },
 
   card: {
     backgroundColor: Colors.surface,

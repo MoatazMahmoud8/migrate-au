@@ -9,8 +9,9 @@ import firestore from '@react-native-firebase/firestore';
 import { UserSubscription, BillingCycle, PaymentMethod } from '../types/subscription';
 
 export const PRICING = {
-  monthly: 19.99,    // AUD
-  yearly: 199.00,    // AUD
+  monthly: 12.99,    // AUD / month
+  yearly: 79.99,     // AUD / year (~$6.67/mo — 49% discount)
+  lifetime: 199.00,  // AUD one-time
 };
 
 const TRIAL_DAYS = 7;
@@ -217,8 +218,11 @@ function calculateRenewalDate(now: number, billingCycle: BillingCycle): number {
 
   if (billingCycle === 'monthly') {
     date.setMonth(date.getMonth() + 1);
-  } else {
+  } else if (billingCycle === 'yearly') {
     date.setFullYear(date.getFullYear() + 1);
+  } else {
+    // Lifetime — set very far future (year 9999) to denote never-expires
+    date.setFullYear(9999);
   }
 
   return date.getTime();

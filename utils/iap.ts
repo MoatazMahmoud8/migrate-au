@@ -20,11 +20,15 @@ import { saveProfile } from './storage';
 const REVENUECAT_API_KEY_IOS: string     = Constants.expoConfig?.extra?.revenueCatKeyIos ?? '';
 const REVENUECAT_API_KEY_ANDROID: string = Constants.expoConfig?.extra?.revenueCatKeyAndroid ?? '';
 
-// Revenue Cat product IDs
-const PRODUCTS = {
-  trialPro: 'migrate_au_trial_7d',      // Free trial, 7 days
-  monthlyPro: 'migrate_au_monthly',     // $19.99 AUD / month
-  yearlyPro: 'migrate_au_yearly',       // $199 AUD / year
+// RevenueCat entitlement ID — must match dashboard configuration
+const ENTITLEMENT_ID = 'premium';
+
+// RevenueCat package identifiers (from the "default" offering)
+// These are RC's standard identifiers — they map to your store products in the dashboard
+const PACKAGES = {
+  monthly:  '$rc_monthly',   // → AUD $12.99 / month
+  annual:   '$rc_annual',    // → AUD $79.99 / year
+  lifetime: '$rc_lifetime',  // → AUD $199 one-time (amg-lifetime-199)
 };
 
 let rcInitialized = false;
@@ -48,7 +52,7 @@ export async function getRevenueCatUserId(): Promise<string> {
 export async function syncSubscriptionStatus(): Promise<boolean> {
   try {
     const customerInfo = await Purchases.getCustomerInfo();
-    const isActive = customerInfo.entitlements.active['pro'] != null;
+    const isActive = customerInfo.entitlements.active[ENTITLEMENT_ID] != null;
     await saveProfile({ isPremium: isActive });
     console.log('[IAP] Subscription synced, isPremium:', isActive);
     return isActive;
@@ -98,9 +102,12 @@ export async function startFreeTrialIAP(userId: string): Promise<boolean> {
     const offering = await getOfferings();
     if (!offering) throw new Error('No offerings available');
 
+    // RC's "default" offering doesn't include a separate trial package — trials are
+    // configured as an intro offer on the monthly/annual products in the store.
+    // Use the annual package so the user lands on the best-value plan after trial.
     const trialPackage = offering.availablePackages.find(
-      p => p.product.identifier === PRODUCTS.trialPro
-    );
+      p => p.identifier === PACKAGES.annual
+    ) || offering.annual || offering.monthly;
 
     if (!trialPackage) {
       console.warn('[IAP] Trial package not found');
@@ -111,7 +118,7 @@ export async function startFreeTrialIAP(userId: string): Promise<boolean> {
     // Purchase the trial package
     try {
       const purchaseResult = await Purchases.purchasePackage(trialPackage);
-      const hasEntitlement = purchaseResult.customerInfo.entitlements.active['pro'] != null;
+      const hasEntitlement = purchaseResult.customerInfo.entitlements.active[ENTITLEMENT_ID] != null;
 
       if (hasEntitlement) {
         // Update Firestore
@@ -134,12 +141,12 @@ export async function startFreeTrialIAP(userId: string): Promise<boolean> {
 }
 
 /**
- * Purchase a subscription (monthly or yearly)
+ * Purchase a subscription (monthly, yearly, or lifetime)
  * Returns { success, cancelled, message } so caller can surface real errors.
  */
 export async function purchaseSubscription(
   userId: string,
-  billingCycle: 'monthly' | 'yearly'
+  billingCycle: BillingCycle
 ): Promise<{ success: boolean; cancelled: boolean; message?: string }> {
   try {
     const offering = await getOfferings();
@@ -147,16 +154,27 @@ export async function purchaseSubscription(
       return { success: false, cancelled: false, message: 'Subscriptions are not configured yet. Please try again later.' };
     }
 
-    const productId = billingCycle === 'monthly' ? PRODUCTS.monthlyPro : PRODUCTS.yearlyPro;
-    const pkg = offering.availablePackages.find(p => p.product.identifier === productId);
+    // Map our internal billing cycle → RC package identifier
+    const packageId =
+      billingCycle === 'monthly'  ? PACKAGES.monthly  :
+      billingCycle === 'yearly'   ? PACKAGES.annual   :
+      PACKAGES.lifetime;
+
+    // Prefer explicit RC helpers (offering.monthly / .annual / .lifetime)
+    // and fall back to identifier match for safety.
+    const pkg =
+      (billingCycle === 'monthly'  && offering.monthly) ||
+      (billingCycle === 'yearly'   && offering.annual)  ||
+      (billingCycle === 'lifetime' && offering.lifetime) ||
+      offering.availablePackages.find(p => p.identifier === packageId);
 
     if (!pkg) {
-      console.warn(`[IAP] Package ${productId} not found`);
+      console.warn(`[IAP] Package ${packageId} not found in offering "${offering.identifier}"`);
       return { success: false, cancelled: false, message: `This plan (${billingCycle}) is not available right now. Please try the other option or contact support.` };
     }
 
     const purchaseResult = await Purchases.purchasePackage(pkg);
-    const hasEntitlement = purchaseResult.customerInfo.entitlements.active['pro'] != null;
+    const hasEntitlement = purchaseResult.customerInfo.entitlements.active[ENTITLEMENT_ID] != null;
 
     if (hasEntitlement) {
       // Extract payment method from package
@@ -192,7 +210,7 @@ export async function purchaseSubscription(
 export async function hasActiveSubscription(): Promise<boolean> {
   try {
     const customerInfo = await Purchases.getCustomerInfo();
-    return customerInfo.entitlements.active['pro'] != null;
+    return customerInfo.entitlements.active[ENTITLEMENT_ID] != null;
   } catch (err) {
     console.warn('[IAP] Error checking entitlement:', err);
     return false;
@@ -218,7 +236,7 @@ export async function getCustomerInfo(): Promise<CustomerInfo | null> {
 export async function restorePurchases(): Promise<{ restored: boolean; message: string }> {
   try {
     const customerInfo = await Purchases.restorePurchases();
-    const hasEntitlement = customerInfo.entitlements.active['pro'] != null;
+    const hasEntitlement = customerInfo.entitlements.active[ENTITLEMENT_ID] != null;
 
     if (hasEntitlement) {
       await saveProfile({ isPremium: true });
@@ -241,15 +259,19 @@ export function getFormattedPrice(billingCycle: BillingCycle): {
   currency: string;
   cycle: string;
 } {
-  return {
-    amount: billingCycle === 'monthly' ? `$${PRICING.monthly}` : `$${PRICING.yearly}`,
-    currency: 'AUD',
-    cycle: billingCycle === 'monthly' ? '/month' : '/year',
-  };
+  const amount =
+    billingCycle === 'monthly' ? `AUD $${PRICING.monthly}` :
+    billingCycle === 'yearly'  ? `AUD $${PRICING.yearly}`  :
+    `AUD $${PRICING.lifetime}`;
+  const cycle =
+    billingCycle === 'monthly' ? '/month' :
+    billingCycle === 'yearly'  ? '/year'  :
+    'one-time';
+  return { amount, currency: 'AUD', cycle };
 }
 
 /**
- * Calculate savings for yearly plan
+ * Calculate savings for yearly plan vs monthly
  */
 export function getYearlySavings(): {
   percent: number;
@@ -261,6 +283,26 @@ export function getYearlySavings(): {
 
   return {
     percent,
-    amount: `$${savings.toFixed(2)}`,
+    amount: `AUD $${savings.toFixed(2)}`,
+  };
+}
+
+/**
+ * Calculate savings for lifetime plan vs 3 years of yearly
+ */
+export function getLifetimeSavings(): {
+  percent: number;
+  amount: string;
+  comparedTo: string;
+} {
+  // Compare lifetime to 3 years of yearly subscription
+  const threeYears = PRICING.yearly * 3;
+  const savings = threeYears - PRICING.lifetime;
+  const percent = Math.round((savings / threeYears) * 100);
+
+  return {
+    percent: Math.max(0, percent),
+    amount: `AUD $${Math.max(0, savings).toFixed(2)}`,
+    comparedTo: '3yr',
   };
 }

@@ -5,7 +5,7 @@
  */
 
 export type SubscriptionTier = 'free' | 'pro';
-export type BillingCycle = 'monthly' | 'yearly';
+export type BillingCycle = 'monthly' | 'yearly' | 'lifetime';
 export type PaymentMethod = 'stripe' | 'apple' | 'google';
 
 export interface UserSubscription {

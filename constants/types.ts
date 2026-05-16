@@ -68,6 +68,13 @@ export interface JourneyEntry {
 }
 
 // Profile
+export interface UsageLimits {
+  calculatorUses: number;      // 0-5 per month (free), unlimited for premium
+  aiMessages: number;          // 0-5 per month (free), unlimited for premium
+  anzscoSearches: number;      // 0-10 per month (free), unlimited for premium
+  lastResetMonth: string;      // YYYY-MM format, for monthly reset
+}
+
 export interface UserProfile {
   name: string;
   anzscoCode: string;
@@ -78,4 +85,6 @@ export interface UserProfile {
   journeyEntries: JourneyEntry[];
   pinnedStates: string[];
   onboardingComplete: boolean;
+  birthDate?: string; // ISO date string, stored locally only (NOT synced to Firebase v1.0)
+  usageLimits?: UsageLimits;
 }

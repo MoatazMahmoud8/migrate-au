@@ -11,7 +11,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, Spacing, Radius, FontSize, FontWeight } from '../constants/theme';
-import { startFreeTrialIAP, purchaseSubscription, getFormattedPrice, getYearlySavings, syncSubscriptionStatus } from '../utils/iap';
+import { startFreeTrialIAP, purchaseSubscription, getFormattedPrice, getYearlySavings, getLifetimeSavings, syncSubscriptionStatus } from '../utils/iap';
 
 interface PaywallModalProps {
   visible: boolean;
@@ -23,18 +23,18 @@ interface PaywallModalProps {
 }
 
 const BENEFITS = [
-  { icon: 'infinite-outline',          text: 'Unlimited Aria AI — your migration consultant' },
-  { icon: 'map-outline',               text: 'Golden Path — personalised 5-stage roadmap' },
-  { icon: 'shield-checkmark-outline',  text: 'Document expiry & age-bracket alerts' },
-  { icon: 'location-outline',          text: 'State-specific occupation intelligence' },
-  { icon: 'trending-up-outline',       text: 'Gap Filler — reach 90 / 95+ points' },
-  { icon: 'document-text-outline',     text: 'Full Migration Audit Report (PDF)' },
-  { icon: 'notifications-outline',     text: 'Instant state nomination alerts' },
+  { icon: 'infinite-outline',          text: 'Unlimited Aria AI — your AU migration consultant' },
+  { icon: 'calculator-outline',        text: 'Unlimited points calculations' },
+  { icon: 'briefcase-outline',         text: 'Unlimited ANZSCO occupation searches' },
+  { icon: 'location-outline',          text: 'State-specific visa intelligence (NSW, VIC, QLD…)' },
+  { icon: 'shield-checkmark-outline',  text: 'Age-bracket point-drop alerts (33, 40, 45)' },
+  { icon: 'map-outline',               text: 'Track up to 10 visa journeys' },
+  { icon: 'sparkles-outline',          text: 'Priority access to new features' },
 ];
 
 export function PaywallModal({ visible, onClose, userId, title, message, feature }: PaywallModalProps) {
   const [loading, setLoading] = useState(false);
-  const [selectedCycle, setSelectedCycle] = useState<'monthly' | 'yearly'>('yearly');
+  const [selectedCycle, setSelectedCycle] = useState<'monthly' | 'yearly' | 'lifetime'>('yearly');
 
   const handleStartTrial = async () => {
     setLoading(true);
@@ -66,6 +66,7 @@ export function PaywallModal({ visible, onClose, userId, title, message, feature
 
   const monthlyPrice = getFormattedPrice('monthly');
   const yearlyPrice  = getFormattedPrice('yearly');
+  const lifetimePrice = getFormattedPrice('lifetime');
   const yearlyDiscount = getYearlySavings();
 
   return (
@@ -110,14 +111,14 @@ export function PaywallModal({ visible, onClose, userId, title, message, feature
                 <Text style={styles.planSub}>{monthlyPrice.cycle}</Text>
               </TouchableOpacity>
 
-              {/* Yearly — recommended */}
+              {/* Yearly — most popular */}
               <TouchableOpacity
                 style={[styles.planCard, styles.planCardYearly, selectedCycle === 'yearly' && styles.planCardActive]}
                 onPress={() => setSelectedCycle('yearly')}
                 activeOpacity={0.8}
               >
                 <View style={styles.saveBadge}>
-                  <Text style={styles.saveBadgeText}>Save {yearlyDiscount.percent}%</Text>
+                  <Text style={styles.saveBadgeText}>Most Popular</Text>
                 </View>
                 {selectedCycle === 'yearly' && (
                   <View style={styles.planCheck}>
@@ -128,7 +129,28 @@ export function PaywallModal({ visible, onClose, userId, title, message, feature
                 <Text style={[styles.planPrice, selectedCycle === 'yearly' && styles.planPriceActive]}>
                   {yearlyPrice.amount}
                 </Text>
-                <Text style={styles.planSub}>{yearlyPrice.cycle}</Text>
+                <Text style={styles.planSub}>Save {yearlyDiscount.percent}%</Text>
+              </TouchableOpacity>
+
+              {/* Lifetime — ultimate choice */}
+              <TouchableOpacity
+                style={[styles.planCard, selectedCycle === 'lifetime' && styles.planCardActive]}
+                onPress={() => setSelectedCycle('lifetime')}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.saveBadge, styles.lifetimeBadge]}>
+                  <Text style={styles.saveBadgeText}>Ultimate Choice</Text>
+                </View>
+                {selectedCycle === 'lifetime' && (
+                  <View style={styles.planCheck}>
+                    <Ionicons name="checkmark-circle" size={18} color={Colors.secondary} />
+                  </View>
+                )}
+                <Text style={[styles.planCycle, selectedCycle === 'lifetime' && styles.planCycleActive]}>Lifetime</Text>
+                <Text style={[styles.planPrice, selectedCycle === 'lifetime' && styles.planPriceActive]}>
+                  {lifetimePrice.amount}
+                </Text>
+                <Text style={styles.planSub}>Pay once · own forever</Text>
               </TouchableOpacity>
             </View>
 
@@ -152,33 +174,21 @@ export function PaywallModal({ visible, onClose, userId, title, message, feature
                     <>
                       <Ionicons name="flash" size={18} color={Colors.primaryDark} />
                       <Text style={styles.primaryBtnText}>
-                        Subscribe — {selectedCycle === 'monthly' ? `${monthlyPrice.amount}/mo` : `${yearlyPrice.amount}/yr`}
+                        {selectedCycle === 'lifetime'
+                          ? `Buy Lifetime — ${lifetimePrice.amount}`
+                          : `Subscribe — ${selectedCycle === 'monthly' ? `${monthlyPrice.amount}/mo` : `${yearlyPrice.amount}/yr`}`}
                       </Text>
                     </>
                   )}
                 </LinearGradient>
               </TouchableOpacity>
 
-              {/* Secondary: Start Trial */}
-              <TouchableOpacity
-                style={styles.secondaryBtn}
-                onPress={handleStartTrial}
-                disabled={loading}
-                activeOpacity={0.8}
-              >
-                {loading ? (
-                  <ActivityIndicator color={Colors.textPrimary} />
-                ) : (
-                  <>
-                    <Ionicons name="gift-outline" size={16} color={Colors.textPrimary} />
-                    <Text style={styles.secondaryBtnText}>Or start 7-day free trial</Text>
-                  </>
-                )}
-              </TouchableOpacity>
             </View>
 
             <Text style={styles.fineprint}>
-              Cancel anytime · Auto-renews · {monthlyPrice.amount}/mo or {yearlyPrice.amount}/yr after trial
+              {selectedCycle === 'lifetime'
+                ? `One-time payment · No recurring charges · ${lifetimePrice.amount}`
+                : `Cancel anytime · Auto-renews · ${monthlyPrice.amount}/mo or ${yearlyPrice.amount}/yr`}
             </Text>
 
             {/* Benefits — below the fold as supporting detail */}
@@ -309,6 +319,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.sm,
     paddingVertical: 3,
     borderRadius: Radius.full,
+  },
+  lifetimeBadge: {
+    backgroundColor: Colors.secondary,
   },
   saveBadgeText: {
     fontSize: FontSize.xs,

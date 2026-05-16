@@ -10,6 +10,7 @@ import {
   Linking,
   Modal,
   ScrollView,
+  Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -34,6 +35,8 @@ import {
 } from '../utils/skilledOccupations';
 import { tap as hapticTap, success as hapticSuccess } from '../utils/haptics';
 import { getProfile, saveProfile } from '../utils/storage';
+import { hasExceededLimit, incrementUsage, getRemainingUses } from '../utils/paywall';
+import { PaywallModal } from '../components/PaywallModal';
 
 type ListFilter = 'All' | SkillList;
 type JurisdictionFilter = 'All' | 'Federal' | StateCode;
@@ -319,6 +322,8 @@ export default function OccupationsScreen() {
   const [selected, setSelected] = useState<SkilledOccupation | null>(null);
   const [savedAnzsco, setSavedAnzsco] = useState<string>('');
   const [expandedState, setExpandedState] = useState<StateCode | null>(null);
+  const [profile, setProfile] = useState<any>(null);
+  const [showPaywall, setShowPaywall] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -329,14 +334,29 @@ export default function OccupationsScreen() {
       setSnapshotDate(snap.snapshotDate);
       setLastChecked(await getOccupationsLastCheckedAt());
       const p = await getProfile();
+      setProfile(p);
       setSavedAnzsco(p.anzscoCode ?? '');
     })();
   }, []);
 
   const handleSetOccupation = async (o: SkilledOccupation) => {
+    if (!profile) return;
+
+    // Check if user has exceeded ANZSCO search limit
+    if (hasExceededLimit('anzscoSearches', profile)) {
+      setShowPaywall(true);
+      return;
+    }
+
     const code = savedAnzsco === o.anzsco ? '' : o.anzsco;
     await saveProfile({ anzscoCode: code });
     setSavedAnzsco(code);
+    
+    // Increment usage after successful save
+    const updated = incrementUsage('anzscoSearches', profile);
+    setProfile(updated);
+    await saveProfile(updated);
+    
     hapticSuccess();
   };
 
@@ -900,6 +920,15 @@ export default function OccupationsScreen() {
           </View>
         </View>
       </Modal>
+
+      <PaywallModal
+        visible={showPaywall}
+        onClose={() => setShowPaywall(false)}
+        userId={profile?.userId || 'local_user'}
+        title="Unlock Advanced Occupation Search"
+        message="You've used your 10 free ANZSCO searches for this month. Upgrade to Pro for unlimited access to explore all occupations across states and visa categories."
+        feature="anzscoSearches"
+      />
     </>
   );
 }

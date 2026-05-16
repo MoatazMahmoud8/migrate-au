@@ -282,6 +282,7 @@ export default function RootLayout() {
           tabPress: () => selection(),
         }}
       >
+        {/* ── Visible tabs (5) ─────────────────────────────────────────── */}
         <Tabs.Screen
           name="(tabs)/index"
           options={{
@@ -292,31 +293,12 @@ export default function RootLayout() {
           }}
         />
         <Tabs.Screen
-          name="occupations"
+          name="(tabs)/explore"
           options={{
-            title: 'Occupations',
+            title: 'Explore',
             headerShown: false,
             tabBarIcon: ({ color, focused }) => (
-              <TabIcon name={focused ? 'list' : 'list-outline'} color={color} focused={focused} />
-            ),
-          }}
-        />
-        <Tabs.Screen
-          name="(tabs)/states"
-          options={{
-            title: 'States',
-            tabBarIcon: ({ color, focused }) => (
-              <TabIcon name={focused ? 'map' : 'map-outline'} color={color} focused={focused} />
-            ),
-          }}
-        />
-        <Tabs.Screen
-          name="(tabs)/english-tests"
-          options={{
-            title: 'English',
-            headerShown: false,
-            tabBarIcon: ({ color, focused }) => (
-              <TabIcon name={focused ? 'book' : 'book-outline'} color={color} focused={focused} />
+              <TabIcon name={focused ? 'compass' : 'compass-outline'} color={color} focused={focused} />
             ),
           }}
         />
@@ -326,26 +308,6 @@ export default function RootLayout() {
             title: '',
             tabBarIcon: ({ focused }) => <AriaFab focused={focused} />,
             tabBarLabelStyle: { height: 0 },
-          }}
-        />
-        <Tabs.Screen
-          name="(tabs)/skill-assessment"
-          options={{
-            title: 'Assess',
-            headerShown: false,
-            tabBarIcon: ({ color, focused }) => (
-              <TabIcon name={focused ? 'ribbon' : 'ribbon-outline'} color={color} focused={focused} />
-            ),
-          }}
-        />
-        <Tabs.Screen
-          name="(tabs)/rounds"
-          options={{
-            title: 'Rounds',
-            headerShown: false,
-            tabBarIcon: ({ color, focused }) => (
-              <TabIcon name={focused ? 'trophy' : 'trophy-outline'} color={color} focused={focused} />
-            ),
           }}
         />
         <Tabs.Screen
@@ -372,31 +334,15 @@ export default function RootLayout() {
             ),
           }}
         />
-        {/* Hidden screens — no tab bar entry, accessible via routes only */}
-        <Tabs.Screen
-          name="(tabs)/calculator"
-          options={{
-            title: 'Points',
-            href: null,
-          }}
-        />
-        {/* english-tests and skill-assessment are visible tabs — defined above */}
-        <Tabs.Screen
-          name="processing-times"
-          options={{
-            title: 'Processing Times',
-            href: null,
-            headerShown: false,
-          }}
-        />
-        <Tabs.Screen
-          name="visas"
-          options={{
-            title: 'Visa Pathways',
-            href: null,
-            headerShown: false,
-          }}
-        />
+        {/* ── Hidden screens — accessible via routes, no tab bar entry ── */}
+        <Tabs.Screen name="(tabs)/calculator"      options={{ title: 'Points',            href: null }} />
+        <Tabs.Screen name="(tabs)/rounds"          options={{ title: 'Rounds',            href: null, headerShown: false }} />
+        <Tabs.Screen name="(tabs)/states"          options={{ title: 'States',            href: null }} />
+        <Tabs.Screen name="(tabs)/english-tests"   options={{ title: 'English',           href: null, headerShown: false }} />
+        <Tabs.Screen name="(tabs)/skill-assessment" options={{ title: 'Skill Assessment', href: null, headerShown: false }} />
+        <Tabs.Screen name="occupations"            options={{ title: 'Occupations',       href: null, headerShown: false }} />
+        <Tabs.Screen name="processing-times"       options={{ title: 'Processing Times',  href: null, headerShown: false }} />
+        <Tabs.Screen name="visas"                  options={{ title: 'Visa Pathways',     href: null, headerShown: false }} />
       </Tabs>
       <OnboardingModal visible={onboardingVisible} onClose={closeOnboarding} />
     </>
