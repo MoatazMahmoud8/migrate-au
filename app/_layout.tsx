@@ -287,6 +287,7 @@ export default function RootLayout() {
           name="(tabs)/index"
           options={{
             title: 'Home',
+            headerShown: false,
             tabBarIcon: ({ color, focused }) => (
               <TabIcon name={focused ? 'home' : 'home-outline'} color={color} focused={focused} />
             ),
@@ -306,6 +307,7 @@ export default function RootLayout() {
           name="(tabs)/ai"
           options={{
             title: '',
+            headerShown: false,
             tabBarIcon: ({ focused }) => <AriaFab focused={focused} />,
             tabBarLabelStyle: { height: 0 },
           }}
@@ -329,6 +331,7 @@ export default function RootLayout() {
           name="(tabs)/profile"
           options={{
             title: 'Profile',
+            headerShown: false,
             tabBarIcon: ({ color, focused }) => (
               <TabIcon name={focused ? 'person-circle' : 'person-circle-outline'} color={color} focused={focused} />
             ),
@@ -337,7 +340,7 @@ export default function RootLayout() {
         {/* ── Hidden screens — accessible via routes, no tab bar entry ── */}
         <Tabs.Screen name="(tabs)/calculator"      options={{ title: 'Points',            href: null }} />
         <Tabs.Screen name="(tabs)/rounds"          options={{ title: 'Rounds',            href: null, headerShown: false }} />
-        <Tabs.Screen name="(tabs)/states"          options={{ title: 'States',            href: null }} />
+        <Tabs.Screen name="(tabs)/states"          options={{ title: 'States',            href: null, headerShown: false }} />
         <Tabs.Screen name="(tabs)/english-tests"   options={{ title: 'English',           href: null, headerShown: false }} />
         <Tabs.Screen name="(tabs)/skill-assessment" options={{ title: 'Skill Assessment', href: null, headerShown: false }} />
         <Tabs.Screen name="occupations"            options={{ title: 'Occupations',       href: null, headerShown: false }} />

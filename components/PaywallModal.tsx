@@ -117,8 +117,10 @@ export function PaywallModal({ visible, onClose, userId, title, message, feature
                 onPress={() => setSelectedCycle('yearly')}
                 activeOpacity={0.8}
               >
-                <View style={styles.saveBadge}>
-                  <Text style={styles.saveBadgeText}>Most Popular</Text>
+                <View style={styles.badgeWrap} pointerEvents="none">
+                  <View style={styles.saveBadge}>
+                    <Text style={styles.saveBadgeText} numberOfLines={1}>POPULAR</Text>
+                  </View>
                 </View>
                 {selectedCycle === 'yearly' && (
                   <View style={styles.planCheck}>
@@ -138,8 +140,10 @@ export function PaywallModal({ visible, onClose, userId, title, message, feature
                 onPress={() => setSelectedCycle('lifetime')}
                 activeOpacity={0.8}
               >
-                <View style={[styles.saveBadge, styles.lifetimeBadge]}>
-                  <Text style={styles.saveBadgeText}>Ultimate Choice</Text>
+                <View style={styles.badgeWrap} pointerEvents="none">
+                  <View style={[styles.saveBadge, styles.lifetimeBadge]}>
+                    <Text style={styles.saveBadgeText} numberOfLines={1}>BEST DEAL</Text>
+                  </View>
                 </View>
                 {selectedCycle === 'lifetime' && (
                   <View style={styles.planCheck}>
@@ -295,9 +299,9 @@ const styles = StyleSheet.create({
     borderColor: Colors.border,
     padding: Spacing.md,
     alignItems: 'center',
-    paddingTop: Spacing.lg,
+    paddingTop: Spacing.xl,
     position: 'relative',
-    minHeight: 90,
+    minHeight: 96,
     justifyContent: 'center',
   },
   planCardYearly: {
@@ -312,21 +316,29 @@ const styles = StyleSheet.create({
     top: Spacing.sm,
     right: Spacing.sm,
   },
-  saveBadge: {
+  badgeWrap: {
     position: 'absolute',
-    top: -12,
+    top: -10,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    zIndex: 2,
+  },
+  saveBadge: {
     backgroundColor: Colors.success,
     paddingHorizontal: Spacing.sm,
     paddingVertical: 3,
     borderRadius: Radius.full,
+    maxWidth: '95%',
   },
   lifetimeBadge: {
     backgroundColor: Colors.secondary,
   },
   saveBadgeText: {
-    fontSize: FontSize.xs,
+    fontSize: FontSize.xxs ?? 10,
     fontWeight: FontWeight.bold,
     color: Colors.primaryDark,
+    letterSpacing: 0.4,
   },
   planCycle: {
     fontSize: FontSize.xs,

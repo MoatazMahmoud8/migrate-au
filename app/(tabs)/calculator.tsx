@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ScrollView,
   View,
@@ -6,9 +6,8 @@ import {
   TouchableOpacity,
   StyleSheet,
   Switch,
-  TextInput,
-  Linking,
   Alert,
+  Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -19,7 +18,6 @@ import { getProfile, saveProfile } from '../../utils/storage';
 import { PaywallModal } from '../../components/PaywallModal';
 import { PointsInput, VisaSubclass, EnglishLevel } from '../../constants/types';
 import { Colors, Spacing, Radius, FontSize, FontWeight } from '../../constants/theme';
-import { ALL_VISAS, CATEGORY_META, ALL_CATEGORIES, VisaCategory } from '../../constants/visaData';
 
 const CALC_STORAGE_KEY = 'calc_input_v1';
 
@@ -145,151 +143,6 @@ function ScoreRing({ score, eligible }: { score: number; eligible: boolean }) {
   );
 }
 
-// ─── Visa Pathways component ──────────────────────────────────────────────────
-
-function VisaPathwaysSection() {
-  const [query, setQuery] = useState('');
-  const [activeCategory, setActiveCategory] = useState<VisaCategory | 'All'>('All');
-  const [expandedCode, setExpandedCode] = useState<string | null>(null);
-
-  const filtered = useMemo(() => {
-    let list = ALL_VISAS;
-    if (activeCategory !== 'All') list = list.filter((v) => v.category === activeCategory);
-    if (query.trim()) {
-      const q = query.trim().toLowerCase();
-      list = list.filter(
-        (v) =>
-          v.code.toLowerCase().includes(q) ||
-          v.name.toLowerCase().includes(q) ||
-          v.subclasses.some((s) => s.toLowerCase().includes(q))
-      );
-    }
-    return list;
-  }, [query, activeCategory]);
-
-  return (
-    <View style={[styles.card, { marginTop: Spacing.lg }]}>
-      {/* Header */}
-      <View style={styles.cardHeader}>
-        <Ionicons name="map-outline" size={18} color={Colors.accent} />
-        <Text style={styles.cardTitle}>Visa Pathways</Text>
-        <View style={[styles.cardBadge, { backgroundColor: Colors.accent + '20' }]}>
-          <Text style={[styles.cardBadgeText, { color: Colors.accent }]}>{filtered.length}</Text>
-        </View>
-      </View>
-
-      {/* Search */}
-      <View style={vp.searchRow}>
-        <Ionicons name="search-outline" size={15} color={Colors.textMuted} style={{ marginRight: 8 }} />
-        <TextInput
-          style={vp.searchInput}
-          placeholder="Search visa number or name…"
-          placeholderTextColor={Colors.textMuted}
-          value={query}
-          onChangeText={setQuery}
-          autoCorrect={false}
-          clearButtonMode="while-editing"
-        />
-        {query.length > 0 && (
-          <TouchableOpacity onPress={() => setQuery('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-            <Ionicons name="close-circle" size={16} color={Colors.textMuted} />
-          </TouchableOpacity>
-        )}
-      </View>
-
-      {/* Category chips */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: Spacing.md }}>
-        <View style={vp.chipRow}>
-          {(['All', ...ALL_CATEGORIES] as Array<VisaCategory | 'All'>).map((cat) => {
-            const active = activeCategory === cat;
-            const meta = cat === 'All' ? null : CATEGORY_META[cat];
-            const tint = meta ? meta.color : Colors.textSecondary;
-            return (
-              <TouchableOpacity
-                key={cat}
-                style={[vp.chip, active && { backgroundColor: tint + '22', borderColor: tint }]}
-                onPress={() => setActiveCategory(cat)}
-                activeOpacity={0.8}
-              >
-                {meta && <Ionicons name={meta.icon as any} size={12} color={active ? tint : Colors.textMuted} style={{ marginRight: 4 }} />}
-                <Text style={[vp.chipText, active && { color: tint, fontWeight: FontWeight.bold }]}>{cat}</Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-      </ScrollView>
-
-      {/* Visa list */}
-      {filtered.length === 0 ? (
-        <Text style={vp.empty}>No visas match "{query}"</Text>
-      ) : (
-        filtered.map((visa) => {
-          const expanded = expandedCode === visa.code;
-          const meta = CATEGORY_META[visa.category];
-          return (
-            <View key={visa.code} style={vp.visaCard}>
-              <TouchableOpacity
-                style={vp.visaHeader}
-                onPress={() => setExpandedCode(expanded ? null : visa.code)}
-                activeOpacity={0.8}
-              >
-                <View style={[vp.visaIconBox, { backgroundColor: meta.bg }]}>
-                  <Ionicons name={visa.icon as any} size={16} color={meta.color} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                    <Text style={vp.visaCode}>SC {visa.code}</Text>
-                    <View style={[vp.typePill, visa.type === 'Permanent' ? vp.typePerm : visa.type === 'Repealed' ? vp.typeRepealed : vp.typeTemp]}>
-                      <Text style={[vp.typeText, visa.type === 'Permanent' ? { color: Colors.success } : visa.type === 'Repealed' ? { color: '#9CA3AF' } : { color: Colors.warning }]}>
-                        {visa.type}
-                      </Text>
-                    </View>
-                    <View style={[vp.catPill, { backgroundColor: meta.bg }]}>
-                      <Text style={[vp.catText, { color: meta.color }]}>{visa.category}</Text>
-                    </View>
-                  </View>
-                  <Text style={vp.visaName}>{visa.name}</Text>
-                </View>
-                <Ionicons name={expanded ? 'chevron-up' : 'chevron-down'} size={16} color={Colors.textMuted} />
-              </TouchableOpacity>
-
-              {expanded && (
-                <View style={vp.visaBody}>
-                  {/* Subclasses */}
-                  <Text style={vp.detailLabel}>Streams / Subclasses</Text>
-                  {visa.subclasses.map((s) => (
-                    <View key={s} style={vp.bulletRow}>
-                      <View style={[vp.bullet, { backgroundColor: meta.color }]} />
-                      <Text style={vp.bulletText}>{s}</Text>
-                    </View>
-                  ))}
-                  {/* Key conditions */}
-                  <Text style={[vp.detailLabel, { marginTop: Spacing.md }]}>Key Requirements</Text>
-                  {visa.conditions.map((c) => (
-                    <View key={c} style={vp.bulletRow}>
-                      <Ionicons name="checkmark-outline" size={13} color={Colors.success} style={{ marginRight: 6 }} />
-                      <Text style={vp.bulletText}>{c}</Text>
-                    </View>
-                  ))}
-                  {/* DHA link */}
-                  <TouchableOpacity
-                    style={vp.dhaBtn}
-                    onPress={() => Linking.openURL(visa.url)}
-                    activeOpacity={0.8}
-                  >
-                    <Ionicons name="open-outline" size={13} color={Colors.accent} />
-                    <Text style={vp.dhaBtnText}>View on DHA website</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
-            </View>
-          );
-        })
-      )}
-    </View>
-  );
-}
-
 // ─── Calculator screen ───────────────────────────────────────────────────────
 
 export default function CalculatorScreen() {
@@ -360,7 +213,7 @@ export default function CalculatorScreen() {
     <ScrollView
       style={styles.container}
       showsVerticalScrollIndicator={false}
-      contentContainerStyle={{ paddingBottom: 100, paddingTop: 60 }}
+      contentContainerStyle={{ paddingBottom: 100, paddingTop: Platform.OS === 'ios' ? 110 : 96 }}
     >
       {/* Remaining Uses Badge */}
       {profile && remaining !== null && !profile.isPremium && (
@@ -616,8 +469,6 @@ export default function CalculatorScreen() {
         );
       })()}
 
-      <VisaPathwaysSection />
-
     </ScrollView>
 
     <PaywallModal
@@ -825,123 +676,3 @@ const styles = StyleSheet.create({
   gapPts: { fontSize: FontSize.sm, fontWeight: FontWeight.bold, color: Colors.success },
 });
 
-const vp = StyleSheet.create({
-  searchRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.background,
-    borderRadius: Radius.md,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    marginBottom: Spacing.md,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: FontSize.sm,
-    color: Colors.textPrimary,
-    paddingVertical: 0,
-  },
-  chipRow: {
-    flexDirection: 'row',
-    gap: 8,
-    paddingRight: Spacing.lg,
-  },
-  chip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: Radius.full,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    backgroundColor: Colors.background,
-  },
-  chipText: { fontSize: 11, color: Colors.textSecondary, fontWeight: FontWeight.semiBold },
-  empty: { color: Colors.textMuted, fontSize: FontSize.sm, textAlign: 'center', paddingVertical: Spacing.xl },
-
-  visaCard: {
-    borderRadius: Radius.lg,
-    backgroundColor: Colors.background,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    marginBottom: Spacing.sm,
-    overflow: 'hidden',
-  },
-  visaHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: Spacing.md,
-    gap: Spacing.md,
-  },
-  visaIconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: Radius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  visaCode: { fontSize: FontSize.sm, fontWeight: FontWeight.bold, color: Colors.textPrimary },
-  visaName: { fontSize: FontSize.xs, color: Colors.textSecondary, marginTop: 2 },
-  typePill: {
-    borderRadius: Radius.full,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderWidth: 1,
-  },
-  typePerm: { backgroundColor: Colors.success + '15', borderColor: Colors.success + '40' },
-  typeTemp: { backgroundColor: Colors.warning + '15', borderColor: Colors.warning + '40' },
-  typeRepealed: { backgroundColor: 'rgba(156,163,175,0.12)', borderColor: 'rgba(156,163,175,0.35)' },
-  typeText: { fontSize: 9, fontWeight: FontWeight.bold },
-  catPill: {
-    borderRadius: Radius.full,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-  },
-  catText: { fontSize: 9, fontWeight: FontWeight.bold },
-
-  visaBody: {
-    paddingHorizontal: Spacing.md,
-    paddingBottom: Spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: Colors.divider,
-  },
-  detailLabel: {
-    fontSize: FontSize.xs,
-    color: Colors.textMuted,
-    fontWeight: FontWeight.semiBold,
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
-    marginTop: Spacing.md,
-    marginBottom: Spacing.xs,
-  },
-  bulletRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 4,
-  },
-  bullet: {
-    width: 5,
-    height: 5,
-    borderRadius: 3,
-    marginTop: 5,
-    marginRight: 8,
-    flexShrink: 0,
-  },
-  bulletText: { fontSize: FontSize.sm, color: Colors.textSecondary, flex: 1, lineHeight: 18 },
-  dhaBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginTop: Spacing.md,
-    alignSelf: 'flex-start',
-    backgroundColor: Colors.accent + '15',
-    borderRadius: Radius.full,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs,
-    borderWidth: 1,
-    borderColor: Colors.accent + '30',
-  },
-  dhaBtnText: { fontSize: FontSize.xs, color: Colors.accent, fontWeight: FontWeight.semiBold },
-});
