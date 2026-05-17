@@ -15,10 +15,19 @@
     "production": {
       "autoIncrement": true,
       "credentialsSource": "remote",
-      "node": "22.15.0"
+      "node": "22.15.0",
+      "ios": {
+        "image": "macos-sequoia-15.2-xcode-16.2"
+      }
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "ios": {
+        "appleId": "moataz.alsbak86@gmail.com",
+        "ascAppId": "FILL_IN_AFTER_CREATING_APP_IN_APPSTORE_CONNECT",
+        "appleTeamId": "DC5476F3WM"
+      }
+    }
   }
 }
