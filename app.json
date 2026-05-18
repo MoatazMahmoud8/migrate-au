@@ -68,7 +68,8 @@
 					"icon": "./assets/icon.png"
 				}
 			],
-			"@react-native-community/datetimepicker"
+			"@react-native-community/datetimepicker",
+			"./plugins/with-modular-headers"
 		],
 		"experiments": {
 			"typedRoutes": true
