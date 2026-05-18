@@ -1,89 +1,95 @@
-  {
-  "expo": {
-    "name": "MigrateAU",
-    "slug": "migrate-au",
-    "version": "1.0.0",
-    "orientation": "portrait",
-    "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
-    "scheme": "migrate-au",
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#002D62"
-    },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
-    "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.jsmglobal.migrationau",
-      "buildNumber": "1",
-      "googleServicesFile": "./GoogleService-Info.plist",
-      "infoPlist": {
-        "NSAppTransportSecurity": {
-          "NSAllowsArbitraryLoads": false
-        },
-        "ITSAppUsesNonExemptEncryption": false,
-        "UIBackgroundModes": [
-          "remote-notification"
-        ]
-      }
-    },
-    "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#002D62"
-      },
-      "package": "com.jsmglobal.migration_au",
-      "versionCode": 100,
-      "googleServicesFile": "./google-services.json",
-      "permissions": [
-        "android.permission.INTERNET",
-        "android.permission.RECEIVE_BOOT_COMPLETED",
-        "android.permission.VIBRATE",
-        "android.permission.POST_NOTIFICATIONS"
-      ]
-    },
-    "web": {
-      "favicon": "./assets/favicon.png",
-      "bundler": "metro"
-    },
-    "plugins": [
-      "expo-router",
-      "expo-font",
-      "@react-native-firebase/app",
-      "@react-native-firebase/auth",
-      [
-        "expo-build-properties",
-        {
-          "android": {
-            "googleServicesFile": "./google-services.json"
-          },
-          "ios": {
-            "useFrameworks": "static"
-          }
-        }
-      ],
-      [
-        "expo-notifications",
-        {
-          "icon": "./assets/icon.png"
-        }
-      ],
-      "@react-native-community/datetimepicker"
-    ],
-    "experiments": {
-      "typedRoutes": true
-    },
-    "extra": {
-      "revenueCatKeyAndroid": "goog_ItWTfepqXqSNKgnRyhyaCRqNCvI",
-      "revenueCatKeyIos": "",
-      "eas": {
-        "projectId": "d89609e7-a74f-4146-9eb2-0e8387e71fd2"
-      },
-      "router": {}
-    },
-    "owner": "moataz.alsbak"
-  }
+{
+	"expo": {
+		"name": "MigrateAU",
+		"slug": "migrate-au",
+		"version": "1.0.0",
+		"orientation": "portrait",
+		"icon": "./assets/icon.png",
+		"userInterfaceStyle": "light",
+		"scheme": "migrate-au",
+		"splash": {
+			"image": "./assets/splash.png",
+			"resizeMode": "contain",
+			"backgroundColor": "#002D62"
+		},
+		"assetBundlePatterns": [
+			"**/*"
+		],
+		"ios": {
+			"supportsTablet": true,
+			"bundleIdentifier": "com.jsmglobal.migrationau",
+			"buildNumber": "1",
+			"googleServicesFile": "./GoogleService-Info.plist",
+			"infoPlist": {
+				"NSAppTransportSecurity": {
+					"NSAllowsArbitraryLoads": false
+				},
+				"ITSAppUsesNonExemptEncryption": false,
+				"UIBackgroundModes": [
+					"remote-notification"
+				]
+			}
+		},
+		"android": {
+			"adaptiveIcon": {
+				"foregroundImage": "./assets/adaptive-icon.png",
+				"backgroundColor": "#002D62"
+			},
+			"package": "com.jsmglobal.migration_au",
+			"versionCode": 100,
+			"googleServicesFile": "./google-services.json",
+			"permissions": [
+				"android.permission.INTERNET",
+				"android.permission.RECEIVE_BOOT_COMPLETED",
+				"android.permission.VIBRATE",
+				"android.permission.POST_NOTIFICATIONS"
+			]
+		},
+		"web": {
+			"favicon": "./assets/favicon.png",
+			"bundler": "metro"
+		},
+		"plugins": [
+			"expo-router",
+			"expo-font",
+			"@react-native-firebase/app",
+			"@react-native-firebase/auth",
+			[
+				"expo-build-properties",
+				{
+					"android": {
+						"googleServicesFile": "./google-services.json"
+					},
+					"ios": {
+						"useFrameworks": "static"
+					}
+				}
+			],
+			[
+				"expo-notifications",
+				{
+					"icon": "./assets/icon.png"
+				}
+			],
+			"@react-native-community/datetimepicker"
+		],
+		"experiments": {
+			"typedRoutes": true
+		},
+		"extra": {
+			"revenueCatKeyAndroid": "goog_ItWTfepqXqSNKgnRyhyaCRqNCvI",
+			"revenueCatKeyIos": "",
+			"eas": {
+				"projectId": "d89609e7-a74f-4146-9eb2-0e8387e71fd2"
+			},
+			"router": {}
+		},
+		"owner": "moataz.alsbak"
+	},
+	"Resources": {
+		"RestApi": {
+			"Type": "AWS::ApiGateway::RestApi",
+			"Properties": {}
+		}
+	}
 }
