@@ -8,9 +8,20 @@ Monitors:
 """
 
 import hashlib
+import os
 import requests
 from bs4 import BeautifulSoup
 from datetime import datetime, timezone
+
+try:
+    import cloudscraper  # type: ignore
+    _HAS_CLOUDSCRAPER = True
+except ImportError:
+    _HAS_CLOUDSCRAPER = False
+
+# Sites known to block datacenter IPs (e.g. GitHub Actions).
+# These fall back to cloudscraper, then to a proxy API if configured.
+_BLOCKED_HOSTS = {"www.act.gov.au", "australiasnorthernterritory.com.au"}
 
 STATES = [
     {
@@ -112,6 +123,59 @@ def _hash(text: str) -> str:
     return hashlib.sha256(text.encode()).hexdigest()[:16]
 
 
+def _fetch_with_fallbacks(session: requests.Session, url: str, timeout: int = 20) -> requests.Response | None:
+    """
+    Multi-stage fetch for sites that block datacenter IPs.
+
+    Order:
+      1. Plain `requests` (works for most sites + works locally for everything)
+      2. cloudscraper (handles simple Cloudflare bot challenges) — only if installed
+         and the host is known to block.
+      3. ScrapingBee API (if `SCRAPINGBEE_API_KEY` env var is set) — uses residential
+         IPs to bypass Cloudflare datacenter blocks. Free tier = 1000 reqs/mo.
+
+    Returns the successful Response, or None if all attempts fail.
+    """
+    # Stage 1: plain requests
+    try:
+        resp = session.get(url, timeout=timeout)
+        resp.raise_for_status()
+        return resp
+    except requests.RequestException as e:
+        host = url.split("/")[2] if "://" in url else ""
+        is_blocked_host = host in _BLOCKED_HOSTS
+        is_403 = isinstance(e, requests.HTTPError) and e.response is not None and e.response.status_code == 403
+        if not (is_blocked_host or is_403):
+            raise  # Genuine failure, not a bot-block
+
+    # Stage 2: cloudscraper
+    if _HAS_CLOUDSCRAPER:
+        try:
+            scraper = cloudscraper.create_scraper(browser={"browser": "chrome", "platform": "windows", "mobile": False})
+            scraper.headers.update(HEADERS)
+            resp = scraper.get(url, timeout=timeout)
+            if resp.ok:
+                return resp
+        except Exception:
+            pass
+
+    # Stage 3: ScrapingBee proxy (only if API key is configured)
+    api_key = os.environ.get("SCRAPINGBEE_API_KEY")
+    if api_key:
+        try:
+            proxy_resp = requests.get(
+                "https://app.scrapingbee.com/api/v1/",
+                params={"api_key": api_key, "url": url, "render_js": "false"},
+                timeout=max(timeout, 40),
+            )
+            if proxy_resp.ok:
+                return proxy_resp
+        except requests.RequestException:
+            pass
+
+    return None
+
+
 def scrape(db) -> list[dict]:
     notifications = []
     meta_ref = db.collection("_scraper_meta")
@@ -121,8 +185,11 @@ def scrape(db) -> list[dict]:
     for state in STATES:
         src_id = f"state_{state['code']}"
         try:
-            resp = session.get(state["url"], timeout=20)
-            resp.raise_for_status()
+            resp = _fetch_with_fallbacks(session, state["url"], timeout=20)
+            if resp is None:
+                # Site is blocking datacenter IPs and no proxy is configured.
+                # Skip silently to avoid log spam on every scheduled run.
+                continue
             soup = BeautifulSoup(resp.text, "html.parser")
             elements = soup.select(state["selector"])
             content = " ".join(el.get_text(" ", strip=True) for el in elements[:30])
