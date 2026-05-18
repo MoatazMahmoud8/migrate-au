@@ -18,6 +18,7 @@ import {
   markAsRead,
   AppNotification,
 } from '../../utils/notifications';
+import { getRevenueCatUserId } from '../../utils/iap';
 
 const CATEGORY_COLORS: Record<string, string> = {
   'Policy Update':          Colors.accent,
@@ -104,12 +105,25 @@ export default function NotificationsScreen() {
   const [stateFilter, setStateFilter] = useState<string>('all');
 
   useEffect(() => {
-    const unsub = subscribeToFeed(items => {
-      setFeed(items);
-      setLoading(false);
-      setRefreshing(false);
-    });
-    return unsub;
+    let cancelled = false;
+    let unsub: (() => void) | undefined;
+    (async () => {
+      const uid = await getRevenueCatUserId().catch(() => '');
+      if (cancelled) return;
+      unsub = subscribeToFeed(
+        items => {
+          setFeed(items);
+          setLoading(false);
+          setRefreshing(false);
+        },
+        30,
+        uid || undefined,
+      );
+    })();
+    return () => {
+      cancelled = true;
+      if (unsub) unsub();
+    };
   }, []);
 
   const handleRead = useCallback((id: string) => {

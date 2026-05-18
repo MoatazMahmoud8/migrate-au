@@ -72,7 +72,7 @@
 				}
 			],
 			"@react-native-community/datetimepicker",
-			"./plugins/with-allow-non-modular-headers"
+			"./plugins/with-rnfirebase-static-framework"
 		],
 		"experiments": {
 			"typedRoutes": true

@@ -8,7 +8,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Colors } from '../constants/theme';
 import { useEffect, useState } from 'react';
 import { initNotifications, subscribeToFeed } from '../utils/notifications';
-import { initRevenueCat, syncSubscriptionStatus } from '../utils/iap';
+import { initRevenueCat, syncSubscriptionStatus, getRevenueCatUserId } from '../utils/iap';
 import { selection } from '../utils/haptics';
 import { getProfile, saveProfile } from '../utils/storage';
 import OnboardingModal from '../components/OnboardingModal';
@@ -69,13 +69,20 @@ export default function RootLayout() {
       syncSubscriptionStatus();
     });
 
-    // Initialise FCM — subscribe to all migration topics
-    initNotifications(['NSW', 'VIC', 'QLD', 'WA', 'SA', 'TAS', 'ACT', 'NT']);
+    // Initialise FCM — subscribe to all migration topics + register device for watchlist
+    let unsubFeed: (() => void) | undefined;
+    (async () => {
+      const userId = await getRevenueCatUserId().catch(() => undefined);
+      await initNotifications(['NSW', 'VIC', 'QLD', 'WA', 'SA', 'TAS', 'ACT', 'NT'], userId ?? undefined);
 
-    // Track unread count for tab badge
-    const unsub = subscribeToFeed(items => {
-      setUnread(items.filter(n => !n.read).length);
-    });
+      // Track unread count for tab badge — must wait for userId so personalised
+      // watchlist alerts are included.
+      unsubFeed = subscribeToFeed(
+        items => setUnread(items.filter(n => !n.read).length),
+        30,
+        userId ?? undefined,
+      );
+    })();
 
     // First-launch onboarding
     getProfile().then((p) => {
@@ -219,7 +226,9 @@ export default function RootLayout() {
       })
       .catch(() => {});
 
-    return unsub;
+    return () => {
+      if (unsubFeed) unsubFeed();
+    };
   }, []);
 
   const closeOnboarding = async () => {

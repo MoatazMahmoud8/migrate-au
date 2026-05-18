@@ -16,6 +16,7 @@ from firebase_admin import credentials, firestore
 
 from scrapers import home_affairs, anzsco, state_nominations
 from notify import send_batch
+from watchlist_dispatcher import dispatch as dispatch_watchlist
 
 
 def get_db():
@@ -66,6 +67,16 @@ def run():
         print(f"  📤 Sending {total} notification(s) via FCM...")
         stats = send_batch(db, all_notifications)
         print(f"  ✅ Sent: {stats['sent']}  ❌ Failed: {stats['failed']}")
+
+        # ── Per-user watchlist (Pro) targeted dispatch
+        try:
+            wl_stats = dispatch_watchlist(db, all_notifications)
+            print(
+                f"  📌 Watchlist: {wl_stats['sent']} sent to "
+                f"{wl_stats['users']} user(s) ({wl_stats['matches']} match(es))"
+            )
+        except Exception as e:
+            print(f"  ⚠️  Watchlist dispatch failed: {e}")
 
     # ── Log run to Firestore
     elapsed = (datetime.now(timezone.utc) - started_at).total_seconds()

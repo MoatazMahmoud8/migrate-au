@@ -80,6 +80,10 @@ def send_topic_notification(db, notification: dict) -> bool:
             "source_id": source_id,
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "read": False,
+            # Broadcast docs are visible to every user; per-user (watchlist)
+            # docs set userId to the recipient's RC id. The client merges both
+            # streams in subscribeToFeed.
+            "userId": None,
         }
         if "state" in notification:
             doc["state"] = notification["state"]

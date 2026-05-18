@@ -637,6 +637,20 @@ export default function ProfileScreen() {
 
       {/* Settings rows */}
       <View style={styles.section}>
+        <Text style={styles.sectionLabel}>Alerts</Text>
+        <View style={styles.card}>
+          <SettingRow
+            icon="notifications-outline"
+            label="Occupation Watchlist"
+            value={profile.isPremium ? 'Pro' : 'Free (1 item)'}
+            onPress={() => router.push('/watchlist')}
+            showArrow
+            last
+          />
+        </View>
+      </View>
+
+      <View style={styles.section}>
         <Text style={styles.sectionLabel}>Subscription</Text>
         <View style={styles.card}>
           <SettingRow

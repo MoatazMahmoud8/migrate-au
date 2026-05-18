@@ -14,6 +14,7 @@ import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import messaging from '@react-native-firebase/messaging';
 import firestore from '@react-native-firebase/firestore';
+import { registerWatchlistDevice } from './watchlist';
 
 // ─── FCM Topics ──────────────────────────────────────────────────────────────
 
@@ -51,7 +52,7 @@ Notifications.setNotificationHandler({
 
 // ─── Initialisation (call once on app start) ─────────────────────────────────
 
-export async function initNotifications(subscribedStates: string[] = []) {
+export async function initNotifications(subscribedStates: string[] = [], userId?: string) {
   // Native-only: @react-native-firebase/messaging has no web implementation.
   if (Platform.OS === 'web') {
     console.log('[notifications] skipped on web');
@@ -73,6 +74,17 @@ export async function initNotifications(subscribedStates: string[] = []) {
 
     // 5. Handle notifications that opened the app (background tap)
     registerBackgroundOpenHandler();
+
+    // 6. Register this device's FCM token against the user's watchlist doc
+    //    so the backend can push targeted occupation alerts.
+    if (userId) {
+      try {
+        const token = await messaging().getToken();
+        if (token) await registerWatchlistDevice(userId, token);
+      } catch (e) {
+        console.warn('[notifications] FCM token registration failed:', e);
+      }
+    }
 
     console.log('[notifications] ✅ Initialised');
     return true;
@@ -204,35 +216,102 @@ export interface AppNotification {
   state?: string;
   timestamp: string;
   read: boolean;
+  /** Owning user (RC user id) — null for broadcasts, set for watchlist hits. */
+  userId?: string | null;
+  /** Watchlist hits also carry the matched occupation for UI labelling. */
+  anzsco?: string;
+  visaSubclass?: string;
 }
 
 /**
  * Subscribe to the real-time Firestore notification feed.
+ *
+ * If `userId` is supplied, the listener merges two streams:
+ *   1. broadcast notifications (userId == null)
+ *   2. personal watchlist notifications (userId == <this user>)
+ *
+ * If `userId` is omitted, the legacy "everything" stream is returned (kept
+ * for callers that only need the global feed, e.g. badge counts).
+ *
  * Returns an unsubscribe function.
  */
 export function subscribeToFeed(
   onUpdate: (notifications: AppNotification[]) => void,
-  limit = 30
+  limit = 30,
+  userId?: string,
 ): () => void {
   // Native-only: @react-native-firebase/firestore has no web implementation.
   if (Platform.OS === 'web') {
     onUpdate([]);
     return () => {};
   }
-  return firestore()
-    .collection('notifications')
+
+  const col = firestore().collection('notifications');
+
+  // ── Path 1: no userId — return everything (used by background badge count
+  //            where leaking other users' watchlist hits is harmless because
+  //            they don't render in any list).
+  if (!userId) {
+    return col
+      .orderBy('timestamp', 'desc')
+      .limit(limit)
+      .onSnapshot(
+        snapshot => {
+          const items: AppNotification[] = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...(doc.data() as Omit<AppNotification, 'id'>),
+          }));
+          onUpdate(items);
+        },
+        err => console.warn('[notifications] Feed error:', err),
+      );
+  }
+
+  // ── Path 2: merge broadcast (userId == null) + personal (userId == me)
+  let broadcasts: AppNotification[] = [];
+  let personal: AppNotification[] = [];
+
+  const emit = () => {
+    const merged = [...broadcasts, ...personal]
+      .sort((a, b) => (b.timestamp || '').localeCompare(a.timestamp || ''))
+      .slice(0, limit);
+    onUpdate(merged);
+  };
+
+  const unsub1 = col
+    .where('userId', '==', null)
     .orderBy('timestamp', 'desc')
     .limit(limit)
     .onSnapshot(
-      snapshot => {
-        const items: AppNotification[] = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...(doc.data() as Omit<AppNotification, 'id'>),
+      snap => {
+        broadcasts = snap.docs.map(d => ({
+          id: d.id,
+          ...(d.data() as Omit<AppNotification, 'id'>),
         }));
-        onUpdate(items);
+        emit();
       },
-      err => console.warn('[notifications] Feed error:', err)
+      err => console.warn('[notifications] Broadcast feed error:', err),
     );
+
+  const unsub2 = col
+    .where('userId', '==', userId)
+    .orderBy('timestamp', 'desc')
+    .limit(limit)
+    .onSnapshot(
+      snap => {
+        personal = snap.docs.map(d => ({
+          id: d.id,
+          ...(d.data() as Omit<AppNotification, 'id'>),
+        }));
+        emit();
+      },
+      err => console.warn('[notifications] Personal feed error:', err),
+    );
+
+  return () => {
+    unsub1();
+    unsub2();
+  };
 }
 
 /** Mark a notification as read in Firestore */
