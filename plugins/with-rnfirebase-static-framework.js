@@ -28,6 +28,11 @@ $RNFirebaseAsStaticFramework = true
 ${TOP_END}
 `;
 
+const MODHDR_MARKER = "# === BEGIN react-native-firebase modular-headers patch ===";
+const MODHDR_END = "# === END react-native-firebase modular-headers patch ===";
+
+const MODHDR_BLOCK = `\n  ${MODHDR_MARKER}\n  use_modular_headers!\n  ${MODHDR_END}\n`;
+
 function patchPodfile(contents) {
   let next = contents;
 
@@ -40,10 +45,23 @@ function patchPodfile(contents) {
     /# === BEGIN react-native-firebase static-framework patch ===[\s\S]*?# === END react-native-firebase static-framework patch ===\n?/g,
     ""
   );
+  next = next.replace(
+    /\n?\s*# === BEGIN react-native-firebase modular-headers patch ===[\s\S]*?# === END react-native-firebase modular-headers patch ===\n?/g,
+    ""
+  );
 
-  // Inject the global flag at the very top of the Podfile so all pod blocks
-  // see it (must come before `target ... do` and before `use_frameworks!`).
+  // 1. Inject the global flag at the very top of the Podfile (must come before
+  //    any `target ... do` block so all pod blocks see it).
   next = TOP_BLOCK + "\n" + next;
+
+  // 2. Inject `use_modular_headers!` right after `use_frameworks!`. Without
+  //    this, React-Core stays non-modular and RNFB framework targets fail with
+  //    `-Wnon-modular-include-in-framework-module` errors when they
+  //    `#import <React/RCTBridgeModule.h>` etc.
+  next = next.replace(
+    /^(\s*use_frameworks!.*)$/m,
+    (match) => `${match}${MODHDR_BLOCK}`
+  );
 
   return next;
 }
