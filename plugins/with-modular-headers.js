@@ -52,24 +52,15 @@ const GRPC_MARKER = "# === BEGIN grpc-core-modulemap-fix ===";
 const GRPC_END    = "# === END grpc-core-modulemap-fix ===";
 // Code block injected before react_native_post_install call (inside its block).
 const GRPC_INLINE = `  ${GRPC_MARKER}
-  # gRPC-Core 1.69.x ships its own module.modulemap but CocoaPods'
-  # use_modular_headers! generates a symlink at
-  # Pods/Headers/Private/grpc/gRPC-Core.modulemap that is not reliably
-  # created, causing "module map file not found" at Xcode compile time.
-  # Strip the bad -fmodule-map-file flag from gRPC-C++ build settings.
-  installer.pods_project.targets.each do |target|
-    next unless target.name == 'gRPC-C++'
-    target.build_configurations.each do |config|
-      %w[OTHER_CFLAGS OTHER_CXXFLAGS].each do |key|
-        val = config.build_settings[key]
-        next unless val
-        if val.is_a?(Array)
-          config.build_settings[key] = val.reject { |f| f.to_s.include?('gRPC-Core.modulemap') }
-        else
-          config.build_settings[key] = val.gsub(/-fmodule-map-file=\\S*gRPC-Core\\.modulemap\\S*/, '').gsub(/\\s+/, ' ').strip
-        end
-      end
-    end
+  # gRPC-Core 1.69.x ships its own module.modulemap. CocoaPods' use_modular_headers!
+  # injects -fmodule-map-file=.../gRPC-Core.modulemap into gRPC-C++'s .xcconfig files.
+  # That symlink is never reliably created, causing "module map file not found" at
+  # Xcode compile time. Strip the bad flag directly from the generated .xcconfig files
+  # (xcconfigs take precedence over pbxproj build settings, so we must patch them).
+  Dir.glob("#{installer.sandbox.root}/Target Support Files/gRPC-C++/*.xcconfig").each do |f|
+    content = File.read(f)
+    new_content = content.gsub(/-fmodule-map-file=\\S*gRPC-Core\\.modulemap/, '')
+    File.write(f, new_content) if new_content != content
   end
   ${GRPC_END}
 `;
