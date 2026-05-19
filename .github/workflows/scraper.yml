@@ -2,8 +2,8 @@ name: MigrateAU Notification Scraper
 
 on:
   schedule:
-    # Every 30 minutes — catches SkillSelect rounds & same-day policy changes
-    - cron: '*/30 * * * *'
+    # Every 3 hours — keeps within GitHub Actions free tier (2000 min/month)
+    - cron: '0 */3 * * *'
   workflow_dispatch:   # manual trigger for testing
 
 jobs:
