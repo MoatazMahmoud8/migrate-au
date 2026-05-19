@@ -17,23 +17,22 @@
  *   static libraries".
  *
  * Problem C (use_modular_headers! globally):
- *   gRPC-Core 1.69.x ships its OWN module.modulemap at include/grpc/module.modulemap.
- *   CocoaPods' use_modular_headers! ALSO generates a module map symlink at:
- *     Pods/Headers/Private/grpc/gRPC-Core.modulemap
- *   AND injects into gRPC-C++'s build settings:
- *     OTHER_CFLAGS = ... -fmodule-map-file=.../gRPC-Core.modulemap
- *   That symlink doesn't get created correctly → "module map file not found" at
- *   Xcode build time.
+ *   gRPC-Core, abseil, BoringSSL-GRPC and others ship their OWN module.modulemap.
+ *   CocoaPods' use_modular_headers! ALSO generates module map symlinks at:
+ *     Pods/Headers/Public|Private/<pod>/<pod>.modulemap
+ *   AND injects -fmodule-map-file flags into every dependent pod's .xcconfig.
+ *   Those symlinks aren't reliably created → "module map file not found" at Xcode
+ *   build time for gRPC-Core, abseil.modulemap, BoringSSL-GRPC.modulemap, etc.
  *
  * THE COMPLETE SOLUTION (this plugin)
  * ------------------------------------
  * 1. NO use_frameworks! — keeps pods as static libraries, solving Problem A.
  * 2. use_modular_headers! globally — gives Firebase Swift pods the module maps
  *    they need for their Obj-C deps, solving Problem B.
- * 3. post_install hook that strips the -fmodule-map-file=...gRPC-Core.modulemap
- *    flag from gRPC-C++'s OTHER_CFLAGS / OTHER_CXXFLAGS, solving Problem C.
- *    (gRPC-C++ will fall back to gRPC-Core's own include/grpc/module.modulemap
- *    via its HEADER_SEARCH_PATHS, which works fine.)
+ * 3. post_install hook that strips ALL -fmodule-map-file flags pointing to
+ *    Pods/Headers/ paths from ALL pod xcconfig files, solving Problem C for
+ *    every affected pod (gRPC-Core, abseil, BoringSSL-GRPC, …). Each pod's
+ *    own module.modulemap is still found via HEADER_SEARCH_PATHS.
  */
 const { withDangerousMod } = require("@expo/config-plugins");
 const fs = require("fs");
@@ -44,7 +43,7 @@ const MOD_HDR_MARKER = "# === BEGIN use_modular_headers patch ===";
 const MOD_HDR_END    = "# === END use_modular_headers patch ===";
 const MOD_HDR_BLOCK  = `\n${MOD_HDR_MARKER}\nuse_modular_headers!\n${MOD_HDR_END}\n`;
 
-// ── Patch 2: gRPC-Core modulemap fix injected INTO existing post_install ─────
+// ── Patch 2: modulemap fix injected INTO existing post_install ───────────────
 // CocoaPods does NOT support multiple post_install blocks. We inject our code
 // inside the existing block by anchoring on `react_native_post_install(` which
 // Expo's generated Podfile always contains.
@@ -52,14 +51,18 @@ const GRPC_MARKER = "# === BEGIN grpc-core-modulemap-fix ===";
 const GRPC_END    = "# === END grpc-core-modulemap-fix ===";
 // Code block injected before react_native_post_install call (inside its block).
 const GRPC_INLINE = `  ${GRPC_MARKER}
-  # gRPC-Core 1.69.x ships its own module.modulemap. CocoaPods' use_modular_headers!
-  # injects -fmodule-map-file=.../gRPC-Core.modulemap into gRPC-C++'s .xcconfig files.
-  # That symlink is never reliably created, causing "module map file not found" at
-  # Xcode compile time. Strip the bad flag directly from the generated .xcconfig files
-  # (xcconfigs take precedence over pbxproj build settings, so we must patch them).
-  Dir.glob("#{installer.sandbox.root}/Target Support Files/gRPC-C++/*.xcconfig").each do |f|
+  # use_modular_headers! globally generates module map symlinks for ALL pods at
+  # Pods/Headers/Public|Private/<pod>/<pod>.modulemap and injects those paths as
+  # -fmodule-map-file= flags in every dependent pod's .xcconfig files.
+  # Several pods (gRPC-Core, abseil, BoringSSL-GRPC, ...) ship their own
+  # module.modulemap but the CocoaPods-generated symlinks are never reliably
+  # created, causing "module map file not found" at Xcode compile time.
+  # FIX: strip ALL -fmodule-map-file flags that reference Pods/Headers/ paths
+  # from ALL pod xcconfig files. Pods that ship their own module.modulemap will
+  # still be found via HEADER_SEARCH_PATHS.
+  Dir.glob("#{installer.sandbox.root}/Target Support Files/**/*.xcconfig").each do |f|
     content = File.read(f)
-    new_content = content.gsub(/-fmodule-map-file=\\S*gRPC-Core\\.modulemap/, '')
+    new_content = content.gsub(/-fmodule-map-file=\\S*Pods\\/Headers\\S*/, '')
     File.write(f, new_content) if new_content != content
   end
   ${GRPC_END}
