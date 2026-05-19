@@ -44,16 +44,19 @@ const MOD_HDR_MARKER = "# === BEGIN use_modular_headers patch ===";
 const MOD_HDR_END    = "# === END use_modular_headers patch ===";
 const MOD_HDR_BLOCK  = `\n${MOD_HDR_MARKER}\nuse_modular_headers!\n${MOD_HDR_END}\n`;
 
-// ── Patch 2: post_install gRPC-Core modulemap fix ────────────────────────────
+// ── Patch 2: gRPC-Core modulemap fix injected INTO existing post_install ─────
+// CocoaPods does NOT support multiple post_install blocks. We inject our code
+// inside the existing block by anchoring on `react_native_post_install(` which
+// Expo's generated Podfile always contains.
 const GRPC_MARKER = "# === BEGIN grpc-core-modulemap-fix ===";
 const GRPC_END    = "# === END grpc-core-modulemap-fix ===";
-const GRPC_POST_INSTALL = `
-${GRPC_MARKER}
-# gRPC-Core 1.69.x ships its own module.modulemap but CocoaPods' use_modular_headers!
-# generates a symlink at Pods/Headers/Private/grpc/gRPC-Core.modulemap that is not
-# reliably created, causing "module map file not found" errors at Xcode build time.
-# Strip the bad -fmodule-map-file flag; gRPC-C++ resolves gRPC-Core via its own map.
-post_install do |installer|
+// Code block injected before react_native_post_install call (inside its block).
+const GRPC_INLINE = `  ${GRPC_MARKER}
+  # gRPC-Core 1.69.x ships its own module.modulemap but CocoaPods'
+  # use_modular_headers! generates a symlink at
+  # Pods/Headers/Private/grpc/gRPC-Core.modulemap that is not reliably
+  # created, causing "module map file not found" at Xcode compile time.
+  # Strip the bad -fmodule-map-file flag from gRPC-C++ build settings.
   installer.pods_project.targets.each do |target|
     next unless target.name == 'gRPC-C++'
     target.build_configurations.each do |config|
@@ -68,8 +71,7 @@ post_install do |installer|
       end
     end
   end
-end
-${GRPC_END}
+  ${GRPC_END}
 `;
 
 function patchPodfile(contents) {
@@ -105,8 +107,15 @@ function patchPodfile(contents) {
     next = `${MOD_HDR_MARKER}\nuse_modular_headers!\n${MOD_HDR_END}\n\n${next}`;
   }
 
-  // ── Patch 2: append post_install block at end of Podfile ──────────────────
-  next = next.trimEnd() + "\n" + GRPC_POST_INSTALL;
+  // ── Patch 2: inject gRPC-Core fix INSIDE the existing post_install block ──
+  // CocoaPods does NOT allow multiple post_install blocks. We inject before
+  // react_native_post_install() which is always present in Expo's Podfile.
+  if (next.includes("react_native_post_install(")) {
+    next = next.replace(
+      /^(\s*react_native_post_install\()/m,
+      `${GRPC_INLINE}\n$1`
+    );
+  }
 
   return next;
 }
