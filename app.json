@@ -50,26 +50,35 @@
 			"bundler": "metro"
 		},
 		"plugins": [
-			"expo-router",
-			"expo-font",
-			"@react-native-firebase/app",
-			"@react-native-firebase/auth",
 			[
 				"expo-build-properties",
 				{
+					"ios": {
+						"useFrameworks": "static",
+						"forceStaticLinking": [
+							"RNFBApp",
+							"RNFBAuth",
+							"RNFBFirestore",
+							"RNFBMessaging"
+						],
+						"ccacheEnabled": true
+					},
 					"android": {
 						"googleServicesFile": "./google-services.json"
 					}
 				}
 			],
+			"expo-router",
+			"expo-font",
+			"@react-native-firebase/app",
+			"@react-native-firebase/auth",
 			[
 				"expo-notifications",
 				{
 					"icon": "./assets/icon.png"
 				}
 			],
-			"@react-native-community/datetimepicker",
-			"./plugins/with-modular-headers"
+			"@react-native-community/datetimepicker"
 		],
 		"experiments": {
 			"typedRoutes": true
