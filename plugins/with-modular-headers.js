@@ -29,10 +29,12 @@
  * 1. NO use_frameworks! — keeps pods as static libraries, solving Problem A.
  * 2. use_modular_headers! globally — gives Firebase Swift pods the module maps
  *    they need for their Obj-C deps, solving Problem B.
- * 3. post_install hook that strips ALL -fmodule-map-file flags pointing to
- *    Pods/Headers/ paths from ALL pod xcconfig files, solving Problem C for
- *    every affected pod (gRPC-Core, abseil, BoringSSL-GRPC, …). Each pod's
- *    own module.modulemap is still found via HEADER_SEARCH_PATHS.
+ * 3. post_install hook that CREATES the missing modulemap files at the
+ *    Pods/Headers/{Public,Private}/<header_dir>/<pod>.modulemap paths Xcode
+ *    expects, by copying from the real files at Pods/Target Support Files/
+ *    <pod>/<pod>.modulemap. Solves Problem C for every affected pod
+ *    (gRPC-Core, abseil, BoringSSL-GRPC, …) regardless of where the missing
+ *    reference is set (xcconfig flags, MODULEMAP_FILE, pbxproj, etc.).
  */
 const { withDangerousMod } = require("@expo/config-plugins");
 const fs = require("fs");
@@ -50,20 +52,44 @@ const MOD_HDR_BLOCK  = `\n${MOD_HDR_MARKER}\nuse_modular_headers!\n${MOD_HDR_END
 const GRPC_MARKER = "# === BEGIN grpc-core-modulemap-fix ===";
 const GRPC_END    = "# === END grpc-core-modulemap-fix ===";
 // Code block injected before react_native_post_install call (inside its block).
+//
+// STRATEGY: instead of trying to STRIP modulemap references (which appear in
+// many places: -fmodule-map-file flags, MODULEMAP_FILE setting, MODULEMAP_PRIVATE_FILE
+// setting, and pbxproj entries), we instead CREATE the missing modulemap files
+// at the exact paths Xcode is looking for. The real modulemap content already
+// exists at Pods/Target Support Files/<pod>/<pod>.modulemap — we just need to
+// copy it into the Pods/Headers/Public|Private/<header_dir>/ locations that
+// CocoaPods should have populated but didn't.
 const GRPC_INLINE = `  ${GRPC_MARKER}
-  # use_modular_headers! globally generates module map symlinks for ALL pods at
-  # Pods/Headers/Public|Private/<pod>/<pod>.modulemap and injects those paths as
-  # -fmodule-map-file= flags in every dependent pod's .xcconfig files.
-  # Several pods (gRPC-Core, abseil, BoringSSL-GRPC, ...) ship their own
-  # module.modulemap but the CocoaPods-generated symlinks are never reliably
-  # created, causing "module map file not found" at Xcode compile time.
-  # FIX: strip ALL -fmodule-map-file flags that reference Pods/Headers/ paths
-  # from ALL pod xcconfig files. Pods that ship their own module.modulemap will
-  # still be found via HEADER_SEARCH_PATHS.
-  Dir.glob("#{installer.sandbox.root}/Target Support Files/**/*.xcconfig").each do |f|
-    content = File.read(f)
-    new_content = content.gsub(/-fmodule-map-file=\\S*Pods\\/Headers\\S*/, '')
-    File.write(f, new_content) if new_content != content
+  # When use_modular_headers! is set globally, CocoaPods generates modulemap files
+  # at Pods/Target Support Files/<pod>/<pod>.modulemap and references them from
+  # build settings as Pods/Headers/Public|Private/<header_dir>/<pod>.modulemap.
+  # For pods like gRPC-Core, abseil, BoringSSL-GRPC the destination symlinks
+  # never get created, causing "module map file not found" at Xcode build time.
+  # FIX: walk every modulemap in Target Support Files and copy it into every
+  # Pods/Headers/{Public,Private} subdirectory where it might be referenced.
+  require 'fileutils'
+  pods_root = installer.sandbox.root.to_s
+  Dir.glob("#{pods_root}/Target Support Files/*/*.modulemap").each do |src|
+    pod_name = File.basename(src, ".modulemap")
+    # Place under both Public and Private, in every header subdir for the pod.
+    ['Public', 'Private'].each do |scope|
+      scope_dir = "#{pods_root}/Headers/#{scope}"
+      next unless Dir.exist?(scope_dir)
+      # Iterate every per-pod header subdirectory; cover both the canonical
+      # pod-name folder and any "alias" folders (e.g. gRPC-Core ships headers
+      # under Headers/Public/grpc/, abseil under Headers/Public/absl/, etc.).
+      Dir.glob("#{scope_dir}/*/").each do |hdr_dir|
+        dst = File.join(hdr_dir, "#{pod_name}.modulemap")
+        next if File.exist?(dst) || File.symlink?(dst)
+        begin
+          FileUtils.cp(src, dst)
+          Pod::UI.puts "  modulemap-fix: created #{dst.sub(pods_root, 'Pods')}"
+        rescue => e
+          Pod::UI.puts "  modulemap-fix: skipped #{dst}: #{e.message}"
+        end
+      end
+    end
   end
   ${GRPC_END}
 `;
