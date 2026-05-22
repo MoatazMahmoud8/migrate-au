@@ -36,6 +36,14 @@ import {
 import { tap as hapticTap, success as hapticSuccess } from '../utils/haptics';
 import { getProfile, saveProfile } from '../utils/storage';
 import { hasExceededLimit, incrementUsage, getRemainingUses } from '../utils/paywall';
+import {
+  SalariesSnapshot,
+  getSalaries,
+  refreshSalaries,
+  getSalaryFor,
+  formatAnnualShort,
+  formatAnnualFull,
+} from '../utils/salaries';
 import { PaywallModal } from '../components/PaywallModal';
 
 type ListFilter = 'All' | SkillList;
@@ -324,6 +332,10 @@ export default function OccupationsScreen() {
   const [expandedState, setExpandedState] = useState<StateCode | null>(null);
   const [profile, setProfile] = useState<any>(null);
   const [showPaywall, setShowPaywall] = useState(false);
+  const [salaries, setSalaries] = useState<SalariesSnapshot>({
+    snapshotDate: '1970-01-01',
+    salaries: {},
+  });
 
   useEffect(() => {
     (async () => {
@@ -336,6 +348,9 @@ export default function OccupationsScreen() {
       const p = await getProfile();
       setProfile(p);
       setSavedAnzsco(p.anzscoCode ?? '');
+      // Salaries: show cache first, refresh in background.
+      setSalaries(await getSalaries());
+      refreshSalaries().then((s) => setSalaries(s)).catch(() => {});
     })();
   }, []);
 
@@ -363,13 +378,15 @@ export default function OccupationsScreen() {
   const onRefresh = async () => {
     setRefreshing(true);
     hapticTap();
-    const [{ snapshot }, reqResult] = await Promise.all([
+    const [{ snapshot }, reqResult, salarySnap] = await Promise.all([
       refreshSkilledOccupations({ force: true }),
       refreshStateRequirements({ force: true }),
+      refreshSalaries({ force: true }),
     ]);
     setItems(mergeStateRequirements(snapshot.items, reqResult.snapshot));
     setSnapshotDate(snapshot.snapshotDate);
     setLastChecked(await getOccupationsLastCheckedAt());
+    setSalaries(salarySnap);
     setRefreshing(false);
   };
 
@@ -537,7 +554,9 @@ export default function OccupationsScreen() {
             />
           }
           keyboardShouldPersistTaps="handled"
-          renderItem={({ item }) => (
+          renderItem={({ item }) => {
+            const salary = getSalaryFor(salaries, item.anzsco);
+            return (
             <TouchableOpacity
               style={[styles.card, savedAnzsco === item.anzsco && styles.cardSaved]}
               activeOpacity={0.85}
@@ -573,13 +592,20 @@ export default function OccupationsScreen() {
                       </Text>
                     </View>
                   )}
+                  {salary && (
+                    <View style={styles.salaryChip}>
+                      <Ionicons name="cash-outline" size={11} color={Colors.success} />
+                      <Text style={styles.salaryChipText}>{formatAnnualShort(salary.annualSalary)}/yr</Text>
+                    </View>
+                  )}
                 </View>
                 <Text style={styles.visasText} numberOfLines={1}>
                   {item.visas.map((v) => `SC ${v}`).join(' · ')}
                 </Text>
               </View>
             </TouchableOpacity>
-          )}
+            );
+          }}
           ListEmptyComponent={
             <View style={styles.empty}>
               <Ionicons name="search-outline" size={32} color={Colors.textMuted} />
@@ -613,6 +639,38 @@ export default function OccupationsScreen() {
 
                   <Text style={styles.modalTitle}>{selected.name}</Text>
                   <Text style={styles.modalGroup}>{selected.group}</Text>
+
+                  {(() => {
+                    const salary = getSalaryFor(salaries, selected.anzsco);
+                    if (!salary) return null;
+                    return (
+                      <View style={styles.salaryCard}>
+                        <View style={styles.salaryCardHead}>
+                          <Ionicons name="cash-outline" size={16} color={Colors.success} />
+                          <Text style={styles.salaryCardTitle}>Median earnings (national)</Text>
+                        </View>
+                        <View style={styles.salaryCardRow}>
+                          <Text style={styles.salaryCardValue}>
+                            {formatAnnualFull(salary.annualSalary)}
+                          </Text>
+                          <Text style={styles.salaryCardUnit}>AUD / year</Text>
+                        </View>
+                        <Text style={styles.salaryCardSub}>
+                          ${salary.weeklyEarnings.toLocaleString('en-AU')} / week
+                          {salary.sourceLevel === '4-digit' ? ' · unit-group figure' : ''}
+                        </Text>
+                        <TouchableOpacity
+                          onPress={() => { hapticTap(); Linking.openURL(salary.sourceUrl); }}
+                          style={styles.salaryCardLink}
+                        >
+                          <Text style={styles.salaryCardLinkText}>
+                            Source: Jobs and Skills Australia
+                          </Text>
+                          <Ionicons name="open-outline" size={12} color={Colors.accent} />
+                        </TouchableOpacity>
+                      </View>
+                    );
+                  })()}
 
                   <Text style={styles.sectionLabel}>Appears on</Text>
                   <View style={styles.chipRow}>
@@ -1141,6 +1199,75 @@ const styles = StyleSheet.create({
   },
   listChipText: { fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.4 },
   visasText: { fontSize: 11, color: Colors.textSecondary, flexShrink: 1, textAlign: 'right' },
+
+  salaryChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: Radius.sm,
+    borderWidth: 1,
+    backgroundColor: `${Colors.success}1A`,
+    borderColor: `${Colors.success}66`,
+  },
+  salaryChipText: {
+    fontSize: 10,
+    fontWeight: FontWeight.bold,
+    color: Colors.success,
+    letterSpacing: 0.2,
+  },
+  salaryCard: {
+    marginTop: Spacing.md,
+    padding: Spacing.md,
+    borderRadius: Radius.md,
+    backgroundColor: `${Colors.success}10`,
+    borderWidth: 1,
+    borderColor: `${Colors.success}40`,
+    gap: 4,
+  },
+  salaryCardHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  salaryCardTitle: {
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.bold,
+    color: Colors.textPrimary,
+    letterSpacing: 0.3,
+  },
+  salaryCardRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 6,
+    marginTop: 2,
+  },
+  salaryCardValue: {
+    fontSize: 22,
+    fontWeight: FontWeight.bold,
+    color: Colors.success,
+  },
+  salaryCardUnit: {
+    fontSize: FontSize.xs,
+    color: Colors.textMuted,
+    letterSpacing: 0.3,
+  },
+  salaryCardSub: {
+    fontSize: FontSize.xs,
+    color: Colors.textSecondary,
+  },
+  salaryCardLink: {
+    marginTop: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  salaryCardLinkText: {
+    fontSize: FontSize.xs,
+    color: Colors.accent,
+    textDecorationLine: 'underline',
+  },
 
   empty: { alignItems: 'center', paddingTop: 60, gap: 10 },
   emptyText: { color: Colors.textMuted, fontSize: FontSize.sm },
