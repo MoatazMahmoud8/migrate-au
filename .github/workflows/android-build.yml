@@ -1,16 +1,10 @@
 name: Android Build (Local)
 
+# IMPORTANT: This workflow is disabled on push to preserve GitHub Actions minutes
+# (the repo is private and each run is ~60-90 minutes). Use EAS for normal builds:
+#   eas build --platform android --profile production
+# Trigger this workflow manually from the Actions tab only when EAS is unavailable.
 on:
-  push:
-    branches: [main]
-    paths:
-      - '**.ts'
-      - '**.tsx'
-      - '**.js'
-      - '**.json'
-      - 'app.json'
-      - 'eas.json'
-      - '.github/workflows/android-build.yml'
   workflow_dispatch:
 
 jobs:
