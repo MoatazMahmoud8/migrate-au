@@ -227,7 +227,7 @@ export function searchOccupations(
   limit = 200
 ): SkilledOccupation[] {
   const q = query.trim().toLowerCase();
-  if (!q) return items.slice(0, limit);
+  if (!q) return items;  // Return all items without limit when no query
   const tokens = q.split(/\s+/).filter(Boolean);
   const matches = items.filter((o) => {
     const haystack = [
