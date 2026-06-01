@@ -22,12 +22,19 @@ import { validateOccupationsSnapshot } from './remoteSchema';
 export const SKILL_OCCUPATIONS_REMOTE_URL =
   'https://migrateau.jsmglobal.xyz/skilled-occupations.json';
 
+/** Schema: { snapshotDate: string, items: SkilledOccupation[] }
+ * Comprehensive ANZSCO occupations from Jobs and Skills Australia (~1,236 entries). */
+export const ALL_ANZSCO_OCCUPATIONS_REMOTE_URL =
+  'https://swift-shore-238707.web.app/all-anzsco-occupations.json';
+
 /** Schema: { snapshotDate: string, requirements: { [anzsco]: { [StateCode]: StateRequirement } } } */
 export const STATE_REQUIREMENTS_REMOTE_URL =
   'https://migrateau.jsmglobal.xyz/state-occupation-requirements.json';
 
 const CACHE_KEY = '@migrate_au_skilled_occupations';
 const LAST_CHECK_KEY = '@migrate_au_skilled_occupations_last_check';
+const ALL_ANZSCO_CACHE_KEY = '@migrate_au_all_anzsco_occupations';
+const ALL_ANZSCO_LAST_CHECK_KEY = '@migrate_au_all_anzsco_last_check';
 const STATE_REQ_CACHE_KEY = '@migrate_au_state_requirements';
 const STATE_REQ_LAST_CHECK_KEY = '@migrate_au_state_requirements_last_check';
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
@@ -49,16 +56,62 @@ export interface OccupationChange {
   detail?: string;
 }
 
-/** Read the current cached snapshot, falling back to the bundled one. */
+/**
+ * Read the current cached snapshot. Priority:
+ *  1. Cached all-anzsco (comprehensive 1,236+) merged with federal list metadata
+ *  2. Cached skilled-occupations (422, federal lists only)
+ *  3. Bundled data (422, federal lists only)
+ */
 export async function getSkilledOccupations(): Promise<OccupationsSnapshot> {
+  // Try all-anzsco cache first
+  try {
+    const raw = await AsyncStorage.getItem(ALL_ANZSCO_CACHE_KEY);
+    if (raw) {
+      const allAnzsco = JSON.parse(raw) as OccupationsSnapshot;
+      // Also fetch skilled metadata to merge in federal list info
+      const skilledRaw = await AsyncStorage.getItem(CACHE_KEY);
+      if (skilledRaw) {
+        const skilled = JSON.parse(skilledRaw) as OccupationsSnapshot;
+        return mergeAllAnzscoWithSkilled(allAnzsco, skilled);
+      }
+      // Return all-anzsco with bundled skilled metadata
+      const bundledSkilled: OccupationsSnapshot = {
+        snapshotDate: SKILL_OCCUPATIONS_SNAPSHOT_DATE,
+        items: SKILLED_OCCUPATIONS,
+      };
+      return mergeAllAnzscoWithSkilled(allAnzsco, bundledSkilled);
+    }
+  } catch {}
+
+  // Fall back to skilled-occupations cache or bundled data
   try {
     const raw = await AsyncStorage.getItem(CACHE_KEY);
     if (raw) return JSON.parse(raw) as OccupationsSnapshot;
   } catch {}
+
   return {
     snapshotDate: SKILL_OCCUPATIONS_SNAPSHOT_DATE,
     items: SKILLED_OCCUPATIONS,
   };
+}
+
+/**
+ * Merge all-anzsco with skilled list metadata. For each occupation in all-anzsco:
+ *  - If it exists in skilled lists, use that version (with full metadata)
+ *  - Otherwise, use the minimal version from all-anzsco
+ */
+function mergeAllAnzscoWithSkilled(
+  allAnzsco: OccupationsSnapshot,
+  skilled: OccupationsSnapshot
+): OccupationsSnapshot {
+  const skilledMap = new Map(skilled.items.map((o) => [o.anzsco, o] as const));
+  const merged = allAnzsco.items.map((o) => skilledMap.get(o.anzsco) ?? o);
+  // Use the newer snapshot date
+  const snapshotDate =
+    new Date(allAnzsco.snapshotDate) > new Date(skilled.snapshotDate)
+      ? allAnzsco.snapshotDate
+      : skilled.snapshotDate;
+  return { snapshotDate, items: merged };
 }
 
 /** Returns ISO timestamp of when we last successfully checked for updates. */
@@ -214,6 +267,71 @@ export async function refreshSkilledOccupations(
       snapshot: await getSkilledOccupations(),
       changes: [],
     };
+  }
+}
+
+/**
+ * Refresh the comprehensive all-anzsco occupations list from Firebase.
+ * This is called on app startup and daily to load the full ANZSCO dataset.
+ * Does not trigger change notifications (these are for skilled-occupations only).
+ */
+export async function refreshAllAnzscoOccupations(
+  opts: { force?: boolean } = {}
+): Promise<{ updated: boolean; snapshot: OccupationsSnapshot }> {
+  const last = await getAllAnzscoLastCheckedAt();
+  if (last) {
+    const age = Date.now() - new Date(last).getTime();
+    if (!opts.force && age < ONE_DAY_MS) {
+      return {
+        updated: false,
+        snapshot: await getSkilledOccupations(),
+      };
+    }
+    if (opts.force && age < MIN_FORCE_INTERVAL_MS) {
+      return {
+        updated: false,
+        snapshot: await getSkilledOccupations(),
+      };
+    }
+  }
+
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
+    let res: Response;
+    try {
+      res = await fetch(ALL_ANZSCO_OCCUPATIONS_REMOTE_URL, {
+        method: 'GET',
+        signal: ctrl.signal,
+      });
+    } finally {
+      clearTimeout(timer);
+    }
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const contentLength = Number(res.headers.get('content-length') ?? 0);
+    if (contentLength && contentLength > 5 * 1024 * 1024) {
+      throw new Error('payload too large');
+    }
+    const json = await res.json();
+    const remote = validateOccupationsSnapshot(json);
+    await AsyncStorage.setItem(ALL_ANZSCO_LAST_CHECK_KEY, new Date().toISOString());
+    await AsyncStorage.setItem(ALL_ANZSCO_CACHE_KEY, JSON.stringify(remote));
+    return { updated: true, snapshot: remote };
+  } catch (err) {
+    console.warn('[allAnzsco] refresh failed:', err);
+    return {
+      updated: false,
+      snapshot: await getSkilledOccupations(),
+    };
+  }
+}
+
+/** Returns ISO timestamp of when we last successfully checked for all-anzsco updates. */
+async function getAllAnzscoLastCheckedAt(): Promise<string | null> {
+  try {
+    return await AsyncStorage.getItem(ALL_ANZSCO_LAST_CHECK_KEY);
+  } catch {
+    return null;
   }
 }
 

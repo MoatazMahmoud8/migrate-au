@@ -29,6 +29,7 @@ import {
   getSkilledOccupations,
   getOccupationsLastCheckedAt,
   refreshSkilledOccupations,
+  refreshAllAnzscoOccupations,
   refreshStateRequirements,
   mergeStateRequirements,
   searchOccupations,
@@ -351,6 +352,16 @@ export default function OccupationsScreen() {
       // Salaries: show cache first, refresh in background.
       setSalaries(await getSalaries());
       refreshSalaries().then((s) => setSalaries(s)).catch(() => {});
+      // Refresh comprehensive all-anzsco list in background
+      refreshAllAnzscoOccupations()
+        .then((res) => {
+          if (res.updated) {
+            const merged2 = mergeStateRequirements(res.snapshot.items, reqSnap.snapshot);
+            setItems(merged2);
+            setSnapshotDate(res.snapshot.snapshotDate);
+          }
+        })
+        .catch(() => {});
     })();
   }, []);
 
@@ -378,13 +389,15 @@ export default function OccupationsScreen() {
   const onRefresh = async () => {
     setRefreshing(true);
     hapticTap();
-    const [{ snapshot }, reqResult, salarySnap] = await Promise.all([
+    const [{ snapshot }, { updated: allAnzscoUpdated, snapshot: allAnzscoSnap }, reqResult, salarySnap] = await Promise.all([
       refreshSkilledOccupations({ force: true }),
+      refreshAllAnzscoOccupations({ force: true }),
       refreshStateRequirements({ force: true }),
       refreshSalaries({ force: true }),
     ]);
-    setItems(mergeStateRequirements(snapshot.items, reqResult.snapshot));
-    setSnapshotDate(snapshot.snapshotDate);
+    const finalSnapshot = allAnzscoUpdated ? allAnzscoSnap : snapshot;
+    setItems(mergeStateRequirements(finalSnapshot.items, reqResult.snapshot));
+    setSnapshotDate(finalSnapshot.snapshotDate);
     setLastChecked(await getOccupationsLastCheckedAt());
     setSalaries(salarySnap);
     setRefreshing(false);
