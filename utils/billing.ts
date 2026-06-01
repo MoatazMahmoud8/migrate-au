@@ -11,7 +11,7 @@ import { UserSubscription, BillingCycle, PaymentMethod } from '../types/subscrip
 export const PRICING = {
   monthly: 12.99,    // AUD / month
   yearly: 79.99,     // AUD / year (~$6.67/mo — 49% discount)
-  lifetime: 199.00,  // AUD one-time
+  lifetime: 199.99,  // AUD one-time
 };
 
 const TRIAL_DAYS = 7;
