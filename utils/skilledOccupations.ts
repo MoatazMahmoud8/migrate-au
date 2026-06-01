@@ -472,7 +472,12 @@ export async function refreshStateRequirements(
     }
 
     await AsyncStorage.setItem(STATE_REQ_LAST_CHECK_KEY, new Date().toISOString());
-    await AsyncStorage.setItem(STATE_REQ_CACHE_KEY, JSON.stringify(json));
+    try {
+      await AsyncStorage.setItem(STATE_REQ_CACHE_KEY, JSON.stringify(json));
+    } catch (storageErr) {
+      // Payload may exceed localStorage quota on web (~5-10MB). Keep in memory and continue.
+      console.warn('[stateRequirements] could not persist to cache (quota?):', storageErr);
+    }
     return { updated: true, snapshot: json };
   } catch (err) {
     console.warn('[stateRequirements] refresh failed:', err);
