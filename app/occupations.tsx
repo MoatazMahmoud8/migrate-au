@@ -34,6 +34,12 @@ import {
   mergeStateRequirements,
   searchOccupations,
 } from '../utils/skilledOccupations';
+import {
+  getDailyUpdates,
+  buildVisaMetaMap,
+  DEFAULT_VISA_META,
+  DailyUpdates,
+} from '../utils/dailyUpdates';
 import { tap as hapticTap, success as hapticSuccess } from '../utils/haptics';
 import { getProfile, saveProfile } from '../utils/storage';
 import { hasExceededLimit, incrementUsage, getRemainingUses } from '../utils/paywall';
@@ -441,6 +447,10 @@ export default function OccupationsScreen() {
   const [selectedVisa, setSelectedVisa] = useState<'190' | '491' | '482'>('190');
   const [profile, setProfile] = useState<any>(null);
   const [showPaywall, setShowPaywall] = useState(false);
+  const [dailyUpdates, setDailyUpdates] = useState<DailyUpdates | null>(null);
+  const visaMeta = useMemo(() => buildVisaMetaMap(dailyUpdates), [dailyUpdates]);
+  const [dailyUpdates, setDailyUpdates] = useState<DailyUpdates | null>(null);
+  const visaMeta = useMemo(() => buildVisaMetaMap(dailyUpdates), [dailyUpdates]);
   const [salaries, setSalaries] = useState<SalariesSnapshot>({
     snapshotDate: '1970-01-01',
     salaries: {},
@@ -460,6 +470,8 @@ export default function OccupationsScreen() {
       // Salaries: show cache first, refresh in background.
       setSalaries(await getSalaries());
       refreshSalaries().then((s) => setSalaries(s)).catch(() => {});
+      // Daily-monitor data (cost, processing cutoff, next invitation round)
+      getDailyUpdates().then((u) => setDailyUpdates(u)).catch(() => {});
       // Refresh comprehensive all-anzsco list in background
       refreshAllAnzscoOccupations()
         .then((res) => {
@@ -916,6 +928,48 @@ export default function OccupationsScreen() {
                                 <Text style={[styles.visaDescription, { color: Colors.textMuted }]}>
                                   {VISA_DESCRIPTIONS[selectedVisa]}
                                 </Text>
+
+                                {/* Live visa metadata (cost, processing cutoff) */}
+                                {(() => {
+                                  const meta = visaMeta[selectedVisa];
+                                  if (!meta) return null;
+                                  return (
+                                    <View style={styles.visaMetaStrip}>
+                                      {meta.cost && (
+                                        <View style={styles.visaMetaPill}>
+                                          <Ionicons name="card-outline" size={11} color={col} />
+                                          <Text style={[styles.visaMetaText, { color: col }]}>
+                                            {meta.cost}
+                                          </Text>
+                                        </View>
+                                      )}
+                                      {meta.processingCutoffLabel && (
+                                        <View style={styles.visaMetaPill}>
+                                          <Ionicons name="time-outline" size={11} color={col} />
+                                          <Text style={[styles.visaMetaText, { color: col }]}>
+                                            Processing: {meta.processingCutoffLabel}
+                                          </Text>
+                                        </View>
+                                      )}
+                                      {meta.stayDuration && (
+                                        <View style={styles.visaMetaPill}>
+                                          <Ionicons name="hourglass-outline" size={11} color={col} />
+                                          <Text style={[styles.visaMetaText, { color: col }]}>
+                                            Stay: {meta.stayDuration}
+                                          </Text>
+                                        </View>
+                                      )}
+                                      {dailyUpdates?.nextRound?.subclass === '189' && selectedVisa !== '482' && (
+                                        <View style={[styles.visaMetaPill, { backgroundColor: `${col}25` }]}>
+                                          <Ionicons name="calendar-outline" size={11} color={col} />
+                                          <Text style={[styles.visaMetaText, { color: col, fontWeight: '700' }]}>
+                                            Next round: {dailyUpdates.nextRound.date}
+                                          </Text>
+                                        </View>
+                                      )}
+                                    </View>
+                                  );
+                                })()}
 
                                 <View style={styles.stateReqRows}>
                                   {req.minSalary != null && (
@@ -1646,6 +1700,28 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
     lineHeight: 16,
+  },
+  visaMetaStrip: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    paddingHorizontal: Spacing.md,
+    paddingBottom: Spacing.sm,
+  },
+  visaMetaPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: Radius.sm,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+  },
+  visaMetaText: {
+    fontSize: 10,
+    fontWeight: '600',
   },
 
   // Australian Graduate Pathway Card
