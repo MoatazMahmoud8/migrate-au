@@ -459,7 +459,7 @@ export async function refreshStateRequirements(
     }
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const contentLength = Number(res.headers.get('content-length') ?? 0);
-    if (contentLength && contentLength > 5 * 1024 * 1024) {
+    if (contentLength && contentLength > 25 * 1024 * 1024) {
       throw new Error('state-requirements payload too large');
     }
     const json = (await res.json()) as StateRequirementsSnapshot;

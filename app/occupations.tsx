@@ -86,6 +86,103 @@ const STATE_COLORS: Record<StateCode, string> = {
   NT: '#FFB800',
 };
 
+// Australian University Graduate Pathways by State
+const STATE_UNIVERSITIES: Record<StateCode, string[]> = {
+  NSW: [
+    'University of Sydney',
+    'UNSW Sydney',
+    'University of Technology Sydney (UTS)',
+    'Macquarie University',
+    'Western Sydney University',
+    'University of Newcastle',
+    'University of Wollongong',
+  ],
+  VIC: [
+    'University of Melbourne',
+    'Monash University',
+    'RMIT University',
+    'Deakin University',
+    'La Trobe University',
+    'Swinburne University',
+  ],
+  QLD: [
+    'University of Queensland (UQ)',
+    'Queensland University of Technology (QUT)',
+    'Griffith University',
+    'James Cook University (JCU)',
+    'Bond University',
+    'Central Queensland University (CQU)',
+  ],
+  WA: [
+    'University of Western Australia (UWA)',
+    'Curtin University',
+    'Murdoch University',
+    'Edith Cowan University (ECU)',
+  ],
+  SA: [
+    'University of Adelaide',
+    'Flinders University',
+    'University of South Australia (UniSA)',
+    'Carnegie Mellon University Adelaide',
+    'Torrens University',
+  ],
+  TAS: [
+    'University of Tasmania (UTAS)',
+  ],
+  ACT: [
+    'Australian National University (ANU)',
+    'University of Canberra (UC)',
+    'UNSW Canberra (ADFA)',
+    'Australian Catholic University',
+  ],
+  NT: [
+    'Charles Darwin University (CDU)',
+  ],
+};
+
+const GRADUATE_BENEFITS: Record<StateCode, string[]> = {
+  NSW: [
+    'NSW Skills List Stream 2 (Living in NSW)',
+    'Wider occupation eligibility',
+    'Lower experience requirements',
+  ],
+  VIC: [
+    'Special pathway for researchers (PhD)',
+    'Lower salary threshold for academics',
+    'Faster processing',
+  ],
+  QLD: [
+    'Access to QLD Skilled Graduate Stream',
+    'Lower salary thresholds',
+    'Access to regional QLD opportunities',
+  ],
+  WA: [
+    'Access to WA Graduate Stream',
+    'Reduced salary requirements',
+    'Special pathway for healthcare/STEM',
+  ],
+  SA: [
+    'Exclusive Supplementary Skilled List access',
+    'Lower salary threshold',
+    'Easier nomination process',
+  ],
+  TAS: [
+    'Lower salary requirement (-15%)',
+    'Reduced experience requirement',
+    'Exclusive occupations available',
+  ],
+  ACT: [
+    'Access to ACT Critical Skills List',
+    'Lower salary requirement',
+    'Faster processing through ACT matrix',
+  ],
+  NT: [
+    'Most flexible requirements in Australia',
+    'Lower salary threshold',
+    'Direct pathway to permanent residence',
+  ],
+};
+
 // ─── English requirements per visa subclass ───────────────────────────────
 interface EnglishReq {
   level: string;
@@ -893,6 +990,46 @@ export default function OccupationsScreen() {
                                   </View>
                                 )}
 
+                                {/* Australian University Graduate Pathway */}
+                                {req.hasGraduatePathway && (
+                                  <View style={[styles.gradPathwayCard, { borderColor: `${col}60`, backgroundColor: `${col}0D` }]}>
+                                    <View style={styles.gradPathwayHeader}>
+                                      <Ionicons name="school" size={16} color={col} />
+                                      <Text style={[styles.gradPathwayTitle, { color: col }]}>
+                                        🎓 {expandedState} Graduate Pathway Available
+                                      </Text>
+                                    </View>
+                                    <Text style={styles.gradPathwayDesc}>
+                                      Graduates of {expandedState} universities get an easier, faster nomination pathway with reduced salary requirements.
+                                    </Text>
+                                    <Text style={[styles.gradPathwaySubtitle, { color: col }]}>
+                                      Eligible Universities:
+                                    </Text>
+                                    <View style={styles.gradPathwayUnis}>
+                                      {(STATE_UNIVERSITIES[expandedState] || []).slice(0, 4).map((uni, i) => (
+                                        <View key={i} style={styles.gradPathwayUniRow}>
+                                          <Ionicons name="checkmark-circle" size={12} color={col} />
+                                          <Text style={styles.gradPathwayUniText}>{uni}</Text>
+                                        </View>
+                                      ))}
+                                      {STATE_UNIVERSITIES[expandedState]?.length > 4 && (
+                                        <Text style={styles.gradPathwayUniMore}>
+                                          +{STATE_UNIVERSITIES[expandedState].length - 4} more universities
+                                        </Text>
+                                      )}
+                                    </View>
+                                    <Text style={[styles.gradPathwaySubtitle, { color: col, marginTop: 8 }]}>
+                                      Pathway Benefits:
+                                    </Text>
+                                    {(GRADUATE_BENEFITS[expandedState] || []).map((benefit, i) => (
+                                      <View key={i} style={styles.gradPathwayBenefitRow}>
+                                        <Text style={[styles.gradPathwayBenefitDot, { color: col }]}>⚡</Text>
+                                        <Text style={styles.gradPathwayBenefitText}>{benefit}</Text>
+                                      </View>
+                                    ))}
+                                  </View>
+                                )}
+
                                 <TouchableOpacity
                                   style={[styles.stateReqLink, { borderColor: `${col}40` }]}
                                   onPress={() => Linking.openURL(req.sourceUrl)}
@@ -1508,6 +1645,75 @@ const styles = StyleSheet.create({
     fontSize: FontSize.xs,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
+    lineHeight: 16,
+  },
+
+  // Australian Graduate Pathway Card
+  gradPathwayCard: {
+    marginHorizontal: Spacing.md,
+    marginTop: Spacing.sm,
+    marginBottom: Spacing.sm,
+    padding: Spacing.md,
+    borderRadius: Radius.md,
+    borderWidth: 1,
+  },
+  gradPathwayHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+    marginBottom: Spacing.xs,
+  },
+  gradPathwayTitle: {
+    fontSize: FontSize.xs,
+    fontWeight: FontWeight.bold,
+    flex: 1,
+  },
+  gradPathwayDesc: {
+    fontSize: FontSize.xs,
+    color: Colors.textSecondary,
+    lineHeight: 16,
+    marginBottom: Spacing.sm,
+  },
+  gradPathwaySubtitle: {
+    fontSize: 10,
+    fontWeight: FontWeight.bold,
+    letterSpacing: 0.5,
+    marginBottom: Spacing.xs,
+    textTransform: 'uppercase',
+  },
+  gradPathwayUnis: {
+    gap: 4,
+  },
+  gradPathwayUniRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  gradPathwayUniText: {
+    fontSize: FontSize.xs,
+    color: Colors.textPrimary,
+    flex: 1,
+  },
+  gradPathwayUniMore: {
+    fontSize: 10,
+    color: Colors.textMuted,
+    fontStyle: 'italic',
+    marginTop: 2,
+  },
+  gradPathwayBenefitRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 6,
+    marginBottom: 3,
+  },
+  gradPathwayBenefitDot: {
+    fontSize: 12,
+    marginTop: -1,
+  },
+  gradPathwayBenefitText: {
+    fontSize: FontSize.xs,
+    color: Colors.textSecondary,
+    flex: 1,
     lineHeight: 16,
   },
 
