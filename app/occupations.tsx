@@ -50,6 +50,16 @@ import { PaywallModal } from '../components/PaywallModal';
 type ListFilter = 'All' | SkillList;
 type JurisdictionFilter = 'All' | 'Federal' | StateCode;
 
+/** Deduplicate occupations by ANZSCO code, keeping first occurrence */
+function deduplicateOccupations(items: SkilledOccupation[]): SkilledOccupation[] {
+  const seen = new Set<string>();
+  return items.filter((o) => {
+    if (seen.has(o.anzsco)) return false;
+    seen.add(o.anzsco);
+    return true;
+  });
+}
+
 const LIST_COLORS: Record<SkillList, string> = {
   CSOL: Colors.accent,
   MLTSSL: Colors.success,
@@ -331,6 +341,7 @@ export default function OccupationsScreen() {
   const [selected, setSelected] = useState<SkilledOccupation | null>(null);
   const [savedAnzsco, setSavedAnzsco] = useState<string>('');
   const [expandedState, setExpandedState] = useState<StateCode | null>(null);
+  const [selectedVisa, setSelectedVisa] = useState<'190' | '491' | '482'>('190');
   const [profile, setProfile] = useState<any>(null);
   const [showPaywall, setShowPaywall] = useState(false);
   const [salaries, setSalaries] = useState<SalariesSnapshot>({
@@ -343,7 +354,7 @@ export default function OccupationsScreen() {
       const snap = await getSkilledOccupations();
       const reqSnap = await refreshStateRequirements();
       const merged = mergeStateRequirements(snap.items, reqSnap.snapshot);
-      setItems(merged);
+      setItems(deduplicateOccupations(merged));
       setSnapshotDate(snap.snapshotDate);
       setLastChecked(await getOccupationsLastCheckedAt());
       const p = await getProfile();
@@ -357,7 +368,7 @@ export default function OccupationsScreen() {
         .then((res) => {
           if (res.updated) {
             const merged2 = mergeStateRequirements(res.snapshot.items, reqSnap.snapshot);
-            setItems(merged2);
+            setItems(deduplicateOccupations(merged2));
             setSnapshotDate(res.snapshot.snapshotDate);
           }
         })
@@ -396,7 +407,7 @@ export default function OccupationsScreen() {
       refreshSalaries({ force: true }),
     ]);
     const finalSnapshot = allAnzscoUpdated ? allAnzscoSnap : snapshot;
-    setItems(mergeStateRequirements(finalSnapshot.items, reqResult.snapshot));
+    setItems(deduplicateOccupations(mergeStateRequirements(finalSnapshot.items, reqResult.snapshot)));
     setSnapshotDate(finalSnapshot.snapshotDate);
     setLastChecked(await getOccupationsLastCheckedAt());
     setSalaries(salarySnap);
@@ -750,103 +761,173 @@ export default function OccupationsScreen() {
                         })}
                       </View>
 
-                      {/* Expanded state requirements panel */}
+                      {/* Expanded state requirements panel with visa tabs */}
                       {expandedState && selected.stateRequirements?.[expandedState] && (() => {
-                        const req = selected.stateRequirements[expandedState]!;
+                        const stateReqs = selected.stateRequirements[expandedState]!;
+                        const req = (stateReqs as any)?.[selectedVisa];
                         const col = STATE_COLORS[expandedState];
+                        
+                        const VISA_LABELS: Record<'190' | '491' | '482', string> = {
+                          '190': 'SC 190\nPermanent',
+                          '491': 'SC 491\nRegional',
+                          '482': 'SC 482\nEmployer',
+                        };
+                        
+                        const VISA_DESCRIPTIONS: Record<'190' | '491' | '482', string> = {
+                          '190': 'Skilled Independent — Permanent visa',
+                          '491': 'Skilled Regional — 5-year provisional',
+                          '482': 'Temporary Skill Shortage — Employer-sponsored',
+                        };
+                        
                         return (
                           <View style={[styles.stateReqPanel, { borderColor: `${col}40` }]}>
                             <View style={styles.stateReqHeader}>
                               <View style={[styles.stateReqDot, { backgroundColor: col }]} />
                               <Text style={[styles.stateReqTitle, { color: col }]}>
-                                {expandedState} — Special Requirements
+                                {expandedState} — Visa Requirements
                               </Text>
-                              {!req.open && (
-                                <View style={styles.closedBadge}>
-                                  <Text style={styles.closedBadgeText}>Closed</Text>
-                                </View>
-                              )}
                             </View>
 
-                            <View style={styles.stateReqRows}>
-                              {req.minSalary != null && (
-                                <View style={styles.stateReqRow}>
-                                  <Ionicons name="cash-outline" size={13} color={Colors.textMuted} />
-                                  <Text style={styles.stateReqKey}>Min. salary</Text>
-                                  <Text style={[styles.stateReqVal, { color: col }]}>
-                                    ${req.minSalary.toLocaleString('en-AU')} AUD/yr
+                            {/* Visa type tabs */}
+                            <View style={styles.visaTabs}>
+                              {(['190', '491', '482'] as const).map((visa) => (
+                                <TouchableOpacity
+                                  key={visa}
+                                  onPress={() => setSelectedVisa(visa)}
+                                  style={[
+                                    styles.visaTab,
+                                    selectedVisa === visa && { 
+                                      backgroundColor: `${col}20`,
+                                      borderBottomColor: col,
+                                      borderBottomWidth: 2,
+                                    }
+                                  ]}
+                                >
+                                  <Text style={[
+                                    styles.visaTabLabel,
+                                    { color: selectedVisa === visa ? col : Colors.textMuted }
+                                  ]}>
+                                    {visa}
                                   </Text>
-                                </View>
-                              )}
-                              {req.minExperienceYears != null && (
-                                <View style={styles.stateReqRow}>
-                                  <Ionicons name="briefcase-outline" size={13} color={Colors.textMuted} />
-                                  <Text style={styles.stateReqKey}>Min. experience</Text>
-                                  <Text style={[styles.stateReqVal, { color: col }]}>
-                                    {req.minExperienceYears} year{req.minExperienceYears !== 1 ? 's' : ''}
-                                  </Text>
-                                </View>
-                              )}
-                              {req.minPoints != null && (
-                                <View style={styles.stateReqRow}>
-                                  <Ionicons name="stats-chart-outline" size={13} color={Colors.textMuted} />
-                                  <Text style={styles.stateReqKey}>Min. EOI points</Text>
-                                  <Text style={[styles.stateReqVal, { color: col }]}>{req.minPoints} pts</Text>
-                                </View>
-                              )}
-                              {req.maxAge != null && (
-                                <View style={styles.stateReqRow}>
-                                  <Ionicons name="person-outline" size={13} color={Colors.textMuted} />
-                                  <Text style={styles.stateReqKey}>Max. age</Text>
-                                  <Text style={[styles.stateReqVal, { color: col }]}>{req.maxAge}</Text>
-                                </View>
-                              )}
-                              <View style={styles.stateReqRow}>
-                                <Ionicons name="checkmark-circle-outline" size={13} color={Colors.textMuted} />
-                                <Text style={styles.stateReqKey}>Skills assessment</Text>
-                                <Text style={[styles.stateReqVal, { color: req.skillsAssessmentRequired ? Colors.warning : Colors.success }]}>
-                                  {req.skillsAssessmentRequired ? 'Required' : 'Check with state'}
-                                </Text>
-                              </View>
-                              <View style={styles.stateReqRow}>
-                                <Ionicons name="document-text-outline" size={13} color={Colors.textMuted} />
-                                <Text style={styles.stateReqKey}>Job offer</Text>
-                                <Text style={[styles.stateReqVal, { color: req.jobOfferRequired ? Colors.warning : Colors.success }]}>
-                                  {req.jobOfferRequired ? 'Required' : 'Not required'}
-                                </Text>
-                              </View>
-                              {req.residencyRequired && (
-                                <View style={styles.stateReqRow}>
-                                  <Ionicons name="home-outline" size={13} color={Colors.textMuted} />
-                                  <Text style={styles.stateReqKey}>State residency</Text>
-                                  <Text style={[styles.stateReqVal, { color: Colors.warning }]}>Required</Text>
-                                </View>
-                              )}
+                                </TouchableOpacity>
+                              ))}
                             </View>
 
-                            {req.notes.length > 0 && (
-                              <View style={styles.stateReqNotes}>
-                                {req.notes.map((n, i) => (
-                                  <View key={i} style={styles.stateReqNoteRow}>
-                                    <View style={[styles.stateReqNoteDot, { backgroundColor: col }]} />
-                                    <Text style={styles.stateReqNoteText}>{n}</Text>
+                            {/* Requirements for selected visa */}
+                            {req && (
+                              <>
+                                <Text style={[styles.visaDescription, { color: Colors.textMuted }]}>
+                                  {VISA_DESCRIPTIONS[selectedVisa]}
+                                </Text>
+
+                                <View style={styles.stateReqRows}>
+                                  {req.minSalary != null && (
+                                    <View style={styles.stateReqRow}>
+                                      <Ionicons name="cash-outline" size={13} color={Colors.textMuted} />
+                                      <Text style={styles.stateReqKey}>Min. salary</Text>
+                                      <Text style={[styles.stateReqVal, { color: col }]}>
+                                        ${req.minSalary.toLocaleString('en-AU')} AUD/yr
+                                      </Text>
+                                    </View>
+                                  )}
+                                  {req.minExperienceYears != null && (
+                                    <View style={styles.stateReqRow}>
+                                      <Ionicons name="briefcase-outline" size={13} color={Colors.textMuted} />
+                                      <Text style={styles.stateReqKey}>Min. experience</Text>
+                                      <Text style={[styles.stateReqVal, { color: col }]}>
+                                        {req.minExperienceYears} year{req.minExperienceYears !== 1 ? 's' : ''}
+                                      </Text>
+                                    </View>
+                                  )}
+                                  {req.minPoints != null ? (
+                                    <View style={styles.stateReqRow}>
+                                      <Ionicons name="stats-chart-outline" size={13} color={Colors.textMuted} />
+                                      <Text style={styles.stateReqKey}>Min. EOI points</Text>
+                                      <Text style={[styles.stateReqVal, { color: col }]}>{req.minPoints} pts</Text>
+                                    </View>
+                                  ) : (
+                                    <View style={styles.stateReqRow}>
+                                      <Ionicons name="stats-chart-outline" size={13} color={Colors.textMuted} />
+                                      <Text style={styles.stateReqKey}>Points test</Text>
+                                      <Text style={[styles.stateReqVal, { color: Colors.success }]}>Not required</Text>
+                                    </View>
+                                  )}
+                                  {req.maxAge != null && (
+                                    <View style={styles.stateReqRow}>
+                                      <Ionicons name="person-outline" size={13} color={Colors.textMuted} />
+                                      <Text style={styles.stateReqKey}>Max. age</Text>
+                                      <Text style={[styles.stateReqVal, { color: col }]}>{req.maxAge}</Text>
+                                    </View>
+                                  )}
+                                  <View style={styles.stateReqRow}>
+                                    <Ionicons name="checkmark-circle-outline" size={13} color={Colors.textMuted} />
+                                    <Text style={styles.stateReqKey}>Skills assessment</Text>
+                                    <Text style={[styles.stateReqVal, { color: req.skillsAssessmentRequired ? Colors.warning : Colors.success }]}>
+                                      {req.skillsAssessmentRequired ? 'Required' : 'Check with state'}
+                                    </Text>
                                   </View>
-                                ))}
-                              </View>
+                                  <View style={styles.stateReqRow}>
+                                    <Ionicons name="document-text-outline" size={13} color={req.jobOfferRequired ? Colors.warning : Colors.success} />
+                                    <Text style={styles.stateReqKey}>Job offer</Text>
+                                    <Text style={[styles.stateReqVal, { color: req.jobOfferRequired ? Colors.warning : Colors.success }]}>
+                                      {req.jobOfferRequired ? '🔴 REQUIRED' : 'Not required'}
+                                    </Text>
+                                  </View>
+                                  {req.residencyRequired && (
+                                    <View style={styles.stateReqRow}>
+                                      <Ionicons name="home-outline" size={13} color={Colors.textMuted} />
+                                      <Text style={styles.stateReqKey}>State residency</Text>
+                                      <Text style={[styles.stateReqVal, { color: Colors.warning }]}>Required</Text>
+                                    </View>
+                                  )}
+                                </View>
+
+                                {req.notes && req.notes.length > 0 && (
+                                  <View style={styles.stateReqNotes}>
+                                    {req.notes.map((n, i) => (
+                                      <View key={i} style={styles.stateReqNoteRow}>
+                                        <View style={[styles.stateReqNoteDot, { backgroundColor: col }]} />
+                                        <Text style={styles.stateReqNoteText}>{n}</Text>
+                                      </View>
+                                    ))}
+                                  </View>
+                                )}
+
+                                <TouchableOpacity
+                                  style={[styles.stateReqLink, { borderColor: `${col}40` }]}
+                                  onPress={() => Linking.openURL(req.sourceUrl)}
+                                  activeOpacity={0.8}
+                                >
+                                  <Ionicons name="open-outline" size={12} color={col} />
+                                  <Text style={[styles.stateReqLinkText, { color: col }]}>View {expandedState} nomination page</Text>
+                                  <Text style={styles.stateReqUpdated}>Updated {req.updatedAt}</Text>
+                                </TouchableOpacity>
+                              </>
                             )}
 
-                            <TouchableOpacity
-                              style={[styles.stateReqLink, { borderColor: `${col}40` }]}
-                              onPress={() => Linking.openURL(req.sourceUrl)}
-                              activeOpacity={0.8}
-                            >
-                              <Ionicons name="open-outline" size={12} color={col} />
-                              <Text style={[styles.stateReqLinkText, { color: col }]}>View {expandedState} nomination page</Text>
-                              <Text style={styles.stateReqUpdated}>Updated {req.updatedAt}</Text>
-                            </TouchableOpacity>
+                            {!req && (
+                              <Text style={[styles.bodyMuted, { padding: Spacing.md }]}>
+                                SC {selectedVisa} requirements not available
+                              </Text>
+                            )}
                           </View>
                         );
                       })()}
+
+                      {/* Fallback: state selected but no requirements found */}
+                      {expandedState && !selected.stateRequirements?.[expandedState] && (
+                        <View style={[styles.stateReqPanel, { borderColor: `${STATE_COLORS[expandedState]}40` }]}>
+                          <View style={styles.stateReqHeader}>
+                            <View style={[styles.stateReqDot, { backgroundColor: STATE_COLORS[expandedState] }]} />
+                            <Text style={[styles.stateReqTitle, { color: STATE_COLORS[expandedState] }]}>
+                              {expandedState} — No requirements found
+                            </Text>
+                          </View>
+                          <Text style={styles.bodyMuted}>
+                            State-specific requirements for this occupation are not currently available. Contact the {expandedState} state migration authority for nomination eligibility criteria.
+                          </Text>
+                        </View>
+                      )}
                     </>
                   ) : (
                     <Text style={styles.bodyMuted}>
@@ -1403,6 +1484,32 @@ const styles = StyleSheet.create({
   },
   stateReqLinkText: { fontSize: FontSize.xs, fontWeight: FontWeight.semiBold, flex: 1 },
   stateReqUpdated: { fontSize: 10, color: Colors.textMuted },
+
+  // Visa tabs
+  visaTabs: {
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.divider,
+    backgroundColor: Colors.glass,
+  },
+  visaTab: {
+    flex: 1,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  visaTabLabel: {
+    fontSize: FontSize.xs,
+    fontWeight: FontWeight.bold,
+    letterSpacing: 0.3,
+  },
+  visaDescription: {
+    fontSize: FontSize.xs,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    lineHeight: 16,
+  },
 
   modalCta: {
     marginTop: Spacing.xl,

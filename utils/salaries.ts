@@ -14,7 +14,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const SALARIES_REMOTE_URL =
-  'https://migrateau.jsmglobal.xyz/salaries.json';
+  'https://swift-shore-238707.web.app/salaries.json';
 
 const CACHE_KEY = '@migrate_au_salaries';
 const LAST_CHECK_KEY = '@migrate_au_salaries_last_check';

@@ -20,7 +20,7 @@ import { validateOccupationsSnapshot } from './remoteSchema';
 
 // Schema: { snapshotDate: string, items: SkilledOccupation[] }
 export const SKILL_OCCUPATIONS_REMOTE_URL =
-  'https://migrateau.jsmglobal.xyz/skilled-occupations.json';
+  'https://swift-shore-238707.web.app/skilled-occupations.json';
 
 /** Schema: { snapshotDate: string, items: SkilledOccupation[] }
  * Comprehensive ANZSCO occupations from Jobs and Skills Australia (~1,236 entries). */
@@ -29,7 +29,7 @@ export const ALL_ANZSCO_OCCUPATIONS_REMOTE_URL =
 
 /** Schema: { snapshotDate: string, requirements: { [anzsco]: { [StateCode]: StateRequirement } } } */
 export const STATE_REQUIREMENTS_REMOTE_URL =
-  'https://migrateau.jsmglobal.xyz/state-occupation-requirements.json';
+  'https://swift-shore-238707.web.app/state-occupation-requirements.json';
 
 const CACHE_KEY = '@migrate_au_skilled_occupations';
 const LAST_CHECK_KEY = '@migrate_au_skilled_occupations_last_check';
