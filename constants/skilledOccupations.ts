@@ -44,17 +44,25 @@ export interface SkilledOccupation {
   states?: Partial<Record<StateCode, string[]>>;
   /**
    * State / territory-specific nomination requirements for this occupation.
+   * Nested structure: [state][visa_type] = StateRequirement
    * Fetched daily from the state requirements endpoint and merged at runtime.
    */
-  stateRequirements?: Partial<Record<StateCode, StateRequirement>>;
+  stateRequirements?: Partial<Record<StateCode, Record<string, StateRequirement>>>;
 }
 
 /**
  * Special requirements a state / territory may impose for nominating a
  * particular occupation — over and above the federal visa requirements.
  * Populated by the daily state-requirements scraper.
+ * Structure: [state][visa_type] = StateRequirement (e.g., [NSW][190])
  */
 export interface StateRequirement {
+  /** Visa subclass code (e.g., "190", "491", "482"). */
+  visa: string;
+  /** Visa name (e.g., "SC 190 Skilled Independent"). */
+  type: string;
+  /** Visa stream description (e.g., "Points-based + State nomination"). */
+  stream: string;
   /** Eligible visa subclasses under this state's program. */
   visas: string[];
   /** Whether the nomination round is currently open. */
