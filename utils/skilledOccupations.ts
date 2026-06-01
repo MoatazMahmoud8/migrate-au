@@ -365,19 +365,51 @@ export function searchOccupations(
 
 export interface StateRequirementsSnapshot {
   snapshotDate: string;
-  /** Map of ANZSCO code → state code → requirements */
-  requirements: Record<string, Partial<Record<StateCode, StateRequirement>>>;
+  /** Map of ANZSCO code → state code → visa type → requirements (nested for visa-specific) */
+  requirements: Record<string, Partial<Record<StateCode, Record<string, StateRequirement>>>>;
+}
+
+/**
+ * Check if cached state requirements use the new visa-specific format.
+ * Old format: requirements[anzsco][state] = StateRequirement
+ * New format: requirements[anzsco][state][visa] = StateRequirement
+ */
+function isVisaSpecificFormat(req: any): boolean {
+  if (!req || !req.requirements) return false;
+  // Check first occupation
+  const firstAnzsco = Object.keys(req.requirements)[0];
+  if (!firstAnzsco) return false;
+  const firstOcc = req.requirements[firstAnzsco];
+  // Check first state
+  const firstState = Object.keys(firstOcc)[0];
+  if (!firstState) return false;
+  const stateReq = firstOcc[firstState];
+  // If it's a dict with visa keys ('190', '491', '482'), it's visa-specific
+  return typeof stateReq === 'object' && ('190' in stateReq || '491' in stateReq || '482' in stateReq);
 }
 
 /**
  * Return the cached state requirements snapshot, or an empty one if
- * nothing is cached yet.
+ * nothing is cached yet. Invalidates cache if it's in old (non-visa-specific) format.
  */
 export async function getStateRequirements(): Promise<StateRequirementsSnapshot> {
   try {
     const raw = await AsyncStorage.getItem(STATE_REQ_CACHE_KEY);
-    if (raw) return JSON.parse(raw) as StateRequirementsSnapshot;
-  } catch {}
+    if (raw) {
+      const parsed = JSON.parse(raw) as StateRequirementsSnapshot;
+      // Check if cache is in old (non-visa-specific) format
+      if (!isVisaSpecificFormat(parsed)) {
+        // Invalidate old cache — force refresh on next call
+        console.warn('[stateRequirements] old cache format detected, invalidating...');
+        await AsyncStorage.removeItem(STATE_REQ_CACHE_KEY);
+        await AsyncStorage.removeItem(STATE_REQ_LAST_CHECK_KEY);
+        return { snapshotDate: '', requirements: {} };
+      }
+      return parsed;
+    }
+  } catch (err) {
+    console.warn('[stateRequirements] cache parse error:', err);
+  }
   return { snapshotDate: '', requirements: {} };
 }
 
@@ -390,6 +422,21 @@ export async function getStateRequirements(): Promise<StateRequirementsSnapshot>
 export async function refreshStateRequirements(
   opts: { force?: boolean } = {}
 ): Promise<{ updated: boolean; snapshot: StateRequirementsSnapshot }> {
+  // First, check if cached data is in old (non-visa-specific) format
+  // If so, invalidate it and force a fresh fetch
+  try {
+    const raw = await AsyncStorage.getItem(STATE_REQ_CACHE_KEY).catch(() => null);
+    if (raw) {
+      const parsed = JSON.parse(raw) as StateRequirementsSnapshot;
+      if (!isVisaSpecificFormat(parsed)) {
+        console.warn('[stateRequirements] old cache format detected, forcing refresh...');
+        await AsyncStorage.removeItem(STATE_REQ_CACHE_KEY);
+        await AsyncStorage.removeItem(STATE_REQ_LAST_CHECK_KEY);
+        opts = { force: true };
+      }
+    }
+  } catch {}
+
   const last = await AsyncStorage.getItem(STATE_REQ_LAST_CHECK_KEY).catch(() => null);
   if (last) {
     const age = Date.now() - new Date(last).getTime();
