@@ -449,8 +449,6 @@ export default function OccupationsScreen() {
   const [showPaywall, setShowPaywall] = useState(false);
   const [dailyUpdates, setDailyUpdates] = useState<DailyUpdates | null>(null);
   const visaMeta = useMemo(() => buildVisaMetaMap(dailyUpdates), [dailyUpdates]);
-  const [dailyUpdates, setDailyUpdates] = useState<DailyUpdates | null>(null);
-  const visaMeta = useMemo(() => buildVisaMetaMap(dailyUpdates), [dailyUpdates]);
   const [salaries, setSalaries] = useState<SalariesSnapshot>({
     snapshotDate: '1970-01-01',
     salaries: {},
@@ -923,7 +921,32 @@ export default function OccupationsScreen() {
                             </View>
 
                             {/* Requirements for selected visa */}
-                            {req && (
+                            {req && req.status === 'not_sponsored' && (
+                              <View style={styles.notSponsoredCard}>
+                                <View style={styles.notSponsoredHeader}>
+                                  <Ionicons name="close-circle" size={18} color={Colors.warning} />
+                                  <Text style={styles.notSponsoredTitle}>
+                                    Not eligible — SC {selectedVisa} in {expandedState}
+                                  </Text>
+                                </View>
+                                <Text style={styles.notSponsoredReason}>
+                                  {req.reason || `This occupation is not on the ${expandedState} nomination list for SC ${selectedVisa}.`}
+                                </Text>
+                                {req.notes && req.notes.length > 0 && (
+                                  <View style={styles.notSponsoredNotes}>
+                                    {req.notes.map((n: string, i: number) => (
+                                      <Text key={i} style={styles.notSponsoredNoteText}>• {n}</Text>
+                                    ))}
+                                  </View>
+                                )}
+                                {req.sourceUrl ? (
+                                  <Text style={styles.notSponsoredSource}>
+                                    Official source: {req.sourceUrl}
+                                  </Text>
+                                ) : null}
+                              </View>
+                            )}
+                            {req && req.status !== 'not_sponsored' && (
                               <>
                                 <Text style={[styles.visaDescription, { color: Colors.textMuted }]}>
                                   {VISA_DESCRIPTIONS[selectedVisa]}
@@ -959,20 +982,14 @@ export default function OccupationsScreen() {
                                           </Text>
                                         </View>
                                       )}
-                                      {dailyUpdates?.nextRound?.subclass === '189' && selectedVisa !== '482' && (
-                                        <View style={[styles.visaMetaPill, { backgroundColor: `${col}25` }]}>
-                                          <Ionicons name="calendar-outline" size={11} color={col} />
-                                          <Text style={[styles.visaMetaText, { color: col, fontWeight: '700' }]}>
-                                            Next round: {dailyUpdates.nextRound.date}
-                                          </Text>
-                                        </View>
-                                      )}
+                                      {/* Federal SkillSelect rounds only invite SC 189 (and SC 491 family-sponsored).
+                                          SC 190 / state-nominated 491 use each state's own selection process — no federal "next round". */}
                                     </View>
                                   );
                                 })()}
 
                                 <View style={styles.stateReqRows}>
-                                  {req.minSalary != null && (
+                                  {req.minSalary != null ? (
                                     <View style={styles.stateReqRow}>
                                       <Ionicons name="cash-outline" size={13} color={Colors.textMuted} />
                                       <Text style={styles.stateReqKey}>Min. salary</Text>
@@ -980,7 +997,15 @@ export default function OccupationsScreen() {
                                         ${req.minSalary.toLocaleString('en-AU')} AUD/yr
                                       </Text>
                                     </View>
-                                  )}
+                                  ) : req.salaryDataAvailable === false ? (
+                                    <View style={styles.stateReqRow}>
+                                      <Ionicons name="cash-outline" size={13} color={Colors.textMuted} />
+                                      <Text style={styles.stateReqKey}>Min. salary</Text>
+                                      <Text style={[styles.stateReqVal, { color: Colors.textMuted, fontStyle: 'italic' }]}>
+                                        Data not available
+                                      </Text>
+                                    </View>
+                                  ) : null}
                                   {req.minExperienceYears != null && (
                                     <View style={styles.stateReqRow}>
                                       <Ionicons name="briefcase-outline" size={13} color={Colors.textMuted} />
@@ -1722,6 +1747,47 @@ const styles = StyleSheet.create({
   visaMetaText: {
     fontSize: 10,
     fontWeight: '600',
+  },
+
+  // Not-sponsored card (occupation not on official list)
+  notSponsoredCard: {
+    marginHorizontal: Spacing.md,
+    marginVertical: Spacing.sm,
+    padding: Spacing.md,
+    borderRadius: Radius.md,
+    borderWidth: 1,
+    borderColor: `${Colors.warning}55`,
+    backgroundColor: `${Colors.warning}0D`,
+  },
+  notSponsoredHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 6,
+  },
+  notSponsoredTitle: {
+    fontSize: FontSize.sm,
+    fontWeight: '700',
+    color: Colors.warning,
+  },
+  notSponsoredReason: {
+    fontSize: FontSize.xs,
+    color: Colors.text,
+    marginBottom: 6,
+  },
+  notSponsoredNotes: {
+    marginTop: 4,
+  },
+  notSponsoredNoteText: {
+    fontSize: 11,
+    color: Colors.textMuted,
+    lineHeight: 16,
+  },
+  notSponsoredSource: {
+    fontSize: 10,
+    color: Colors.textMuted,
+    marginTop: 6,
+    fontStyle: 'italic',
   },
 
   // Australian Graduate Pathway Card
