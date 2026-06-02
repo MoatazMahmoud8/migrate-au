@@ -41,6 +41,7 @@ import {
   DailyUpdates,
 } from '../utils/dailyUpdates';
 import { tap as hapticTap, success as hapticSuccess } from '../utils/haptics';
+import { recordEngagement } from '../utils/rateApp';
 import { getProfile, saveProfile } from '../utils/storage';
 import { hasExceededLimit, incrementUsage, getRemainingUses } from '../utils/paywall';
 import {
@@ -502,6 +503,7 @@ export default function OccupationsScreen() {
     await saveProfile(updated);
     
     hapticSuccess();
+    if (code) { recordEngagement('saved_anzsco'); }
   };
 
   const onRefresh = async () => {

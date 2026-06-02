@@ -26,6 +26,7 @@ import { tap as hapticTap, success as hapticSuccess } from '../../utils/haptics'
 import { SKILLED_OCCUPATIONS } from '../../constants/skilledOccupations';
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import { canAddJourneyEntry, canAddStateSubscription } from '../../utils/paywall';
+import { askToRate } from '../../utils/rateApp';
 
 const JOURNEY_STAGES: Array<{ key: JourneyStageKey; label: string; desc: string }> = [
   { key: 'assess', label: 'Skills Assessment', desc: 'Skills assessment & English test preparation' },
@@ -703,6 +704,13 @@ export default function ProfileScreen() {
       <View style={styles.section}>
         <Text style={styles.sectionLabel}>Support</Text>
         <View style={styles.card}>
+          <SettingRow
+            icon="star-outline"
+            label="Rate MigrateAU"
+            value="Help others find the app"
+            onPress={() => { hapticTap(); askToRate(true); }}
+            showArrow
+          />
           <SettingRow
             icon="chatbubble-ellipses-outline"
             label="Send Feedback"
