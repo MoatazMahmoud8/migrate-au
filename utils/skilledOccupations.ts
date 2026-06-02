@@ -471,12 +471,20 @@ export async function refreshStateRequirements(
       throw new Error('invalid state-requirements schema');
     }
 
-    await AsyncStorage.setItem(STATE_REQ_LAST_CHECK_KEY, new Date().toISOString());
+    let cached = true;
     try {
       await AsyncStorage.setItem(STATE_REQ_CACHE_KEY, JSON.stringify(json));
     } catch (storageErr) {
       // Payload may exceed localStorage quota on web (~5-10MB). Keep in memory and continue.
+      cached = false;
       console.warn('[stateRequirements] could not persist to cache (quota?):', storageErr);
+    }
+    // Only stamp the last-check time when we successfully cached, otherwise
+    // a stale empty cache + recent last-check would block future refreshes.
+    if (cached) {
+      await AsyncStorage.setItem(STATE_REQ_LAST_CHECK_KEY, new Date().toISOString());
+    } else {
+      await AsyncStorage.removeItem(STATE_REQ_LAST_CHECK_KEY).catch(() => {});
     }
     return { updated: true, snapshot: json };
   } catch (err) {
