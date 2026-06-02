@@ -827,41 +827,54 @@ export default function OccupationsScreen() {
                   </View>
 
                   <Text style={styles.sectionLabel}>State / territory eligibility</Text>
-                  {selected.states && Object.keys(selected.states).length > 0 ? (
+                  {(() => {
+                    const hasAnyData = !!selected.stateRequirements && Object.keys(selected.stateRequirements).length > 0;
+                    const hasSeed = !!selected.states && Object.keys(selected.states).length > 0;
+                    if (!hasAnyData && !hasSeed) return null;
+                    return (
                     <>
                       <View style={styles.stateGrid}>
                         {STATE_CODES.map((s) => {
-                          const visas = selected.states?.[s];
-                          const available = !!visas && visas.length > 0;
-                          const hasReqs = !!selected.stateRequirements?.[s];
+                          // Prefer real requirements data; fall back to hardcoded seed.
+                          const reqs = selected.stateRequirements?.[s];
+                          const sponsoredVisas = reqs
+                            ? (['190', '491', '482'] as const).filter((v) => (reqs as any)?.[v]?.status === 'sponsored')
+                            : [];
+                          const seedVisas = selected.states?.[s] ?? [];
+                          const visas = sponsoredVisas.length > 0 ? sponsoredVisas : seedVisas;
+                          const eligible = sponsoredVisas.length > 0 || seedVisas.length > 0;
+                          // Tappable whenever we have any state-level data (sponsored OR explicit not_sponsored entry).
+                          const tappable = !!reqs || seedVisas.length > 0;
                           const isOpen = expandedState === s;
                           return (
                             <TouchableOpacity
                               key={s}
-                              activeOpacity={available ? 0.75 : 1}
-                              disabled={!available}
+                              activeOpacity={tappable ? 0.75 : 1}
+                              disabled={!tappable}
                               onPress={() => {
                                 setExpandedState(isOpen ? null : s);
                                 hapticTap();
                               }}
                               style={[
                                 styles.stateCell,
-                                available
+                                eligible
                                   ? { backgroundColor: `${STATE_COLORS[s]}1A`, borderColor: isOpen ? STATE_COLORS[s] : `${STATE_COLORS[s]}88` }
-                                  : { opacity: 0.35 },
+                                  : tappable
+                                    ? { backgroundColor: `${Colors.warning}10`, borderColor: `${Colors.warning}55` }
+                                    : { opacity: 0.35 },
                               ]}
                             >
-                              <Text style={[styles.stateCellCode, { color: available ? STATE_COLORS[s] : Colors.textMuted }]}>
+                              <Text style={[styles.stateCellCode, { color: eligible ? STATE_COLORS[s] : tappable ? Colors.warning : Colors.textMuted }]}>
                                 {s}
                               </Text>
                               <Text style={styles.stateCellVisas}>
-                                {available ? visas!.join(' · ') : '—'}
+                                {visas.length > 0 ? visas.join(' · ') : tappable ? 'Not sponsored' : '—'}
                               </Text>
-                              {available && hasReqs && (
+                              {tappable && (
                                 <Ionicons
-                                  name={isOpen ? 'chevron-up' : 'information-circle-outline'}
+                                  name={isOpen ? 'chevron-up' : eligible ? 'information-circle-outline' : 'alert-circle-outline'}
                                   size={10}
-                                  color={STATE_COLORS[s]}
+                                  color={eligible ? STATE_COLORS[s] : Colors.warning}
                                   style={{ marginTop: 2 }}
                                 />
                               )}
@@ -1147,11 +1160,8 @@ export default function OccupationsScreen() {
                         </View>
                       )}
                     </>
-                  ) : (
-                    <Text style={styles.bodyMuted}>
-                      Not currently on any state nomination list.
-                    </Text>
-                  )}
+                    );
+                  })()}
 
                   {/* ─── English Requirements ─────────────────────────── */}
                   {selected.visas.length > 0 && (() => {
