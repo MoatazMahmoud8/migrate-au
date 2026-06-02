@@ -423,13 +423,18 @@ export async function refreshStateRequirements(
   opts: { force?: boolean } = {}
 ): Promise<{ updated: boolean; snapshot: StateRequirementsSnapshot }> {
   // First, check if cached data is in old (non-visa-specific) format
-  // If so, invalidate it and force a fresh fetch
+  // OR if the cache is missing/empty (e.g. previous write hit a quota error).
+  // In either case, invalidate timestamp so we re-fetch instead of returning empty data.
   try {
     const raw = await AsyncStorage.getItem(STATE_REQ_CACHE_KEY).catch(() => null);
-    if (raw) {
+    if (!raw) {
+      // No cache → ignore any stale last-check stamp
+      await AsyncStorage.removeItem(STATE_REQ_LAST_CHECK_KEY).catch(() => {});
+      opts = { force: true };
+    } else {
       const parsed = JSON.parse(raw) as StateRequirementsSnapshot;
-      if (!isVisaSpecificFormat(parsed)) {
-        console.warn('[stateRequirements] old cache format detected, forcing refresh...');
+      if (!isVisaSpecificFormat(parsed) || !parsed.requirements || Object.keys(parsed.requirements).length === 0) {
+        console.warn('[stateRequirements] empty or old cache detected, forcing refresh...');
         await AsyncStorage.removeItem(STATE_REQ_CACHE_KEY);
         await AsyncStorage.removeItem(STATE_REQ_LAST_CHECK_KEY);
         opts = { force: true };
