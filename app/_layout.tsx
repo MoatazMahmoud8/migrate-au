@@ -14,6 +14,9 @@ import { getProfile, saveProfile } from '../utils/storage';
 import OnboardingModal from '../components/OnboardingModal';
 import { refreshProcessingTimes } from '../utils/processingTimes';
 import { refreshSkilledOccupations } from '../utils/skilledOccupations';
+import { initSentry, Sentry } from '../utils/sentry';
+
+initSentry();
 
 SplashScreen.hideAsync();
 
@@ -57,7 +60,7 @@ function AriaFab({ focused }: { focused: boolean }) {
   );
 }
 
-export default function RootLayout() {
+function RootLayout() {
   const [unread, setUnread] = useState(0);
   const [onboardingVisible, setOnboardingVisible] = useState(false);
 
@@ -417,3 +420,5 @@ const tabStyles = StyleSheet.create({
     borderColor: Colors.primaryDark,
   },
 });
+
+export default Sentry.wrap(RootLayout);

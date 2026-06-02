@@ -15,7 +15,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as StoreReview from 'expo-store-review';
 import { Alert, Linking, Platform } from 'react-native';
 
-const APP_STORE_ID = '0000000000'; // TODO: replace with real Apple ID once App Store listing exists
+const APP_STORE_ID = '6767216706';
 const ANDROID_PACKAGE = 'com.jsmglobal.migration_au';
 
 const PLAY_STORE_URL = `https://play.google.com/store/apps/details?id=${ANDROID_PACKAGE}`;

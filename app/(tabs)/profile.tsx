@@ -27,6 +27,7 @@ import { SKILLED_OCCUPATIONS } from '../../constants/skilledOccupations';
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import { canAddJourneyEntry, canAddStateSubscription } from '../../utils/paywall';
 import { askToRate } from '../../utils/rateApp';
+import { Sentry } from '../../utils/sentry';
 
 const JOURNEY_STAGES: Array<{ key: JourneyStageKey; label: string; desc: string }> = [
   { key: 'assess', label: 'Skills Assessment', desc: 'Skills assessment & English test preparation' },
@@ -735,6 +736,34 @@ export default function ProfileScreen() {
           <SettingRow icon="key-outline" label="Account ID" value={rcUserId ? rcUserId.slice(0, 18) + '…' : '—'} last />
         </View>
       </View>
+
+      {__DEV__ && (
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>Developer</Text>
+          <View style={styles.card}>
+            <SettingRow
+              icon="bug-outline"
+              label="Send test error to Sentry"
+              value="Verifies crash reporting"
+              onPress={() => {
+                Sentry.captureException(new Error(`MigrateAU test error @ ${new Date().toISOString()}`));
+                Alert.alert('Sent', 'Check sentry.io → Issues to confirm it arrived.');
+              }}
+              showArrow
+            />
+            <SettingRow
+              icon="warning-outline"
+              label="Trigger native crash"
+              value="Will hard-crash the app"
+              onPress={() => {
+                Sentry.nativeCrash();
+              }}
+              showArrow
+              last
+            />
+          </View>
+        </View>
+      )}
 
       <View style={styles.disclaimer}>
         <Ionicons name="alert-circle-outline" size={14} color={Colors.textMuted} />

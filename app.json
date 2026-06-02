@@ -78,7 +78,14 @@
 					"icon": "./assets/icon.png"
 				}
 			],
-			"@react-native-community/datetimepicker"
+			"@react-native-community/datetimepicker",
+			[
+				"@sentry/react-native/expo",
+				{
+					"organization": "REPLACE_WITH_SENTRY_ORG_SLUG",
+					"project": "REPLACE_WITH_SENTRY_PROJECT_SLUG"
+				}
+			]
 		],
 		"experiments": {
 			"typedRoutes": true
