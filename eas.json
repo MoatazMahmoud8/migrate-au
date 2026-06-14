@@ -17,6 +17,9 @@
       "autoIncrement": true,
       "credentialsSource": "remote",
       "node": "22.15.0",
+      "env": {
+        "NODE_ENV": "production"
+      },
       "ios": {
         "image": "macos-sequoia-15.6-xcode-26.0"
       }
