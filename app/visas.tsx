@@ -3,6 +3,7 @@ import {
   ScrollView,
   View,
   Text,
+  TextInput,
   TouchableOpacity,
   StyleSheet,
   Linking,
@@ -52,6 +53,7 @@ export default function VisasScreen() {
       : 'All';
   const [filter, setFilter] = useState<Filter>(initial);
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
   const filterRef = useRef<ScrollView>(null);
   const [snapshot, setSnapshot] = useState<{ items: ProcessingTime[] }>({ items: [] });
 
@@ -60,10 +62,22 @@ export default function VisasScreen() {
   }, []);
 
   const groups = useMemo(() => {
-    const visas =
+    let visas =
       filter === 'All' ? ALL_VISAS : ALL_VISAS.filter((v) => v.category === filter);
+    
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      visas = visas.filter((v) => 
+        v.code.toLowerCase().includes(query) ||
+        v.name.toLowerCase().includes(query) ||
+        v.conditions.some(c => c.toLowerCase().includes(query)) ||
+        v.subclasses.some(s => s.toLowerCase().includes(query))
+      );
+    }
+    
     return groupByCategory(visas);
-  }, [filter]);
+  }, [filter, searchQuery]);
 
   const totalCount = useMemo(
     () => groups.reduce((s, g) => s + g.items.length, 0),
@@ -98,6 +112,26 @@ export default function VisasScreen() {
             All Australian visa subclasses organised by category — streams, conditions and official links in one place.
           </Text>
         </LinearGradient>
+
+        {/* Search bar */}
+        <View style={styles.searchContainer}>
+          <Ionicons name="search-outline" size={18} color={Colors.textMuted} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search visas by code, name or conditions..."
+            placeholderTextColor={Colors.textMuted}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity
+              onPress={() => setSearchQuery('')}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Ionicons name="close-circle" size={18} color={Colors.textMuted} />
+            </TouchableOpacity>
+          )}
+        </View>
 
         {/* Category tab bar */}
         <ScrollView
@@ -483,6 +517,23 @@ const styles = StyleSheet.create({
   },
   calcCardTitle: { fontSize: FontSize.sm, fontWeight: FontWeight.bold as any, color: Colors.secondary },
   calcCardSub: { fontSize: FontSize.xs, color: Colors.textMuted, marginTop: 2 },
+
+  /* Search */
+  searchContainer: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.md,
+    marginBottom: Spacing.sm,
+  },
+  searchInput: {
+    flex: 1,
+    paddingHorizontal: 12, paddingVertical: 10,
+    borderRadius: Radius.lg,
+    backgroundColor: Colors.surface,
+    borderWidth: 1, borderColor: Colors.border,
+    color: Colors.textPrimary,
+    fontSize: FontSize.sm,
+  },
 
   /* Footer */
   footer: {

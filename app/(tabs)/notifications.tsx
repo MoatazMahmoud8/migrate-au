@@ -5,12 +5,14 @@ import {
   FlatList,
   TouchableOpacity,
   StyleSheet,
-  Linking,
   RefreshControl,
   ActivityIndicator,
   ScrollView,
+  Platform,
+  Linking,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, Radius, FontSize, FontWeight } from '../../constants/theme';
 import {
@@ -18,17 +20,23 @@ import {
   markAsRead,
   AppNotification,
 } from '../../utils/notifications';
+import { subscribeToNotificationsWeb, initializeFirebaseWeb } from '../../utils/firebaseWeb';
 import { getRevenueCatUserId } from '../../utils/iap';
+import { SourceValidator } from '../../utils/sourceValidator';
+import NotificationDetail from '../../components/NotificationDetail';
+import InAppBrowser from '../../components/InAppBrowser';
 
 const CATEGORY_COLORS: Record<string, string> = {
-  'Policy Update':          Colors.accent,
-  'Visa Change':            Colors.error,
-  'SkillSelect Round':      Colors.secondary,
-  'Points Test':            '#A78BFA',
-  'Processing Time':        Colors.success,
-  'State Nomination':       '#FB923C',
-  'ANZSCO Occupation List': '#34D399',
-  'ANZSCO Classification':  '#34D399',
+  'Policy Update':          Colors.accent,         // Cyan
+  'Visa Change':            Colors.error,          // Red
+  'SkillSelect Round':      Colors.secondary,      // Yellow/Gold
+  'News':                   Colors.info,           // Cyan
+  'Government Update':      Colors.primary,        // Dark Blue
+  'Processing Time':        Colors.success,        // Green
+  'State Nomination':       '#FB923C',             // Orange
+  'ANZSCO Occupation List': Colors.success,        // Green
+  'ANZSCO Classification':  Colors.success,        // Green
+  'Points Test':            Colors.accentPurple,   // Purple
 };
 
 const CATEGORY_ICONS: Record<string, string> = {
@@ -55,17 +63,21 @@ function timeAgo(iso: string): string {
 function NotificationCard({
   item,
   onRead,
+  onTap,
 }: {
   item: AppNotification;
   onRead: (id: string) => void;
+  onTap: (notification: AppNotification) => void;
 }) {
   const color = CATEGORY_COLORS[item.category] ?? Colors.accent;
   const icon  = (CATEGORY_ICONS[item.category] ?? 'notifications') as any;
+  const source = SourceValidator.getSafeSource(item.source);
 
-  const handlePress = useCallback(async () => {
+  const handlePress = useCallback(() => {
     if (!item.read) onRead(item.id);
-    if (item.url) await Linking.openURL(item.url);
-  }, [item, onRead]);
+    // Show detail screen instead of opening URL directly
+    onTap(item);
+  }, [item, onRead, onTap]);
 
   return (
     <TouchableOpacity
@@ -84,15 +96,16 @@ function NotificationCard({
       {/* Content */}
       <View style={styles.content}>
         <View style={styles.row}>
-          <Text style={[styles.category, { color }]}>{item.category}</Text>
+          <Text style={styles.category}>{item.category}</Text>
           <Text style={styles.time}>{timeAgo(item.timestamp)}</Text>
         </View>
         <Text style={styles.title} numberOfLines={2}>{item.title}</Text>
         <Text style={styles.body}  numberOfLines={2}>{item.body}</Text>
+        <Text style={styles.source}>Source: {source}</Text>
       </View>
 
-      {/* Unread dot */}
-      {!item.read && <View style={[styles.dot, { backgroundColor: color }]} />}
+      {/* Unread dot - Sentry Blue */}
+      {!item.read && <View style={styles.dot} />}
     </TouchableOpacity>
   );
 }
@@ -103,6 +116,9 @@ export default function NotificationsScreen() {
   const [loading, setLoading]     = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [stateFilter, setStateFilter] = useState<string>('all');
+  const [selectedNotification, setSelectedNotification] = useState<AppNotification | null>(null);
+  const [showInAppBrowser, setShowInAppBrowser] = useState(false);
+  const [browserUrl, setBrowserUrl] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -110,15 +126,30 @@ export default function NotificationsScreen() {
     (async () => {
       const uid = await getRevenueCatUserId().catch(() => '');
       if (cancelled) return;
-      unsub = subscribeToFeed(
-        items => {
-          setFeed(items);
-          setLoading(false);
-          setRefreshing(false);
-        },
-        30,
-        uid || undefined,
-      );
+
+      // Use web Firebase on web, native Firebase on mobile
+      if (Platform.OS === 'web') {
+        initializeFirebaseWeb();
+        unsub = subscribeToNotificationsWeb(
+          items => {
+            setFeed(items);
+            setLoading(false);
+            setRefreshing(false);
+          },
+          30,
+          uid || undefined,
+        ) || undefined;
+      } else {
+        unsub = subscribeToFeed(
+          items => {
+            setFeed(items);
+            setLoading(false);
+            setRefreshing(false);
+          },
+          30,
+          uid || undefined,
+        );
+      }
     })();
     return () => {
       cancelled = true;
@@ -129,6 +160,26 @@ export default function NotificationsScreen() {
   const handleRead = useCallback((id: string) => {
     markAsRead(id);
     setFeed(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+  }, []);
+
+  const handleNotificationTap = useCallback((notification: AppNotification) => {
+    setSelectedNotification(notification);
+  }, []);
+
+  const handleCloseDetail = useCallback(() => {
+    setSelectedNotification(null);
+    setShowInAppBrowser(false);
+    setBrowserUrl(null);
+  }, []);
+
+  const handleReadSource = useCallback((url: string) => {
+    setBrowserUrl(url);
+    setShowInAppBrowser(true);
+  }, []);
+
+  const handleCloseInAppBrowser = useCallback(() => {
+    setShowInAppBrowser(false);
+    setBrowserUrl(null);
   }, []);
 
   const onRefresh = useCallback(() => {
@@ -156,6 +207,22 @@ export default function NotificationsScreen() {
     { id: 'NT',  label: 'NT'  },
   ];
 
+  // Render based on current state
+  if (showInAppBrowser && browserUrl) {
+    return <InAppBrowser url={browserUrl} onClose={handleCloseInAppBrowser} />;
+  }
+
+  if (selectedNotification) {
+    return (
+      <NotificationDetail
+        notification={selectedNotification}
+        onClose={handleCloseDetail}
+        onReadSource={handleReadSource}
+      />
+    );
+  }
+
+  // Render main notifications list
   return (
     <View style={[styles.screen, { paddingTop: insets.top + 60 }]}>
       {/* Header */}
@@ -168,12 +235,15 @@ export default function NotificationsScreen() {
         )}
       </View>
 
-      {/* State filter pills */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.filterRow}
-      >
+      {/* State filter pills - sticky at top with gradient fade */}
+      <LinearGradient
+        colors={[Colors.background, 'rgba(6, 16, 31, 0)']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={styles.filterGradientOverlay}
+        pointerEvents="none"
+      />
+      <View style={styles.filterRow}>
         {FILTERS.map((f) => {
           const active = stateFilter === f.id;
           return (
@@ -187,7 +257,7 @@ export default function NotificationsScreen() {
             </TouchableOpacity>
           );
         })}
-      </ScrollView>
+      </View>
 
       {loading ? (
         <View style={{ paddingHorizontal: Spacing.lg, paddingTop: Spacing.sm, gap: 10 }}>
@@ -219,7 +289,11 @@ export default function NotificationsScreen() {
           data={filteredFeed}
           keyExtractor={item => item.id}
           renderItem={({ item }) => (
-            <NotificationCard item={item} onRead={handleRead} />
+            <NotificationCard 
+              item={item} 
+              onRead={handleRead}
+              onTap={handleNotificationTap}
+            />
           )}
           contentContainerStyle={styles.list}
           refreshControl={
@@ -308,13 +382,16 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
+    gap: 8,
   },
   category: {
-    fontSize: 11,
-    fontWeight: '700',
+    fontSize: 9,
+    fontWeight: '600',
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 0.4,
+    color: Colors.textMuted,
+    marginBottom: 4,
   },
   time: {
     fontSize: 11,
@@ -322,7 +399,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: FontSize.sm,
-    fontWeight: FontWeight.semiBold as any,
+    fontWeight: FontWeight.bold as any,
     color: Colors.textPrimary,
     lineHeight: 18,
   },
@@ -331,10 +408,17 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     lineHeight: 16,
   },
+  source: {
+    fontSize: 10,
+    color: Colors.textMuted,
+    marginTop: 6,
+    fontStyle: 'italic',
+  },
   dot: {
     width: 8,
     height: 8,
     borderRadius: 4,
+    backgroundColor: Colors.accent,
   },
   empty: {
     alignItems: 'center',
@@ -371,10 +455,21 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.md,
     paddingTop: 2,
     gap: 8,
+    flexWrap: 'wrap',
+    backgroundColor: Colors.background,
+    zIndex: 10,
+  },
+  filterGradientOverlay: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    width: 80,
+    height: '100%',
+    zIndex: 11,
   },
   pill: {
-    paddingHorizontal: 14,
-    paddingVertical: 7,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     borderRadius: Radius.full,
     borderWidth: 1,
     borderColor: Colors.border,
@@ -384,7 +479,7 @@ const styles = StyleSheet.create({
   },
   pillActive: {
     borderColor: Colors.secondary,
-    backgroundColor: 'rgba(255,205,0,0.12)',
+    backgroundColor: 'rgba(255,205,0,0.15)',
   },
   pillText: {
     fontSize: FontSize.xs,

@@ -54,7 +54,7 @@ function AriaFab({ focused }: { focused: boolean }) {
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
       >
-        <Ionicons name="sparkles" size={26} color={focused ? Colors.primaryDark : Colors.white} />
+        <Ionicons name="chatbubble-ellipses" size={26} color={focused ? Colors.primaryDark : Colors.white} />
       </LinearGradient>
     </View>
   );
@@ -75,16 +75,34 @@ function RootLayout() {
     // Initialise FCM — subscribe to all migration topics + register device for watchlist
     let unsubFeed: (() => void) | undefined;
     (async () => {
-      const userId = await getRevenueCatUserId().catch(() => undefined);
-      await initNotifications(['NSW', 'VIC', 'QLD', 'WA', 'SA', 'TAS', 'ACT', 'NT'], userId ?? undefined);
+      try {
+        const userId = await getRevenueCatUserId().catch(() => undefined);
+        console.log('[_layout] Initializing notifications...');
+        
+        const notifInitSuccess = await initNotifications(
+          ['NSW', 'VIC', 'QLD', 'WA', 'SA', 'TAS', 'ACT', 'NT'],
+          userId ?? undefined
+        );
+        
+        if (!notifInitSuccess) {
+          console.warn('[_layout] ⚠️  Notifications initialization returned false - FCM may not be available');
+        } else {
+          console.log('[_layout] ✅ Notifications initialized successfully');
+        }
 
-      // Track unread count for tab badge — must wait for userId so personalised
-      // watchlist alerts are included.
-      unsubFeed = subscribeToFeed(
-        items => setUnread(items.filter(n => !n.read).length),
-        30,
-        userId ?? undefined,
-      );
+        // Track unread count for tab badge — must wait for userId so personalised
+        // watchlist alerts are included.
+        unsubFeed = subscribeToFeed(
+          items => setUnread(items.filter(n => !n.read).length),
+          30,
+          userId ?? undefined,
+        );
+        
+        console.log('[_layout] ✅ Notification feed subscribed');
+      } catch (err) {
+        console.error('[_layout] ❌ Notification initialization failed:', err);
+        // Continue without notifications rather than crash
+      }
     })();
 
     // First-launch onboarding
@@ -247,7 +265,7 @@ function RootLayout() {
       <StatusBar style="light" />
       <Tabs
         screenOptions={{
-          tabBarActiveTintColor: Colors.secondary,
+          tabBarActiveTintColor: '#FFD700',
           tabBarInactiveTintColor: Colors.textMuted,
           tabBarBackground: () => (
             Platform.OS === 'ios'

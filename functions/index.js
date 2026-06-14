@@ -72,9 +72,14 @@ exports.ariaChat = onRequest(
 
       const apiKey = GEMINI_API_KEY.value();
       if (!apiKey) {
-        res.status(500).json({ error: 'API key not set' });
+        console.error('[ariaChat] CRITICAL: GEMINI_API_KEY secret is not set!');
+        res.status(500).json({ 
+          error: 'Aria API key not configured. Contact system administrator.' 
+        });
         return;
       }
+
+      console.log('[ariaChat] Request received. API Key loaded (length: ' + apiKey.length + ')');
 
       // Sanitize history (last 20 turns)
       const chatHistory = (Array.isArray(history) ? history : [])
@@ -85,22 +90,59 @@ exports.ariaChat = onRequest(
           parts: [{ text: m.text }],
         }));
 
-      // Call Gemini
-      const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({
-        model: 'gemini-flash-latest',
-        systemInstruction: SYSTEM_PROMPT,
-      });
+      try {
+        console.log('[ariaChat] Initializing GoogleGenerativeAI...');
+        const genAI = new GoogleGenerativeAI(apiKey);
+        
+        console.log('[ariaChat] Creating model: gemini-2.5-flash');
+        const model = genAI.getGenerativeModel({
+          model: 'gemini-2.5-flash',
+          systemInstruction: SYSTEM_PROMPT,
+        });
 
-      const chat = model.startChat({ history: chatHistory });
-      const result = await chat.sendMessage(message);
-      const reply = result.response.text();
-
-      res.status(200).json({ reply });
+        console.log('[ariaChat] Starting chat with ' + chatHistory.length + ' history messages');
+        console.log('[ariaChat] User message: ' + message.substring(0, 100) + '...');
+        
+        const chat = model.startChat({ history: chatHistory });
+        console.log('[ariaChat] Calling sendMessage...');
+        
+        const result = await chat.sendMessage(message);
+        const reply = result.response.text();
+        
+        console.log('[ariaChat] SUCCESS! Reply length: ' + reply.length);
+        res.status(200).json({ reply });
+        
+      } catch (geminiErr) {
+        const errorInfo = {
+          name: geminiErr?.name || 'Unknown',
+          message: geminiErr?.message || 'No message',
+          code: geminiErr?.code || 'N/A',
+          status: geminiErr?.status || 'N/A',
+        };
+        
+        console.error('[ariaChat] Gemini API Error:', JSON.stringify(errorInfo));
+        
+        // Provide intelligent fallback based on error
+        let fallbackReply;
+        if (geminiErr?.message?.includes('429') || geminiErr?.message?.includes('depleted')) {
+          fallbackReply = `⚠️ **Aria API Limit Reached**\n\nThe AI service is temporarily overloaded. Your question was:\n\n**"${message}"**\n\n✅ **Immediate Help:**\n- Visit [immi.homeaffairs.gov.au](https://immi.homeaffairs.gov.au) for official information\n- Contact a MARA (Registered Migration Agent) for personalized advice\n- Check the Department of Home Affairs official channels\n\n🔄 Try again in a few moments.`;
+        } else if (geminiErr?.message?.includes('authentication') || geminiErr?.message?.includes('401')) {
+          fallbackReply = `⚠️ **Aria Configuration Issue**\n\nThe AI service is experiencing authentication issues. This is a temporary system problem.\n\n✅ **What You Can Do:**\n- Contact support if this persists\n- Use the official [immi.homeaffairs.gov.au](https://immi.homeaffairs.gov.au) portal\n- Consult a MARA for visa advice`;
+        } else {
+          fallbackReply = `📍 **Aria Assistant**\n\nI'm experiencing technical difficulties. Here's what I can help with:\n\n**Your Question:** ${message}\n\n✅ **Recommended Next Steps:**\n- Visit [immi.homeaffairs.gov.au](https://immi.homeaffairs.gov.au)\n- Contact a MARA (Registered Migration Agent)\n- Review the latest Skilled Migration Plan\n- Check state nomination requirements\n\n⚖️ For formal visa advice, always consult a registered migration agent.`;
+        }
+        
+        res.status(200).json({ reply: fallbackReply });
+      }
     } catch (err) {
-      console.error('[ariaChat] error:', err?.message);
+      console.error('[ariaChat] CRITICAL ERROR:', {
+        message: err?.message,
+        code: err?.code,
+        status: err?.status,
+        stack: err?.stack?.substring(0, 200),
+      });
       res.status(500).json({
-        error: 'Aria is temporarily unavailable. Please try again.',
+        error: 'Aria service error. Please try again later.',
       });
     }
   }

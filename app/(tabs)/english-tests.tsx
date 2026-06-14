@@ -182,6 +182,35 @@ const TESTS: TestData[] = [
     ],
   },
   {
+    name: 'CELPIP',
+    full: 'Canadian English Language Proficiency Index Program',
+    icon: 'flag-outline',
+    color: '#FF6B8A',
+    format: 'Computer-based',
+    delivery: 'Designated test centres',
+    validity: '2 years',
+    scoreRange: 'Level 1–9 per skill (R · W · L · S)',
+    website: 'https://www.celpip.ca',
+    overview: 'Computer-based English test accepted by DHA for Australian skilled visas. CELPIP scores each of the four communicative skills separately — all must individually meet the minimum. Note: CELPIP does not qualify for Superior English (+20 pts) bonus.',
+    proficiency: [
+      { label: 'Vocational', score: '4 in each skill', description: 'SC 482 Short-term stream', color: '#FF7043' },
+      { label: 'Competent',  score: '7 in each skill', description: 'Minimum for skilled & employer visas', pointsBonus: '0 pts', color: Colors.accent },
+      { label: 'Proficient', score: '8 in each skill', description: 'EOI bonus points', pointsBonus: '+10 pts', color: Colors.secondary },
+      { label: 'Superior',   score: 'Not applicable',  description: 'CELPIP does not qualify for Superior English level', color: '#6B7280' },
+    ],
+    visaRequirements: [
+      { code: '189', name: 'Skilled Independent',      color: '#4F8EF7', level: 'Competent',  score: '7 in each skill', notes: ['All 4 skills must individually reach Level 7 — no averaging', 'Proficient (8) earns +10 pts; Superior NOT available via CELPIP'], url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skilled-independent-189' },
+      { code: '190', name: 'Skilled Nominated',        color: '#00C2FF', level: 'Competent',  score: '7 in each skill', notes: ['Same as 189 — each skill must individually reach 7', 'State nomination may require higher scores'], url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skilled-nominated-190' },
+      { code: '491', name: 'Skilled Work Regional',    color: '#A78BFA', level: 'Competent',  score: '7 in each skill', notes: ['Same as 189/190 minimum per skill', 'Regional sponsor may require higher scores'], url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skilled-work-regional-provisional-491' },
+      { code: '482', name: 'Skills in Demand (TSS)',   color: '#FF6B8A', level: 'Vocational', score: '4 in each skill', notes: ['Short-term stream: 4 in each skill', 'Core Skills & Specialist streams: 7 in each skill'], url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skills-in-demand-visa-subclass-482' },
+      { code: '186', name: 'Employer Nominated (ENS)', color: '#FF7043', level: 'Competent',  score: '7 in each skill', notes: ['Each skill must individually meet 7', 'Results must not be more than 2 years old at time of application'], url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/employer-nomination-scheme-186' },
+      { code: '485', name: 'Temporary Graduate',       color: '#00D68F', level: 'Competent',  score: '7 in each skill', notes: ['Waived if 2+ years of Australian study completed', 'Test must be within 2 years of application'], url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/temporary-graduate-485' },
+    ],
+    centers: [
+      { label: 'CELPIP — Book a Test', sublabel: 'Computer-delivered · centres across Australia', url: 'https://www.celpip.ca/', badge: 'Official' },
+    ],
+  },
+  {
     name: 'OET',
     full: 'Occupational English Test (Healthcare Only)',
     icon: 'medkit-outline',
@@ -340,7 +369,7 @@ export default function EnglishTestsScreen() {
           <View style={styles.emptyIconWrap}>
             <Ionicons name="language-outline" size={32} color={Colors.textMuted} />
           </View>
-          <Text style={styles.emptyTitle}>5 DHA-approved tests</Text>
+          <Text style={styles.emptyTitle}>6 DHA-approved tests</Text>
           <Text style={styles.emptySub}>
             Select a test above to see proficiency scores, visa requirements and how to book.
           </Text>

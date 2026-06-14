@@ -12,8 +12,17 @@
  */
 import * as Sentry from '@sentry/react-native';
 import Constants from 'expo-constants';
+import { Platform } from 'react-native';
 
 export function initSentry(): void {
+  // Skip Sentry initialization on web — @sentry/react-native is native-only
+  if (Platform.OS === 'web') {
+    if (__DEV__) {
+      console.log('[sentry] Skipped on web platform — native-only module');
+    }
+    return;
+  }
+  
   const dsn = process.env.EXPO_PUBLIC_SENTRY_DSN;
   if (!dsn) {
     if (__DEV__) {

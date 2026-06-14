@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { getProfile, saveProfile } from '../../utils/storage';
 import { tap as hapticTap } from '../../utils/haptics';
+import PaywallModal from '../../components/PaywallModal';
 
 interface StateVisa { sub: string; label: string; desc: string }
 interface StateVisaGroup { category: string; icon: string; visas: StateVisa[] }
@@ -210,15 +211,27 @@ const STATES: StateEntry[] = [
 export default function StatesScreen() {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [pinned, setPinned] = useState<string[]>([]);
+  const [isPremium, setIsPremium] = useState(false);
+  const [showPaywall, setShowPaywall] = useState(false);
   const insets = useSafeAreaInsets();
   const router = useRouter();
 
   useEffect(() => {
-    getProfile().then((p) => setPinned(p.pinnedStates ?? []));
+    getProfile().then((p) => {
+      setPinned(p.pinnedStates ?? []);
+      setIsPremium(p.isPremium ?? false);
+    });
   }, []);
 
   const togglePin = async (code: string) => {
     hapticTap();
+    
+    // Premium feature: State intelligence/pinning
+    if (!isPremium && !pinned.includes(code)) {
+      setShowPaywall(true);
+      return;
+    }
+    
     const next = pinned.includes(code)
       ? pinned.filter((c) => c !== code)
       : [...pinned, code];
@@ -383,6 +396,14 @@ export default function StatesScreen() {
           Data sourced from official state/territory migration portals. Eligibility criteria change — always confirm on the official site.
         </Text>
       </View>
+      <PaywallModal 
+        visible={showPaywall} 
+        onClose={() => setShowPaywall(false)} 
+        userId={''}
+        title="Unlock State Intelligence"
+        message="Pin your favorite states and filter alerts by state. Premium feature."
+        feature="states" 
+      />
     </ScrollView>
   );
 }

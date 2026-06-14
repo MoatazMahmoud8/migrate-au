@@ -223,7 +223,11 @@ export default function AiScreen() {
       {/* Remaining uses badge */}
       {profile && remaining !== null && !profile.isPremium && (
         <View style={styles.remainingBadge}>
-          <Ionicons name="lightning-outline" size={14} color={Colors.secondary} />
+          <Ionicons 
+            name={remaining > 0 ? "zap" : "lock-closed"} 
+            size={14} 
+            color={remaining > 0 ? Colors.secondary : Colors.error} 
+          />
           <Text style={styles.remainingText}>
             {remaining > 0 ? `${remaining} free message${remaining === 1 ? '' : 's'} left` : 'Free messages used up'}
           </Text>

@@ -59,37 +59,56 @@ export async function initNotifications(subscribedStates: string[] = [], userId?
     return false;
   }
   try {
+    console.log('[notifications] 🚀 Starting initialization...');
+    
     // 1. Request permission
     const granted = await requestPermission();
-    if (!granted) return false;
+    if (!granted) {
+      console.warn('[notifications] ⚠️  Permission not granted - notifications disabled');
+      return false;
+    }
+    console.log('[notifications] ✅ Permission granted');
 
     // 2. Subscribe to global topics
     await subscribeGlobalTopics();
+    console.log('[notifications] ✅ Global topics subscribed');
 
     // 3. Subscribe to state-specific topics the user chose
     await subscribeStateTopics(subscribedStates);
+    console.log('[notifications] ✅ State topics subscribed:', subscribedStates);
 
     // 4. Register foreground handler
     registerForegroundHandler();
+    console.log('[notifications] ✅ Foreground handler registered');
 
     // 5. Handle notifications that opened the app (background tap)
     registerBackgroundOpenHandler();
+    console.log('[notifications] ✅ Background handler registered');
 
     // 6. Register this device's FCM token against the user's watchlist doc
     //    so the backend can push targeted occupation alerts.
     if (userId) {
       try {
+        console.log('[notifications] 📡 Getting FCM token...');
         const token = await messaging().getToken();
-        if (token) await registerWatchlistDevice(userId, token);
+        if (token) {
+          console.log('[notifications] ✅ FCM token obtained:', token.substring(0, 20) + '...');
+          await registerWatchlistDevice(userId, token);
+          console.log('[notifications] ✅ Watchlist device registered for userId:', userId);
+        } else {
+          console.warn('[notifications] ⚠️  FCM token is null/empty - device may not be registered');
+        }
       } catch (e) {
-        console.warn('[notifications] FCM token registration failed:', e);
+        console.warn('[notifications] ⚠️  FCM token registration failed:', e);
       }
+    } else {
+      console.log('[notifications] ℹ️  No userId provided - skipping watchlist device registration');
     }
 
-    console.log('[notifications] ✅ Initialised');
+    console.log('[notifications] ✅ Initialised successfully');
     return true;
   } catch (err) {
-    console.warn('[notifications] Init error:', err);
+    console.error('[notifications] ❌ Init error:', err);
     return false;
   }
 }
@@ -98,38 +117,64 @@ export async function initNotifications(subscribedStates: string[] = [], userId?
 
 async function requestPermission(): Promise<boolean> {
   if (Platform.OS === 'android') {
+    console.log('[notifications] Requesting Android permissions...');
     // Android 13+ requires POST_NOTIFICATIONS runtime permission
     const { status } = await Notifications.requestPermissionsAsync();
     if (status !== 'granted') {
-      console.warn('[notifications] Permission denied (Android)');
+      console.warn('[notifications] ❌ Android permission denied - status:', status);
       return false;
     }
+    console.log('[notifications] ✅ Android permissions granted');
+    
     // Also request Firebase messaging permission
-    await messaging().requestPermission();
-    return true;
+    try {
+      const authStatus = await messaging().requestPermission();
+      console.log('[notifications] ✅ Firebase messaging permission - status:', authStatus);
+      return true;
+    } catch (e) {
+      console.warn('[notifications] ⚠️  Firebase messaging permission request failed:', e);
+      // Still return true since expo-notifications permission was granted
+      return true;
+    }
   }
 
   // iOS
+  console.log('[notifications] Requesting iOS permissions...');
   const authStatus = await messaging().requestPermission();
-  const allowed = [
-    messaging.AuthorizationStatus.AUTHORIZED,
-    messaging.AuthorizationStatus.PROVISIONAL,
-  ].includes(authStatus);
+  console.log('[notifications] iOS permission status:', authStatus);
+  
+  const allowed = authStatus === messaging.AuthorizationStatus.AUTHORIZED || 
+                   authStatus === messaging.AuthorizationStatus.PROVISIONAL;
 
   if (!allowed) {
-    console.warn('[notifications] Permission denied (iOS)');
+    console.warn('[notifications] ❌ iOS permission denied - status:', authStatus);
     return false;
   }
+  
+  console.log('[notifications] ✅ iOS permissions granted');
   return true;
 }
 
 // ─── Topic subscriptions ─────────────────────────────────────────────────────
 
 async function subscribeGlobalTopics() {
-  await Promise.all(
-    GLOBAL_TOPICS.map(topic => messaging().subscribeToTopic(topic))
+  console.log('[notifications] 📌 Subscribing to global topics:', GLOBAL_TOPICS);
+  const results = await Promise.allSettled(
+    GLOBAL_TOPICS.map(async (topic) => {
+      try {
+        await messaging().subscribeToTopic(topic);
+        console.log('[notifications] ✅ Subscribed to topic:', topic);
+        return { topic, success: true };
+      } catch (e) {
+        console.error('[notifications] ❌ Failed to subscribe to topic:', topic, e);
+        return { topic, success: false, error: e };
+      }
+    })
   );
-  console.log('[notifications] Subscribed to global topics:', GLOBAL_TOPICS);
+  const failed = results.filter(r => r.status === 'rejected' || (r.status === 'fulfilled' && !r.value.success));
+  if (failed.length > 0) {
+    console.warn('[notifications] ⚠️  Some global topics failed:', failed);
+  }
 }
 
 export async function subscribeStateTopics(stateCodes: string[]) {
@@ -137,9 +182,30 @@ export async function subscribeStateTopics(stateCodes: string[]) {
     .map(code => STATE_TOPICS[code])
     .filter(Boolean);
 
-  await Promise.all(topics.map(topic => messaging().subscribeToTopic(topic)));
-  if (topics.length) {
-    console.log('[notifications] Subscribed to state topics:', topics);
+  if (topics.length === 0) {
+    console.log('[notifications] ℹ️  No state topics to subscribe to');
+    return;
+  }
+
+  console.log('[notifications] 📌 Subscribing to state topics:', topics);
+  const results = await Promise.allSettled(
+    topics.map(async (topic) => {
+      try {
+        await messaging().subscribeToTopic(topic);
+        console.log('[notifications] ✅ Subscribed to state topic:', topic);
+        return { topic, success: true };
+      } catch (e) {
+        console.error('[notifications] ❌ Failed to subscribe to state topic:', topic, e);
+        return { topic, success: false, error: e };
+      }
+    })
+  );
+  
+  const failed = results.filter(r => r.status === 'rejected' || (r.status === 'fulfilled' && !r.value.success));
+  if (failed.length > 0) {
+    console.warn('[notifications] ⚠️  Some state topics failed:', failed);
+  } else {
+    console.log('[notifications] ✅ All state topics subscribed');
   }
 }
 
@@ -177,13 +243,13 @@ function registerForegroundHandler() {
 function registerBackgroundOpenHandler() {
   // App was in background and user tapped the notification
   messaging().onNotificationOpenedApp((remoteMessage) => {
-    handleNotificationNavigation(remoteMessage.data);
+    handleNotificationNavigation(remoteMessage.data as Record<string, string> | undefined);
   });
 
   // App was quit and launched by tapping notification
   messaging().getInitialNotification().then((remoteMessage) => {
     if (remoteMessage) {
-      handleNotificationNavigation(remoteMessage.data);
+      handleNotificationNavigation(remoteMessage.data as Record<string, string> | undefined);
     }
   });
 }
@@ -221,6 +287,10 @@ export interface AppNotification {
   /** Watchlist hits also carry the matched occupation for UI labelling. */
   anzsco?: string;
   visaSubclass?: string;
+  /** Source attribution: government body, media outlet, or AMG analysis */
+  source?: string;
+  /** Source URL - only official sources, no competitor links */
+  sourceUrl?: string;
 }
 
 /**
@@ -253,14 +323,16 @@ export function subscribeToFeed(
   //            they don't render in any list).
   if (!userId) {
     return col
-      .orderBy('timestamp', 'desc')
-      .limit(limit)
+      .limit(limit * 2) // Fetch more to account for sorting
       .onSnapshot(
         snapshot => {
-          const items: AppNotification[] = snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...(doc.data() as Omit<AppNotification, 'id'>),
-          }));
+          const items: AppNotification[] = snapshot.docs
+            .map(doc => ({
+              id: doc.id,
+              ...(doc.data() as Omit<AppNotification, 'id'>),
+            }))
+            .sort((a, b) => (b.timestamp || '').localeCompare(a.timestamp || ''))
+            .slice(0, limit);
           onUpdate(items);
         },
         err => console.warn('[notifications] Feed error:', err),
@@ -280,14 +352,15 @@ export function subscribeToFeed(
 
   const unsub1 = col
     .where('userId', '==', null)
-    .orderBy('timestamp', 'desc')
-    .limit(limit)
+    .limit(limit * 2)
     .onSnapshot(
       snap => {
-        broadcasts = snap.docs.map(d => ({
-          id: d.id,
-          ...(d.data() as Omit<AppNotification, 'id'>),
-        }));
+        broadcasts = snap.docs
+          .map(d => ({
+            id: d.id,
+            ...(d.data() as Omit<AppNotification, 'id'>),
+          }))
+          .sort((a, b) => (b.timestamp || '').localeCompare(a.timestamp || ''));
         emit();
       },
       err => console.warn('[notifications] Broadcast feed error:', err),
@@ -295,14 +368,15 @@ export function subscribeToFeed(
 
   const unsub2 = col
     .where('userId', '==', userId)
-    .orderBy('timestamp', 'desc')
-    .limit(limit)
+    .limit(limit * 2)
     .onSnapshot(
       snap => {
-        personal = snap.docs.map(d => ({
-          id: d.id,
-          ...(d.data() as Omit<AppNotification, 'id'>),
-        }));
+        personal = snap.docs
+          .map(d => ({
+            id: d.id,
+            ...(d.data() as Omit<AppNotification, 'id'>),
+          }))
+          .sort((a, b) => (b.timestamp || '').localeCompare(a.timestamp || ''));
         emit();
       },
       err => console.warn('[notifications] Personal feed error:', err),

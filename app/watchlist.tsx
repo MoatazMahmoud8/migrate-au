@@ -176,6 +176,13 @@ export default function WatchlistScreen() {
   };
 
   const toggleState = (code: string) => {
+    // Premium feature: State-filtered watchlist alerts
+    if (!isPremium && !selectedStates.includes(code)) {
+      // Free user trying to ADD a state - block it
+      setPaywallVisible(true);
+      return;
+    }
+    // Premium user or removing an already-selected state
     setSelectedStates((prev) =>
       prev.includes(code) ? prev.filter((s) => s !== code) : [...prev, code],
     );
@@ -354,27 +361,33 @@ export default function WatchlistScreen() {
 
             {(subclass === '190' || subclass === '491') && (
               <>
-                <Text style={styles.label}>States (optional — leave empty for all)</Text>
-                <View style={styles.chipRow}>
-                  {STATES.map((s) => (
-                    <TouchableOpacity
-                      key={s}
-                      onPress={() => toggleState(s)}
-                      style={[
-                        styles.chip,
-                        selectedStates.includes(s) && styles.chipActive,
-                      ]}
-                    >
-                      <Text
+                <View style={{ opacity: isPremium ? 1 : 0.5 }}>
+                  <Text style={styles.label}>
+                    States (optional{!isPremium ? ' — Premium feature' : ' — leave empty for all'})
+                  </Text>
+                  <View style={styles.chipRow}>
+                    {STATES.map((s) => (
+                      <TouchableOpacity
+                        key={s}
+                        onPress={() => { if (isPremium) toggleState(s); else if (selectedStates.includes(s)) toggleState(s); else setPaywallVisible(true); }}
+                        disabled={!isPremium && !selectedStates.includes(s)}
                         style={[
-                          styles.chipText,
-                          selectedStates.includes(s) && styles.chipTextActive,
+                          styles.chip,
+                          selectedStates.includes(s) && styles.chipActive,
+                          !isPremium && !selectedStates.includes(s) && { opacity: 0.5 },
                         ]}
                       >
-                        {s}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
+                        <Text
+                          style={[
+                            styles.chipText,
+                            selectedStates.includes(s) && styles.chipTextActive,
+                          ]}
+                        >
+                          {s}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
                 </View>
               </>
             )}

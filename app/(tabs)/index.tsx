@@ -450,11 +450,25 @@ function ScoreCard({ input, onCalcPress }: { input: PointsInput | null; onCalcPr
 
 function GlanceRow({ input }: { input: PointsInput | null }) {
   const router = useRouter();
+  const [latestRound, setLatestRound] = useState({ label: 'Nov 2025', minPoints: 65 });
   const breakdown = input ? calculatePoints(input) : null;
   const above = breakdown ? breakdown.total - 65 : null;
   const color = breakdown
     ? (breakdown.likelyEligible ? Colors.success : breakdown.total >= 55 ? Colors.warning : '#FF6B6B')
     : Colors.textMuted;
+
+  // Load latest round data on component mount
+  useEffect(() => {
+    const { getLatestRound } = require('../../utils/latestRound');
+    (async () => {
+      try {
+        const round = await getLatestRound();
+        setLatestRound({ label: round.label, minPoints: round.minPoints ?? 65 });
+      } catch (e) {
+        console.warn('[GlanceRow] Failed to load latest round:', e);
+      }
+    })();
+  }, []);
 
   const cards = [
     {
@@ -462,8 +476,8 @@ function GlanceRow({ input }: { input: PointsInput | null }) {
       iconColor: Colors.secondary,
       bg: 'rgba(255,205,0,0.10)',
       label: 'Last Round',
-      value: 'Nov 2025',
-      sub: 'SC 189 · 65 pts min',
+      value: latestRound.label,
+      sub: `SC 189 · ${latestRound.minPoints} pts min`,
       route: '/(tabs)/rounds',
     },
     breakdown
