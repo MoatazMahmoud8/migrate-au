@@ -38,6 +38,7 @@
 			"package": "com.jsmglobal.migration_au",
 			"versionCode": 100,
 			"googleServicesFile": "./google-services.json",
+			"jsEngine": "jsc",
 			"permissions": [
 				"android.permission.INTERNET",
 				"android.permission.RECEIVE_BOOT_COMPLETED",
@@ -64,7 +65,8 @@
 						"ccacheEnabled": true
 					},
 					"android": {
-						"googleServicesFile": "./google-services.json"
+						"googleServicesFile": "./google-services.json",
+						"enableHermes": false
 					}
 				}
 			],
