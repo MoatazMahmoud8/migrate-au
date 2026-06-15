@@ -45,7 +45,7 @@ export default function NotificationDetail({ notification, onClose, onReadSource
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: Colors.bg }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: Colors.background }]}>
       {/* Header with close button */}
       <View style={styles.header}>
         <TouchableOpacity onPress={onClose} activeOpacity={0.7}>
@@ -144,7 +144,7 @@ function formatTimeAgo(timestamp: string | number): string {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#ffffff', // White background for better readability
+    backgroundColor: Colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -157,7 +157,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: FontSize.lg,
-    fontWeight: FontWeight.semibold,
+    fontWeight: FontWeight.semiBold,
     color: Colors.textPrimary,
   },
   scrollContent: {
@@ -180,7 +180,7 @@ const styles = StyleSheet.create({
   },
   badgeText: {
     fontSize: FontSize.xs,
-    fontWeight: FontWeight.semibold,
+    fontWeight: FontWeight.semiBold,
   },
   timeAgo: {
     fontSize: FontSize.sm,
@@ -190,7 +190,7 @@ const styles = StyleSheet.create({
   headline: {
     fontSize: FontSize.xl,
     fontWeight: FontWeight.bold,
-    color: '#1a1a1a', // Dark text for visibility
+    color: Colors.textPrimary,
     marginBottom: Spacing.md,
     lineHeight: 28,
   },
@@ -208,15 +208,15 @@ const styles = StyleSheet.create({
   },
   sourceText: {
     fontSize: FontSize.sm,
-    color: '#666666', // Dark gray for readability
+    color: Colors.textSecondary,
     fontWeight: FontWeight.regular,
   },
   bodySection: {
     marginBottom: Spacing.lg,
   },
   bodyText: {
-    fontSize: FontSize.base,
-    color: '#1a1a1a', // Dark text for readability on white
+    fontSize: FontSize.md,
+    color: Colors.textPrimary,
     lineHeight: 22,
     fontWeight: FontWeight.regular,
   },
@@ -236,8 +236,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   buttonText: {
-    fontSize: FontSize.base,
-    fontWeight: FontWeight.semibold,
+    fontSize: FontSize.md,
+    fontWeight: FontWeight.semiBold,
     color: 'white',
   },
 });

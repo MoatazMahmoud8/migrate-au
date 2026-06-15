@@ -41,7 +41,7 @@ export default function InAppBrowser({ url, onClose, title }: InAppBrowserProps)
   // On web, render an embedded iframe
   if (Platform.OS === 'web') {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: Colors.bg }]}>
+      <SafeAreaView style={[styles.container, { backgroundColor: Colors.background }]}>
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={onClose} activeOpacity={0.7}>
@@ -76,7 +76,7 @@ export default function InAppBrowser({ url, onClose, title }: InAppBrowserProps)
   // On native, render WebView if available
   if (WebView) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: Colors.bg }]}>
+      <SafeAreaView style={[styles.container, { backgroundColor: Colors.background }]}>
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity
@@ -125,7 +125,7 @@ export default function InAppBrowser({ url, onClose, title }: InAppBrowserProps)
 
   // Fallback: show message that WebView is not available
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: Colors.bg }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: Colors.background }]}>
       <View style={styles.header}>
         <TouchableOpacity onPress={onClose} activeOpacity={0.7}>
           <Ionicons name="chevron-back" size={28} color={Colors.textPrimary} />
@@ -155,7 +155,7 @@ export default function InAppBrowser({ url, onClose, title }: InAppBrowserProps)
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.bg,
+    backgroundColor: Colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -163,13 +163,13 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.md,
-    backgroundColor: Colors.bg,
+    backgroundColor: Colors.background,
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
   },
   headerTitle: {
-    fontSize: FontSize.base,
-    fontWeight: FontWeight.semibold,
+    fontSize: FontSize.md,
+    fontWeight: FontWeight.semiBold,
     color: Colors.textPrimary,
     flex: 1,
     marginHorizontal: Spacing.md,
@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: Colors.bg,
+    backgroundColor: Colors.background,
   },
   loadingText: {
     marginTop: Spacing.md,
@@ -204,7 +204,7 @@ const styles = StyleSheet.create({
     marginTop: Spacing.md,
   },
   fallbackText: {
-    fontSize: FontSize.base,
+    fontSize: FontSize.md,
     color: Colors.textMuted,
     textAlign: 'center',
     marginTop: Spacing.md,
@@ -219,8 +219,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   fallbackButtonText: {
-    fontSize: FontSize.base,
-    fontWeight: FontWeight.semibold,
+    fontSize: FontSize.md,
+    fontWeight: FontWeight.semiBold,
     color: 'white',
   },
 });
