@@ -1,14 +1,14 @@
 module.exports = function (api) {
   api.cache(true);
   return {
-    presets: ['babel-preset-expo'],
+    presets: [
+      // Force hermes-v0 profile: transforms classes to ES5 and private fields
+      // to WeakMap pattern - required because hermesc in RN 0.81.5 Linux does
+      // not support class syntax or private fields (#x). TypeScript is stripped
+      // first via babel-preset-expo's overrides before class transforms run.
+      ['babel-preset-expo', { unstable_transformProfile: 'hermes-v0' }],
+    ],
     plugins: [
-      // 1. Parse and transform modern class field assignments FIRST
-      ['@babel/plugin-transform-class-properties', { "loose": true }],
-      ['@babel/plugin-transform-private-methods', { "loose": true }],
-      ['@babel/plugin-transform-private-property-in-object', { "loose": true }],
-      // 2. THEN safely convert classes down to ES5 prototypes for Hermes
-      ['@babel/plugin-transform-classes', { "loose": true }],
       'react-native-reanimated/plugin',
     ],
   };
