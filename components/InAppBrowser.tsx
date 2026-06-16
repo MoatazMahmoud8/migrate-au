@@ -37,6 +37,13 @@ interface InAppBrowserProps {
 export default function InAppBrowser({ url, onClose, title }: InAppBrowserProps) {
   const [loading, setLoading] = useState(true);
   const [canGoBack, setCanGoBack] = useState(false);
+  const webViewRef = React.useRef<any>(null);
+
+  const handleGoBack = () => {
+    if (webViewRef.current && canGoBack) {
+      webViewRef.current.goBack();
+    }
+  };
 
   // On web, render an embedded iframe
   if (Platform.OS === 'web') {
@@ -80,7 +87,7 @@ export default function InAppBrowser({ url, onClose, title }: InAppBrowserProps)
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity
-            onPress={canGoBack ? () => {/* go back handler */} : onClose}
+            onPress={canGoBack ? handleGoBack : onClose}
             activeOpacity={0.7}
           >
             <Ionicons name="chevron-back" size={28} color={Colors.textPrimary} />
@@ -103,6 +110,7 @@ export default function InAppBrowser({ url, onClose, title }: InAppBrowserProps)
 
         {/* WebView */}
         <WebView
+          ref={webViewRef}
           source={{ uri: url }}
           onLoadStart={() => setLoading(true)}
           onLoadEnd={() => setLoading(false)}

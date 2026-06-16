@@ -1784,7 +1784,7 @@ const styles = StyleSheet.create({
   },
   notSponsoredReason: {
     fontSize: FontSize.xs,
-    color: Colors.text,
+    color: Colors.textSecondary,
     marginBottom: 6,
   },
   notSponsoredNotes: {
