@@ -38,7 +38,7 @@
 			"package": "com.jsmglobal.migration_au",
 			"versionCode": 100,
 			"googleServicesFile": "./google-services.json",
-			"jsEngine": "jsc",
+			"jsEngine": "hermes",
 			"permissions": [
 				"android.permission.INTERNET",
 				"android.permission.RECEIVE_BOOT_COMPLETED",
@@ -66,7 +66,7 @@
 					},
 					"android": {
 						"googleServicesFile": "./google-services.json",
-						"enableHermes": false
+						"enableHermes": true
 					}
 				}
 			],

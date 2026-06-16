@@ -140,19 +140,25 @@ async function requestPermission(): Promise<boolean> {
 
   // iOS
   console.log('[notifications] Requesting iOS permissions...');
-  const authStatus = await messaging().requestPermission();
-  console.log('[notifications] iOS permission status:', authStatus);
-  
-  const allowed = authStatus === messaging.AuthorizationStatus.AUTHORIZED || 
-                   authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+  try {
+    const authStatus = await messaging().requestPermission();
+    console.log('[notifications] iOS permission status:', authStatus);
+    
+    const allowed = authStatus === messaging.AuthorizationStatus.AUTHORIZED || 
+                     authStatus === messaging.AuthorizationStatus.PROVISIONAL;
 
-  if (!allowed) {
-    console.warn('[notifications] ❌ iOS permission denied - status:', authStatus);
+    if (!allowed) {
+      console.warn('[notifications] ❌ iOS permission denied - status:', authStatus);
+      return false;
+    }
+    
+    console.log('[notifications] ✅ iOS permissions granted');
+    return true;
+  } catch (e) {
+    console.warn('[notifications] ⚠️  iOS Firebase permission request failed:', e);
+    // Don't crash - allow app to continue
     return false;
   }
-  
-  console.log('[notifications] ✅ iOS permissions granted');
-  return true;
 }
 
 // ─── Topic subscriptions ─────────────────────────────────────────────────────
