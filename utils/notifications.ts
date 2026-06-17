@@ -350,48 +350,94 @@ export function subscribeToFeed(
   let personal: AppNotification[] = [];
 
   const emit = () => {
-    const merged = [...broadcasts, ...personal]
-      .sort((a, b) => (b.timestamp || '').localeCompare(a.timestamp || ''))
-      .slice(0, limit);
-    onUpdate(merged);
+    try {
+      console.log('[subscribeToFeed] Emitting update - broadcasts:', broadcasts.length, 'personal:', personal.length);
+      const merged = [...broadcasts, ...personal]
+        .sort((a, b) => (b.timestamp || '').localeCompare(a.timestamp || ''))
+        .slice(0, limit);
+      console.log('[subscribeToFeed] Merged:', merged.length, 'items');
+      onUpdate(merged);
+    } catch (err) {
+      console.error('[subscribeToFeed] Error in emit/onUpdate callback:', err);
+      // Silently fail - don't crash the app
+    }
   };
 
-  const unsub1 = col
-    .where('userId', '==', null)
-    .limit(limit * 2)
-    .onSnapshot(
-      snap => {
-        broadcasts = snap.docs
-          .map(d => ({
-            id: d.id,
-            ...(d.data() as Omit<AppNotification, 'id'>),
-          }))
-          .sort((a, b) => (b.timestamp || '').localeCompare(a.timestamp || ''));
-        emit();
-      },
-      err => console.warn('[notifications] Broadcast feed error:', err),
-    );
+  try {
+    const unsub1 = col
+      .where('userId', '==', null)
+      .limit(limit * 2)
+      .onSnapshot(
+        snap => {
+          try {
+            console.log('[subscribeToFeed] Broadcast snapshot:', snap.docs.length, 'docs');
+            broadcasts = snap.docs
+              .map(d => {
+                try {
+                  return {
+                    id: d.id,
+                    ...(d.data() as Omit<AppNotification, 'id'>),
+                  };
+                } catch (mapErr) {
+                  console.error('[subscribeToFeed] Error mapping broadcast doc:', mapErr);
+                  return null as any;
+                }
+              })
+              .filter(Boolean)
+              .sort((a, b) => (b.timestamp || '').localeCompare(a.timestamp || ''));
+            emit();
+          } catch (err) {
+            console.error('[subscribeToFeed] Error processing broadcast snapshot:', err);
+          }
+        },
+        err => {
+          console.error('[notifications] Broadcast feed error:', err);
+        },
+      );
 
-  const unsub2 = col
-    .where('userId', '==', userId)
-    .limit(limit * 2)
-    .onSnapshot(
-      snap => {
-        personal = snap.docs
-          .map(d => ({
-            id: d.id,
-            ...(d.data() as Omit<AppNotification, 'id'>),
-          }))
-          .sort((a, b) => (b.timestamp || '').localeCompare(a.timestamp || ''));
-        emit();
-      },
-      err => console.warn('[notifications] Personal feed error:', err),
-    );
+    const unsub2 = col
+      .where('userId', '==', userId)
+      .limit(limit * 2)
+      .onSnapshot(
+        snap => {
+          try {
+            console.log('[subscribeToFeed] Personal snapshot:', snap.docs.length, 'docs');
+            personal = snap.docs
+              .map(d => {
+                try {
+                  return {
+                    id: d.id,
+                    ...(d.data() as Omit<AppNotification, 'id'>),
+                  };
+                } catch (mapErr) {
+                  console.error('[subscribeToFeed] Error mapping personal doc:', mapErr);
+                  return null as any;
+                }
+              })
+              .filter(Boolean)
+              .sort((a, b) => (b.timestamp || '').localeCompare(a.timestamp || ''));
+            emit();
+          } catch (err) {
+            console.error('[subscribeToFeed] Error processing personal snapshot:', err);
+          }
+        },
+        err => {
+          console.error('[notifications] Personal feed error:', err);
+        },
+      );
 
-  return () => {
-    unsub1();
-    unsub2();
-  };
+    return () => {
+      try {
+        unsub1();
+        unsub2();
+      } catch (err) {
+        console.error('[subscribeToFeed] Error unsubscribing:', err);
+      }
+    };
+  } catch (err) {
+    console.error('[subscribeToFeed] Error setting up feed listeners:', err);
+    return () => {};
+  }
 }
 
 /** Mark a notification as read in Firestore */

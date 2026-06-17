@@ -25,6 +25,7 @@ import { getRevenueCatUserId } from '../../utils/iap';
 import { SourceValidator } from '../../utils/sourceValidator';
 import NotificationDetail from '../../components/NotificationDetail';
 import InAppBrowser from '../../components/InAppBrowser';
+import { ErrorBoundary } from '../../components/ErrorBoundary';
 
 const CATEGORY_COLORS: Record<string, string> = {
   'Policy Update':          Colors.accent,         // Cyan
@@ -124,36 +125,68 @@ export default function NotificationsScreen() {
     let cancelled = false;
     let unsub: (() => void) | undefined;
     (async () => {
-      const uid = await getRevenueCatUserId().catch(() => '');
-      if (cancelled) return;
+      try {
+        const uid = await getRevenueCatUserId().catch(() => '');
+        if (cancelled) return;
 
-      // Use web Firebase on web, native Firebase on mobile
-      if (Platform.OS === 'web') {
-        initializeFirebaseWeb();
-        unsub = subscribeToNotificationsWeb(
-          items => {
-            setFeed(items);
-            setLoading(false);
-            setRefreshing(false);
-          },
-          30,
-          uid || undefined,
-        ) || undefined;
-      } else {
-        unsub = subscribeToFeed(
-          items => {
-            setFeed(items);
-            setLoading(false);
-            setRefreshing(false);
-          },
-          30,
-          uid || undefined,
-        );
+        // Use web Firebase on web, native Firebase on mobile
+        if (Platform.OS === 'web') {
+          initializeFirebaseWeb();
+          unsub = subscribeToNotificationsWeb(
+            items => {
+              try {
+                if (!cancelled) {
+                  console.log('[notifications.tsx] Web update - items:', items?.length || 0);
+                  setFeed(items || []);
+                  setLoading(false);
+                  setRefreshing(false);
+                }
+              } catch (err) {
+                console.error('[notifications.tsx] Error updating feed from web:', err);
+                setLoading(false);
+                setRefreshing(false);
+              }
+            },
+            30,
+            uid || undefined,
+          ) || undefined;
+        } else {
+          unsub = subscribeToFeed(
+            items => {
+              try {
+                if (!cancelled) {
+                  console.log('[notifications.tsx] Native update - items:', items?.length || 0);
+                  setFeed(items || []);
+                  setLoading(false);
+                  setRefreshing(false);
+                }
+              } catch (err) {
+                console.error('[notifications.tsx] Error updating feed from native:', err);
+                setLoading(false);
+                setRefreshing(false);
+              }
+            },
+            30,
+            uid || undefined,
+          );
+        }
+      } catch (err) {
+        console.error('[notifications.tsx] Error in notification setup:', err);
+        if (!cancelled) {
+          setLoading(false);
+          setRefreshing(false);
+        }
       }
     })();
     return () => {
       cancelled = true;
-      if (unsub) unsub();
+      if (unsub) {
+        try {
+          unsub();
+        } catch (err) {
+          console.error('[notifications.tsx] Error unsubscribing:', err);
+        }
+      }
     };
   }, []);
 
@@ -209,21 +242,28 @@ export default function NotificationsScreen() {
 
   // Render based on current state
   if (showInAppBrowser && browserUrl) {
-    return <InAppBrowser url={browserUrl} onClose={handleCloseInAppBrowser} />;
+    return (
+      <ErrorBoundary>
+        <InAppBrowser url={browserUrl} onClose={handleCloseInAppBrowser} />
+      </ErrorBoundary>
+    );
   }
 
   if (selectedNotification) {
     return (
-      <NotificationDetail
-        notification={selectedNotification}
-        onClose={handleCloseDetail}
-        onReadSource={handleReadSource}
-      />
+      <ErrorBoundary>
+        <NotificationDetail
+          notification={selectedNotification}
+          onClose={handleCloseDetail}
+          onReadSource={handleReadSource}
+        />
+      </ErrorBoundary>
     );
   }
 
   // Render main notifications list
   return (
+    <ErrorBoundary>
     <View style={[styles.screen, { paddingTop: insets.top + 60 }]}>
       {/* Header */}
       <View style={styles.header}>
@@ -287,14 +327,29 @@ export default function NotificationsScreen() {
       ) : (
         <FlatList
           data={filteredFeed}
-          keyExtractor={item => item.id}
-          renderItem={({ item }) => (
-            <NotificationCard 
-              item={item} 
-              onRead={handleRead}
-              onTap={handleNotificationTap}
-            />
-          )}
+          keyExtractor={(item, index) => item?.id || `notification-${index}`}
+          renderItem={({ item, index }) => {
+            try {
+              if (!item) {
+                console.warn('[notifications] Null item at index:', index);
+                return null;
+              }
+              return (
+                <NotificationCard 
+                  item={item} 
+                  onRead={handleRead}
+                  onTap={handleNotificationTap}
+                />
+              );
+            } catch (err) {
+              console.error('[notifications] Error rendering NotificationCard at index', index, ':', err);
+              return (
+                <View style={styles.errorItem}>
+                  <Text style={styles.errorText}>Error loading notification</Text>
+                </View>
+              );
+            }
+          }}
           contentContainerStyle={styles.list}
           refreshControl={
             <RefreshControl
@@ -307,6 +362,7 @@ export default function NotificationsScreen() {
         />
       )}
     </View>
+    </ErrorBoundary>
   );
 }
 
@@ -510,5 +566,19 @@ const styles = StyleSheet.create({
     height: 10,
     borderRadius: 5,
     backgroundColor: 'rgba(255,255,255,0.08)',
+  },
+  errorItem: {
+    padding: Spacing.md,
+    marginHorizontal: Spacing.md,
+    marginVertical: Spacing.sm,
+    backgroundColor: Colors.errorLight,
+    borderRadius: Radius.md,
+    borderLeftWidth: 3,
+    borderLeftColor: Colors.error,
+  },
+  errorText: {
+    color: Colors.error,
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.medium,
   },
 });
