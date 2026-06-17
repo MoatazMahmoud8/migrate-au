@@ -318,16 +318,20 @@ export function subscribeToFeed(
 ): () => void {
   // Native-only: @react-native-firebase/firestore has no web implementation.
   if (Platform.OS === 'web') {
+    console.log('[subscribeToFeed] Skipping on web platform');
     onUpdate([]);
     return () => {};
   }
 
-  const col = firestore().collection('notifications');
+  try {
+    console.log('[subscribeToFeed] Initializing Firestore collection - userId:', userId);
+    const col = firestore().collection('notifications');
+    console.log('[subscribeToFeed] Firestore collection ready');
 
-  // ── Path 1: no userId — return everything (used by background badge count
-  //            where leaking other users' watchlist hits is harmless because
-  //            they don't render in any list).
-  if (!userId) {
+    // ── Path 1: no userId — return everything (used by background badge count
+    //            where leaking other users' watchlist hits is harmless because
+    //            they don't render in any list).
+    if (!userId) {
     return col
       .limit(limit * 2) // Fetch more to account for sorting
       .onSnapshot(
@@ -435,7 +439,12 @@ export function subscribeToFeed(
       }
     };
   } catch (err) {
-    console.error('[subscribeToFeed] Error setting up feed listeners:', err);
+    console.error('[subscribeToFeed] ❌ Critical error - Firestore unavailable or initialization failed:', err);
+    if (err instanceof Error) {
+      console.error('[subscribeToFeed] Error message:', err.message);
+      console.error('[subscribeToFeed] Stack trace:', err.stack);
+    }
+    // Return empty unsubscribe to prevent app crash
     return () => {};
   }
 }
