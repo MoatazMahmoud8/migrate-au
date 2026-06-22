@@ -332,42 +332,45 @@ export function subscribeToFeed(
     //            where leaking other users' watchlist hits is harmless because
     //            they don't render in any list).
     if (!userId) {
-    return col
-      .limit(limit * 2) // Fetch more to account for sorting
-      .onSnapshot(
-        snapshot => {
-          const items: AppNotification[] = snapshot.docs
-            .map(doc => ({
-              id: doc.id,
-              ...(doc.data() as Omit<AppNotification, 'id'>),
-            }))
-            .sort((a, b) => (b.timestamp || '').localeCompare(a.timestamp || ''))
-            .slice(0, limit);
-          onUpdate(items);
-        },
-        err => console.warn('[notifications] Feed error:', err),
-      );
-  }
-
-  // ── Path 2: merge broadcast (userId == null) + personal (userId == me)
-  let broadcasts: AppNotification[] = [];
-  let personal: AppNotification[] = [];
-
-  const emit = () => {
-    try {
-      console.log('[subscribeToFeed] Emitting update - broadcasts:', broadcasts.length, 'personal:', personal.length);
-      const merged = [...broadcasts, ...personal]
-        .sort((a, b) => (b.timestamp || '').localeCompare(a.timestamp || ''))
-        .slice(0, limit);
-      console.log('[subscribeToFeed] Merged:', merged.length, 'items');
-      onUpdate(merged);
-    } catch (err) {
-      console.error('[subscribeToFeed] Error in emit/onUpdate callback:', err);
-      // Silently fail - don't crash the app
+      return col
+        .limit(limit * 2) // Fetch more to account for sorting
+        .onSnapshot(
+          snapshot => {
+            try {
+              const items: AppNotification[] = snapshot.docs
+                .map(doc => ({
+                  id: doc.id,
+                  ...(doc.data() as Omit<AppNotification, 'id'>),
+                }))
+                .sort((a, b) => (b.timestamp || '').localeCompare(a.timestamp || ''))
+                .slice(0, limit);
+              onUpdate(items);
+            } catch (err) {
+              console.error('[subscribeToFeed] Error processing no-userId snapshot:', err);
+            }
+          },
+          err => console.warn('[notifications] Feed error:', err),
+        );
     }
-  };
 
-  try {
+    // ── Path 2: merge broadcast (userId == null) + personal (userId == me)
+    let broadcasts: AppNotification[] = [];
+    let personal: AppNotification[] = [];
+
+    const emit = () => {
+      try {
+        console.log('[subscribeToFeed] Emitting update - broadcasts:', broadcasts.length, 'personal:', personal.length);
+        const merged = [...broadcasts, ...personal]
+          .sort((a, b) => (b.timestamp || '').localeCompare(a.timestamp || ''))
+          .slice(0, limit);
+        console.log('[subscribeToFeed] Merged:', merged.length, 'items');
+        onUpdate(merged);
+      } catch (err) {
+        console.error('[subscribeToFeed] Error in emit/onUpdate callback:', err);
+        // Silently fail - don't crash the app
+      }
+    };
+
     const unsub1 = col
       .where('userId', '==', null)
       .limit(limit * 2)
