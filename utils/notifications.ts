@@ -325,8 +325,19 @@ export function subscribeToFeed(
 
   try {
     console.log('[subscribeToFeed] Initializing Firestore collection - userId:', userId);
-    const col = firestore().collection('notifications');
-    console.log('[subscribeToFeed] Firestore collection ready');
+    console.log('[subscribeToFeed] firestore() function exists:', typeof firestore === 'function');
+    
+    const fs = firestore();
+    console.log('[subscribeToFeed] firestore() returned:', typeof fs, fs ? 'object' : 'null/undefined');
+    
+    if (!fs) {
+      console.error('[subscribeToFeed] ❌ firestore() returned null/undefined - Firebase not initialized');
+      onUpdate([]);
+      return () => {};
+    }
+    
+    const col = fs.collection('notifications');
+    console.log('[subscribeToFeed] Firestore collection ready, collection object type:', typeof col);
 
     // ── Path 1: no userId — return everything (used by background badge count
     //            where leaking other users' watchlist hits is harmless because
