@@ -332,24 +332,34 @@ export function subscribeToFeed(
     //            where leaking other users' watchlist hits is harmless because
     //            they don't render in any list).
     if (!userId) {
+      console.log('[subscribeToFeed] Setting up Path 1 listener (no userId)');
       return col
         .limit(limit * 2) // Fetch more to account for sorting
         .onSnapshot(
           snapshot => {
             try {
+              console.log('[subscribeToFeed] Path 1 snapshot received:', snapshot.docs.length, 'docs');
               const items: AppNotification[] = snapshot.docs
-                .map(doc => ({
-                  id: doc.id,
-                  ...(doc.data() as Omit<AppNotification, 'id'>),
-                }))
+                .map((doc, idx) => {
+                  console.log(`[subscribeToFeed] Mapping doc ${idx}:`, doc.id, 'data:', Object.keys(doc.data()));
+                  return {
+                    id: doc.id,
+                    ...(doc.data() as Omit<AppNotification, 'id'>),
+                  };
+                })
                 .sort((a, b) => (b.timestamp || '').localeCompare(a.timestamp || ''))
                 .slice(0, limit);
+              console.log('[subscribeToFeed] Processed', items.length, 'notifications, calling onUpdate');
               onUpdate(items);
             } catch (err) {
               console.error('[subscribeToFeed] Error processing no-userId snapshot:', err);
+              console.error('[subscribeToFeed] Stack:', err instanceof Error ? err.stack : 'unknown');
             }
           },
-          err => console.warn('[notifications] Feed error:', err),
+          err => {
+            console.warn('[subscribeToFeed] Feed error:', err);
+            console.error('[subscribeToFeed] Error stack:', err instanceof Error ? err.stack : 'unknown');
+          },
         );
     }
 
