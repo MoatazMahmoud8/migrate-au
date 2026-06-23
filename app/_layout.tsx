@@ -16,6 +16,18 @@ import { refreshProcessingTimes } from '../utils/processingTimes';
 import { refreshSkilledOccupations } from '../utils/skilledOccupations';
 import { initSentry, Sentry } from '../utils/sentry';
 
+// Initialize Firebase for native platforms
+// @react-native-firebase auto-initializes on app startup, but we explicitly
+// initialize to ensure it's ready before any queries
+if (Platform.OS !== 'web') {
+  try {
+    const firebase = require('@react-native-firebase/app').default;
+    console.log('[_layout] Firebase app initialized:', firebase.app().name);
+  } catch (err) {
+    console.warn('[_layout] Firebase initialization warning:', err);
+  }
+}
+
 initSentry();
 
 SplashScreen.hideAsync();
