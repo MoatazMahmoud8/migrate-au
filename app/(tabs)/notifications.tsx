@@ -10,6 +10,7 @@ import {
   ScrollView,
   Platform,
   Linking,
+  Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -26,6 +27,7 @@ import { SourceValidator } from '../../utils/sourceValidator';
 import NotificationDetail from '../../components/NotificationDetail';
 import InAppBrowser from '../../components/InAppBrowser';
 import { ErrorBoundary } from '../../components/ErrorBoundary';
+import { diagnoseFirebase } from '../../utils/firestore-debug';
 
 const CATEGORY_COLORS: Record<string, string> = {
   'Policy Update':          Colors.accent,         // Cyan
@@ -219,6 +221,25 @@ export default function NotificationsScreen() {
     setRefreshing(true);
   }, []);
 
+  const handleDiagnostics = useCallback(async () => {
+    console.log('[notifications] Running Firebase diagnostics...');
+    try {
+      await diagnoseFirebase();
+      Alert.alert(
+        'Diagnostics Complete',
+        'Check the console logs for detailed Firebase status. All diagnostics have been logged with the [firestore-debug] prefix.',
+        [{ text: 'OK' }]
+      );
+    } catch (err) {
+      console.error('[notifications] Diagnostics error:', err);
+      Alert.alert(
+        'Diagnostics Error',
+        err instanceof Error ? err.message : String(err),
+        [{ text: 'OK' }]
+      );
+    }
+  }, []);
+
   const filteredFeed = useMemo(() => {
     if (stateFilter === 'all') return feed;
     if (stateFilter === 'FED') return feed.filter(n => !n.state || n.state === 'FED' || n.state === 'Federal');
@@ -318,6 +339,12 @@ export default function NotificationsScreen() {
             <Ionicons name="newspaper-outline" size={40} color={Colors.accent} />
           </View>
           <Text style={styles.emptyText}>{feed.length === 0 ? 'No updates yet' : 'No updates for this filter'}</Text>
+          {feed.length === 0 && (
+            <TouchableOpacity style={styles.diagnosticsButton} onPress={handleDiagnostics}>
+              <Ionicons name="settings" size={16} color={Colors.white} style={{ marginRight: 8 }} />
+              <Text style={styles.diagnosticsButtonText}>Run Firebase Diagnostics</Text>
+            </TouchableOpacity>
+          )}
           <Text style={styles.emptySubtext}>
             {feed.length === 0
               ? "You'll be notified instantly when Home Affairs, states, or occupation lists change."
@@ -580,5 +607,20 @@ const styles = StyleSheet.create({
     color: Colors.error,
     fontSize: FontSize.sm,
     fontWeight: FontWeight.medium,
+  },
+  diagnosticsButton: {
+    flexDirection: 'row',
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: Radius.md,
+    backgroundColor: Colors.secondary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: Spacing.md,
+  },
+  diagnosticsButtonText: {
+    color: Colors.background,
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.semiBold as any,
   },
 });
