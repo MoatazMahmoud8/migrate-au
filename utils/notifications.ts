@@ -337,26 +337,52 @@ export function subscribeToFeed(
   console.log('[subscribeToFeed] ==========================================');
   console.log('[subscribeToFeed] Starting subscription setup - userId:', userId);
   console.log('[subscribeToFeed] Platform:', Platform.OS);
+  console.log('[subscribeToFeed] Time:', new Date().toISOString());
   
   let unsubscribed = false;
+  let testQueryCompleted = false;
+  let testQueryTimeout: NodeJS.Timeout | null = null;
 
   try {
     // Get Firestore instance
     const fs = firestore();
-    console.log('[subscribeToFeed] ✅ Firestore instance obtained');
+    console.log('[subscribeToFeed] ✅ Firestore instance obtained - Type:', typeof fs);
 
     // Get collection reference
     const col = fs.collection('notifications');
     console.log('[subscribeToFeed] ✅ Collection reference created');
 
     // Test: First do a simple get() to verify access works
-    col.limit(1).get().then(snap => {
-      if (!unsubscribed) {
-        console.log('[subscribeToFeed] 🧪 Test query returned:', snap.size, 'documents');
+    const testQueryStart = Date.now();
+    console.log('[subscribeToFeed] 🧪 Starting test query...');
+    
+    // Set a timeout for the test query
+    testQueryTimeout = setTimeout(() => {
+      if (!testQueryCompleted && !unsubscribed) {
+        console.warn('[subscribeToFeed] 🧪 Test query timeout (30s) - query may be hanging');
       }
-    }).catch(err => {
-      console.error('[subscribeToFeed] 🧪 Test query failed:', err);
-    });
+    }, 30000);
+
+    col.limit(1).get()
+      .then(snap => {
+        testQueryCompleted = true;
+        if (testQueryTimeout) clearTimeout(testQueryTimeout);
+        const elapsed = Date.now() - testQueryStart;
+        
+        if (!unsubscribed) {
+          console.log(`[subscribeToFeed] 🧪 Test query returned: ${snap.size} documents (${elapsed}ms)`);
+        }
+      })
+      .catch(err => {
+        testQueryCompleted = true;
+        if (testQueryTimeout) clearTimeout(testQueryTimeout);
+        const elapsed = Date.now() - testQueryStart;
+        
+        console.error(`[subscribeToFeed] 🧪 Test query FAILED after ${elapsed}ms:`, err instanceof Error ? err.message : err);
+        if (err instanceof Error && err.stack) {
+          console.error('[subscribeToFeed] Stack:', err.stack);
+        }
+      });
 
     // ── Path 1: no userId — return everything
     if (!userId) {
