@@ -334,189 +334,146 @@ export function subscribeToFeed(
     return () => {};
   }
 
+  console.log('[subscribeToFeed] ==========================================');
+  console.log('[subscribeToFeed] Starting subscription setup - userId:', userId);
+  console.log('[subscribeToFeed] Platform:', Platform.OS);
+  
   let unsubscribed = false;
-  
-  const attemptSubscribe = (attemptCount = 1, maxAttempts = 3) => {
-    try {
-      console.log(`[subscribeToFeed] Attempt ${attemptCount}/${maxAttempts}: Initializing Firestore collection - userId:`, userId);
-      
-      let fs;
-      try {
-        fs = firestore();
-      } catch (err) {
-        console.error(`[subscribeToFeed] Attempt ${attemptCount} - firestore() failed:`, err);
-        if (attemptCount < maxAttempts) {
-          console.log(`[subscribeToFeed] Retrying in 1 second...`);
-          setTimeout(() => attemptSubscribe(attemptCount + 1, maxAttempts), 1000);
-          return () => { unsubscribed = true; };
-        }
-        throw err;
-      }
-      
-      console.log('[subscribeToFeed] firestore() returned:', typeof fs, fs ? 'valid' : 'null');
-      
-      if (!fs) {
-        throw new Error('firestore() returned null/undefined');
-      }
-      
-      const col = fs.collection('notifications');
-      console.log('[subscribeToFeed] Firestore collection reference created');
 
-      // ── Path 1: no userId — return everything (used by background badge count
-      //            where leaking other users' watchlist hits is harmless because
-      //            they don't render in any list).
-      if (!userId) {
-        console.log('[subscribeToFeed] Setting up Path 1 listener (no userId)');
-        const unsubListener = col
-          .limit(limit * 2) // Fetch more to account for sorting
-          .onSnapshot(
-            snapshot => {
-              if (unsubscribed) return;
-              try {
-                console.log('[subscribeToFeed] Path 1 snapshot received:', snapshot.docs.length, 'docs');
-                const items: AppNotification[] = snapshot.docs
-                  .map((doc, idx) => {
-                    const data = doc.data() as Omit<AppNotification, 'id'>;
-                    console.log(`[subscribeToFeed] Mapping doc ${idx}:`, doc.id, 'fields:', Object.keys(data).slice(0, 5).join(','), '...');
-                    return {
-                      id: doc.id,
-                      ...data,
-                    };
-                  })
-                  .sort((a, b) => (b.timestamp || '').localeCompare(a.timestamp || ''))
-                  .slice(0, limit);
-                console.log('[subscribeToFeed] Processed', items.length, 'notifications, calling onUpdate');
-                onUpdate(items);
-              } catch (err) {
-                console.error('[subscribeToFeed] Error processing no-userId snapshot:', err);
-                console.error('[subscribeToFeed] Stack:', err instanceof Error ? err.stack : 'unknown');
-              }
-            },
-            err => {
-              if (unsubscribed) return;
-              console.error('[subscribeToFeed] Feed error:', err);
-              console.error('[subscribeToFeed] Error details:', err instanceof Error ? err.message : String(err));
-            },
-          );
-        
-        return () => { 
-          unsubscribed = true;
-          try {
-            unsubListener();
-          } catch (e) {
-            console.warn('[subscribeToFeed] Error unsubscribing from Path 1:', e);
-          }
-        };
-      }
-
-      // ── Path 2: merge broadcast (userId == null) + personal (userId == me)
-      let broadcasts: AppNotification[] = [];
-      let personal: AppNotification[] = [];
-
-      const emit = () => {
-        try {
-          console.log('[subscribeToFeed] Emitting update - broadcasts:', broadcasts.length, 'personal:', personal.length);
-          const merged = [...broadcasts, ...personal]
-            .sort((a, b) => (b.timestamp || '').localeCompare(a.timestamp || ''))
-            .slice(0, limit);
-          console.log('[subscribeToFeed] Merged:', merged.length, 'items');
-          onUpdate(merged);
-        } catch (err) {
-          console.error('[subscribeToFeed] Error in emit/onUpdate callback:', err);
-          // Silently fail - don't crash the app
-        }
-      };
-
-      const unsub1 = col
-        .where('userId', '==', null)
-        .limit(limit * 2)
-        .onSnapshot(
-          snap => {
-            if (unsubscribed) return;
-            try {
-              console.log('[subscribeToFeed] Broadcast snapshot:', snap.docs.length, 'docs');
-              broadcasts = snap.docs
-                .map(d => {
-                  try {
-                    return {
-                      id: d.id,
-                      ...(d.data() as Omit<AppNotification, 'id'>),
-                    };
-                  } catch (mapErr) {
-                    console.error('[subscribeToFeed] Error mapping broadcast doc:', mapErr);
-                    return null as any;
-                  }
-                })
-                .filter(Boolean)
-                .sort((a, b) => (b.timestamp || '').localeCompare(a.timestamp || ''));
-              emit();
-            } catch (err) {
-              console.error('[subscribeToFeed] Error processing broadcast snapshot:', err);
-            }
-          },
-          err => {
-            if (unsubscribed) return;
-            console.error('[notifications] Broadcast feed error:', err);
-          },
-        );
-
-      const unsub2 = col
-        .where('userId', '==', userId)
-        .limit(limit * 2)
-        .onSnapshot(
-          snap => {
-            if (unsubscribed) return;
-            try {
-              console.log('[subscribeToFeed] Personal snapshot:', snap.docs.length, 'docs');
-              personal = snap.docs
-                .map(d => {
-                  try {
-                    return {
-                      id: d.id,
-                      ...(d.data() as Omit<AppNotification, 'id'>),
-                    };
-                  } catch (mapErr) {
-                    console.error('[subscribeToFeed] Error mapping personal doc:', mapErr);
-                    return null as any;
-                  }
-                })
-                .filter(Boolean)
-                .sort((a, b) => (b.timestamp || '').localeCompare(a.timestamp || ''));
-              emit();
-            } catch (err) {
-              console.error('[subscribeToFeed] Error processing personal snapshot:', err);
-            }
-          },
-          err => {
-            if (unsubscribed) return;
-            console.error('[notifications] Personal feed error:', err);
-          },
-        );
-
-      return () => {
-        unsubscribed = true;
-        try {
-          unsub1();
-          unsub2();
-        } catch (err) {
-          console.error('[subscribeToFeed] Error unsubscribing:', err);
-        }
-      };
-    } catch (innerErr) {
-      console.error('[subscribeToFeed] Attempt', attemptCount, 'failed with error:', innerErr);
-      throw innerErr;
-    }
-  };
-  
   try {
-    return attemptSubscribe();
-  } catch (err) {
-    console.error('[subscribeToFeed] ❌ Critical error - Firestore unavailable or initialization failed:', err);
-    if (err instanceof Error) {
-      console.error('[subscribeToFeed] Error message:', err.message);
-      console.error('[subscribeToFeed] Stack trace:', err.stack);
+    // Get Firestore instance
+    const fs = firestore();
+    console.log('[subscribeToFeed] ✅ Firestore instance obtained');
+
+    // Get collection reference
+    const col = fs.collection('notifications');
+    console.log('[subscribeToFeed] ✅ Collection reference created');
+
+    // Test: First do a simple get() to verify access works
+    col.limit(1).get().then(snap => {
+      if (!unsubscribed) {
+        console.log('[subscribeToFeed] 🧪 Test query returned:', snap.size, 'documents');
+      }
+    }).catch(err => {
+      console.error('[subscribeToFeed] 🧪 Test query failed:', err);
+    });
+
+    // ── Path 1: no userId — return everything
+    if (!userId) {
+      console.log('[subscribeToFeed] Setting up Path 1 listener (no userId)');
+      const unsubListener = col
+        .limit(limit * 2)
+        .onSnapshot(
+          snapshot => {
+            if (unsubscribed) {
+              console.log('[subscribeToFeed] Ignoring snapshot (already unsubscribed)');
+              return;
+            }
+            try {
+              console.log('[subscribeToFeed] 📬 Snapshot received:', snapshot.docs.length, 'docs');
+              const items: AppNotification[] = snapshot.docs
+                .map(doc => {
+                  const data = doc.data() as Omit<AppNotification, 'id'>;
+                  return { id: doc.id, ...data };
+                })
+                .sort((a, b) => (b.timestamp || '').localeCompare(a.timestamp || ''))
+                .slice(0, limit);
+              
+              console.log('[subscribeToFeed] 📤 Calling onUpdate with', items.length, 'items');
+              onUpdate(items);
+            } catch (err) {
+              console.error('[subscribeToFeed] Error processing snapshot:', err);
+            }
+          },
+          err => {
+            if (unsubscribed) return;
+            console.error('[subscribeToFeed] ❌ Snapshot error:', err);
+          }
+        );
+      
+      console.log('[subscribeToFeed] ✅ Listener attached successfully');
+      return () => {
+        console.log('[subscribeToFeed] Unsubscribing from Path 1');
+        unsubscribed = true;
+        unsubListener();
+      };
     }
-    // Return empty unsubscribe to prevent app crash
+
+    // ── Path 2: with userId — merge broadcast + personal
+    console.log('[subscribeToFeed] Setting up Path 2 listener (with userId)');
+    let broadcasts: AppNotification[] = [];
+    let personal: AppNotification[] = [];
+
+    const emit = () => {
+      try {
+        const merged = [...broadcasts, ...personal]
+          .sort((a, b) => (b.timestamp || '').localeCompare(a.timestamp || ''))
+          .slice(0, limit);
+        console.log('[subscribeToFeed] 📤 Emitting merged:', merged.length, 'items (broadcasts:', broadcasts.length, 'personal:', personal.length + ')');
+        onUpdate(merged);
+      } catch (err) {
+        console.error('[subscribeToFeed] Error in emit:', err);
+      }
+    };
+
+    const unsub1 = col
+      .where('userId', '==', null)
+      .limit(limit * 2)
+      .onSnapshot(
+        snap => {
+          if (unsubscribed) return;
+          try {
+            console.log('[subscribeToFeed] Broadcast snapshot:', snap.docs.length, 'docs');
+            broadcasts = snap.docs
+              .map(d => ({ id: d.id, ...(d.data() as Omit<AppNotification, 'id'>) }))
+              .sort((a, b) => (b.timestamp || '').localeCompare(a.timestamp || ''));
+            emit();
+          } catch (err) {
+            console.error('[subscribeToFeed] Error processing broadcast:', err);
+          }
+        },
+        err => {
+          if (unsubscribed) return;
+          console.error('[subscribeToFeed] Broadcast listener error:', err);
+        }
+      );
+
+    const unsub2 = col
+      .where('userId', '==', userId)
+      .limit(limit * 2)
+      .onSnapshot(
+        snap => {
+          if (unsubscribed) return;
+          try {
+            console.log('[subscribeToFeed] Personal snapshot:', snap.docs.length, 'docs');
+            personal = snap.docs
+              .map(d => ({ id: d.id, ...(d.data() as Omit<AppNotification, 'id'>) }))
+              .sort((a, b) => (b.timestamp || '').localeCompare(a.timestamp || ''));
+            emit();
+          } catch (err) {
+            console.error('[subscribeToFeed] Error processing personal:', err);
+          }
+        },
+        err => {
+          if (unsubscribed) return;
+          console.error('[subscribeToFeed] Personal listener error:', err);
+        }
+      );
+
+    console.log('[subscribeToFeed] ✅ Both listeners attached successfully');
+    return () => {
+      console.log('[subscribeToFeed] Unsubscribing from Path 2');
+      unsubscribed = true;
+      unsub1();
+      unsub2();
+    };
+  } catch (err) {
+    console.error('[subscribeToFeed] ❌ FATAL ERROR:', err);
+    if (err instanceof Error) {
+      console.error('[subscribeToFeed] Message:', err.message);
+      console.error('[subscribeToFeed] Stack:', err.stack);
+    }
+    onUpdate([]);
     return () => {};
   }
 }
