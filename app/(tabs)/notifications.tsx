@@ -438,12 +438,15 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     gap: 3,
+    overflow: 'hidden',
   },
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     gap: 8,
+    flex: 1,
+    overflow: 'hidden',
   },
   category: {
     fontSize: 9,
@@ -452,10 +455,12 @@ const styles = StyleSheet.create({
     letterSpacing: 0.4,
     color: Colors.textMuted,
     marginBottom: 4,
+    flexShrink: 1,
   },
   time: {
     fontSize: 11,
     color: Colors.textMuted,
+    flexShrink: 0,
   },
   title: {
     fontSize: FontSize.sm,
