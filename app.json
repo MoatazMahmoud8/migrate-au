@@ -103,11 +103,5 @@
 			"router": {}
 		},
 		"owner": "moataz.alsbak"
-	},
-	"Resources": {
-		"RestApi": {
-			"Type": "AWS::ApiGateway::RestApi",
-			"Properties": {}
-		}
 	}
 }
