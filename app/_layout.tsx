@@ -8,6 +8,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Colors } from '../constants/theme';
 import { useEffect, useState } from 'react';
 import { initNotifications, subscribeToFeed } from '../utils/notifications';
+import { refreshLatestRound } from '../utils/latestRound';
 import { initRevenueCat, syncSubscriptionStatus, getRevenueCatUserId } from '../utils/iap';
 import { selection } from '../utils/haptics';
 import { getProfile, saveProfile } from '../utils/storage';
@@ -114,6 +115,14 @@ function RootLayout() {
       } catch (err) {
         console.error('[_layout] ❌ Notification initialization failed:', err);
         // Continue without notifications rather than crash
+      }
+      
+      // Refresh SkillSelect round data on app startup (background)
+      try {
+        console.log('[_layout] Refreshing SkillSelect round data...');
+        await refreshLatestRound();
+      } catch (err) {
+        console.warn('[_layout] Failed to refresh round data:', err);
       }
     })();
 
