@@ -334,22 +334,23 @@ export default function NotificationsScreen() {
           ))}
         </View>
       ) : filteredFeed.length === 0 ? (
-        <View style={styles.empty}>
+        <ScrollView contentContainerStyle={styles.empty} scrollEnabled={false}>
           <View style={styles.emptyIconBadge}>
             <Ionicons name="newspaper-outline" size={40} color={Colors.accent} />
           </View>
           <Text style={styles.emptyText}>{feed.length === 0 ? 'No updates yet' : 'No updates for this filter'}</Text>
-          {feed.length === 0 && (
-            <TouchableOpacity style={styles.diagnosticsButton} onPress={handleDiagnostics}>
-              <Ionicons name="settings" size={16} color={Colors.white} style={{ marginRight: 8 }} />
-              <Text style={styles.diagnosticsButtonText}>Run Firebase Diagnostics</Text>
-            </TouchableOpacity>
-          )}
           <Text style={styles.emptySubtext}>
             {feed.length === 0
               ? "You'll be notified instantly when Home Affairs, states, or occupation lists change."
-              : 'Try a different state or tap All to see everything.'}
+              : 'Try changing your filter or check back later.'}
           </Text>
+          {feed.length === 0 && (
+            <TouchableOpacity style={styles.diagnosticsButton} onPress={handleDiagnostics}>
+              <Ionicons name="settings" size={16} color={Colors.background} style={{ marginRight: 8 }} />
+              <Text style={styles.diagnosticsButtonText}>Run Firebase Diagnostics</Text>
+            </TouchableOpacity>
+          )}
+        </ScrollView>
         </View>
       ) : (
         <FlatList
