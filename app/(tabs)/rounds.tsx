@@ -58,23 +58,24 @@ const STATE_ORDER = ['NSW', 'VIC', 'QLD', 'WA', 'SA', 'TAS', 'ACT', 'NT'];
 // ─── Bundled fallback (13 November 2025 — Dept of Home Affairs) ───────────────
 
 const FALLBACK: RoundsData = {
-  lastUpdated: '2025-11-13',
+  lastUpdated: '2026-06-05',
   sourceUrl: 'https://immi.homeaffairs.gov.au/visas/working-in-australia/skillselect/invitation-rounds',
   note: 'SC 190 and SC 491 (State/Territory Nominated) are managed by states independently — no departmental rounds apply. SC 189 and SC 491 (Family Sponsored) rounds are issued by the Dept of Home Affairs.',
   currentRound: {
-    date: '2025-11-13',
-    label: '13 November 2025',
-    sc189Total: 10000,
-    sc189TieBreak: '2025-11',
-    sc491FamilyTotal: 300,
-    sc491FamilyTieBreak: '2025-10',
+    date: '2026-05-28',
+    label: '28 May 2026',
+    sc189Total: 3500,
+    sc189TieBreak: '2026-05',
+    sc491FamilyTotal: 400,
+    sc491FamilyTieBreak: '2026-04',
   },
   stateNominations: {
-    period: '2025-26 (Jul 2025 – Apr 2026)',
+    period: '2026-27 (Jul 2025 – Apr 2026)',
     sc190: { NSW: 604, VIC: 1894, QLD: 741, WA: 1254, SA: 911, TAS: 988, ACT: 2237, NT: 1443 },
     sc491: { NSW: 653, VIC: 1049, QLD: 438, WA: 630, SA: 594, TAS: 367, ACT: 656, NT: 1067 },
   },
   rounds: [
+    { date: '2026-05-28', label: '28 May 2026', sc189Total: 3500, sc189TieBreak: '2026-05', sc491FamilyTotal: 400, sc491FamilyTieBreak: '2026-04' },
     { date: '2025-11-13', label: '13 November 2025', sc189Total: 10000, sc189TieBreak: '2025-11', sc491FamilyTotal: 300, sc491FamilyTieBreak: '2025-10' },
     { date: '2025-08-21', label: '21 August 2025', sc189Total: 6887, sc491FamilyTotal: 150 },
     { date: '2024-11-07', label: '7 November 2024', sc189Total: 5000, sc491FamilyTotal: 100 },
