@@ -175,6 +175,17 @@ Displays in Notifications tab (newest first)
 
 ## Update Frequency & Timing
 
+### **Source Monitoring Schedule**
+
+| Source | Monitoring | Actual Updates | Why Daily Check? |
+|--------|-----------|-----------------|-----------------|
+| **Department of Home Affairs** | 🔄 Daily | Monthly (SkillSelect rounds) | Announcements can happen any day; don't miss surprise rounds |
+| **State Governments** (8) | 🔄 Daily | Quarterly to Ad-hoc | Allocations can change without notice; states open/close applications unexpectedly |
+| **News Media** (ABC, SBS) | 🔄 Daily | Daily | Policy changes, visa announcements, industry updates |
+| **ANZSCO Board** | 🔄 Daily | Annually | Rare but critical when it happens |
+
+**Key Point:** We check sources **daily**, but actual updates occur at different frequencies. This ensures users never miss time-sensitive announcements.
+
 ### **Real-time Checking**
 - App checks **every 5 seconds** when user is on Notifications tab
 - Notifications appear **within 5-10 seconds** of being added to database
@@ -182,18 +193,19 @@ Displays in Notifications tab (newest first)
 
 ### **Typical Update Frequency by Category**
 
-| Category | Frequency | Typical Updates |
-|----------|-----------|-----------------|
-| SkillSelect Rounds | Monthly | ~1 per month |
-| Policy Changes | Weekly | ~2-3 per week |
-| State Nominations | Quarterly | ~4-8 per quarter |
-| ANZSCO Updates | Annually | ~1 per year |
-| Processing Times | As needed | ~2-4 per year |
-| News Articles | Daily | ~5-10 per day |
+| Category | Frequency | Typical Updates | Impact |
+|----------|-----------|-----------------|--------|
+| SkillSelect Rounds | Monthly | ~1 per month | 🔴 Critical - affects 100k+ people |
+| State Nominations | Weekly to Monthly | ~2-4 per month | 🔴 Critical - allocation changes |
+| Policy Changes | Weekly | ~2-3 per week | 🟡 Important - visa rules change |
+| Processing Times | As needed | ~2-4 per year | 🟡 Important for planning |
+| News Articles | Daily | ~5-10 per day | 🟢 Informational |
+| ANZSCO Updates | Annually | ~1 per year | 🔴 Critical - occupation changes |
 
 ### **Peak Times**
 - **SkillSelect rounds:** Mid-month (DHA typically releases on 2nd/3rd Thursday)
-- **State updates:** Quarterly announcements
+- **State updates:** Can be announced any time, watch closely during quarter transitions
+- **Policy changes:** During parliamentary sitting days (Australian Federal Parliament)
 - **News:** Throughout business hours (Australian Eastern Time)
 
 ---
