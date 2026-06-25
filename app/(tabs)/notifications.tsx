@@ -21,13 +21,13 @@ import {
   markAsRead,
   AppNotification,
 } from '../../utils/notifications';
+import { subscribeToFeedPoll } from '../../utils/notifications-poll';
 import { subscribeToNotificationsWeb, initializeFirebaseWeb } from '../../utils/firebaseWeb';
 import { getRevenueCatUserId } from '../../utils/iap';
 import { SourceValidator } from '../../utils/sourceValidator';
 import NotificationDetail from '../../components/NotificationDetail';
 import InAppBrowser from '../../components/InAppBrowser';
 import { ErrorBoundary } from '../../components/ErrorBoundary';
-import { diagnoseFirebase } from '../../utils/firestore-debug';
 
 const CATEGORY_COLORS: Record<string, string> = {
   'Policy Update':          Colors.accent,         // Cyan
@@ -153,23 +153,25 @@ export default function NotificationsScreen() {
             uid || undefined,
           ) || undefined;
         } else {
-          unsub = subscribeToFeed(
+          console.log('[notifications.tsx] Using polling-based notification sync');
+          unsub = subscribeToFeedPoll(
             items => {
               try {
                 if (!cancelled) {
-                  console.log('[notifications.tsx] Native update - items:', items?.length || 0);
+                  console.log('[notifications.tsx] Poll update - items:', items?.length || 0);
                   setFeed(items || []);
                   setLoading(false);
                   setRefreshing(false);
                 }
               } catch (err) {
-                console.error('[notifications.tsx] Error updating feed from native:', err);
+                console.error('[notifications.tsx] Error updating feed from poll:', err);
                 setLoading(false);
                 setRefreshing(false);
               }
             },
             30,
             uid || undefined,
+            5000, // Poll every 5 seconds
           );
         }
       } catch (err) {
@@ -219,25 +221,6 @@ export default function NotificationsScreen() {
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-  }, []);
-
-  const handleDiagnostics = useCallback(async () => {
-    console.log('[notifications] Running Firebase diagnostics...');
-    try {
-      await diagnoseFirebase();
-      Alert.alert(
-        'Diagnostics Complete',
-        'Check the console logs for detailed Firebase status. All diagnostics have been logged with the [firestore-debug] prefix.',
-        [{ text: 'OK' }]
-      );
-    } catch (err) {
-      console.error('[notifications] Diagnostics error:', err);
-      Alert.alert(
-        'Diagnostics Error',
-        err instanceof Error ? err.message : String(err),
-        [{ text: 'OK' }]
-      );
-    }
   }, []);
 
   const filteredFeed = useMemo(() => {
@@ -344,12 +327,6 @@ export default function NotificationsScreen() {
               ? "You'll be notified instantly when Home Affairs, states, or occupation lists change."
               : 'Try changing your filter or check back later.'}
           </Text>
-          {feed.length === 0 && (
-            <TouchableOpacity style={styles.diagnosticsButton} onPress={handleDiagnostics}>
-              <Ionicons name="settings" size={16} color={Colors.background} style={{ marginRight: 8 }} />
-              <Text style={styles.diagnosticsButtonText}>Run Firebase Diagnostics</Text>
-            </TouchableOpacity>
-          )}
         </ScrollView>
       ) : (
         <FlatList
@@ -607,20 +584,5 @@ const styles = StyleSheet.create({
     color: Colors.error,
     fontSize: FontSize.sm,
     fontWeight: FontWeight.medium,
-  },
-  diagnosticsButton: {
-    flexDirection: 'row',
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    borderRadius: Radius.md,
-    backgroundColor: Colors.secondary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: Spacing.md,
-  },
-  diagnosticsButtonText: {
-    color: Colors.background,
-    fontSize: FontSize.sm,
-    fontWeight: FontWeight.semiBold as any,
   },
 });
