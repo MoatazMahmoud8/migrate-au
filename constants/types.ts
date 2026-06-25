@@ -85,6 +85,7 @@ export interface UserProfile {
   journeyEntries: JourneyEntry[];
   pinnedStates: string[];
   onboardingComplete: boolean;
+  darkModeEnabled?: boolean; // Premium feature only
   birthDate?: string; // ISO date string, stored locally only (NOT synced to Firebase v1.0)
   usageLimits?: UsageLimits;
 }

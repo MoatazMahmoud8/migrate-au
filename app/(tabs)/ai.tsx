@@ -22,6 +22,7 @@ import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { hasExceededLimit, getRemainingUses, incrementUsage } from '../../utils/paywall';
 import { getProfile, saveProfile } from '../../utils/storage';
 import { PaywallModal } from '../../components/PaywallModal';
+import { UsageMeter } from '../../components/UsageMeter';
 import { sendAriaMessage, AriaHistoryMessage } from '../../utils/aria';
 import Markdown from 'react-native-markdown-display';
 
@@ -149,6 +150,16 @@ export default function AiScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
     >
+      {/* Usage meter for free users */}
+      {profile && remaining !== null && !profile.isPremium && (
+        <UsageMeter
+          feature="aiMessages"
+          remaining={remaining}
+          onUpgradePress={() => setShowPaywall(true)}
+          isPremium={profile.isPremium}
+        />
+      )}
+
       {messages.length === 0 ? (
         <View style={styles.empty}>
           {/* Aria avatar */}
@@ -220,25 +231,6 @@ export default function AiScreen() {
         </Text>
       </View>
 
-      {/* Remaining uses badge */}
-      {profile && remaining !== null && !profile.isPremium && (
-        <View style={styles.remainingBadge}>
-          <Ionicons 
-            name={remaining > 0 ? "zap" : "lock-closed"} 
-            size={14} 
-            color={remaining > 0 ? Colors.secondary : Colors.error} 
-          />
-          <Text style={styles.remainingText}>
-            {remaining > 0 ? `${remaining} free message${remaining === 1 ? '' : 's'} left` : 'Free messages used up'}
-          </Text>
-          {remaining === 0 && (
-            <TouchableOpacity onPress={() => setShowPaywall(true)}>
-              <Text style={styles.remainingUpgrade}>Upgrade →</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      )}
-
       <View style={[styles.inputRow, { marginBottom: tabBarHeight }]}>
         <TextInput
           style={styles.input}
@@ -268,7 +260,7 @@ export default function AiScreen() {
         onClose={() => setShowPaywall(false)}
         userId={profile?.userId || 'local_user'}
         title="Unlock Aria AI Premium"
-        message="You've used your 3 free AI messages for this month. Upgrade to Pro for unlimited access to your personal migration consultant."
+        message="Your 3 free AI questions per month is exhausted."
         feature="aiMessages"
       />
     </KeyboardAvoidingView>
@@ -277,32 +269,6 @@ export default function AiScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
-
-  remainingBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginHorizontal: Spacing.lg,
-    marginBottom: Spacing.md,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    backgroundColor: Colors.secondary + '10',
-    borderRadius: Radius.md,
-    borderLeftWidth: 3,
-    borderLeftColor: Colors.secondary,
-  },
-  remainingText: {
-    flex: 1,
-    fontSize: FontSize.sm,
-    color: Colors.secondary,
-    fontWeight: FontWeight.semiBold,
-    marginLeft: Spacing.sm,
-  },
-  remainingUpgrade: {
-    fontSize: FontSize.sm,
-    color: Colors.secondary,
-    fontWeight: FontWeight.bold,
-  },
 
   // Empty state
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: Spacing.xl },

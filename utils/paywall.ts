@@ -10,6 +10,10 @@ export const PAYWALL_LIMITS = {
   anzscoSearches: 10,
   journeyEntries: 1,
   stateSubscriptions: 2,
+  notificationHistoryDays: 7,      // Free: last 7 days; Premium: full
+  realtimeAlerts: false,             // Free: no real-time; Premium: yes
+  pdfExport: false,                  // Free: no; Premium: yes
+  darkMode: false,                   // Free: no; Premium: yes
 };
 
 /**
@@ -71,6 +75,34 @@ export function canAddJourneyEntry(profile: UserProfile): boolean {
 export function canAddStateSubscription(profile: UserProfile): boolean {
   if (profile.isPremium) return true; // Premium: unlimited
   return (profile.subscribedStates?.length ?? 0) < PAYWALL_LIMITS.stateSubscriptions;
+}
+
+/**
+ * Check if user has access to real-time alerts
+ */
+export function hasRealtimeAlerts(profile: UserProfile): boolean {
+  return profile.isPremium; // Only premium users get real-time
+}
+
+/**
+ * Check if user can export to PDF
+ */
+export function canExportPDF(profile: UserProfile): boolean {
+  return profile.isPremium; // Only premium users
+}
+
+/**
+ * Check if user has dark mode
+ */
+export function hasDarkMode(profile: UserProfile): boolean {
+  return profile.isPremium; // Only premium users
+}
+
+/**
+ * Get notification history limit in days
+ */
+export function getNotificationHistoryDays(profile: UserProfile): number {
+  return profile.isPremium ? 365 * 1.5 : PAYWALL_LIMITS.notificationHistoryDays; // 18 months vs 7 days
 }
 
 /**

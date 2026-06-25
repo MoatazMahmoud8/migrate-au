@@ -16,6 +16,7 @@ import { calculatePoints } from '../../utils/pointsCalculator';
 import { hasExceededLimit, getRemainingUses, incrementUsage } from '../../utils/paywall';
 import { getProfile, saveProfile } from '../../utils/storage';
 import { PaywallModal } from '../../components/PaywallModal';
+import { UsageMeter } from '../../components/UsageMeter';
 import { PointsInput, VisaSubclass, EnglishLevel } from '../../constants/types';
 import { Colors, Spacing, Radius, FontSize, FontWeight } from '../../constants/theme';
 
@@ -217,17 +218,12 @@ export default function CalculatorScreen() {
     >
       {/* Remaining Uses Badge */}
       {profile && remaining !== null && !profile.isPremium && (
-        <View style={styles.remainingBadge}>
-          <Ionicons name="lightning-outline" size={14} color={Colors.secondary} />
-          <Text style={styles.remainingText}>
-            {remaining > 0 ? `${remaining} free calculation${remaining === 1 ? '' : 's'} left` : 'Free calculations used up'}
-          </Text>
-          {remaining === 0 && (
-            <TouchableOpacity onPress={() => setShowPaywall(true)}>
-              <Text style={styles.remainingUpgrade}>Upgrade →</Text>
-            </TouchableOpacity>
-          )}
-        </View>
+        <UsageMeter
+          feature="calculator"
+          remaining={remaining}
+          onUpgradePress={() => setShowPaywall(true)}
+          isPremium={profile.isPremium}
+        />
       )}
 
       <ScoreRing score={breakdown.total} eligible={breakdown.likelyEligible} />
@@ -545,33 +541,6 @@ const seg = StyleSheet.create({
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
-
-  remainingBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginHorizontal: Spacing.lg,
-    marginTop: Spacing.md,
-    marginBottom: Spacing.md,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    backgroundColor: Colors.secondary + '10',
-    borderRadius: Radius.md,
-    borderLeftWidth: 3,
-    borderLeftColor: Colors.secondary,
-  },
-  remainingText: {
-    flex: 1,
-    fontSize: FontSize.sm,
-    color: Colors.secondary,
-    fontWeight: FontWeight.semiBold,
-    marginLeft: Spacing.sm,
-  },
-  remainingUpgrade: {
-    fontSize: FontSize.sm,
-    color: Colors.secondary,
-    fontWeight: FontWeight.bold,
-  },
 
   card: {
     backgroundColor: Colors.surface,

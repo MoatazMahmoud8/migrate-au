@@ -28,6 +28,7 @@ import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/d
 import { canAddJourneyEntry, canAddStateSubscription } from '../../utils/paywall';
 import { askToRate } from '../../utils/rateApp';
 import { Sentry } from '../../utils/sentry';
+import { generateJourneyPDF, sharePDF } from '../../utils/pdfExport';
 
 const JOURNEY_STAGES: Array<{ key: JourneyStageKey; label: string; desc: string }> = [
   { key: 'assess', label: 'Skills Assessment', desc: 'Skills assessment & English test preparation' },
@@ -258,6 +259,33 @@ export default function ProfileScreen() {
     hapticSuccess();
   };
 
+  const handleExportPDF = () => {
+    if (!profile) return;
+    
+    if (!profile.isPremium) {
+      setShowPaywall(true);
+      return;
+    }
+
+    const pdfContent = generateJourneyPDF(profile);
+    const shared = sharePDF(pdfContent, profile);
+    
+    Alert.alert(
+      '📄 Journey Exported',
+      'Your visa journey has been exported as a text document. You can copy this to save or share with a migration agent.',
+      [
+        {
+          text: 'Copy to Clipboard',
+          onPress: () => {
+            // In production, use react-native-clipboard
+            alert('PDF export ready! Share with your migration agent.');
+          },
+        },
+        { text: 'Done', style: 'cancel' },
+      ]
+    );
+  };
+
   const openDateModal = (entryId: string, stageKey: JourneyStageKey) => {
     const entry = journeyEntries.find((e) => e.id === entryId);
     const existing = entry?.stageDates?.[stageKey];
@@ -418,10 +446,18 @@ export default function ProfileScreen() {
       <View style={styles.section}>
         <View style={jStyles.sectionHeader}>
           <Text style={styles.sectionLabel}>My Journey</Text>
-          <TouchableOpacity style={jStyles.addBtn} onPress={() => setShowAddJourney(true)} activeOpacity={0.8}>
-            <Ionicons name="add" size={15} color={Colors.primaryDark} />
-            <Text style={jStyles.addBtnText}>Add</Text>
-          </TouchableOpacity>
+          <View style={jStyles.headerActions}>
+            {journeyEntries.length > 0 && profile?.isPremium && (
+              <TouchableOpacity style={jStyles.exportBtn} onPress={handleExportPDF} activeOpacity={0.8}>
+                <Ionicons name="document-outline" size={14} color={Colors.secondary} />
+                <Text style={jStyles.exportBtnText}>Export</Text>
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity style={jStyles.addBtn} onPress={() => setShowAddJourney(true)} activeOpacity={0.8}>
+              <Ionicons name="add" size={15} color={Colors.primaryDark} />
+              <Text style={jStyles.addBtnText}>Add</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {journeyEntries.length === 0 && (
@@ -651,6 +687,34 @@ export default function ProfileScreen() {
           />
         </View>
       </View>
+
+      {/* Display Settings - Dark Mode for Premium */}
+      {profile.isPremium && (
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>Display</Text>
+          <View style={styles.card}>
+            <View style={styles.settingRow}>
+              <View style={styles.settingContent}>
+                <Ionicons name="moon-outline" size={18} color={Colors.secondary} />
+                <View style={styles.settingTextContainer}>
+                  <Text style={styles.settingLabel}>Dark Mode</Text>
+                  <Text style={styles.settingValue}>Premium Feature</Text>
+                </View>
+              </View>
+              <Switch
+                value={profile.darkModeEnabled ?? false}
+                onValueChange={async (value) => {
+                  const updated = { ...profile, darkModeEnabled: value };
+                  setProfile(updated);
+                  await saveProfile({ darkModeEnabled: value });
+                }}
+                trackColor={{ false: Colors.border, true: Colors.secondary + '50' }}
+                thumbColor={profile.darkModeEnabled ? Colors.secondary : Colors.textMuted}
+              />
+            </View>
+          </View>
+        </View>
+      )}
 
       <View style={styles.section}>
         <Text style={styles.sectionLabel}>Subscription</Text>
@@ -1223,12 +1287,22 @@ const jStyles = StyleSheet.create({
   sectionHeader: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: Spacing.sm,
   },
+  headerActions: {
+    flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
+  },
   addBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
     backgroundColor: Colors.secondary, borderRadius: Radius.full,
     paddingHorizontal: Spacing.md, paddingVertical: 5,
   },
   addBtnText: { fontSize: FontSize.xs, fontWeight: FontWeight.bold, color: Colors.primaryDark },
+  exportBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    backgroundColor: Colors.surface, borderRadius: Radius.full,
+    paddingHorizontal: Spacing.md, paddingVertical: 5,
+    borderWidth: 1, borderColor: Colors.secondary,
+  },
+  exportBtnText: { fontSize: FontSize.xs, fontWeight: FontWeight.semiBold, color: Colors.secondary },
 
   emptyCard: {
     backgroundColor: Colors.surface, borderRadius: Radius.xl,
@@ -1467,6 +1541,33 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
     borderWidth: 1,
     borderColor: Colors.border,
+  },
+
+  // Settings row with switch
+  settingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: Spacing.md,
+  },
+  settingContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+    flex: 1,
+  },
+  settingTextContainer: {
+    flex: 1,
+  },
+  settingLabel: {
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.semiBold,
+    color: Colors.textPrimary,
+    marginBottom: 2,
+  },
+  settingValue: {
+    fontSize: FontSize.xs,
+    color: Colors.textMuted,
   },
 
   // Premium card

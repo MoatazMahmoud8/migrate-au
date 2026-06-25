@@ -23,13 +23,16 @@ interface PaywallModalProps {
 }
 
 const BENEFITS = [
-  { icon: 'infinite-outline',          text: 'Unlimited Aria AI — your AU migration consultant' },
+  { icon: 'sparkles-outline',          text: 'Aria AI — unlimited expert visa consultant' },
   { icon: 'calculator-outline',        text: 'Unlimited points calculations' },
   { icon: 'briefcase-outline',         text: 'Unlimited ANZSCO occupation searches' },
-  { icon: 'location-outline',          text: 'State-specific visa intelligence (NSW, VIC, QLD…)' },
-  { icon: 'shield-checkmark-outline',  text: 'Age-bracket point-drop alerts (33, 40, 45)' },
+  { icon: 'lightning-outline',         text: 'Real-time SkillSelect & state alerts' },
+  { icon: 'location-outline',          text: 'State subscriptions (unlimited)' },
+  { icon: 'document-outline',          text: 'PDF export of your visa journey' },
+  { icon: 'shield-checkmark-outline',  text: 'Age-bracket point-drop alerts' },
   { icon: 'map-outline',               text: 'Track up to 10 visa journeys' },
-  { icon: 'sparkles-outline',          text: 'Priority access to new features' },
+  { icon: 'moon-outline',              text: 'Dark mode support' },
+  { icon: 'archive-outline',           text: 'Full 18-month notification history' },
 ];
 
 export function PaywallModal({ visible, onClose, userId, title, message, feature }: PaywallModalProps) {
@@ -69,6 +72,26 @@ export function PaywallModal({ visible, onClose, userId, title, message, feature
   const lifetimePrice = getFormattedPrice('lifetime');
   const yearlyDiscount = getYearlySavings();
 
+  // Context-specific messaging
+  const getFeatureMessage = () => {
+    switch (feature) {
+      case 'aiMessages':
+        return '3 expert consultation questions per month isn\'t enough for your visa journey. Aria is here 24/7 to guide you through every step.';
+      case 'calculator':
+        return 'Track every point in your visa strategy. 3 calculations per month limits your planning. Go unlimited with Premium.';
+      case 'anzscoSearches':
+        return 'Find the perfect occupation for your visa. Free tier limits research. Search unlimited occupations.';
+      case 'journey':
+        return 'One visa application? You deserve to track multiple pathways (189, 491, state nomination) simultaneously.';
+      case 'realtimeAlerts':
+        return 'Miss one SkillSelect round and you\'re waiting 6+ months. Get real-time alerts on your phone, not daily summaries.';
+      case 'pdfExport':
+        return 'Export your visa journey as a PDF — keep official records, share with agents, save offline.';
+      default:
+        return message;
+    }
+  };
+
   return (
     <Modal visible={visible} transparent animationType="slide">
       <View style={styles.backdrop}>
@@ -88,7 +111,7 @@ export function PaywallModal({ visible, onClose, userId, title, message, feature
                 <Ionicons name="star" size={32} color={Colors.secondary} />
               </LinearGradient>
               <Text style={styles.heroTitle}>{title}</Text>
-              <Text style={styles.heroSub}>{message}</Text>
+              <Text style={styles.heroSub}>{getFeatureMessage()}</Text>
             </View>
 
             {/* Plan selector */}
