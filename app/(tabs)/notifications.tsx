@@ -351,7 +351,6 @@ export default function NotificationsScreen() {
             </TouchableOpacity>
           )}
         </ScrollView>
-        </View>
       ) : (
         <FlatList
           data={filteredFeed}
