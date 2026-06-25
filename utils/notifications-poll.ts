@@ -59,7 +59,12 @@ export function subscribeToFeedPoll(
 
         const allDocs = [...broadcasts.docs, ...personal.docs];
         const items = allDocs
-          .map(doc => ({ id: doc.id, ...doc.data() }))
+          .map(doc => {
+            const data = doc.data();
+            const timestamp = data.timestamp;
+            const isoTimestamp = typeof timestamp === 'string' ? timestamp : (timestamp?.toDate?.().toISOString() || '');
+            return { id: doc.id, ...data, timestamp: isoTimestamp };
+          })
           .sort((a: any, b: any) => (b.timestamp || '').localeCompare(a.timestamp || ''))
           .slice(0, limit);
 
@@ -77,7 +82,12 @@ export function subscribeToFeedPoll(
         // Simple case: no userId
         const snap = await col.limit(limit * 2).get();
         const items = snap.docs
-          .map(doc => ({ id: doc.id, ...doc.data() }))
+          .map(doc => {
+            const data = doc.data();
+            const timestamp = data.timestamp;
+            const isoTimestamp = typeof timestamp === 'string' ? timestamp : (timestamp?.toDate?.().toISOString() || '');
+            return { id: doc.id, ...data, timestamp: isoTimestamp };
+          })
           .sort((a: any, b: any) => (b.timestamp || '').localeCompare(a.timestamp || ''))
           .slice(0, limit);
 

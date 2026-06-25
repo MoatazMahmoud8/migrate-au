@@ -400,7 +400,10 @@ export function subscribeToFeed(
               const items: AppNotification[] = snapshot.docs
                 .map(doc => {
                   const data = doc.data() as Omit<AppNotification, 'id'>;
-                  return { id: doc.id, ...data };
+                  // Convert Firestore Timestamp to ISO string if needed
+                  const timestamp = data.timestamp;
+                  const isoTimestamp = typeof timestamp === 'string' ? timestamp : (timestamp?.toDate?.().toISOString() || '');
+                  return { id: doc.id, ...data, timestamp: isoTimestamp };
                 })
                 .sort((a, b) => (b.timestamp || '').localeCompare(a.timestamp || ''))
                 .slice(0, limit);
@@ -451,7 +454,12 @@ export function subscribeToFeed(
           try {
             console.log('[subscribeToFeed] Broadcast snapshot:', snap.docs.length, 'docs');
             broadcasts = snap.docs
-              .map(d => ({ id: d.id, ...(d.data() as Omit<AppNotification, 'id'>) }))
+              .map(d => {
+                const data = d.data() as Omit<AppNotification, 'id'>;
+                const timestamp = data.timestamp;
+                const isoTimestamp = typeof timestamp === 'string' ? timestamp : (timestamp?.toDate?.().toISOString() || '');
+                return { id: d.id, ...data, timestamp: isoTimestamp };
+              })
               .sort((a, b) => (b.timestamp || '').localeCompare(a.timestamp || ''));
             emit();
           } catch (err) {
@@ -473,7 +481,12 @@ export function subscribeToFeed(
           try {
             console.log('[subscribeToFeed] Personal snapshot:', snap.docs.length, 'docs');
             personal = snap.docs
-              .map(d => ({ id: d.id, ...(d.data() as Omit<AppNotification, 'id'>) }))
+              .map(d => {
+                const data = d.data() as Omit<AppNotification, 'id'>;
+                const timestamp = data.timestamp;
+                const isoTimestamp = typeof timestamp === 'string' ? timestamp : (timestamp?.toDate?.().toISOString() || '');
+                return { id: d.id, ...data, timestamp: isoTimestamp };
+              })
               .sort((a, b) => (b.timestamp || '').localeCompare(a.timestamp || ''));
             emit();
           } catch (err) {
