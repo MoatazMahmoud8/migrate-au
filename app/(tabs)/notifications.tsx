@@ -279,14 +279,7 @@ export default function NotificationsScreen() {
         )}
       </View>
 
-      {/* State filter pills - sticky at top with gradient fade */}
-      <LinearGradient
-        colors={[Colors.background, 'rgba(6, 16, 31, 0)']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-        style={styles.filterGradientOverlay}
-        pointerEvents="none"
-      />
+      {/* State filter pills */}
       <View style={styles.filterRow}>
         {FILTERS.map((f) => {
           const active = stateFilter === f.id;
