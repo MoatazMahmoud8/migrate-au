@@ -13,6 +13,8 @@ import {
   TouchableOpacity,
   StyleSheet,
   SafeAreaView,
+  Platform,
+  StatusBar,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, Radius, FontSize, FontWeight } from '../constants/theme';
@@ -151,7 +153,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.lg,
+    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 40) + 10 : Spacing.lg,
     paddingBottom: Spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
