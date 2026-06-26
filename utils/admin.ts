@@ -20,19 +20,38 @@ const ADMIN_USER_IDS = [
 export async function isUserAdmin(userId?: string): Promise<boolean> {
   try {
     // If no userId provided, get from RevenueCat
-    const uid = userId || (await getRevenueCatUserId().catch(() => undefined));
-    if (!uid) return false;
+    let uid = userId || (await getRevenueCatUserId().catch(() => undefined));
+    
+    console.log('[admin] isUserAdmin check - uid:', uid, 'DEV:', __DEV__);
+    
+    // DEV MODE: If no user ID or 'anonymous', default to 'moataz'
+    // (RevenueCat returns 'anonymous' on web when not initialized)
+    if ((!uid || uid === 'anonymous') && __DEV__) {
+      console.log('[admin] Using dev mode fallback');
+      uid = 'moataz';
+    }
+    
+    if (!uid) {
+      console.log('[admin] No user ID after checks');
+      return false;
+    }
 
     // Check local admin list
-    if (ADMIN_USER_IDS.includes(uid)) return true;
+    if (ADMIN_USER_IDS.includes(uid)) {
+      console.log('[admin] User found in ADMIN_USER_IDS:', uid);
+      return true;
+    }
 
     // Check Firestore admin list
     try {
       const db = getFirestore();
       const adminDoc = await db.collection('admin_users').doc(uid).get();
-      return adminDoc.exists && adminDoc.data()?.isAdmin === true;
-    } catch {
+      const result = adminDoc.exists && adminDoc.data()?.isAdmin === true;
+      console.log('[admin] Firestore check result:', result);
+      return result;
+    } catch (err) {
       // Firestore not available (offline), use local list only
+      console.error('[admin] Firestore check error:', err);
       return false;
     }
   } catch (err) {
@@ -58,15 +77,35 @@ export async function createNotification(notification: {
     const db = getFirestore();
     const newRef = db.collection('notifications').doc();
     
+    // Map category to topic (required field)
+    const topic = notification.category.toLowerCase().replace(/\s+/g, '_');
+    
+    console.log('[admin] Creating notification:', {
+      title: notification.title,
+      body: notification.body,
+      category: notification.category,
+      topic,
+      url: notification.link,
+      source: notification.source,
+    });
+    
     await newRef.set({
+      // Required fields
       id: newRef.id,
-      ...notification,
-      timestamp: new Date().toISOString(),
+      title: notification.title,
+      body: notification.body,
+      category: notification.category,
+      topic: topic, // Required by AppNotification
+      url: notification.link || 'https://migrateau.jsmglobal.xyz', // Required by AppNotification
+      timestamp: new Date(), // Firestore will convert to Timestamp
       read: false,
-      createdAt: new Date(),
-      createdBy: await getRevenueCatUserId().catch(() => 'admin'),
+      
+      // Optional fields
+      source: notification.source || 'Admin',
+      sourceUrl: notification.link,
     });
 
+    console.log('[admin] ✅ Notification created:', newRef.id);
     return newRef.id;
   } catch (err) {
     console.error('[admin] createNotification error:', err);

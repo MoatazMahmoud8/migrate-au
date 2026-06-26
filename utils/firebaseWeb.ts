@@ -91,10 +91,17 @@ export function subscribeToNotificationsWeb(
     );
 
     return onSnapshot(q, snapshot => {
-      const items = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
+      const items = snapshot.docs.map(doc => {
+        const data = doc.data();
+        // Convert Firestore Timestamp to ISO string for timeAgo function
+        const timestamp = data.timestamp?.toDate?.()?.toISOString?.() || data.timestamp || new Date().toISOString();
+        return {
+          id: doc.id,
+          ...data,
+          timestamp, // Ensure it's an ISO string
+        };
+      });
+      console.log('[firebaseWeb] Updated with', items.length, 'items');
       onUpdate(items);
     });
   } catch (err) {
