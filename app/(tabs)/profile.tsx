@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   ScrollView,
   View,
@@ -154,6 +154,18 @@ export default function ProfileScreen() {
   const [birthDateInput, setBirthDateInput] = useState('');
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const adminTapCount = useRef(0);
+  const adminTapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleAvatarTap = () => {
+    adminTapCount.current += 1;
+    if (adminTapTimer.current) clearTimeout(adminTapTimer.current);
+    adminTapTimer.current = setTimeout(() => { adminTapCount.current = 0; }, 2000);
+    if (adminTapCount.current >= 5 && isAdmin) {
+      adminTapCount.current = 0;
+      router.push('/admin/dashboard' as any);
+    }
+  };
 
   useEffect(() => {
     getProfile().then((p) => {
@@ -395,7 +407,7 @@ export default function ProfileScreen() {
         {/* Decorative orb */}
         <View style={styles.headerOrb} />
 
-        <View style={styles.avatarWrap}>
+        <TouchableOpacity style={styles.avatarWrap} onPress={handleAvatarTap} activeOpacity={0.8}>
           <LinearGradient colors={[Colors.secondary, '#FFB800']} style={styles.avatar}>
             <Text style={styles.avatarText}>{initials}</Text>
           </LinearGradient>
@@ -404,7 +416,7 @@ export default function ProfileScreen() {
               <Ionicons name="star" size={10} color={Colors.primaryDark} />
             </View>
           )}
-        </View>
+        </TouchableOpacity>
 
         {editingName ? (
           <View style={styles.nameEditRow}>
