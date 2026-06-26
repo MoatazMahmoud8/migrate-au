@@ -88,6 +88,28 @@ export default function NotificationDetail({ notification, onClose, onReadSource
           <Text style={styles.bodyText}>{notification.body}</Text>
         </View>
 
+        {/* Metadata section */}
+        {notification.timestamp && (
+          <View style={styles.metaSection}>
+            <View style={styles.metaRow}>
+              <Ionicons name="time-outline" size={14} color={Colors.textMuted} />
+              <Text style={styles.metaText}>{new Date(notification.timestamp).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</Text>
+            </View>
+            {notification.category && (
+              <View style={styles.metaRow}>
+                <Ionicons name="pricetag-outline" size={14} color={Colors.textMuted} />
+                <Text style={styles.metaText}>{notification.category}</Text>
+              </View>
+            )}
+            {notification.topic && (
+              <View style={styles.metaRow}>
+                <Ionicons name="layers-outline" size={14} color={Colors.textMuted} />
+                <Text style={styles.metaText}>Topic: {notification.topic}</Text>
+              </View>
+            )}
+          </View>
+        )}
+
         {/* Spacer */}
         <View style={{ height: Spacing.xl * 2 }} />
       </ScrollView>
@@ -108,14 +130,6 @@ export default function NotificationDetail({ notification, onClose, onReadSource
               style={{ marginLeft: Spacing.sm }}
             />
           </TouchableOpacity>
-        </View>
-      )}
-      {/* If no source URL, show alternative message */}
-      {(!notification.sourceUrl || !notification.sourceUrl.trim()) && (
-        <View style={[styles.footer, { backgroundColor: 'rgba(0,194,255,0.1)' }]}>
-          <Text style={[styles.buttonText, { color: Colors.textMuted, textAlign: 'center' }]}>
-            No official source link available
-          </Text>
         </View>
       )}
     </SafeAreaView>
@@ -222,6 +236,22 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
     lineHeight: 22,
     fontWeight: FontWeight.regular,
+  },
+  metaSection: {
+    marginTop: Spacing.lg,
+    paddingTop: Spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+    gap: 8,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  metaText: {
+    fontSize: FontSize.sm,
+    color: Colors.textMuted,
   },
   footer: {
     paddingHorizontal: Spacing.lg,

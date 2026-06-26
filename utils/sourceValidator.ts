@@ -33,6 +33,9 @@ const APPROVED_SOURCES = {
   // In-House Analysis
   AMG_ANALYSIS: 'AMG Analysis',
   AMG_IMMIGRATION_NETWORK: 'AMG Immigration Network',
+  ADMIN: 'Admin',
+  ADMIN_DASHBOARD: 'Admin Dashboard',
+  ADMIN_DASHBOARD_TEST: 'Admin Dashboard Test',
 };
 
 // ─── Blocked Competitors & Agents ────────────────────────────────────────────
