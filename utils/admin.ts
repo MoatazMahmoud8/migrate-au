@@ -3,8 +3,17 @@
  * Handles admin authentication and permissions
  */
 
+import { Platform } from 'react-native';
 import { getRevenueCatUserId } from './iap';
 import { getFirestore } from '@react-native-firebase/firestore';
+import { initializeFirebaseWeb } from './firebaseWeb';
+import {
+  getFirestore as getWebFirestore,
+  collection as webCollection,
+  doc as webDoc,
+  setDoc as webSetDoc,
+  getDoc as webGetDoc,
+} from 'firebase/firestore';
 
 // Admin user IDs (can be set via environment or Firestore)
 const ADMIN_USER_IDS = [
@@ -78,54 +87,48 @@ export async function createNotification(notification: {
       title: notification.title?.substring(0, 50),
       body: notification.body?.substring(0, 50),
       category: notification.category,
+      platform: Platform.OS,
     });
 
-    let db;
-    try {
-      db = getFirestore();
-      console.log('[admin] Firestore instance obtained');
-    } catch (fsErr) {
-      console.error('[admin] Failed to get Firestore instance:', fsErr);
-      throw new Error(`Firestore not available: ${fsErr?.message}`);
-    }
-
-    const newRef = db.collection('notifications').doc();
-    console.log('[admin] Document reference created:', newRef.id);
-    
     // Map category to topic (required field)
     const topic = notification.category.toLowerCase().replace(/\s+/g, '_');
+    const notifId = `notif_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     
     const docData = {
-      // Required fields
-      id: newRef.id,
+      id: notifId,
       title: notification.title,
       body: notification.body,
       category: notification.category,
-      topic: topic, // Required by AppNotification
-      url: notification.link || 'https://migrateau.jsmglobal.xyz', // Required by AppNotification
-      timestamp: new Date(), // Firestore will convert to Timestamp
+      topic: topic,
+      url: notification.link || 'https://migrateau.jsmglobal.xyz',
+      timestamp: new Date().toISOString(),
       read: false,
-      
-      // Optional fields
       source: notification.source || 'Admin',
-      sourceUrl: notification.link,
+      sourceUrl: notification.link || '',
     };
 
-    console.log('[admin] Writing document to Firestore:', {
-      id: newRef.id,
-      title: docData.title.substring(0, 30),
-      category: docData.category,
-      topic: docData.topic,
-    });
-    
-    await newRef.set(docData);
-    console.log('[admin] ✅ Notification successfully created:', newRef.id);
-    return newRef.id;
+    if (Platform.OS === 'web') {
+      // Use Firebase Web SDK on web platform
+      console.log('[admin] Using Firebase Web SDK');
+      initializeFirebaseWeb();
+      const webDb = getWebFirestore();
+      const docRef = webDoc(webCollection(webDb, 'notifications'), notifId);
+      await webSetDoc(docRef, docData);
+      console.log('[admin] ✅ Web: Notification created:', notifId);
+    } else {
+      // Use native Firebase on mobile
+      console.log('[admin] Using native Firebase');
+      const db = getFirestore();
+      const newRef = db.collection('notifications').doc(notifId);
+      await newRef.set(docData);
+      console.log('[admin] ✅ Native: Notification created:', notifId);
+    }
+
+    return notifId;
   } catch (err: any) {
     console.error('[admin] createNotification failed:', {
       message: err?.message,
       code: err?.code,
-      fullError: JSON.stringify(err, null, 2),
     });
     throw new Error(`Failed to create notification: ${err?.message || 'Unknown error'}`);
   }
