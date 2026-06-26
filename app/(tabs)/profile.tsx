@@ -152,18 +152,34 @@ export default function ProfileScreen() {
   const [dateInput, setDateInput] = useState('');
   const [showBirthDatePicker, setShowBirthDatePicker] = useState(false);
   const [birthDateInput, setBirthDateInput] = useState('');
+  const [showAdminPin, setShowAdminPin] = useState(false);
+  const [adminPinInput, setAdminPinInput] = useState('');
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const adminTapCount = useRef(0);
   const adminTapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const ADMIN_PIN = 'sob7anallah';
+
   const handleAvatarTap = () => {
     adminTapCount.current += 1;
     if (adminTapTimer.current) clearTimeout(adminTapTimer.current);
     adminTapTimer.current = setTimeout(() => { adminTapCount.current = 0; }, 2000);
-    if (adminTapCount.current >= 5 && isAdmin) {
+    if (adminTapCount.current >= 5) {
       adminTapCount.current = 0;
+      setAdminPinInput('');
+      setShowAdminPin(true);
+    }
+  };
+
+  const handleAdminPinSubmit = () => {
+    if (adminPinInput === ADMIN_PIN) {
+      setShowAdminPin(false);
+      setAdminPinInput('');
       router.push('/admin/dashboard' as any);
+    } else {
+      Alert.alert('Incorrect', 'Access denied.');
+      setAdminPinInput('');
     }
   };
 
@@ -1174,6 +1190,44 @@ export default function ProfileScreen() {
             >
               <Text style={feedbackStyles.cancelText}>Cancel</Text>
             </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Admin PIN Modal */}
+      <Modal
+        visible={showAdminPin}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowAdminPin(false)}
+      >
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: 40 }}>
+          <View style={{ backgroundColor: Colors.surface, borderRadius: 16, padding: 24, width: '100%', maxWidth: 300, alignItems: 'center' }}>
+            <Text style={{ color: Colors.textPrimary, fontSize: 16, fontWeight: '700', marginBottom: 16 }}>Enter Passphrase</Text>
+            <TextInput
+              style={{ width: '100%', backgroundColor: Colors.background, borderRadius: 8, padding: 12, color: Colors.textPrimary, fontSize: 16, borderWidth: 1, borderColor: Colors.border, marginBottom: 16 }}
+              value={adminPinInput}
+              onChangeText={setAdminPinInput}
+              placeholder="Passphrase"
+              placeholderTextColor={Colors.textMuted}
+              autoFocus
+              secureTextEntry
+              onSubmitEditing={handleAdminPinSubmit}
+            />
+            <View style={{ flexDirection: 'row', gap: 12, width: '100%' }}>
+              <TouchableOpacity
+                onPress={() => setShowAdminPin(false)}
+                style={{ flex: 1, padding: 12, borderRadius: 8, alignItems: 'center', borderWidth: 1, borderColor: Colors.border }}
+              >
+                <Text style={{ color: Colors.textMuted, fontWeight: '600' }}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleAdminPinSubmit}
+                style={{ flex: 1, padding: 12, borderRadius: 8, alignItems: 'center', backgroundColor: Colors.accent }}
+              >
+                <Text style={{ color: '#fff', fontWeight: '600' }}>Enter</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
