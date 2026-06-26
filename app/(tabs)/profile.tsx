@@ -29,6 +29,7 @@ import { canAddJourneyEntry, canAddStateSubscription } from '../../utils/paywall
 import { askToRate } from '../../utils/rateApp';
 import { Sentry } from '../../utils/sentry';
 import { generateJourneyPDF, sharePDF } from '../../utils/pdfExport';
+import { isUserAdmin } from '../../utils/admin';
 
 const JOURNEY_STAGES: Array<{ key: JourneyStageKey; label: string; desc: string }> = [
   { key: 'assess', label: 'Skills Assessment', desc: 'Skills assessment & English test preparation' },
@@ -138,6 +139,7 @@ export default function ProfileScreen() {
   const [rcUserId, setRcUserId] = useState<string>('');
   const [restoring, setRestoring] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   // Journey
   const [journeyEntries, setJourneyEntries] = useState<JourneyEntry[]>([]);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -170,6 +172,11 @@ export default function ProfileScreen() {
       }
     });
     getRevenueCatUserId().then(setRcUserId);
+  }, []);
+
+  // Check if user is admin
+  useEffect(() => {
+    isUserAdmin().then(setIsAdmin).catch(() => setIsAdmin(false));
   }, []);
 
   // Refresh profile after paywall closes (purchase may have set isPremium)
@@ -800,6 +807,25 @@ export default function ProfileScreen() {
           <SettingRow icon="key-outline" label="Account ID" value={rcUserId ? rcUserId.slice(0, 18) + '…' : '—'} last />
         </View>
       </View>
+
+      {isAdmin && (
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>Admin</Text>
+          <View style={styles.card}>
+            <SettingRow
+              icon="megaphone-outline"
+              label="Send Notification"
+              value="Broadcast to all users"
+              onPress={() => {
+                hapticTap();
+                router.push('/admin/dashboard');
+              }}
+              showArrow
+              last
+            />
+          </View>
+        </View>
+      )}
 
       {__DEV__ && (
         <View style={styles.section}>

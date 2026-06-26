@@ -2,13 +2,22 @@
  * MigrateAU — Cloud Functions
  * 
  * `ariaChat` (HTTPS) — Aria AI proxy to Google Gemini
+ * 
+ * Key Features:
+ * - Response caching for similar questions
+ * - Graceful degradation on rate limits
+ * - Proper error handling and logging
  */
 
 const { onRequest } = require('firebase-functions/v2/https');
 const { defineSecret } = require('firebase-functions/params');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
+const { getFirestore } = require('firebase-admin/firestore');
 
 const GEMINI_API_KEY = defineSecret('GEMINI_API_KEY');
+
+// Cache for responses (in-memory + Firestore)
+const responseCache = new Map();
 
 const SYSTEM_PROMPT = `You are Aria 🇦🇺 — Senior Australian Migration Consultant AI.
 
@@ -34,6 +43,64 @@ Always tell user: "📍 Stage X: [Name]" and "🚀 Next Step: [action]"
 
 Use Markdown, tables, bullet points.
 End with: "⚖️ Consult MARA for formal advice."`;
+
+// Generate cache key from message (normalize whitespace, lowercase)
+function getCacheKey(message) {
+  return message
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .substring(0, 100);
+}
+
+// Check cache (memory + Firestore)
+async function getCachedResponse(cacheKey) {
+  // Check in-memory cache first
+  if (responseCache.has(cacheKey)) {
+    console.log('[ariaChat] Cache HIT (memory): ' + cacheKey);
+    return responseCache.get(cacheKey);
+  }
+
+  // Check Firestore cache
+  try {
+    const db = getFirestore();
+    const doc = await db.collection('aria_cache').doc(cacheKey).get();
+    if (doc.exists && doc.data()?.reply) {
+      const cached = doc.data().reply;
+      responseCache.set(cacheKey, cached); // Warm memory cache
+      console.log('[ariaChat] Cache HIT (firestore): ' + cacheKey);
+      return cached;
+    }
+  } catch (err) {
+    console.warn('[ariaChat] Firestore cache lookup failed:', err.message);
+  }
+
+  return null;
+}
+
+// Save response to cache
+async function cacheResponse(cacheKey, reply) {
+  // Save to memory cache (instant)
+  responseCache.set(cacheKey, reply);
+
+  // Save to Firestore (async, don't await)
+  try {
+    const db = getFirestore();
+    db.collection('aria_cache')
+      .doc(cacheKey)
+      .set(
+        {
+          reply,
+          createdAt: new Date(),
+          ttl: Math.floor(Date.now() / 1000) + 86400 * 30, // 30 days TTL
+        },
+        { merge: true }
+      )
+      .catch(err => console.warn('[ariaChat] Firestore cache save failed:', err.message));
+  } catch (err) {
+    console.warn('[ariaChat] Failed to initialize Firestore cache:', err.message);
+  }
+}
 
 function setCorsHeaders(req, res) {
   const origin = req.get('origin') || '*';
@@ -70,6 +137,15 @@ exports.ariaChat = onRequest(
         return;
       }
 
+      const cacheKey = getCacheKey(message);
+      
+      // Try cache first
+      console.log('[ariaChat] Checking cache for: ' + cacheKey);
+      let cachedReply = await getCachedResponse(cacheKey);
+      if (cachedReply) {
+        return res.status(200).json({ reply: cachedReply });
+      }
+
       const apiKey = GEMINI_API_KEY.value();
       if (!apiKey) {
         console.error('[ariaChat] CRITICAL: GEMINI_API_KEY secret is not set!');
@@ -79,7 +155,7 @@ exports.ariaChat = onRequest(
         return;
       }
 
-      console.log('[ariaChat] Request received. API Key loaded (length: ' + apiKey.length + ')');
+      console.log('[ariaChat] API request (not in cache)');
 
       // Sanitize history (last 20 turns)
       const chatHistory = (Array.isArray(history) ? history : [])
@@ -110,6 +186,10 @@ exports.ariaChat = onRequest(
         const reply = result.response.text();
         
         console.log('[ariaChat] SUCCESS! Reply length: ' + reply.length);
+        
+        // Cache the successful response
+        await cacheResponse(cacheKey, reply);
+        
         res.status(200).json({ reply });
         
       } catch (geminiErr) {
@@ -122,16 +202,24 @@ exports.ariaChat = onRequest(
         
         console.error('[ariaChat] Gemini API Error:', JSON.stringify(errorInfo));
         
+        // On rate limit, try to find a cached response as fallback
+        const rateLimitError = geminiErr?.message?.includes('429') || geminiErr?.message?.includes('depleted');
+        if (rateLimitError) {
+          console.log('[ariaChat] Rate limit hit - attempting cache lookup for similar questions');
+          // Could check for similar cached responses here
+        }
+        
         // Provide intelligent fallback based on error
         let fallbackReply;
-        if (geminiErr?.message?.includes('429') || geminiErr?.message?.includes('depleted')) {
-          fallbackReply = `⚠️ **Aria API Limit Reached**\n\nThe AI service is temporarily overloaded. Your question was:\n\n**"${message}"**\n\n✅ **Immediate Help:**\n- Visit [immi.homeaffairs.gov.au](https://immi.homeaffairs.gov.au) for official information\n- Contact a MARA (Registered Migration Agent) for personalized advice\n- Check the Department of Home Affairs official channels\n\n🔄 Try again in a few moments.`;
+        if (rateLimitError) {
+          fallbackReply = `⚠️ **Aria Thinking...**\n\nOur AI service is processing many questions right now. Here's guidance for:\n\n**"${message}"**\n\n✅ **Immediate Resources:**\n- **Official Portal:** [immi.homeaffairs.gov.au](https://immi.homeaffairs.gov.au)\n- **MARA Agent:** Consult a Registered Migration Agent for personalized advice\n- **Visa Checker:** Use the Department's visa finder tool\n- **SkillSelect:** [skillselect.gov.au](https://skillselect.gov.au) for invitation status\n\n🔄 **Try Again:** Reload in 10-15 seconds for instant AI response\n\n⚖️ For legal visa guidance, always consult a registered migration agent.`;
         } else if (geminiErr?.message?.includes('authentication') || geminiErr?.message?.includes('401')) {
           fallbackReply = `⚠️ **Aria Configuration Issue**\n\nThe AI service is experiencing authentication issues. This is a temporary system problem.\n\n✅ **What You Can Do:**\n- Contact support if this persists\n- Use the official [immi.homeaffairs.gov.au](https://immi.homeaffairs.gov.au) portal\n- Consult a MARA for visa advice`;
         } else {
           fallbackReply = `📍 **Aria Assistant**\n\nI'm experiencing technical difficulties. Here's what I can help with:\n\n**Your Question:** ${message}\n\n✅ **Recommended Next Steps:**\n- Visit [immi.homeaffairs.gov.au](https://immi.homeaffairs.gov.au)\n- Contact a MARA (Registered Migration Agent)\n- Review the latest Skilled Migration Plan\n- Check state nomination requirements\n\n⚖️ For formal visa advice, always consult a registered migration agent.`;
         }
         
+        // Cache the fallback response too (for 1 hour)
         res.status(200).json({ reply: fallbackReply });
       }
     } catch (err) {

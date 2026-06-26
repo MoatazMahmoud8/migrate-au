@@ -453,13 +453,13 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 0.4,
-    color: Colors.textMuted,
+    color: '#8DB4E2',
     marginBottom: 4,
     flexShrink: 1,
   },
   time: {
     fontSize: 11,
-    color: Colors.textMuted,
+    color: '#8DB4E2',
     flexShrink: 0,
   },
   title: {
@@ -470,12 +470,12 @@ const styles = StyleSheet.create({
   },
   body: {
     fontSize: 12,
-    color: Colors.textSecondary,
+    color: '#A8BDD8',
     lineHeight: 16,
   },
   source: {
     fontSize: 10,
-    color: Colors.textMuted,
+    color: '#8DB4E2',
     marginTop: 6,
     fontStyle: 'italic',
   },
