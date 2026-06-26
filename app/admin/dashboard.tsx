@@ -66,14 +66,22 @@ export default function AdminDashboard() {
   }, []);
 
   const handleSendNotification = async () => {
-    hapticTap();
+    console.log('[admin] Send button clicked');
+    try {
+      hapticTap();
+    } catch (e) {
+      // Haptics not available on web
+    }
 
     const validation = validateNotification(draft);
     if (!validation.valid) {
+      const msg = `Validation Error:\n${validation.errors.join('\n')}`;
+      console.error('[admin]', msg);
       Alert.alert('Validation Error', validation.errors.join('\n'));
       return;
     }
 
+    console.log('[admin] Validation passed, sending notification...', draft);
     setSubmitting(true);
     try {
       const notifId = await createNotification({
@@ -84,8 +92,17 @@ export default function AdminDashboard() {
         link: draft.link || undefined,
       });
 
-      hapticSuccess();
-      Alert.alert('✅ Success', `Notification created: ${notifId}\n\nUsers will see this in their feed within seconds.`);
+      console.log('[admin] ✅ Notification created:', notifId);
+      
+      try {
+        hapticSuccess();
+      } catch (e) {
+        // Haptics not available on web
+      }
+
+      const msg = `✅ Success!\n\nNotification created: ${notifId}\n\nUsers will see this in their feed within 5-10 seconds.`;
+      console.log('[admin] Showing success message');
+      Alert.alert('✅ Notification Sent', msg);
 
       // Clear form
       setDraft({
@@ -96,8 +113,13 @@ export default function AdminDashboard() {
         link: '',
       });
     } catch (err: any) {
-      console.error('Failed to send notification:', err);
-      Alert.alert('Error', `Failed to send notification: ${err?.message || 'Unknown error'}`);
+      const errMsg = err?.message || 'Unknown error';
+      console.error('[admin] Failed to send notification:', err);
+      console.error('[admin] Full error:', JSON.stringify(err, null, 2));
+      
+      const msg = `Failed to send notification:\n${errMsg}`;
+      console.error('[admin]', msg);
+      Alert.alert('Error', msg);
     } finally {
       setSubmitting(false);
     }

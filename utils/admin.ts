@@ -74,22 +74,28 @@ export async function createNotification(notification: {
   link?: string;
 }): Promise<string> {
   try {
-    const db = getFirestore();
+    console.log('[admin] createNotification called with:', {
+      title: notification.title?.substring(0, 50),
+      body: notification.body?.substring(0, 50),
+      category: notification.category,
+    });
+
+    let db;
+    try {
+      db = getFirestore();
+      console.log('[admin] Firestore instance obtained');
+    } catch (fsErr) {
+      console.error('[admin] Failed to get Firestore instance:', fsErr);
+      throw new Error(`Firestore not available: ${fsErr?.message}`);
+    }
+
     const newRef = db.collection('notifications').doc();
+    console.log('[admin] Document reference created:', newRef.id);
     
     // Map category to topic (required field)
     const topic = notification.category.toLowerCase().replace(/\s+/g, '_');
     
-    console.log('[admin] Creating notification:', {
-      title: notification.title,
-      body: notification.body,
-      category: notification.category,
-      topic,
-      url: notification.link,
-      source: notification.source,
-    });
-    
-    await newRef.set({
+    const docData = {
       // Required fields
       id: newRef.id,
       title: notification.title,
@@ -103,13 +109,25 @@ export async function createNotification(notification: {
       // Optional fields
       source: notification.source || 'Admin',
       sourceUrl: notification.link,
-    });
+    };
 
-    console.log('[admin] ✅ Notification created:', newRef.id);
+    console.log('[admin] Writing document to Firestore:', {
+      id: newRef.id,
+      title: docData.title.substring(0, 30),
+      category: docData.category,
+      topic: docData.topic,
+    });
+    
+    await newRef.set(docData);
+    console.log('[admin] ✅ Notification successfully created:', newRef.id);
     return newRef.id;
-  } catch (err) {
-    console.error('[admin] createNotification error:', err);
-    throw err;
+  } catch (err: any) {
+    console.error('[admin] createNotification failed:', {
+      message: err?.message,
+      code: err?.code,
+      fullError: JSON.stringify(err, null, 2),
+    });
+    throw new Error(`Failed to create notification: ${err?.message || 'Unknown error'}`);
   }
 }
 
