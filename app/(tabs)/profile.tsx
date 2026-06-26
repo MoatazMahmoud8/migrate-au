@@ -808,7 +808,8 @@ export default function ProfileScreen() {
         </View>
       </View>
 
-      {isAdmin && (
+      {/* Admin section hidden from UI - access via direct URL only */}
+      {/* {isAdmin && (
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>Admin</Text>
           <View style={styles.card}>
@@ -825,7 +826,7 @@ export default function ProfileScreen() {
             />
           </View>
         </View>
-      )}
+      )} */
 
       {__DEV__ && (
         <View style={styles.section}>
