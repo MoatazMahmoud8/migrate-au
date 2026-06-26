@@ -808,26 +808,6 @@ export default function ProfileScreen() {
         </View>
       </View>
 
-      {/* Admin section hidden from UI - access via direct URL only */}
-      {/* {isAdmin && (
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Admin</Text>
-          <View style={styles.card}>
-            <SettingRow
-              icon="megaphone-outline"
-              label="Send Notification"
-              value="Broadcast to all users"
-              onPress={() => {
-                hapticTap();
-                router.push('/admin/dashboard');
-              }}
-              showArrow
-              last
-            />
-          </View>
-        </View>
-      )} */
-
       {__DEV__ && (
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>Developer</Text>
