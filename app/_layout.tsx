@@ -398,6 +398,7 @@ function RootLayout() {
         <Tabs.Screen name="processing-times"       options={{ title: 'Processing Times',  href: null, headerShown: false }} />
         <Tabs.Screen name="visas"                  options={{ title: 'Visa Pathways',     href: null, headerShown: false }} />
         <Tabs.Screen name="watchlist"              options={{ title: 'Watchlist',         href: null, headerShown: false }} />
+        <Tabs.Screen name="admin"                  options={{ href: null, headerShown: false }} />
       </Tabs>
       <OnboardingModal visible={onboardingVisible} onClose={closeOnboarding} />
     </>
