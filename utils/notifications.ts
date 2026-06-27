@@ -391,7 +391,7 @@ export function subscribeToFeed(
       const unsubListener = col
         .limit(limit * 2)
         .onSnapshot(
-          snapshot => {
+          async snapshot => {
             if (unsubscribed) {
               console.log('[subscribeToFeed] Ignoring snapshot (already unsubscribed)');
               return;
