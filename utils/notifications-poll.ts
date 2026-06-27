@@ -5,6 +5,7 @@
 
 import { Platform } from 'react-native';
 import firestore from '@react-native-firebase/firestore';
+import { getReadIds } from './notifications';
 
 interface PollSubscription {
   unsubscribe: () => void;
@@ -64,12 +65,13 @@ export function subscribeToFeedPoll(
           seenIds.add(doc.id);
           return true;
         });
+        const readIds = await getReadIds();
         const items = allDocs
           .map(doc => {
             const data = doc.data();
             const timestamp = data.timestamp;
             const isoTimestamp = typeof timestamp === 'string' ? timestamp : (timestamp?.toDate?.().toISOString() || '');
-            return { id: doc.id, ...data, timestamp: isoTimestamp };
+            return { id: doc.id, ...data, timestamp: isoTimestamp, read: readIds.has(doc.id) };
           })
           .sort((a: any, b: any) => (b.timestamp || '').localeCompare(a.timestamp || ''))
           .slice(0, limit);
@@ -87,12 +89,13 @@ export function subscribeToFeedPoll(
       } else {
         // Simple case: no userId
         const snap = await col.limit(limit * 2).get();
+        const readIds = await getReadIds();
         const items = snap.docs
           .map(doc => {
             const data = doc.data();
             const timestamp = data.timestamp;
             const isoTimestamp = typeof timestamp === 'string' ? timestamp : (timestamp?.toDate?.().toISOString() || '');
-            return { id: doc.id, ...data, timestamp: isoTimestamp };
+            return { id: doc.id, ...data, timestamp: isoTimestamp, read: readIds.has(doc.id) };
           })
           .sort((a: any, b: any) => (b.timestamp || '').localeCompare(a.timestamp || ''))
           .slice(0, limit);

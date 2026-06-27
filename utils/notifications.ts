@@ -15,6 +15,7 @@ import * as Notifications from 'expo-notifications';
 import messaging from '@react-native-firebase/messaging';
 import firestore from '@react-native-firebase/firestore';
 import app from '@react-native-firebase/app';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { registerWatchlistDevice } from './watchlist';
 
 // Verify Firebase is initialized
@@ -397,13 +398,14 @@ export function subscribeToFeed(
             }
             try {
               console.log('[subscribeToFeed] 📬 Snapshot received:', snapshot.docs.length, 'docs');
+              const readIds = await getReadIds();
               const items: AppNotification[] = snapshot.docs
                 .map(doc => {
                   const data = doc.data() as Omit<AppNotification, 'id'>;
                   // Convert Firestore Timestamp to ISO string if needed
                   const timestamp = data.timestamp;
                   const isoTimestamp = typeof timestamp === 'string' ? timestamp : (timestamp?.toDate?.().toISOString() || '');
-                  return { id: doc.id, ...data, timestamp: isoTimestamp };
+                  return { id: doc.id, ...data, timestamp: isoTimestamp, read: readIds.has(doc.id) };
                 })
                 .sort((a, b) => (b.timestamp || '').localeCompare(a.timestamp || ''))
                 .slice(0, limit);
@@ -517,21 +519,36 @@ export function subscribeToFeed(
   }
 }
 
-/** Mark a notification as read in Firestore */
+const READ_IDS_KEY = '@migrate_au_read_notification_ids';
+
+/** Get locally stored read notification IDs */
+export async function getReadIds(): Promise<Set<string>> {
+  try {
+    const raw = await AsyncStorage.getItem(READ_IDS_KEY);
+    return raw ? new Set(JSON.parse(raw)) : new Set();
+  } catch {
+    return new Set();
+  }
+}
+
+/** Mark a notification as read (local storage) */
 export async function markAsRead(notificationId: string) {
-  if (Platform.OS === 'web') return;
-  await firestore()
-    .collection('notifications')
-    .doc(notificationId)
-    .update({ read: true });
+  try {
+    const readIds = await getReadIds();
+    readIds.add(notificationId);
+    await AsyncStorage.setItem(READ_IDS_KEY, JSON.stringify([...readIds]));
+  } catch {
+    // ignore storage errors
+  }
 }
 
 /** Count unread notifications */
 export async function getUnreadCount(): Promise<number> {
   if (Platform.OS === 'web') return 0;
+  const readIds = await getReadIds();
   const snap = await firestore()
     .collection('notifications')
-    .where('read', '==', false)
+    .limit(30)
     .get();
-  return snap.size;
+  return snap.docs.filter(doc => !readIds.has(doc.id)).length;
 }
