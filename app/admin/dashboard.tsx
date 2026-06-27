@@ -17,7 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Spacing, Radius, FontSize, FontWeight } from '../../constants/theme';
-import { isUserAdmin, createNotification, NOTIFICATION_CATEGORIES, validateNotification } from '../../utils/admin';
+import { isUserAdmin, createNotification, saveDraft, approveDraft, deleteNotification, deleteDraft, getDrafts, getPublishedNotifications, NOTIFICATION_CATEGORIES, validateNotification } from '../../utils/admin';
 import { tap as hapticTap, success as hapticSuccess } from '../../utils/haptics';
 
 interface NotificationDraft {
@@ -36,6 +36,10 @@ export default function AdminDashboard() {
   const [submitting, setSubmitting] = useState(false);
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [activeTab, setActiveTab] = useState<'compose' | 'manage'>('compose');
+  const [drafts, setDrafts] = useState<any[]>([]);
+  const [published, setPublished] = useState<any[]>([]);
+  const [loadingManage, setLoadingManage] = useState(false);
 
   const [draft, setDraft] = useState<NotificationDraft>({
     title: '',
@@ -47,32 +51,43 @@ export default function AdminDashboard() {
 
   // Check admin on mount
   // PIN-based access is already verified in profile.tsx before navigating here
-  // Skip the isUserAdmin() check — the passphrase IS the auth gate
   useEffect(() => {
     setIsAdmin(true);
     setLoading(false);
   }, []);
 
-  const handleSendNotification = async () => {
-    console.log('[admin] Send button clicked');
-    try {
-      hapticTap();
-    } catch (e) {
-      // Haptics not available on web
+  // Load manage data when tab switches
+  useEffect(() => {
+    if (activeTab === 'manage') {
+      loadManageData();
     }
+  }, [activeTab]);
+
+  const loadManageData = async () => {
+    setLoadingManage(true);
+    try {
+      const [d, p] = await Promise.all([getDrafts(), getPublishedNotifications()]);
+      setDrafts(d);
+      setPublished(p);
+    } catch (err) {
+      console.error('[admin] Failed to load manage data:', err);
+    } finally {
+      setLoadingManage(false);
+    }
+  };
+
+  const handleSaveDraft = async () => {
+    try { hapticTap(); } catch (e) {}
 
     const validation = validateNotification(draft);
     if (!validation.valid) {
-      const msg = `Validation Error:\n${validation.errors.join('\n')}`;
-      console.error('[admin]', msg);
       Alert.alert('Validation Error', validation.errors.join('\n'));
       return;
     }
 
-    console.log('[admin] Validation passed, sending notification...', draft);
     setSubmitting(true);
     try {
-      const notifId = await createNotification({
+      const draftId = await saveDraft({
         title: draft.title,
         body: draft.body,
         category: draft.category,
@@ -80,36 +95,61 @@ export default function AdminDashboard() {
         link: draft.link || undefined,
       });
 
-      console.log('[admin] ✅ Notification created:', notifId);
-      
-      try {
-        hapticSuccess();
-      } catch (e) {
-        // Haptics not available on web
-      }
-
-      const msg = `✅ Success!\n\nNotification created: ${notifId}\n\nUsers will see this in their feed within 5-10 seconds.`;
-      console.log('[admin] Showing success message');
-      Alert.alert('✅ Notification Sent', msg);
-
-      // Clear form
-      setDraft({
-        title: '',
-        body: '',
-        category: 'News',
-        source: 'Admin',
-        link: '',
-      });
+      try { hapticSuccess(); } catch (e) {}
+      Alert.alert('📝 Draft Saved', `Saved as draft: ${draftId}\n\nGo to Manage tab to review and publish.`);
+      setDraft({ title: '', body: '', category: 'News', source: 'Admin', link: '' });
     } catch (err: any) {
-      const errMsg = err?.message || 'Unknown error';
-      console.error('[admin] Failed to send notification:', err);
-      console.error('[admin] Full error:', JSON.stringify(err, null, 2));
-      
-      const msg = `Failed to send notification:\n${errMsg}`;
-      console.error('[admin]', msg);
-      Alert.alert('Error', msg);
+      Alert.alert('Error', `Failed to save draft: ${err?.message || 'Unknown error'}`);
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleApprove = async (draftId: string, title: string) => {
+    Alert.alert('Publish Notification', `Send "${title}" to all users?`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Publish',
+        style: 'default',
+        onPress: async () => {
+          try {
+            const notifId = await approveDraft(draftId);
+            try { hapticSuccess(); } catch (e) {}
+            Alert.alert('✅ Published', `Notification sent to all users.\nID: ${notifId}`);
+            loadManageData();
+          } catch (err: any) {
+            Alert.alert('Error', err?.message || 'Failed to publish');
+          }
+        },
+      },
+    ]);
+  };
+
+  const handleDeletePublished = async (notifId: string, title: string) => {
+    Alert.alert('Delete Notification', `Remove "${title}" from all users? This cannot be undone.`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await deleteNotification(notifId);
+            Alert.alert('🗑️ Deleted', 'Notification removed from all users.');
+            loadManageData();
+          } catch (err: any) {
+            Alert.alert('Error', err?.message || 'Failed to delete');
+          }
+        },
+      },
+    ]);
+  };
+
+  const handleDeleteDraft = async (draftId: string) => {
+    try {
+      await deleteDraft(draftId);
+      loadManageData();
+    } catch (err: any) {
+      Alert.alert('Error', err?.message || 'Failed to delete draft');
     }
   };
 
@@ -139,10 +179,29 @@ export default function AdminDashboard() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="chevron-back" size={24} color={Colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>📢 Send Notification</Text>
+        <Text style={styles.headerTitle}>📢 Admin Dashboard</Text>
         <View style={{ width: 24 }} />
       </View>
 
+      {/* Tabs */}
+      <View style={styles.tabs}>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'compose' && styles.tabActive]}
+          onPress={() => setActiveTab('compose')}
+        >
+          <Text style={[styles.tabText, activeTab === 'compose' && styles.tabTextActive]}>Compose</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'manage' && styles.tabActive]}
+          onPress={() => setActiveTab('manage')}
+        >
+          <Text style={[styles.tabText, activeTab === 'manage' && styles.tabTextActive]}>
+            Manage {drafts.length > 0 ? `(${drafts.length})` : ''}
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {activeTab === 'compose' ? (
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Title Input */}
         <View style={styles.section}>
@@ -225,15 +284,15 @@ export default function AdminDashboard() {
 
           <TouchableOpacity
             style={styles.sendBtn}
-            onPress={handleSendNotification}
+            onPress={handleSaveDraft}
             disabled={submitting}
           >
             {submitting ? (
               <ActivityIndicator color={Colors.primaryDark} size={18} />
             ) : (
               <>
-                <Ionicons name="send" size={18} color={Colors.primaryDark} />
-                <Text style={styles.sendBtnText}>Send to Users</Text>
+                <Ionicons name="document-text" size={18} color={Colors.primaryDark} />
+                <Text style={styles.sendBtnText}>Save as Draft</Text>
               </>
             )}
           </TouchableOpacity>
@@ -241,6 +300,58 @@ export default function AdminDashboard() {
 
         <View style={{ height: 40 }} />
       </ScrollView>
+      ) : (
+      /* Manage Tab */
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {loadingManage ? (
+          <ActivityIndicator size="large" color={Colors.secondary} style={{ marginTop: 40 }} />
+        ) : (
+          <>
+            {/* Drafts Section */}
+            <View style={styles.section}>
+              <Text style={styles.label}>📝 Pending Drafts ({drafts.length})</Text>
+              {drafts.length === 0 && (
+                <Text style={{ color: Colors.textMuted, fontSize: FontSize.sm, marginTop: 8 }}>No drafts. Compose a notification first.</Text>
+              )}
+              {drafts.map(d => (
+                <View key={d.id} style={styles.manageCard}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.manageTitle}>{d.title}</Text>
+                    <Text style={styles.manageBody} numberOfLines={2}>{d.body}</Text>
+                    <Text style={styles.manageMeta}>{d.category} · {d.timestamp?.substring(0, 16)}</Text>
+                  </View>
+                  <View style={styles.manageActions}>
+                    <TouchableOpacity style={styles.approveBtn} onPress={() => handleApprove(d.id, d.title)}>
+                      <Ionicons name="checkmark-circle" size={22} color="#4CAF50" />
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.deleteBtn} onPress={() => handleDeleteDraft(d.id)}>
+                      <Ionicons name="trash" size={22} color={Colors.error} />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ))}
+            </View>
+
+            {/* Published Section */}
+            <View style={[styles.section, { marginTop: Spacing.xl }]}>
+              <Text style={styles.label}>📤 Published ({published.length})</Text>
+              {published.map(n => (
+                <View key={n.id} style={styles.manageCard}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.manageTitle}>{n.title}</Text>
+                    <Text style={styles.manageMeta}>{n.category} · {n.timestamp?.substring(0, 16)}</Text>
+                  </View>
+                  <TouchableOpacity style={styles.deleteBtn} onPress={() => handleDeletePublished(n.id, n.title)}>
+                    <Ionicons name="trash" size={22} color={Colors.error} />
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </View>
+          </>
+        )}
+        <View style={{ height: 40 }} />
+      </ScrollView>
+      )}
 
       {/* Category Picker Modal */}
       <Modal
@@ -601,5 +712,63 @@ const styles = StyleSheet.create({
     color: Colors.error,
     textAlign: 'center',
     marginTop: Spacing.xl,
+  },
+  tabs: {
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: Spacing.md,
+    alignItems: 'center',
+  },
+  tabActive: {
+    borderBottomWidth: 2,
+    borderBottomColor: Colors.secondary,
+  },
+  tabText: {
+    fontSize: FontSize.md,
+    color: Colors.textMuted,
+    fontWeight: FontWeight.semiBold,
+  },
+  tabTextActive: {
+    color: Colors.secondary,
+  },
+  manageCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.md,
+    padding: Spacing.md,
+    marginTop: Spacing.sm,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  manageTitle: {
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.bold,
+    color: Colors.textPrimary,
+  },
+  manageBody: {
+    fontSize: FontSize.xs,
+    color: Colors.textSecondary,
+    marginTop: 2,
+  },
+  manageMeta: {
+    fontSize: FontSize.xs,
+    color: Colors.textMuted,
+    marginTop: 4,
+  },
+  manageActions: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+    marginLeft: Spacing.sm,
+  },
+  approveBtn: {
+    padding: 6,
+  },
+  deleteBtn: {
+    padding: 6,
   },
 });
