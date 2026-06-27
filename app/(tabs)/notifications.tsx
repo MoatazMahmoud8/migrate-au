@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -28,6 +28,7 @@ import { SourceValidator } from '../../utils/sourceValidator';
 import NotificationDetail from '../../components/NotificationDetail';
 import InAppBrowser from '../../components/InAppBrowser';
 import { ErrorBoundary } from '../../components/ErrorBoundary';
+import { useNavigation } from '@react-navigation/native';
 
 const CATEGORY_COLORS: Record<string, string> = {
   'Policy Update':          Colors.accent,         // Cyan
@@ -115,6 +116,7 @@ function NotificationCard({
 
 export default function NotificationsScreen() {
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation();
   const [feed, setFeed]           = useState<AppNotification[]>([]);
   const [loading, setLoading]     = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -219,8 +221,27 @@ export default function NotificationsScreen() {
     setBrowserUrl(null);
   }, []);
 
+  // Reset to list view when tab is tapped while already focused (re-tap)
+  const isFocusedRef = useRef(false);
+  useEffect(() => {
+    const unsubFocus = navigation.addListener('focus' as any, () => {
+      if (isFocusedRef.current && selectedNotification) {
+        setSelectedNotification(null);
+        setShowInAppBrowser(false);
+        setBrowserUrl(null);
+      }
+      isFocusedRef.current = true;
+    });
+    const unsubBlur = navigation.addListener('blur' as any, () => {
+      isFocusedRef.current = false;
+    });
+    return () => { unsubFocus(); unsubBlur(); };
+  }, [navigation, selectedNotification]);
+
   const onRefresh = useCallback(() => {
     setRefreshing(true);
+    // Safety timeout — stop spinner after 5 seconds even if no new data
+    setTimeout(() => setRefreshing(false), 5000);
   }, []);
 
   const filteredFeed = useMemo(() => {
