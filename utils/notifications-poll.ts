@@ -51,13 +51,19 @@ export function subscribeToFeedPoll(
 
       let query = col.limit(limit * 2);
       if (userId) {
-        // Get both broadcasts and personal notifications
+        // Get both broadcasts (no userId field or userId=null) and personal notifications
         const [broadcasts, personal] = await Promise.all([
-          col.where('userId', '==', null).limit(limit * 2).get(),
+          col.orderBy('timestamp', 'desc').limit(limit * 2).get(),
           col.where('userId', '==', userId).limit(limit * 2).get(),
         ]);
 
-        const allDocs = [...broadcasts.docs, ...personal.docs];
+        // Merge and deduplicate
+        const seenIds = new Set<string>();
+        const allDocs = [...broadcasts.docs, ...personal.docs].filter(doc => {
+          if (seenIds.has(doc.id)) return false;
+          seenIds.add(doc.id);
+          return true;
+        });
         const items = allDocs
           .map(doc => {
             const data = doc.data();
