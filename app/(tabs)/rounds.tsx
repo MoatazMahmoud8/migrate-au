@@ -602,8 +602,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
     borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.border,
   },
-  sectionToggleText: { fontSize: FontSize.sm, fontWeight: FontWeight.semiBold, color: Colors.textPrimary },
-  sectionToggleSub: { fontSize: FontSize.xs, color: Colors.textMuted },
+  sectionToggleText: { fontSize: FontSize.sm, fontWeight: FontWeight.semiBold, color: Colors.textPrimary, flexShrink: 1 },
+  sectionToggleSub: { fontSize: FontSize.xs, color: Colors.textMuted, flexShrink: 1 },
 
   stateTable: {
     marginHorizontal: Spacing.lg, marginBottom: Spacing.md,
