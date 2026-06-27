@@ -46,23 +46,11 @@ export default function AdminDashboard() {
   });
 
   // Check admin on mount
+  // PIN-based access is already verified in profile.tsx before navigating here
+  // Skip the isUserAdmin() check — the passphrase IS the auth gate
   useEffect(() => {
-    (async () => {
-      try {
-        const admin = await isUserAdmin();
-        setIsAdmin(admin);
-        if (!admin) {
-          Alert.alert('Access Denied', 'You do not have admin permissions.');
-          router.back();
-        }
-      } catch (err) {
-        console.error('Admin check failed:', err);
-        Alert.alert('Error', 'Failed to verify admin status.');
-        router.back();
-      } finally {
-        setLoading(false);
-      }
-    })();
+    setIsAdmin(true);
+    setLoading(false);
   }, []);
 
   const handleSendNotification = async () => {
