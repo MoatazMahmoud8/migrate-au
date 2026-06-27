@@ -15,8 +15,21 @@ on:
           - development
 
 jobs:
+  sentry-gate:
+    name: Verify Sentry is configured
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Sentry must be enabled
+        run: |
+          grep -q '"@sentry/react-native/expo"' app.json || { echo "::error::Sentry plugin disabled in app.json"; exit 1; }
+          grep -q "initSentry" app/_layout.tsx || { echo "::error::initSentry() missing"; exit 1; }
+          grep -q "EXPO_PUBLIC_SENTRY_DSN" .env || { echo "::error::Sentry DSN not set"; exit 1; }
+          echo "✅ Sentry checks passed"
+
   build-android:
     name: Android (${{ github.event.inputs.profile }})
+    needs: sentry-gate
     runs-on: ubuntu-latest
 
     steps:

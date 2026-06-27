@@ -1,0 +1,75 @@
+name: Pre-Release Checks
+
+on:
+  # Runs before any build workflow
+  workflow_dispatch:
+  # Automatically run on pushes to main
+  push:
+    branches: [main]
+    paths:
+      - 'app.json'
+      - 'utils/sentry.ts'
+      - 'app/_layout.tsx'
+      - 'package.json'
+
+jobs:
+  sentry-check:
+    name: Verify Sentry Integration
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check Sentry DSN is configured
+        run: |
+          if ! grep -q "EXPO_PUBLIC_SENTRY_DSN" .env; then
+            echo "::error::EXPO_PUBLIC_SENTRY_DSN is missing from .env"
+            exit 1
+          fi
+          echo "✅ Sentry DSN found in .env"
+
+      - name: Check Sentry plugin is enabled in app.json
+        run: |
+          if ! grep -q '"@sentry/react-native/expo"' app.json; then
+            echo "::error::Sentry plugin is not enabled in app.json plugins array"
+            echo "::error::Uncomment or add @sentry/react-native/expo to plugins"
+            exit 1
+          fi
+          echo "✅ Sentry plugin enabled in app.json"
+
+      - name: Check Sentry is initialized in app layout
+        run: |
+          if ! grep -q "initSentry" app/_layout.tsx; then
+            echo "::error::initSentry() not called in app/_layout.tsx"
+            exit 1
+          fi
+          echo "✅ initSentry() called in _layout.tsx"
+
+      - name: Check @sentry/react-native is in dependencies
+        run: |
+          if ! grep -q '"@sentry/react-native"' package.json; then
+            echo "::error::@sentry/react-native not found in package.json"
+            exit 1
+          fi
+          echo "✅ @sentry/react-native package installed"
+
+      - name: Check SENTRY_AUTH_TOKEN secret exists
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+        run: |
+          if [ -z "$SENTRY_AUTH_TOKEN" ]; then
+            echo "::warning::SENTRY_AUTH_TOKEN secret not set — source maps won't upload"
+            echo "Set it in GitHub repo Settings > Secrets > Actions"
+          else
+            echo "✅ SENTRY_AUTH_TOKEN secret is set"
+          fi
+
+      - name: Summary
+        run: |
+          echo "## 🛡️ Sentry Pre-Release Check Passed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ DSN configured" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Plugin enabled" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Initialized in app" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Package installed" >> $GITHUB_STEP_SUMMARY

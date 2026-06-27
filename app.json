@@ -80,16 +80,14 @@
 					"icon": "./assets/icon.png"
 				}
 			],
-			"@react-native-community/datetimepicker"
-			// Commented out: Sentry plugin causes Metro to require babel-preset-expo (breaks web)
-			// [
-			//	"@sentry/react-native/expo",
-			//	{
-			//		"organization": "jsm-global-pty-ltd",
-			//		"project": "amg-app",
-			//		"authToken": "$SENTRY_AUTH_TOKEN"
-			//	}
-			// ]
+			"@react-native-community/datetimepicker",
+			[
+				"@sentry/react-native/expo",
+				{
+					"organization": "jsm-global-pty-ltd",
+					"project": "amg-app"
+				}
+			]
 		],
 		"experiments": {
 			"typedRoutes": true
