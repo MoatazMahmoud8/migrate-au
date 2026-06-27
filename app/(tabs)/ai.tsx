@@ -24,6 +24,7 @@ import { getProfile, saveProfile } from '../../utils/storage';
 import { PaywallModal } from '../../components/PaywallModal';
 import { UsageMeter } from '../../components/UsageMeter';
 import { sendAriaMessage, AriaHistoryMessage } from '../../utils/aria';
+import { recordEngagement } from '../../utils/rateApp';
 import Markdown from 'react-native-markdown-display';
 
 // System prompt and Gemini key live on the server (functions/index.js).
@@ -44,6 +45,7 @@ export default function AiScreen() {
   const [remaining, setRemaining] = useState<number | null>(null);
   const [showPaywall, setShowPaywall] = useState(false);
   const flatListRef = useRef<FlatList>(null);
+  const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
 
   // Load profile on mount
@@ -105,6 +107,9 @@ export default function AiScreen() {
       await saveProfile(updated);
       const rem = getRemainingUses('aiMessages', updated);
       setRemaining(rem);
+
+      // Track engagement for review prompt
+      recordEngagement('ai_chat');
     } catch (e: any) {
       console.error('Aria error:', e?.message);
       const errMsg: ChatMessage = {
@@ -146,7 +151,7 @@ export default function AiScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, { paddingTop: insets.top }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
     >
