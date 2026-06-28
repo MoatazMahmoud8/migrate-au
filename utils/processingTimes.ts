@@ -21,7 +21,7 @@ import {
 import { validateProcessingTimesSnapshot } from './remoteSchema';
 // Schema: { snapshotDate: string, items: ProcessingTime[] }
 export const PROCESSING_TIMES_REMOTE_URL =
-  'https://migrateau.jsmglobal.xyz/processing-times.json';
+  'https://swift-shore-238707.web.app/processing-times.json';
 
 const CACHE_KEY = '@migrate_au_processing_times';
 const LAST_CHECK_KEY = '@migrate_au_processing_times_last_check';

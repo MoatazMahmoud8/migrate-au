@@ -100,7 +100,7 @@ export async function createNotification(notification: {
       body: notification.body,
       category: notification.category,
       topic: topic,
-      url: notification.link || 'https://migrateau.jsmglobal.xyz',
+      url: notification.link || 'https://swift-shore-238707.web.app',
       timestamp: new Date().toISOString(),
       read: false,
       source: notification.source || 'Admin',
