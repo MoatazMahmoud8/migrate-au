@@ -1,0 +1,50 @@
+MigrateAU: Australian Migration 2026
+
+--- Promotional Text ---
+Your complete guide to Australian skilled migration. Track SkillSelect rounds, calculate your points, compare occupation cutoffs, and get AI-powered visa advice. Real-time updates from the Department of Home Affairs. Free to download.
+
+--- Description ---
+Plan your Australian migration journey with confidence using MigrateAU — the most comprehensive skilled migration app with real-time data from official government sources.
+
+KEY FEATURES:
+- SkillSelect Round Tracker - live invitation round results with per-occupation minimum points
+- Points Calculator - calculate your SC 189/190/491 points instantly
+- AI Migration Consultant (Aria) - get personalised visa advice powered by Gemini AI
+- Occupation Cutoff Table - 144+ occupations with colour-coded competitiveness
+- State Nomination Dashboard - SC 190 & 491 allocations across all 8 states/territories
+- Processing Times - real-time visa processing time estimates
+- Push Notifications - instant alerts for new rounds, policy changes, and state updates
+- Salary Data - median earnings by occupation (sourced from Jobs & Skills Australia)
+- In-App News Feed - curated migration news from official sources
+- Round History - track trends across 8+ previous invitation rounds
+- Dark Mode - clean, distraction-free interface
+
+VISA TYPES COVERED:
+1. SC 189 — Skilled Independent (points-tested)
+2. SC 190 — State/Territory Nominated
+3. SC 491 — Skilled Work Regional (Family Sponsored & State Nominated)
+
+WHY MIGRATEAU?
+- Data sourced from immi.homeaffairs.gov.au & jobsandskills.gov.au
+- Updated automatically via daily scrapers
+- Track your eligibility vs current cutoffs
+- AI consultant trained on official migration policy
+- Completely free with no ads
+
+Independent tool by JSM GLOBAL PTY LTD. Not affiliated with the Australian Government or Department of Home Affairs.
+Sources: immi.homeaffairs.gov.au, jobsandskills.gov.au
+
+--- What's New in This Version ---
+June 2026 Update (v1.0.0 Build 181)
+
+- AI Consultant (Aria): Gemini 2.5 Flash powered migration advice
+- Admin Notification System: approval workflow with draft → review → publish
+- SkillSelect Round Auto-Updates: Playwright-based scraper for DHA's new JS-rendered pages
+- Notification Polling: 5-second real-time feed on native
+- Read Status: persistent unread badge tracking via local storage
+- Pull-to-Refresh: fixed infinite loading with safety timeout
+- State Nomination Data: SC 190 & 491 allocations by state
+- Occupation Cutoffs: 144 occupations with colour-coded minimum points
+- In-App Review Prompts: smart engagement-based prompts
+- Sentry Crash Monitoring: production error tracking enabled
+- Safe Area Fix: AI chat screen no longer overlaps status bar
