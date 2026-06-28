@@ -41,12 +41,12 @@ export async function getLatestRound(): Promise<LatestRound> {
           
           if (data.currentRound) {
             const round = data.currentRound;
-            console.log('[latestRound] Fetched fresh data:', round.label);
+            console.log('[latestRound] Fetched fresh data:', round.date);
             return {
               date: round.date,
               label: formatRoundDate(round.date),
-              minPoints: round.sc189Total || 65,
-              tieBreak: round.sc189TieBreak,
+              minPoints: round.sc189?.total || round.sc189Total || 65,
+              tieBreak: round.sc189?.tieBreak || round.sc189TieBreak,
             };
           }
         }
@@ -63,12 +63,12 @@ export async function getLatestRound(): Promise<LatestRound> {
         const data = JSON.parse(cached);
         if (data.currentRound) {
           const round = data.currentRound;
-          console.log('[latestRound] Using cached data:', round.label);
+          console.log('[latestRound] Using cached data:', round.date);
           return {
             date: round.date,
             label: formatRoundDate(round.date),
-            minPoints: round.sc189Total || 65,
-            tieBreak: round.sc189TieBreak,
+            minPoints: round.sc189?.total || round.sc189Total || 65,
+            tieBreak: round.sc189?.tieBreak || round.sc189TieBreak,
           };
         }
       } catch (e) {
@@ -82,10 +82,10 @@ export async function getLatestRound(): Promise<LatestRound> {
   // Fallback to most recent known data (will be updated as new rounds happen)
   console.log('[latestRound] Using fallback data');
   return {
-    date: '2026-05-01',
-    label: 'May 2026',
-    minPoints: 70,
-    tieBreak: '2026-05',
+    date: '2026-06-04',
+    label: 'Jun 2026',
+    minPoints: 65,
+    tieBreak: '2026-06',
   };
 }
 
