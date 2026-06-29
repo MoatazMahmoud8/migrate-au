@@ -1,7 +1,10 @@
 MigrateAU: Australian Migration 2026
 
 --- Promotional Text ---
-Your complete guide to Australian skilled migration. Track SkillSelect rounds, calculate your points, compare occupation cutoffs, and get AI-powered visa advice. Real-time updates from the Department of Home Affairs. Free to download.
+Track SkillSelect rounds, calculate points, compare occupation cutoffs & get AI visa advice. Real-time updates from Home Affairs. Free.
+
+--- Keywords ---
+skillselect, migration, visa 189, visa 190, visa 491, points calculator, invitation round, occupation list, state nomination, australia immigration
 
 --- Description ---
 Plan your Australian migration journey with confidence using MigrateAU — the most comprehensive skilled migration app with real-time data from official government sources.
@@ -33,6 +36,9 @@ WHY MIGRATEAU?
 
 Independent tool by JSM GLOBAL PTY LTD. Not affiliated with the Australian Government or Department of Home Affairs.
 Sources: immi.homeaffairs.gov.au, jobsandskills.gov.au
+
+Privacy Policy: https://jsmglobal.xyz/migration-privacy.html
+Terms of Use (EULA): https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
 
 --- What's New in This Version ---
 June 2026 Update (v1.0.0 Build 181)

@@ -7,6 +7,7 @@ import {
   Modal,
   ActivityIndicator,
   ScrollView,
+  Linking,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -217,6 +218,21 @@ export function PaywallModal({ visible, onClose, userId, title, message, feature
                 ? `One-time payment · No recurring charges · ${lifetimePrice.amount}`
                 : `Cancel anytime · Auto-renews · ${monthlyPrice.amount}/mo or ${yearlyPrice.amount}/yr`}
             </Text>
+
+            {/* Required Apple links for subscriptions */}
+            <View style={styles.legalLinks}>
+              <TouchableOpacity onPress={() => Linking.openURL('https://jsmglobal.xyz/migration-privacy.html')}>
+                <Text style={styles.legalLinkText}>Privacy Policy</Text>
+              </TouchableOpacity>
+              <Text style={styles.legalSeparator}>·</Text>
+              <TouchableOpacity onPress={() => Linking.openURL('https://www.apple.com/legal/internet-services/itunes/dev/stdeula/')}>
+                <Text style={styles.legalLinkText}>Terms of Use (EULA)</Text>
+              </TouchableOpacity>
+              <Text style={styles.legalSeparator}>·</Text>
+              <TouchableOpacity onPress={() => Linking.openURL('https://apps.apple.com/account/subscriptions')}>
+                <Text style={styles.legalLinkText}>Manage Subscriptions</Text>
+              </TouchableOpacity>
+            </View>
 
             {/* Benefits — below the fold as supporting detail */}
             <View style={styles.benefitsDivider}>
@@ -472,6 +488,23 @@ const styles = StyleSheet.create({
     color: Colors.textMuted,
     textAlign: 'center',
     lineHeight: 16,
+  },
+  legalLinks: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: Spacing.sm,
+    flexWrap: 'wrap',
+  },
+  legalLinkText: {
+    fontSize: FontSize.xs,
+    color: Colors.secondary,
+    textDecorationLine: 'underline',
+  },
+  legalSeparator: {
+    fontSize: FontSize.xs,
+    color: Colors.textMuted,
+    marginHorizontal: 6,
   },
 });
 
