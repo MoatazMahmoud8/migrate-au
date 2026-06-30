@@ -185,10 +185,11 @@ export async function purchaseSubscription(
       const receiptId = purchaseResult.customerInfo.originalPurchaseDate || '';
 
       // Update Firestore with paid subscription
-      await convertTrialToPaid(userId, billingCycle, paymentMethod, {
-        appleReceiptId: paymentMethod === 'apple' ? receiptId : undefined,
-        googleReceiptId: paymentMethod === 'google' ? receiptId : undefined,
-      });
+      const externalIds: Record<string, string> = {};
+      if (paymentMethod === 'apple' && receiptId) externalIds.appleReceiptId = receiptId;
+      if (paymentMethod === 'google' && receiptId) externalIds.googleReceiptId = receiptId;
+
+      await convertTrialToPaid(userId, billingCycle, paymentMethod, externalIds);
 
       return { success: true, cancelled: false };
     }

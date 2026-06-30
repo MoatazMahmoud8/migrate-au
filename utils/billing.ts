@@ -66,6 +66,11 @@ export async function convertTrialToPaid(
   const now = Date.now();
   const renewsAt = calculateRenewalDate(now, billingCycle);
 
+  // Filter out undefined values — Firestore rejects them
+  const extras = Object.fromEntries(
+    Object.entries(externalIds || {}).filter(([, v]) => v !== undefined)
+  );
+
   await firestore()
     .collection('subscriptions')
     .doc(userId)
@@ -78,7 +83,7 @@ export async function convertTrialToPaid(
         renewsAt,
         expiresAt: renewsAt,
         trialUsed: true,
-        ...(externalIds || {}),
+        ...extras,
         updatedAt: now,
       },
       { merge: true }
