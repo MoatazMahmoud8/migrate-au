@@ -27,7 +27,7 @@ const BENEFITS = [
   { icon: 'sparkles-outline',          text: 'Aria AI — unlimited expert visa consultant' },
   { icon: 'calculator-outline',        text: 'Unlimited points calculations' },
   { icon: 'briefcase-outline',         text: 'Unlimited ANZSCO occupation searches' },
-  { icon: 'lightning-outline',         text: 'Real-time SkillSelect & state alerts' },
+  { icon: 'flash-outline',             text: 'Real-time SkillSelect & state alerts' },
   { icon: 'location-outline',          text: 'State subscriptions (unlimited)' },
   { icon: 'document-outline',          text: 'PDF export of your visa journey' },
   { icon: 'shield-checkmark-outline',  text: 'Age-bracket point-drop alerts' },

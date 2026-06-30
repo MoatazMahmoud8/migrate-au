@@ -47,9 +47,9 @@ export function initSentry(): void {
     enableAutoSessionTracking: true,
     attachStacktrace: true,
     beforeSend(event) {
-      // Drop noisy network aborts (user cancelled / offline).
+      // Drop noisy network timeouts (user-initiated fetch aborts / offline).
       const msg = event.exception?.values?.[0]?.value ?? '';
-      if (/AbortError|NetworkError|Network request failed/i.test(msg)) {
+      if (/Network request failed/i.test(msg)) {
         return null;
       }
       return event;

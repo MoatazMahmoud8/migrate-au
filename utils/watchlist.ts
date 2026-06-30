@@ -127,7 +127,12 @@ export async function saveWatchlistItem(
     states: partial.states && partial.states.length ? partial.states : undefined,
     createdAt: partial.createdAt ?? new Date().toISOString(),
   };
-  await userRef(userId).collection('items').doc(id).set(item);
+  try {
+    await userRef(userId).collection('items').doc(id).set(item);
+  } catch (err) {
+    console.warn('[watchlist] saveWatchlistItem failed:', err);
+    throw err;
+  }
   return item;
 }
 
