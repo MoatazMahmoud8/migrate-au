@@ -184,12 +184,19 @@ export async function purchaseSubscription(
       // Use original purchase date as a receipt identifier (RC handles validation server-side)
       const receiptId = purchaseResult.customerInfo.originalPurchaseDate || '';
 
-      // Update Firestore with paid subscription
-      const externalIds: Record<string, string> = {};
-      if (paymentMethod === 'apple' && receiptId) externalIds.appleReceiptId = receiptId;
-      if (paymentMethod === 'google' && receiptId) externalIds.googleReceiptId = receiptId;
+      // Update Firestore with paid subscription (non-critical — RC is source of truth)
+      try {
+        const externalIds: Record<string, string> = {};
+        if (paymentMethod === 'apple' && receiptId) externalIds.appleReceiptId = receiptId;
+        if (paymentMethod === 'google' && receiptId) externalIds.googleReceiptId = receiptId;
 
-      await convertTrialToPaid(userId, billingCycle, paymentMethod, externalIds);
+        await convertTrialToPaid(userId, billingCycle, paymentMethod, externalIds);
+      } catch (fsErr) {
+        console.warn('[IAP] Firestore subscription write failed (non-critical):', fsErr);
+      }
+
+      // Always update local premium status from RC entitlement
+      await saveProfile({ isPremium: true });
 
       return { success: true, cancelled: false };
     }
@@ -251,6 +258,13 @@ export async function restorePurchases(): Promise<{ restored: boolean; message: 
     if (hasEntitlement) {
       await saveProfile({ isPremium: true });
       console.log('[IAP] Purchases restored — isPremium: true');
+      // Non-critical Firestore sync
+      try {
+        const uid = await getRevenueCatUserId();
+        await convertTrialToPaid(uid, 'monthly', 'google', {});
+      } catch (e) {
+        console.warn('[IAP] Firestore sync on restore failed (non-critical):', e);
+      }
       return { restored: true, message: 'Your subscription has been restored!' };
     }
 
