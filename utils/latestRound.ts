@@ -32,7 +32,10 @@ export async function getLatestRound(): Promise<LatestRound> {
     // If cache is stale, try to fetch fresh data
     if (stale) {
       try {
-        const res = await fetch(REMOTE_URL, { signal: AbortSignal.timeout(5000) });
+        const ctrl = new AbortController();
+        const timer = setTimeout(() => ctrl.abort(), 5000);
+        const res = await fetch(REMOTE_URL, { signal: ctrl.signal });
+        clearTimeout(timer);
         if (res.ok) {
           const data = await res.json();
           // Cache the fresh data
@@ -119,7 +122,10 @@ function extractMinPointsFromTieBreak(tieBreak: string | undefined): number {
  */
 export async function refreshLatestRound(): Promise<void> {
   try {
-    const res = await fetch(REMOTE_URL, { signal: AbortSignal.timeout(5000) });
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 5000);
+    const res = await fetch(REMOTE_URL, { signal: ctrl.signal });
+    clearTimeout(timer);
     if (res.ok) {
       const data = await res.json();
       await AsyncStorage.setItem(CACHE_KEY, JSON.stringify(data));

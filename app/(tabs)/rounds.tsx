@@ -239,7 +239,10 @@ async function loadData(): Promise<RoundsData> {
     const ts = await AsyncStorage.getItem(CACHE_TS_KEY);
     const stale = !ts || (Date.now() - parseInt(ts)) / 3600000 >= CACHE_HOURS;
     if (stale) {
-      const res = await fetch(REMOTE_URL, { signal: AbortSignal.timeout(8000) });
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 8000);
+      const res = await fetch(REMOTE_URL, { signal: ctrl.signal });
+      clearTimeout(timer);
       if (res.ok) {
         const data: RoundsData = await res.json();
         await AsyncStorage.setItem(CACHE_KEY, JSON.stringify(data));
