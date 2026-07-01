@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -224,21 +224,17 @@ export default function NotificationsScreen() {
   }, []);
 
   // Reset to list view when tab is tapped while already focused (re-tap)
-  const isFocusedRef = useRef(false);
   useEffect(() => {
-    const unsubFocus = navigation.addListener('focus' as any, () => {
-      if (isFocusedRef.current && selectedNotification) {
+    const unsubTabPress = navigation.addListener('tabPress' as any, (e: any) => {
+      if (selectedNotification || showInAppBrowser) {
+        e.preventDefault();
         setSelectedNotification(null);
         setShowInAppBrowser(false);
         setBrowserUrl(null);
       }
-      isFocusedRef.current = true;
     });
-    const unsubBlur = navigation.addListener('blur' as any, () => {
-      isFocusedRef.current = false;
-    });
-    return () => { unsubFocus(); unsubBlur(); };
-  }, [navigation, selectedNotification]);
+    return () => { unsubTabPress(); };
+  }, [navigation, selectedNotification, showInAppBrowser]);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
