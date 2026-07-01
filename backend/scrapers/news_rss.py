@@ -38,6 +38,33 @@ KEYWORDS_MED = [
 MAX_NOTIFICATIONS_PER_RUN = 3
 
 
+AUSTRALIA_MARKERS = [
+    "australia", "australian", "nsw", "victoria", "queensland", "melbourne",
+    "sydney", "brisbane", "perth", "adelaide", "hobart", "canberra", "darwin",
+    "home affairs", "centrelink", "medicare", "ato", "rba", "reserve bank",
+    "fair work", "hecs", "tafe", "albanese", "dutton", "treasurer",
+    "parliament house", "services australia",
+]
+
+EXCLUDE_TERMS = [
+    "trump", "biden", "white house", "congress", "senate vote",
+    "supreme court", "capitol", "republican", "democrat",
+    "uk parliament", "westminster", "downing street", "brexit",
+]
+
+
+def _is_australian(title: str, desc: str) -> bool:
+    """Return True only if the article is clearly about Australia."""
+    text = (title + " " + desc).lower()
+    # Reject if it contains US/UK political terms
+    if any(term in text for term in EXCLUDE_TERMS):
+        return False
+    # Accept if it mentions Australian markers
+    if any(marker in text for marker in AUSTRALIA_MARKERS):
+        return True
+    return False
+
+
 def _relevance_score(title: str, desc: str) -> int:
     text = (title + " " + desc).lower()
     score = 0
@@ -78,7 +105,7 @@ def scrape(db) -> list[dict]:
                 desc = re.sub(r"<[^>]+>", "", item.findtext("description") or "").strip()[:400]
                 link = (item.findtext("link") or "").strip()
                 score = _relevance_score(title, desc)
-                if title and link and score > 0:
+                if title and link and score > 0 and _is_australian(title, desc):
                     candidates.append({
                         "title": title,
                         "desc": desc,
