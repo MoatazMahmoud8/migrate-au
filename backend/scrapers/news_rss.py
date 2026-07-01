@@ -11,28 +11,31 @@ from datetime import datetime, timezone
 
 RSS_FEEDS = [
     "https://www.abc.net.au/news/feed/51120/rss.xml",
-    "https://www.abc.net.au/news/topic/immigration/rss.xml",
-    "https://www.abc.net.au/news/topic/housing/rss.xml",
     "https://www.theguardian.com/australia-news/rss",
+    "https://www.theguardian.com/australia-news/australian-immigration-and-asylum/rss",
     "https://www.smh.com.au/rss/feed.xml",
-    "https://www.skynews.com.au/feed",
+    "https://www.sbs.com.au/news/topic/immigration/feed",
+    "https://www.sbs.com.au/news/topic/visa/feed",
 ]
 
 KEYWORDS_HIGH = [
     "visa", "migration", "migrant", "immigration", "skilled visa", "partner visa",
     "citizenship", "permanent resident", "temporary visa", "student visa",
-    "work visa", "asylum", "refugee", "deportat", "border",
-    "rent", "rental", "cost of living", "inflation", "interest rate", "rba",
-    "reserve bank", "cash rate", "mortgage",
-    "minimum wage", "unemployment", "fair work",
-    "housing crisis", "first home", "affordable housing",
+    "work visa", "asylum", "refugee", "deportat",
+    "visa fee", "visa charge", "visa application", "visa processing",
+    "points test", "skillselect", "skill select", "invitation round",
+    "anzsco", "occupation list", "skilled occupation",
+    "state nomination", "state sponsorship", "190 visa", "491 visa", "189 visa",
+    "bridging visa", "work rights", "skills assessment",
+    "migration agent", "home affairs",
 ]
 
 KEYWORDS_MED = [
-    "centrelink", "welfare", "services australia",
-    "university", "tuition", "scholarship", "hecs",
-    "medicare", "budget", "election", "parliament",
-    "tax", "ato", "superannuation",
+    "ielts", "pte", "english test", "naati",
+    "subclass", "eoi", "expression of interest",
+    "migration program", "migration review", "migration zone",
+    "sponsor", "nomination", "priority processing",
+    "onshore", "offshore", "visa grant", "visa refusal", "visa cancel",
 ]
 
 MAX_NOTIFICATIONS_PER_RUN = 3
@@ -79,14 +82,20 @@ def _relevance_score(title: str, desc: str) -> int:
 
 def _categorize(title: str, desc: str) -> str:
     text = (title + " " + desc).lower()
-    if any(kw in text for kw in ["visa", "migration", "immigration", "migrant", "citizenship", "refugee", "border", "deportat"]):
-        return "Policy Update"
-    if any(kw in text for kw in ["rent", "housing", "first home", "property", "affordable housing"]):
-        return "Housing"
-    if any(kw in text for kw in ["interest rate", "rba", "cash rate", "inflation", "cost of living"]):
-        return "Economy"
-    if any(kw in text for kw in ["wage", "unemployment", "fair work", "job"]):
-        return "Employment"
+    if any(kw in text for kw in ["points test", "skillselect", "skill select", "invitation round", "eoi"]):
+        return "SkillSelect"
+    if any(kw in text for kw in ["anzsco", "occupation list", "skilled occupation"]):
+        return "Occupation Lists"
+    if any(kw in text for kw in ["state nomination", "state sponsorship", "190", "491", "nomination"]):
+        return "State Nomination"
+    if any(kw in text for kw in ["visa fee", "visa charge", "visa processing"]):
+        return "Visa Fees"
+    if any(kw in text for kw in ["citizenship"]):
+        return "Citizenship"
+    if any(kw in text for kw in ["refugee", "asylum", "deportat"]):
+        return "Refugees"
+    if any(kw in text for kw in ["visa", "migration", "immigration", "migrant"]):
+        return "Visa & Migration"
     return "News"
 
 
