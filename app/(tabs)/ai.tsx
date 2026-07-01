@@ -184,14 +184,14 @@ export default function AiScreen() {
 
           <View style={styles.suggestions}>
             {SUGGESTIONS.map((s) => (
-              <TouchableOpacity key={s} style={styles.chip} onPress={() => send(s)}>
+              <TouchableOpacity key={s} style={[styles.chip, { backgroundColor: Colors.surface, borderColor: Colors.border }]} onPress={() => send(s)}>
                 <Ionicons name="chevron-forward-circle-outline" size={14} color={Colors.accent} />
                 <Text style={styles.chipText}>{s}</Text>
               </TouchableOpacity>
             ))}
           </View>
 
-          <View style={styles.disclaimer}>
+          <View style={[styles.disclaimer, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
             <Ionicons name="shield-checkmark-outline" size={13} color={Colors.textMuted} />
             <Text style={styles.disclaimerText}>
               Aria provides info based on official docs. Double-check on{' '}
@@ -218,7 +218,7 @@ export default function AiScreen() {
 
       {loading && (
         <View style={styles.typing}>
-          <View style={styles.typingDots}>
+          <View style={[styles.typingDots, { backgroundColor: Colors.surface }]}>
             <ActivityIndicator size="small" color={Colors.accent} />
           </View>
           <Text style={styles.typingText}>Aria is thinking…</Text>
@@ -240,7 +240,7 @@ export default function AiScreen() {
 
       <View style={[styles.inputRow, { marginBottom: tabBarHeight }]}>
         <TextInput
-          style={styles.input}
+          style={[styles.input, { backgroundColor: Colors.surface, borderColor: Colors.border, color: Colors.textPrimary }]}
           value={input}
           onChangeText={setInput}
           placeholder="Ask about your visa options…"

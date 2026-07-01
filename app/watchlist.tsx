@@ -245,7 +245,7 @@ export default function WatchlistScreen() {
               </View>
             }
             renderItem={({ item }) => (
-              <View style={styles.card}>
+              <View style={[styles.card, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.cardTitle} numberOfLines={2}>
                     {item.anzscoTitle}
@@ -284,7 +284,7 @@ export default function WatchlistScreen() {
           >
             <Text style={styles.label}>Occupation</Text>
             {selectedOcc ? (
-              <View style={styles.selectedOcc}>
+              <View style={[styles.selectedOcc, { backgroundColor: Colors.surface }]}>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.cardTitle}>{selectedOcc.name}</Text>
                   <Text style={styles.cardMeta}>ANZSCO {selectedOcc.anzsco}</Text>
@@ -300,10 +300,10 @@ export default function WatchlistScreen() {
                   onChangeText={setQuery}
                   placeholder="Search by code or title (e.g. 261313)"
                   placeholderTextColor={Colors.textMuted}
-                  style={styles.input}
+                  style={[styles.input, { backgroundColor: Colors.surface, borderColor: Colors.border, color: Colors.textPrimary }]}
                   autoCorrect={false}
                 />
-                <View style={styles.resultsBox}>
+                <View style={[styles.resultsBox, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
                   {results.slice(0, 8).map((occ) => (
                     <TouchableOpacity
                       key={occ.anzsco}
@@ -398,7 +398,7 @@ export default function WatchlistScreen() {
           {/* Action bar */}
           <View style={[styles.actionBar, { paddingBottom: insets.bottom + Spacing.md }]}>
             <TouchableOpacity
-              style={styles.cancelBtn}
+              style={[styles.cancelBtn, { backgroundColor: Colors.surface }]}
               onPress={() => setAdding(false)}
             >
               <Text style={styles.cancelBtnText}>Cancel</Text>

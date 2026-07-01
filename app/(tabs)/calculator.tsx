@@ -231,7 +231,7 @@ export default function CalculatorScreen() {
       <ScoreRing score={breakdown.total} eligible={breakdown.likelyEligible} />
 
       {/* Visa Type */}
-      <View style={styles.card}>
+      <View style={[styles.card, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
         <View style={styles.cardHeader}>
           <Ionicons name="card-outline" size={18} color={Colors.secondary} />
           <Text style={styles.cardTitle}>Visa Subclass</Text>
@@ -245,7 +245,7 @@ export default function CalculatorScreen() {
       </View>
 
       {/* Age */}
-      <View style={styles.card}>
+      <View style={[styles.card, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
         <View style={styles.cardHeader}>
           <Ionicons name="person-outline" size={18} color={Colors.secondary} />
           <Text style={styles.cardTitle}>Age</Text>
@@ -264,7 +264,7 @@ export default function CalculatorScreen() {
       </View>
 
       {/* English */}
-      <View style={styles.card}>
+      <View style={[styles.card, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
         <View style={styles.cardHeader}>
           <Ionicons name="chatbubble-ellipses-outline" size={18} color={Colors.secondary} />
           <Text style={styles.cardTitle}>English Proficiency</Text>
@@ -281,7 +281,7 @@ export default function CalculatorScreen() {
       </View>
 
       {/* Work Experience */}
-      <View style={styles.card}>
+      <View style={[styles.card, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
         <View style={styles.cardHeader}>
           <Ionicons name="briefcase-outline" size={18} color={Colors.secondary} />
           <Text style={styles.cardTitle}>Work Experience</Text>
@@ -306,7 +306,7 @@ export default function CalculatorScreen() {
       </View>
 
       {/* Partner */}
-      <View style={styles.card}>
+      <View style={[styles.card, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
         <View style={styles.cardHeader}>
           <Ionicons name="heart-outline" size={18} color={Colors.secondary} />
           <Text style={styles.cardTitle}>Partner Skills</Text>
@@ -329,7 +329,7 @@ export default function CalculatorScreen() {
       </View>
 
       {/* Bonus Points */}
-      <View style={styles.card}>
+      <View style={[styles.card, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
         <View style={styles.cardHeader}>
           <Ionicons name="star-outline" size={18} color={Colors.secondary} />
           <Text style={styles.cardTitle}>Bonus Points</Text>
@@ -369,7 +369,7 @@ export default function CalculatorScreen() {
       </View>
 
       {/* Breakdown */}
-      <View style={styles.card}>
+      <View style={[styles.card, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
         <View style={styles.cardHeader}>
           <Ionicons name="bar-chart-outline" size={18} color={Colors.secondary} />
           <Text style={styles.cardTitle}>Full Breakdown</Text>
@@ -441,7 +441,7 @@ export default function CalculatorScreen() {
         if (tips.length === 0) return null;
 
         return (
-          <View style={styles.card}>
+          <View style={[styles.card, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
             <View style={styles.cardHeader}>
               <Ionicons name="trending-up" size={18} color={Colors.warning} />
               <Text style={styles.cardTitle}>🏆 Gap Filler — Reach {nextBracket}+ Points</Text>

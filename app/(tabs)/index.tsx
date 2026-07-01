@@ -573,7 +573,7 @@ export default function HomeScreen() {
           <Text style={[styles.dateText, { color: Colors.textMuted }]}>{formatDate()}</Text>
         </View>
         <TouchableOpacity
-          style={styles.searchBtn}
+          style={[styles.searchBtn, { backgroundColor: Colors.surface }]}
           onPress={() => setSearchVisible(true)}
           activeOpacity={0.8}
         >
@@ -610,7 +610,7 @@ export default function HomeScreen() {
       {/* Aria AI */}
       <FadeInView delay={280} style={styles.section}>
         <TouchableOpacity
-          style={styles.ariaCard}
+          style={[styles.ariaCard, { backgroundColor: Colors.surface, borderColor: Colors.border }]}
           onPress={() => router.push('/(tabs)/ai' as any)}
           activeOpacity={0.85}
         >

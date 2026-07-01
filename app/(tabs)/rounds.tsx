@@ -360,7 +360,7 @@ export default function RoundsScreen() {
           <Text style={styles.pageTitle}>SkillSelect Rounds</Text>
           <Text style={styles.pageSub}>Updated {fmtDate(data.lastUpdated)} · Dept of Home Affairs</Text>
         </View>
-        <TouchableOpacity style={styles.refreshBtn} onPress={() => fetchData(true)} activeOpacity={0.7}>
+        <TouchableOpacity style={[styles.refreshBtn, { backgroundColor: Colors.surface, borderColor: Colors.border }]} onPress={() => fetchData(true)} activeOpacity={0.7}>
           {refreshing
             ? <ActivityIndicator size="small" color={Colors.accent} />
             : <Ionicons name="refresh" size={18} color={Colors.accent} />}
@@ -392,13 +392,13 @@ export default function RoundsScreen() {
       </View>
 
       {/* SC 190 note */}
-      <View style={styles.noteBox}>
+      <View style={[styles.noteBox, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
         <Ionicons name="information-circle-outline" size={14} color={Colors.accent} />
         <Text style={styles.noteText}>{data.note}</Text>
       </View>
 
       {/* State nominations toggle */}
-      <TouchableOpacity style={styles.sectionToggle} onPress={() => setStateExpanded((v) => !v)} activeOpacity={0.7}>
+      <TouchableOpacity style={[styles.sectionToggle, { backgroundColor: Colors.surface }]} onPress={() => setStateExpanded((v) => !v)} activeOpacity={0.7}>
         <Ionicons name="map-outline" size={16} color={Colors.success} />
         <Text style={styles.sectionToggleText}>SC 190 & 491 State Nominations</Text>
         <Text style={styles.sectionToggleSub}>{sn.period}</Text>
@@ -406,7 +406,7 @@ export default function RoundsScreen() {
       </TouchableOpacity>
 
       {stateExpanded && (
-        <View style={styles.stateTable}>
+        <View style={[styles.stateTable, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
           <View style={[styles.stateRow, styles.tableHeader]}>
             <Text style={[styles.stateNameCell, styles.headerText]}>State</Text>
             <Text style={[styles.tableCell, styles.headerText]}>SC 190</Text>
@@ -424,7 +424,7 @@ export default function RoundsScreen() {
       )}
 
       {/* Round history toggle */}
-      <TouchableOpacity style={styles.sectionToggle} onPress={() => setHistoryExpanded((v) => !v)} activeOpacity={0.7}>
+      <TouchableOpacity style={[styles.sectionToggle, { backgroundColor: Colors.surface }]} onPress={() => setHistoryExpanded((v) => !v)} activeOpacity={0.7}>
         <Ionicons name="time-outline" size={16} color={Colors.accentPurple} />
         <Text style={styles.sectionToggleText}>Round History</Text>
         <Text style={styles.sectionToggleSub}>{data.rounds.length} rounds</Text>
@@ -432,7 +432,7 @@ export default function RoundsScreen() {
       </TouchableOpacity>
 
       {historyExpanded && (
-        <View style={styles.stateTable}>
+        <View style={[styles.stateTable, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
           <View style={[styles.stateRow, styles.tableHeader]}>
             <Text style={[styles.histDateCell, styles.headerText]}>Date</Text>
             <Text style={[styles.tableCell, styles.headerText]}>SC 189</Text>
@@ -472,7 +472,7 @@ export default function RoundsScreen() {
       </View>
 
       {/* Search bar */}
-      <View style={styles.searchBar}>
+      <View style={[styles.searchBar, { backgroundColor: Colors.surface }]}>
         <Ionicons name="search-outline" size={16} color={Colors.textMuted} />
         <TextInput
           style={styles.searchInput}

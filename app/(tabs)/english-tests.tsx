@@ -337,7 +337,7 @@ export default function EnglishTestsScreen() {
         </TouchableOpacity>
 
         {dropdownOpen && (
-          <View style={styles.dropdown}>
+          <View style={[styles.dropdown, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
             {TESTS.map((t, i) => (
               <TouchableOpacity
                 key={t.name}
@@ -425,7 +425,7 @@ export default function EnglishTestsScreen() {
           </View>
 
           {/* ② Proficiency levels */}
-          <View style={styles.card}>
+          <View style={[styles.card, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
             <View style={styles.cardInner}>
               <Text style={styles.sectionHead}>Proficiency Levels</Text>
               <Text style={styles.sectionSub}>DHA-defined thresholds for {selectedTest.name}</Text>
@@ -447,7 +447,7 @@ export default function EnglishTestsScreen() {
           </View>
 
           {/* ③ Visa requirements */}
-          <View style={styles.card}>
+          <View style={[styles.card, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
             <View style={styles.cardInner}>
               <Text style={styles.sectionHead}>Visa Subclass Requirements</Text>
               <Text style={styles.sectionSub}>Minimum {selectedTest.name} scores per visa — tap to expand</Text>
@@ -500,7 +500,7 @@ export default function EnglishTestsScreen() {
           </View>
 
           {/* ④ Test centres */}
-          <View style={styles.card}>
+          <View style={[styles.card, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
             <View style={styles.cardInner}>
               <Text style={styles.sectionHead}>Book a Test</Text>
               <Text style={styles.sectionSub}>Official booking portals for {selectedTest.name}</Text>
@@ -557,7 +557,7 @@ export default function EnglishTestsScreen() {
       </TouchableOpacity>
 
       {/* Disclaimer */}
-      <View style={styles.disclaimer}>
+      <View style={[styles.disclaimer, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
         <Ionicons name="alert-circle-outline" size={14} color={Colors.textMuted} />
         <Text style={styles.disclaimerText}>
           Requirements may change. Always verify on{' '}

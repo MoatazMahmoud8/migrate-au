@@ -96,9 +96,9 @@ export default function SearchModal({ visible, onClose }: Props) {
 
   return (
     <Modal visible={visible} animationType="slide" transparent={false}>
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: Colors.background }]}>
         <View style={styles.header}>
-          <View style={styles.searchBar}>
+          <View style={[styles.searchBar, { backgroundColor: Colors.surface }]}>
             <Ionicons name="search" size={18} color={Colors.textMuted} />
             <TextInput
               autoFocus
@@ -106,7 +106,7 @@ export default function SearchModal({ visible, onClose }: Props) {
               placeholderTextColor={Colors.textMuted}
               value={query}
               onChangeText={setQuery}
-              style={styles.input}
+              style={[styles.input, { backgroundColor: Colors.surface, borderColor: Colors.border, color: Colors.textPrimary }]}
               returnKeyType="search"
             />
             {query.length > 0 && (

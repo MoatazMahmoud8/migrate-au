@@ -224,7 +224,7 @@ export default function VisasScreen() {
                     // Pick the fastest stream's p50 for the collapsed badge
                     const fastestTime = times.length > 0 ? times[0] : null;
                     return (
-                      <View key={v.code} style={styles.card}>
+                      <View key={v.code} style={[styles.card, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
                         <TouchableOpacity
                           style={styles.cardHead}
                           activeOpacity={0.85}

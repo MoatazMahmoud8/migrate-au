@@ -487,7 +487,7 @@ export default function ProfileScreen() {
           <Text style={[styles.sectionLabel, { color: Colors.textMuted }]}>My Journey</Text>
           <View style={jStyles.headerActions}>
             {journeyEntries.length > 0 && profile?.isPremium && (
-              <TouchableOpacity style={jStyles.exportBtn} onPress={handleExportPDF} activeOpacity={0.8}>
+              <TouchableOpacity style={[jStyles.exportBtn, { backgroundColor: Colors.surface }]} onPress={handleExportPDF} activeOpacity={0.8}>
                 <Ionicons name="document-outline" size={14} color={Colors.secondary} />
                 <Text style={jStyles.exportBtnText}>Export</Text>
               </TouchableOpacity>
@@ -500,7 +500,7 @@ export default function ProfileScreen() {
         </View>
 
         {journeyEntries.length === 0 && (
-          <TouchableOpacity style={jStyles.emptyCard} onPress={() => setShowAddJourney(true)} activeOpacity={0.8}>
+          <TouchableOpacity style={[jStyles.emptyCard, { backgroundColor: Colors.surface, borderColor: Colors.border }]} onPress={() => setShowAddJourney(true)} activeOpacity={0.8}>
             <Ionicons name="map-outline" size={28} color={Colors.textMuted} />
             <Text style={jStyles.emptyTitle}>Track your visa journey</Text>
             <Text style={jStyles.emptyDesc}>Add a visa application to track your progress and key milestone dates</Text>
@@ -873,7 +873,7 @@ export default function ProfileScreen() {
         </View>
       )}
 
-      <View style={styles.disclaimer}>
+      <View style={[styles.disclaimer, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
         <Ionicons name="alert-circle-outline" size={14} color={Colors.textMuted} />
         <Text style={styles.disclaimerText}>
           Information is general in nature. Always consult a{' '}

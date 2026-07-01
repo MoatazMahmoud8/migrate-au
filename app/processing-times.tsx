@@ -113,11 +113,11 @@ export default function ProcessingTimesScreen() {
           </Text>
 
           <View style={styles.metaRow}>
-            <View style={styles.metaPill}>
+            <View style={[styles.metaPill, { backgroundColor: Colors.surface }]}>
               <Ionicons name="calendar-outline" size={11} color={Colors.textMuted} />
               <Text style={styles.metaText}>Updated {formatSnapshot(snapshotDate)}</Text>
             </View>
-            <View style={styles.metaPill}>
+            <View style={[styles.metaPill, { backgroundColor: Colors.surface }]}>
               <Ionicons name="refresh-outline" size={11} color={Colors.textMuted} />
               <Text style={styles.metaText}>Checked {timeAgo(lastChecked)}</Text>
             </View>
@@ -150,7 +150,7 @@ export default function ProcessingTimesScreen() {
           {filtered.map((p, idx) => (
             <TouchableOpacity
               key={`${p.subclass}-${p.stream ?? idx}`}
-              style={styles.card}
+              style={[styles.card, { backgroundColor: Colors.surface, borderColor: Colors.border }]}
               activeOpacity={0.85}
               onPress={() => Linking.openURL(p.url)}
             >

@@ -575,7 +575,7 @@ export default function OccupationsScreen() {
             Search every federal and state-nominated list in one place.
           </Text>
 
-          <View style={styles.searchWrap}>
+          <View style={[styles.searchWrap, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
             <Ionicons name="search" size={16} color={Colors.textMuted} />
             <TextInput
               value={query}
@@ -594,15 +594,15 @@ export default function OccupationsScreen() {
           </View>
 
           <View style={styles.metaRow}>
-            <View style={styles.metaPill}>
+            <View style={[styles.metaPill, { backgroundColor: Colors.surface }]}>
               <Ionicons name="calendar-outline" size={11} color={Colors.textMuted} />
               <Text style={styles.metaText}>Updated {formatSnapshot(snapshotDate)}</Text>
             </View>
-            <View style={styles.metaPill}>
+            <View style={[styles.metaPill, { backgroundColor: Colors.surface }]}>
               <Ionicons name="refresh-outline" size={11} color={Colors.textMuted} />
               <Text style={styles.metaText}>Checked {timeAgo(lastChecked)}</Text>
             </View>
-            <View style={styles.metaPill}>
+            <View style={[styles.metaPill, { backgroundColor: Colors.surface }]}>
               <Ionicons name="list-outline" size={11} color={Colors.textMuted} />
               <Text style={styles.metaText}>{filtered.length} results</Text>
             </View>
@@ -1220,7 +1220,7 @@ export default function OccupationsScreen() {
                     return (
                       <>
                         <Text style={styles.sectionLabel}>Skills assessment</Text>
-                        <View style={styles.authCard}>
+                        <View style={[styles.authCard, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
                           <View style={styles.authHeader}>
                             <View style={styles.authIcon}>
                               <Ionicons name="shield-checkmark-outline" size={16} color={Colors.accent} />

@@ -426,8 +426,8 @@ export default function SkillAssessmentScreen() {
       </LinearGradient>
 
       {/* Search */}
-      <View style={styles.searchWrap}>
-        <View style={styles.searchBox}>
+      <View style={[styles.searchWrap, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
+        <View style={[styles.searchBox, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
           <Ionicons name="search-outline" size={16} color={Colors.textMuted} />
           <TextInput
             style={styles.searchInput}

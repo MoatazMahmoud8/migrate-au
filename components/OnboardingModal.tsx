@@ -63,7 +63,7 @@ export default function OnboardingModal({ visible, onClose }: Props) {
 
   return (
     <Modal visible={visible} animationType="fade" transparent={false}>
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: Colors.background }]}>
         <TouchableOpacity style={styles.skipBtn} onPress={onClose}>
           <Text style={styles.skipText}>Skip</Text>
         </TouchableOpacity>
