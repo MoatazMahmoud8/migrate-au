@@ -14,7 +14,7 @@ from datetime import datetime, timezone
 import firebase_admin
 from firebase_admin import credentials, firestore
 
-from scrapers import home_affairs, anzsco, state_nominations
+from scrapers import home_affairs, anzsco, state_nominations, news_rss
 from notify import send_batch
 from watchlist_dispatcher import dispatch as dispatch_watchlist
 
@@ -53,10 +53,16 @@ def run():
     print(f"      → {len(anzsco_notifications)} change(s) detected")
 
     # ── 3. State & territory nominations (all 8)
-    print("\n[3/3] Scraping state nominations...")
+    print("\n[3/4] Scraping state nominations...")
     state_notifications = state_nominations.scrape(db)
     all_notifications.extend(state_notifications)
     print(f"      → {len(state_notifications)} change(s) detected")
+
+    # ── 4. RSS news (migration-relevant media articles)
+    print("\n[4/4] Checking RSS news feeds...")
+    news_notifications = news_rss.scrape(db)
+    all_notifications.extend(news_notifications)
+    print(f"      → {len(news_notifications)} new article(s)")
 
     # ── Send FCM notifications for all detected changes
     print(f"\n{'─'*55}")
@@ -88,6 +94,7 @@ def run():
             "home_affairs": len(ha_notifications),
             "anzsco": len(anzsco_notifications),
             "states": len(state_notifications),
+            "news_rss": len(news_notifications),
         },
     })
 
