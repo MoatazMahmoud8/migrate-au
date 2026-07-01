@@ -19,23 +19,40 @@ RSS_FEEDS = [
 ]
 
 KEYWORDS_HIGH = [
-    "visa", "migration", "migrant", "immigration", "skilled visa", "partner visa",
-    "citizenship", "permanent resident", "temporary visa", "student visa",
-    "work visa", "asylum", "refugee", "deportat",
-    "visa fee", "visa charge", "visa application", "visa processing",
+    # Visa types & applications
+    "visa", "visa application", "visa grant", "visa refusal", "visa cancel",
+    "visa condition", "visa change", "visa fee", "visa charge", "visa processing",
+    "skilled visa", "partner visa", "student visa", "work visa", "temporary visa",
+    "bridging visa", "tourist visa", "visitor visa", "protection visa",
+    "subclass 189", "subclass 190", "subclass 491", "subclass 500", "subclass 482",
+    "subclass 186", "subclass 485", "subclass 820", "subclass 801",
+    "189 visa", "190 visa", "491 visa", "482 visa", "500 visa",
+    # Migration & how to migrate
+    "migration", "migrate to australia", "immigration", "permanent resident",
+    "citizenship", "how to apply", "application process",
     "points test", "skillselect", "skill select", "invitation round",
-    "anzsco", "occupation list", "skilled occupation",
-    "state nomination", "state sponsorship", "190 visa", "491 visa", "189 visa",
-    "bridging visa", "work rights", "skills assessment",
-    "migration agent", "home affairs",
+    "expression of interest", "eoi",
+    # ANZSCO & occupations
+    "anzsco", "occupation list", "skilled occupation", "mltssl", "stsol",
+    # State nominations
+    "state nomination", "state sponsorship", "sponsor",
+    "nomination", "priority processing",
+    # Conditions & changes
+    "condition 8105", "condition 8501", "condition 8202",
+    "work rights", "work limitation", "visa condition change",
+    # Home Affairs & official
+    "home affairs", "immi.homeaffairs", "immiaccount",
+    "planned maintenance", "system maintenance", "system outage", "downtime",
+    "skills assessment", "migration agent",
 ]
 
 KEYWORDS_MED = [
     "ielts", "pte", "english test", "naati",
-    "subclass", "eoi", "expression of interest",
-    "migration program", "migration review", "migration zone",
-    "sponsor", "nomination", "priority processing",
-    "onshore", "offshore", "visa grant", "visa refusal", "visa cancel",
+    "onshore", "offshore", "migration program", "migration review",
+    "migration zone", "biometric", "health examination",
+    "police clearance", "character requirement",
+    "genuine temporary entrant", "gte",
+    "labour agreement", "dama", "regional",
 ]
 
 MAX_NOTIFICATIONS_PER_RUN = 3
@@ -44,9 +61,11 @@ MAX_NOTIFICATIONS_PER_RUN = 3
 AUSTRALIA_MARKERS = [
     "australia", "australian", "nsw", "victoria", "queensland", "melbourne",
     "sydney", "brisbane", "perth", "adelaide", "hobart", "canberra", "darwin",
-    "home affairs", "centrelink", "medicare", "ato", "rba", "reserve bank",
-    "fair work", "hecs", "tafe", "albanese", "dutton", "treasurer",
-    "parliament house", "services australia",
+    "home affairs", "immi.homeaffairs", "immiaccount", "skillselect",
+    "services australia", "fair work", "anzsco",
+    "subclass", "189", "190", "491", "482", "500", "485",
+    "albanese", "dutton", "migration program",
+    "state nomination", "tafe", "naati",
 ]
 
 EXCLUDE_TERMS = [
@@ -84,16 +103,20 @@ def _categorize(title: str, desc: str) -> str:
     text = (title + " " + desc).lower()
     if any(kw in text for kw in ["points test", "skillselect", "skill select", "invitation round", "eoi"]):
         return "SkillSelect"
-    if any(kw in text for kw in ["anzsco", "occupation list", "skilled occupation"]):
+    if any(kw in text for kw in ["anzsco", "occupation list", "skilled occupation", "mltssl", "stsol"]):
         return "Occupation Lists"
-    if any(kw in text for kw in ["state nomination", "state sponsorship", "190", "491", "nomination"]):
+    if any(kw in text for kw in ["state nomination", "state sponsorship", "nomination"]):
         return "State Nomination"
-    if any(kw in text for kw in ["visa fee", "visa charge", "visa processing"]):
+    if any(kw in text for kw in ["visa fee", "visa charge"]):
         return "Visa Fees"
+    if any(kw in text for kw in ["maintenance", "outage", "downtime"]):
+        return "System Update"
+    if any(kw in text for kw in ["condition", "work rights", "visa change", "visa condition"]):
+        return "Visa Conditions"
     if any(kw in text for kw in ["citizenship"]):
         return "Citizenship"
-    if any(kw in text for kw in ["refugee", "asylum", "deportat"]):
-        return "Refugees"
+    if any(kw in text for kw in ["how to apply", "application process", "visa application"]):
+        return "How to Apply"
     if any(kw in text for kw in ["visa", "migration", "immigration", "migrant"]):
         return "Visa & Migration"
     return "News"
