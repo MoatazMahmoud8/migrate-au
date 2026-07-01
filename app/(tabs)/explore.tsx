@@ -104,8 +104,8 @@ export default function ExploreScreen() {
     >
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Explore</Text>
-        <Text style={styles.headerSub}>All migration tools in one place</Text>
+        <Text style={[styles.headerTitle, { color: Colors.textPrimary }]}>Explore</Text>
+        <Text style={[styles.headerSub, { color: Colors.textMuted }]}>All migration tools in one place</Text>
       </View>
 
       {/* Tool grid */}
@@ -113,15 +113,15 @@ export default function ExploreScreen() {
         {TOOLS.map((tool) => (
           <TouchableOpacity
             key={tool.route}
-            style={[styles.card, { borderColor: tool.border }]}
+            style={[styles.card, { backgroundColor: Colors.surface, borderColor: tool.border }]}
             onPress={() => router.push(tool.route as any)}
             activeOpacity={0.75}
           >
             <View style={[styles.cardIcon, { backgroundColor: tool.bg }]}>
               <Ionicons name={tool.icon} size={26} color={tool.color} />
             </View>
-            <Text style={styles.cardLabel}>{tool.label}</Text>
-            <Text style={styles.cardDesc}>{tool.desc}</Text>
+            <Text style={[styles.cardLabel, { color: Colors.textPrimary }]}>{tool.label}</Text>
+            <Text style={[styles.cardDesc, { color: Colors.textMuted }]}>{tool.desc}</Text>
             <View style={styles.cardArrow}>
               <Ionicons name="arrow-forward" size={13} color={tool.color} />
             </View>

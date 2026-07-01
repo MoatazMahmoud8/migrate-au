@@ -74,6 +74,7 @@ function NotificationCard({
   onRead: (id: string) => void;
   onTap: (notification: AppNotification) => void;
 }) {
+  const Colors = useColors();
   const color = CATEGORY_COLORS[item.category] ?? Colors.accent;
   const icon  = (CATEGORY_ICONS[item.category] ?? 'notifications') as any;
   const source = SourceValidator.getSafeSource(item.source);
@@ -86,7 +87,7 @@ function NotificationCard({
 
   return (
     <TouchableOpacity
-      style={[styles.card, !item.read && styles.cardUnread]}
+      style={[styles.card, { backgroundColor: Colors.surface, borderColor: Colors.border }, !item.read && [styles.cardUnread, { backgroundColor: Colors.surfaceRaised }]]}
       activeOpacity={0.75}
       onPress={handlePress}
     >
@@ -101,12 +102,12 @@ function NotificationCard({
       {/* Content */}
       <View style={styles.content}>
         <View style={styles.row}>
-          <Text style={styles.category}>{item.category}</Text>
-          <Text style={styles.time}>{timeAgo(item.timestamp)}</Text>
+          <Text style={[styles.category, { color: Colors.textMuted }]}>{item.category}</Text>
+          <Text style={[styles.time, { color: Colors.textMuted }]}>{timeAgo(item.timestamp)}</Text>
         </View>
-        <Text style={styles.title} numberOfLines={2}>{item.title}</Text>
-        <Text style={styles.body}  numberOfLines={2}>{item.body}</Text>
-        <Text style={styles.source}>Source: {source}</Text>
+        <Text style={[styles.title, { color: Colors.textPrimary }]} numberOfLines={2}>{item.title}</Text>
+        <Text style={[styles.body, { color: Colors.textSecondary }]}  numberOfLines={2}>{item.body}</Text>
+        <Text style={[styles.source, { color: Colors.textMuted }]}>Source: {source}</Text>
       </View>
 
       {/* Unread dot - Sentry Blue */}
@@ -290,7 +291,7 @@ export default function NotificationsScreen() {
     <View style={[styles.screen, { paddingTop: insets.top + 60, backgroundColor: Colors.background }]}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.heading}>Updates</Text>
+        <Text style={[styles.heading, { color: Colors.textPrimary }]}>Updates</Text>
         {unreadCount > 0 && (
           <View style={styles.badge}>
             <Text style={styles.badgeText}>{unreadCount}</Text>
@@ -299,17 +300,17 @@ export default function NotificationsScreen() {
       </View>
 
       {/* State filter pills */}
-      <View style={styles.filterRow}>
+      <View style={[styles.filterRow, { backgroundColor: Colors.background }]}>
         {FILTERS.map((f) => {
           const active = stateFilter === f.id;
           return (
             <TouchableOpacity
               key={f.id}
-              style={[styles.pill, active && styles.pillActive]}
+              style={[styles.pill, { backgroundColor: Colors.surface, borderColor: Colors.border }, active && styles.pillActive]}
               activeOpacity={0.8}
               onPress={() => setStateFilter(f.id)}
             >
-              <Text style={[styles.pillText, active && styles.pillTextActive]}>{f.label}</Text>
+              <Text style={[styles.pillText, { color: Colors.textMuted }, active && styles.pillTextActive]}>{f.label}</Text>
             </TouchableOpacity>
           );
         })}
@@ -333,8 +334,8 @@ export default function NotificationsScreen() {
           <View style={styles.emptyIconBadge}>
             <Ionicons name="newspaper-outline" size={40} color={Colors.accent} />
           </View>
-          <Text style={styles.emptyText}>{feed.length === 0 ? 'No updates yet' : 'No updates for this filter'}</Text>
-          <Text style={styles.emptySubtext}>
+          <Text style={[styles.emptyText, { color: Colors.textSecondary }]}>{feed.length === 0 ? 'No updates yet' : 'No updates for this filter'}</Text>
+          <Text style={[styles.emptySubtext, { color: Colors.textMuted }]}>
             {feed.length === 0
               ? "You'll be notified instantly when Home Affairs, states, or occupation lists change."
               : 'Try changing your filter or check back later.'}

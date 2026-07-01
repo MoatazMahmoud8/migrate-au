@@ -156,6 +156,7 @@ function FadeInView({ children, delay = 0, style }: any) {
 // ─── Visa Finder ──────────────────────────────────────────────────────────────
 
 function VisaFinder() {
+  const Colors = useColors();
   const router = useRouter();
   const [selected, setSelected] = useState<PurposeId | null>(null);
   const recAnim = useRef(new Animated.Value(0)).current;
@@ -182,12 +183,12 @@ function VisaFinder() {
   const purpose = VISA_PURPOSES.find((p) => p.id === selected) ?? null;
 
   return (
-    <View style={styles.finderSection}>
+    <View style={[styles.finderSection, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
       <View style={styles.finderHeader}>
         <Ionicons name="compass-outline" size={18} color={Colors.accent} />
-        <Text style={styles.finderTitle}>Find by Goal</Text>
+        <Text style={[styles.finderTitle, { color: Colors.textPrimary }]}>Find by Goal</Text>
       </View>
-      <Text style={styles.finderSub}>Pick what brings you here — we'll show the right visas.</Text>
+      <Text style={[styles.finderSub, { color: Colors.textMuted }]}>Pick what brings you here — we'll show the right visas.</Text>
 
       {/* 3-column purpose grid */}
       <View style={styles.purposeGrid}>
@@ -207,8 +208,8 @@ function VisaFinder() {
               <View style={[styles.purposeIconWrap, { backgroundColor: p.bg }]}>
                 <Ionicons name={p.icon} size={18} color={p.color} />
               </View>
-              <Text style={[styles.purposeLabel, active && { color: p.color }]}>{p.label}</Text>
-              <Text style={styles.purposeHint}>{p.hint}</Text>
+              <Text style={[styles.purposeLabel, { color: Colors.textPrimary }, active && { color: p.color }]}>{p.label}</Text>
+              <Text style={[styles.purposeHint, { color: Colors.textMuted }]}>{p.hint}</Text>
             </TouchableOpacity>
           );
         })}
@@ -246,8 +247,8 @@ function VisaFinder() {
                 <Text style={[styles.recCodeText, { color: purpose.color }]}>SC {v.code}</Text>
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.recName}>{v.name}</Text>
-                <Text style={styles.recWhy}>{v.why}</Text>
+                <Text style={[styles.recName, { color: Colors.textPrimary }]}>{v.name}</Text>
+                <Text style={[styles.recWhy, { color: Colors.textMuted }]}>{v.why}</Text>
               </View>
               <Ionicons name="chevron-forward" size={14} color={Colors.textMuted} />
             </TouchableOpacity>
@@ -279,6 +280,7 @@ const PATHWAY_CARDS: Array<{ key: VisaCategory; tagline: string }> = [
 ];
 
 function VisaPathwaysGrid() {
+  const Colors = useColors();
   const router = useRouter();
   return (
     <View style={pw.section}>
@@ -288,7 +290,7 @@ function VisaPathwaysGrid() {
         onPress={() => router.push('/visas' as any)}
         activeOpacity={0.7}
       >
-        <Text style={pw.title}>Visa Pathways</Text>
+        <Text style={[pw.title, { color: Colors.textPrimary }]}>Visa Pathways</Text>
         <View style={{ flex: 1 }} />
         <Text style={pw.viewAll}>View all</Text>
         <Ionicons name="chevron-forward" size={13} color={Colors.accent} />
@@ -302,7 +304,7 @@ function VisaPathwaysGrid() {
           return (
             <TouchableOpacity
               key={key}
-              style={[pw.card, { borderColor: meta.color + '28' }]}
+              style={[pw.card, { borderColor: meta.color + '28', backgroundColor: Colors.surface }]}
               onPress={() => router.push({ pathname: '/visas', params: { category: key } } as any)}
               activeOpacity={0.75}
             >
@@ -320,8 +322,8 @@ function VisaPathwaysGrid() {
               </View>
 
               {/* Labels */}
-              <Text style={pw.cardName}>{key}</Text>
-              <Text style={pw.cardTagline}>{tagline}</Text>
+              <Text style={[pw.cardName, { color: Colors.textPrimary }]}>{key}</Text>
+              <Text style={[pw.cardTagline, { color: Colors.textMuted }]}>{tagline}</Text>
 
               {/* Bottom arrow */}
               <View style={pw.cardArrow}>
@@ -450,6 +452,7 @@ function ScoreCard({ input, onCalcPress }: { input: PointsInput | null; onCalcPr
 // ─── At a Glance Row ──────────────────────────────────────────────────────────
 
 function GlanceRow({ input }: { input: PointsInput | null }) {
+  const Colors = useColors();
   const router = useRouter();
   const [latestRound, setLatestRound] = useState({ label: 'Nov 2025', minPoints: 65 });
   const breakdown = input ? calculatePoints(input) : null;
@@ -520,16 +523,16 @@ function GlanceRow({ input }: { input: PointsInput | null }) {
       {cards.map((c) => (
         <TouchableOpacity
           key={c.label}
-          style={gl.card}
+          style={[gl.card, { backgroundColor: Colors.surface, borderColor: Colors.border }]}
           onPress={() => router.push(c.route as any)}
           activeOpacity={0.75}
         >
           <View style={[gl.iconWrap, { backgroundColor: c.bg }]}>
             <Ionicons name={c.icon} size={18} color={c.iconColor} />
           </View>
-          <Text style={gl.label}>{c.label}</Text>
+          <Text style={[gl.label, { color: Colors.textMuted }]}>{c.label}</Text>
           <Text style={[gl.value, { color: c.iconColor }]}>{c.value}</Text>
-          <Text style={gl.sub}>{c.sub}</Text>
+          <Text style={[gl.sub, { color: Colors.textMuted }]}>{c.sub}</Text>
         </TouchableOpacity>
       ))}
     </ScrollView>
@@ -566,8 +569,8 @@ export default function HomeScreen() {
       {/* Top bar */}
       <View style={[styles.topBar, { paddingTop: insets.top + 12 }]}>
         <View>
-          <Text style={styles.greeting}>{greeting.emoji} {greeting.text}</Text>
-          <Text style={styles.dateText}>{formatDate()}</Text>
+          <Text style={[styles.greeting, { color: Colors.textPrimary }]}>{greeting.emoji} {greeting.text}</Text>
+          <Text style={[styles.dateText, { color: Colors.textMuted }]}>{formatDate()}</Text>
         </View>
         <TouchableOpacity
           style={styles.searchBtn}
@@ -589,7 +592,7 @@ export default function HomeScreen() {
       {/* At a glance strip */}
       <FadeInView delay={80}>
         <View style={styles.glanceSectionHeader}>
-          <Text style={styles.glanceSectionTitle}>At a Glance</Text>
+          <Text style={[styles.glanceSectionTitle, { color: Colors.textPrimary }]}>At a Glance</Text>
         </View>
         <GlanceRow input={calcInput} />
       </FadeInView>

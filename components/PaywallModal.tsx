@@ -98,12 +98,12 @@ export function PaywallModal({ visible, onClose, userId, title, message, feature
   return (
     <Modal visible={visible} transparent animationType="slide">
       <View style={styles.backdrop}>
-        <View style={styles.modal}>
+        <View style={[styles.modal, { backgroundColor: Colors.background }]}>
           {/* Handle bar */}
-          <View style={styles.handle} />
+          <View style={[styles.handle, { backgroundColor: Colors.divider }]} />
 
           {/* Close */}
-          <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
+          <TouchableOpacity style={[styles.closeBtn, { backgroundColor: Colors.surface }]} onPress={onClose}>
             <Ionicons name="close" size={20} color={Colors.textMuted} />
           </TouchableOpacity>
 
@@ -113,15 +113,15 @@ export function PaywallModal({ visible, onClose, userId, title, message, feature
               <LinearGradient colors={['#3D1F8A', '#5B2D9E']} style={styles.heroIcon}>
                 <Ionicons name="star" size={32} color={Colors.secondary} />
               </LinearGradient>
-              <Text style={styles.heroTitle}>{title}</Text>
-              <Text style={styles.heroSub}>{getFeatureMessage()}</Text>
+              <Text style={[styles.heroTitle, { color: Colors.textPrimary }]}>{title}</Text>
+              <Text style={[styles.heroSub, { color: Colors.textSecondary }]}>{getFeatureMessage()}</Text>
             </View>
 
             {/* Plan selector */}
             <View style={styles.planRow}>
               {/* Monthly */}
               <TouchableOpacity
-                style={[styles.planCard, selectedCycle === 'monthly' && styles.planCardActive]}
+                style={[styles.planCard, { backgroundColor: Colors.surface, borderColor: Colors.border }, selectedCycle === 'monthly' && styles.planCardActive]}
                 onPress={() => setSelectedCycle('monthly')}
                 activeOpacity={0.8}
               >
@@ -130,16 +130,16 @@ export function PaywallModal({ visible, onClose, userId, title, message, feature
                     <Ionicons name="checkmark-circle" size={18} color={Colors.secondary} />
                   </View>
                 )}
-                <Text style={[styles.planCycle, selectedCycle === 'monthly' && styles.planCycleActive]}>Monthly</Text>
-                <Text style={[styles.planPrice, selectedCycle === 'monthly' && styles.planPriceActive]}>
+                <Text style={[styles.planCycle, { color: Colors.textMuted }, selectedCycle === 'monthly' && styles.planCycleActive]}>Monthly</Text>
+                <Text style={[styles.planPrice, { color: Colors.textPrimary }, selectedCycle === 'monthly' && styles.planPriceActive]}>
                   {monthlyPrice.amount}
                 </Text>
-                <Text style={styles.planSub}>{monthlyPrice.cycle}</Text>
+                <Text style={[styles.planSub, { color: Colors.textMuted }]}>{monthlyPrice.cycle}</Text>
               </TouchableOpacity>
 
               {/* Yearly — most popular */}
               <TouchableOpacity
-                style={[styles.planCard, styles.planCardYearly, selectedCycle === 'yearly' && styles.planCardActive]}
+                style={[styles.planCard, styles.planCardYearly, { backgroundColor: Colors.surface, borderColor: Colors.border }, selectedCycle === 'yearly' && styles.planCardActive]}
                 onPress={() => setSelectedCycle('yearly')}
                 activeOpacity={0.8}
               >
@@ -153,16 +153,16 @@ export function PaywallModal({ visible, onClose, userId, title, message, feature
                     <Ionicons name="checkmark-circle" size={18} color={Colors.secondary} />
                   </View>
                 )}
-                <Text style={[styles.planCycle, selectedCycle === 'yearly' && styles.planCycleActive]}>Yearly</Text>
-                <Text style={[styles.planPrice, selectedCycle === 'yearly' && styles.planPriceActive]}>
+                <Text style={[styles.planCycle, { color: Colors.textMuted }, selectedCycle === 'yearly' && styles.planCycleActive]}>Yearly</Text>
+                <Text style={[styles.planPrice, { color: Colors.textPrimary }, selectedCycle === 'yearly' && styles.planPriceActive]}>
                   {yearlyPrice.amount}
                 </Text>
-                <Text style={styles.planSub}>Save {yearlyDiscount.percent}%</Text>
+                <Text style={[styles.planSub, { color: Colors.textMuted }]}>Save {yearlyDiscount.percent}%</Text>
               </TouchableOpacity>
 
               {/* Lifetime — ultimate choice */}
               <TouchableOpacity
-                style={[styles.planCard, selectedCycle === 'lifetime' && styles.planCardActive]}
+                style={[styles.planCard, { backgroundColor: Colors.surface, borderColor: Colors.border }, selectedCycle === 'lifetime' && styles.planCardActive]}
                 onPress={() => setSelectedCycle('lifetime')}
                 activeOpacity={0.8}
               >
@@ -176,11 +176,11 @@ export function PaywallModal({ visible, onClose, userId, title, message, feature
                     <Ionicons name="checkmark-circle" size={18} color={Colors.secondary} />
                   </View>
                 )}
-                <Text style={[styles.planCycle, selectedCycle === 'lifetime' && styles.planCycleActive]}>Lifetime</Text>
-                <Text style={[styles.planPrice, selectedCycle === 'lifetime' && styles.planPriceActive]}>
+                <Text style={[styles.planCycle, { color: Colors.textMuted }, selectedCycle === 'lifetime' && styles.planCycleActive]}>Lifetime</Text>
+                <Text style={[styles.planPrice, { color: Colors.textPrimary }, selectedCycle === 'lifetime' && styles.planPriceActive]}>
                   {lifetimePrice.amount}
                 </Text>
-                <Text style={styles.planSub}>Pay once · own forever</Text>
+                <Text style={[styles.planSub, { color: Colors.textMuted }]}>Pay once · own forever</Text>
               </TouchableOpacity>
             </View>
 
@@ -215,7 +215,7 @@ export function PaywallModal({ visible, onClose, userId, title, message, feature
 
             </View>
 
-            <Text style={styles.fineprint}>
+            <Text style={[styles.fineprint, { color: Colors.textMuted }]}>
               {selectedCycle === 'lifetime'
                 ? `One-time payment · No recurring charges · ${lifetimePrice.amount}`
                 : `Cancel anytime · Auto-renews · ${monthlyPrice.amount}/mo or ${yearlyPrice.amount}/yr`}
@@ -238,9 +238,9 @@ export function PaywallModal({ visible, onClose, userId, title, message, feature
 
             {/* Benefits — below the fold as supporting detail */}
             <View style={styles.benefitsDivider}>
-              <View style={styles.benefitsDividerLine} />
-              <Text style={styles.benefitsDividerText}>What you get</Text>
-              <View style={styles.benefitsDividerLine} />
+              <View style={[styles.benefitsDividerLine, { backgroundColor: Colors.border }]} />
+              <Text style={[styles.benefitsDividerText, { color: Colors.textMuted }]}>What you get</Text>
+              <View style={[styles.benefitsDividerLine, { backgroundColor: Colors.border }]} />
             </View>
             <View style={styles.benefits}>
               {BENEFITS.map(({ icon, text }) => (
@@ -248,7 +248,7 @@ export function PaywallModal({ visible, onClose, userId, title, message, feature
                   <View style={styles.benefitIcon}>
                     <Ionicons name={icon as any} size={14} color={Colors.secondary} />
                   </View>
-                  <Text style={styles.benefitText}>{text}</Text>
+                  <Text style={[styles.benefitText, { color: Colors.textSecondary }]}>{text}</Text>
                 </View>
               ))}
             </View>

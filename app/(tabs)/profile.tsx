@@ -484,7 +484,7 @@ export default function ProfileScreen() {
       {/* My Journey */}
       <View style={styles.section}>
         <View style={jStyles.sectionHeader}>
-          <Text style={styles.sectionLabel}>My Journey</Text>
+          <Text style={[styles.sectionLabel, { color: Colors.textMuted }]}>My Journey</Text>
           <View style={jStyles.headerActions}>
             {journeyEntries.length > 0 && profile?.isPremium && (
               <TouchableOpacity style={jStyles.exportBtn} onPress={handleExportPDF} activeOpacity={0.8}>
@@ -621,11 +621,11 @@ export default function ProfileScreen() {
       {/* Age Bracket Alerts (v1.0 — local-only, premium feature) */}
       {profile.isPremium && (
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Age Bracket Alerts</Text>
-          <View style={styles.card}>
+          <Text style={[styles.sectionLabel, { color: Colors.textMuted }]}>Age Bracket Alerts</Text>
+          <View style={[styles.card, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
             {profile.birthDate ? (() => {
               const bracketAlert = calculateAgeBracketAlert(profile.birthDate);
-              if (!bracketAlert) return <Text style={styles.sectionLabel}>Invalid birth date</Text>;
+              if (!bracketAlert) return <Text style={[styles.sectionLabel, { color: Colors.textMuted }]}>Invalid birth date</Text>;
 
               return (
                 <>
@@ -717,8 +717,8 @@ export default function ProfileScreen() {
 
       {/* Settings rows */}
       <View style={styles.section}>
-        <Text style={styles.sectionLabel}>Alerts</Text>
-        <View style={styles.card}>
+        <Text style={[styles.sectionLabel, { color: Colors.textMuted }]}>Alerts</Text>
+        <View style={[styles.card, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
           <SettingRow
             icon="notifications-outline"
             label="Occupation Watchlist"
@@ -760,8 +760,8 @@ export default function ProfileScreen() {
       )}
 
       <View style={styles.section}>
-        <Text style={styles.sectionLabel}>Subscription</Text>
-        <View style={styles.card}>
+        <Text style={[styles.sectionLabel, { color: Colors.textMuted }]}>Subscription</Text>
+        <View style={[styles.card, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
           <SettingRow
             icon={profile.isPremium ? 'star' : 'star-outline'}
             label="Current Plan"
@@ -790,8 +790,8 @@ export default function ProfileScreen() {
 
 
       <View style={styles.section}>
-        <Text style={styles.sectionLabel}>Resources</Text>
-        <View style={styles.card}>
+        <Text style={[styles.sectionLabel, { color: Colors.textMuted }]}>Resources</Text>
+        <View style={[styles.card, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
           <SettingRow
             icon="globe-outline"
             label="Official Source"
@@ -811,8 +811,8 @@ export default function ProfileScreen() {
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionLabel}>Support</Text>
-        <View style={styles.card}>
+        <Text style={[styles.sectionLabel, { color: Colors.textMuted }]}>Support</Text>
+        <View style={[styles.card, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
           <SettingRow
             icon="star-outline"
             label="Rate MigrateAU"
@@ -832,8 +832,8 @@ export default function ProfileScreen() {
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionLabel}>About</Text>
-        <View style={styles.card}>
+        <Text style={[styles.sectionLabel, { color: Colors.textMuted }]}>About</Text>
+        <View style={[styles.card, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
           <SettingRow icon="information-circle-outline" label="MigrateAU" value="v1.0.0" />
           <SettingRow
             icon="shield-outline"
@@ -847,8 +847,8 @@ export default function ProfileScreen() {
 
       {__DEV__ && (
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Developer</Text>
-          <View style={styles.card}>
+          <Text style={[styles.sectionLabel, { color: Colors.textMuted }]}>Developer</Text>
+          <View style={[styles.card, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
             <SettingRow
               icon="bug-outline"
               label="Send test error to Sentry"
@@ -1249,22 +1249,23 @@ function SettingRow({
 }: {
   icon: string; label: string; value?: string; badge?: string; locked?: boolean; onPress?: () => void; showArrow?: boolean; last?: boolean; loading?: boolean;
 }) {
+  const Colors = useColors();
   return (
     <TouchableOpacity
-      style={[rowStyles.row, !last && rowStyles.rowBorder]}
+      style={[rowStyles.row, !last && rowStyles.rowBorder, !last && { borderBottomColor: Colors.divider }]}
       onPress={onPress}
       activeOpacity={onPress ? 0.7 : 1}
       disabled={(!onPress && !showArrow) || loading}
     >
-      <View style={rowStyles.iconWrap}>
+      <View style={[rowStyles.iconWrap, { backgroundColor: Colors.background }]}>
         <Ionicons name={icon as any} size={18} color={locked ? Colors.textMuted : Colors.textSecondary} />
       </View>
-      <Text style={[rowStyles.label, locked && rowStyles.labelMuted]}>{label}</Text>
+      <Text style={[rowStyles.label, { color: Colors.textPrimary }, locked && { color: Colors.textMuted }]}>{label}</Text>
       <View style={rowStyles.right}>
         {loading
           ? <ActivityIndicator size="small" color={Colors.textMuted} />
           : <>
-              {value && <Text style={rowStyles.value}>{value}</Text>}
+              {value && <Text style={[rowStyles.value, { color: Colors.textMuted }]}>{value}</Text>}
               {badge && <View style={rowStyles.badge}><Text style={rowStyles.badgeText}>{badge}</Text></View>}
               {locked && <Ionicons name="lock-closed" size={14} color={Colors.textMuted} />}
               {showArrow && <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} />}
