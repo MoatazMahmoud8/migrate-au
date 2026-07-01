@@ -12,6 +12,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Colors, Spacing, Radius, FontSize, FontWeight } from '../constants/theme';
+import { useColors } from '../constants/ThemeContext';
 
 interface Props {
   visible: boolean;
@@ -69,6 +70,7 @@ const CATEGORY_LABEL: Record<SearchItem['category'], string> = {
 };
 
 export default function SearchModal({ visible, onClose }: Props) {
+  const Colors = useColors();
   const router = useRouter();
   const [query, setQuery] = useState('');
 

@@ -13,6 +13,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, FontSize, FontWeight, Radius, Spacing } from '../../constants/theme';
+import { useColors } from '../../constants/ThemeContext';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -314,6 +315,7 @@ const OccupationRow = React.memo(({ item, index }: { item: OccupationScore; inde
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 
 export default function RoundsScreen() {
+  const Colors = useColors();
   const insets = useSafeAreaInsets();
   const [data, setData] = useState<RoundsData>(FALLBACK);
   const [loading, setLoading] = useState(true);
@@ -526,7 +528,7 @@ export default function RoundsScreen() {
 
   return (
     <FlatList
-      style={styles.container}
+      style={[styles.container, { backgroundColor: Colors.background }]}
       data={filtered}
       keyExtractor={(item) => item.name}
       ListHeaderComponent={ListHeader}

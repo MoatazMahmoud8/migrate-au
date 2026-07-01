@@ -32,6 +32,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Colors, Spacing, Radius, FontSize, FontWeight } from '../constants/theme';
+import { useColors } from '../constants/ThemeContext';
 import {
   WatchlistItem,
   listWatchlist,
@@ -53,6 +54,7 @@ const STATES = ['NSW', 'VIC', 'QLD', 'WA', 'SA', 'TAS', 'ACT', 'NT'];
 const VISA_SUBCLASSES = ['189', '190', '491', '186', '494'];
 
 export default function WatchlistScreen() {
+  const Colors = useColors();
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
@@ -198,7 +200,7 @@ export default function WatchlistScreen() {
   }
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={[styles.container, { paddingTop: insets.top, backgroundColor: Colors.background }]}>
       <Stack.Screen options={{ headerShown: false }} />
 
       {/* Header */}

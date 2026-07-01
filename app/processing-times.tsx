@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Stack, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Spacing, Radius, FontSize, FontWeight } from '../constants/theme';
+import { useColors } from '../constants/ThemeContext';
 import { CATEGORIES, ProcessingTime } from '../constants/processingTimes';
 import {
   getProcessingTimes,
@@ -45,6 +46,7 @@ function formatSnapshot(date: string): string {
 }
 
 export default function ProcessingTimesScreen() {
+  const Colors = useColors();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [items, setItems] = useState<ProcessingTime[]>([]);
@@ -83,7 +85,7 @@ export default function ProcessingTimesScreen() {
     <>
       <Stack.Screen options={{ headerShown: false }} />
       <ScrollView
-        style={styles.container}
+        style={[styles.container, { backgroundColor: Colors.background }]}
         contentContainerStyle={{ paddingBottom: 100 }}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.accent} />

@@ -12,6 +12,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, Spacing, Radius, FontSize, FontWeight } from '../constants/theme';
+import { useColors } from '../constants/ThemeContext';
 import { startFreeTrialIAP, purchaseSubscription, getFormattedPrice, getYearlySavings, getLifetimeSavings, syncSubscriptionStatus } from '../utils/iap';
 
 interface PaywallModalProps {
@@ -37,6 +38,7 @@ const BENEFITS = [
 ];
 
 export function PaywallModal({ visible, onClose, userId, title, message, feature }: PaywallModalProps) {
+  const Colors = useColors();
   const [loading, setLoading] = useState(false);
   const [selectedCycle, setSelectedCycle] = useState<'monthly' | 'yearly' | 'lifetime'>('yearly');
 

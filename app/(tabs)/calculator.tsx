@@ -19,6 +19,7 @@ import { PaywallModal } from '../../components/PaywallModal';
 import { UsageMeter } from '../../components/UsageMeter';
 import { PointsInput, VisaSubclass, EnglishLevel } from '../../constants/types';
 import { Colors, Spacing, Radius, FontSize, FontWeight } from '../../constants/theme';
+import { useColors } from '../../constants/ThemeContext';
 
 const CALC_STORAGE_KEY = 'calc_input_v1';
 
@@ -147,6 +148,7 @@ function ScoreRing({ score, eligible }: { score: number; eligible: boolean }) {
 // ─── Calculator screen ───────────────────────────────────────────────────────
 
 export default function CalculatorScreen() {
+  const Colors = useColors();
   const [input, setInput] = useState<PointsInput>(defaultInput);
   const [showPaywall, setShowPaywall] = useState(false);
   const [profile, setProfile] = useState<any>(null);
@@ -212,7 +214,7 @@ export default function CalculatorScreen() {
   return (
     <>
     <ScrollView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: Colors.background }]}
       showsVerticalScrollIndicator={false}
       contentContainerStyle={{ paddingBottom: 100, paddingTop: Platform.OS === 'ios' ? 110 : 96 }}
     >

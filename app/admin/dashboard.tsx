@@ -16,6 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Spacing, Radius, FontSize, FontWeight } from '../../constants/theme';
+import { useColors } from '../../constants/ThemeContext';
 import { isUserAdmin, createNotification, saveDraft, approveDraft, deleteNotification, deleteDraft, getDrafts, getPublishedNotifications, NOTIFICATION_CATEGORIES, validateNotification } from '../../utils/admin';
 import { tap as hapticTap, success as hapticSuccess } from '../../utils/haptics';
 
@@ -28,6 +29,7 @@ interface NotificationDraft {
 }
 
 export default function AdminDashboard() {
+  const Colors = useColors();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [isAdmin, setIsAdmin] = useState(false);
@@ -170,7 +172,7 @@ export default function AdminDashboard() {
 
   return (
     <KeyboardAvoidingView
-      style={[styles.container, { paddingTop: insets.top }]}
+      style={[styles.container, { paddingTop: insets.top, backgroundColor: Colors.background }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       {/* Header */}

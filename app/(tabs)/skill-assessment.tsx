@@ -11,6 +11,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, Radius, FontSize, FontWeight } from '../../constants/theme';
+import { useColors } from '../../constants/ThemeContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { tap as hapticTap } from '../../utils/haptics';
 
@@ -376,6 +377,7 @@ const AUTHORITIES: Authority[] = [
 
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function SkillAssessmentScreen() {
+  const Colors = useColors();
   const insets = useSafeAreaInsets();
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<AuthCategory>('All');
@@ -403,7 +405,7 @@ export default function SkillAssessmentScreen() {
 
   return (
     <ScrollView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: Colors.background }]}
       showsVerticalScrollIndicator={false}
       contentContainerStyle={{ paddingBottom: 110 }}
       keyboardShouldPersistTaps="handled"

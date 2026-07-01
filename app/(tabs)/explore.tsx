@@ -10,6 +10,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Colors, Spacing, Radius, FontSize, FontWeight } from '../../constants/theme';
+import { useColors } from '../../constants/ThemeContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get('window');
@@ -91,12 +92,13 @@ const TOOLS = [
 ] as const;
 
 export default function ExploreScreen() {
+  const Colors = useColors();
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
   return (
     <ScrollView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: Colors.background }]}
       contentContainerStyle={[styles.content, { paddingTop: insets.top + 64, paddingBottom: 100 }]}
       showsVerticalScrollIndicator={false}
     >

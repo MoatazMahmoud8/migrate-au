@@ -11,6 +11,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, Radius, FontSize, FontWeight } from '../../constants/theme';
+import { useColors } from '../../constants/ThemeContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { getProfile, saveProfile } from '../../utils/storage';
@@ -209,6 +210,7 @@ const STATES: StateEntry[] = [
 ];
 
 export default function StatesScreen() {
+  const Colors = useColors();
   const [expanded, setExpanded] = useState<string | null>(null);
   const [pinned, setPinned] = useState<string[]>([]);
   const [isPremium, setIsPremium] = useState(false);
@@ -249,7 +251,7 @@ export default function StatesScreen() {
 
   return (
     <ScrollView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: Colors.background }]}
       showsVerticalScrollIndicator={false}
       contentContainerStyle={{ paddingBottom: 100 }}
     >

@@ -16,6 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, Radius, FontSize, FontWeight } from '../../constants/theme';
+import { useColors } from '../../constants/ThemeContext';
 import {
   subscribeToFeed,
   markAsRead,
@@ -115,6 +116,7 @@ function NotificationCard({
 }
 
 export default function NotificationsScreen() {
+  const Colors = useColors();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
   const [feed, setFeed]           = useState<AppNotification[]>([]);
@@ -289,7 +291,7 @@ export default function NotificationsScreen() {
   // Render main notifications list
   return (
     <ErrorBoundary>
-    <View style={[styles.screen, { paddingTop: insets.top + 60 }]}>
+    <View style={[styles.screen, { paddingTop: insets.top + 60, backgroundColor: Colors.background }]}>
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.heading}>Updates</Text>

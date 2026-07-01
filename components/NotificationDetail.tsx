@@ -18,6 +18,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, Radius, FontSize, FontWeight } from '../constants/theme';
+import { useColors } from '../constants/ThemeContext';
 import { AppNotification } from '../utils/notifications';
 
 const CATEGORY_COLORS: Record<string, { main: string; bg: string }> = {
@@ -35,6 +36,7 @@ interface NotificationDetailProps {
 }
 
 export default function NotificationDetail({ notification, onClose, onReadSource }: NotificationDetailProps) {
+  const Colors = useColors();
   const categoryColorObj = CATEGORY_COLORS[notification.category] || { main: Colors.accent, bg: 'rgba(0, 194, 255, 0.2)' };
   const categoryColor = categoryColorObj.main;
   const categoryBg = categoryColorObj.bg;

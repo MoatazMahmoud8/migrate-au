@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, Radius, FontSize, FontWeight } from '../constants/theme';
+import { useColors } from '../constants/ThemeContext';
 import { UserProfile } from '../constants/types';
 
 interface UsageMeterProps {
@@ -12,6 +13,7 @@ interface UsageMeterProps {
 }
 
 export function UsageMeter({ feature, remaining, onUpgradePress, isPremium }: UsageMeterProps) {
+  const Colors = useColors();
   if (isPremium || remaining === null) return null;
 
   const featureLabel: Record<typeof feature, { name: string; icon: string }> = {

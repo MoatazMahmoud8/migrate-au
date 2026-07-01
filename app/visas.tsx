@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Spacing, Radius, FontSize, FontWeight } from '../constants/theme';
+import { useColors } from '../constants/ThemeContext';
 import {
   ALL_VISAS,
   CATEGORY_META,
@@ -44,6 +45,7 @@ function groupByCategory(visas: typeof ALL_VISAS): Array<{ category: Category; i
 }
 
 export default function VisasScreen() {
+  const Colors = useColors();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ category?: string }>();
@@ -87,7 +89,7 @@ export default function VisasScreen() {
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
-      <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 100 }}>
+      <ScrollView style={[styles.container, { backgroundColor: Colors.background }]} contentContainerStyle={{ paddingBottom: 100 }}>
         {/* Header */}
         <LinearGradient
           colors={[Colors.primaryDark, Colors.background]}

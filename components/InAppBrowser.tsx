@@ -17,6 +17,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, Radius, FontSize, FontWeight } from '../constants/theme';
+import { useColors } from '../constants/ThemeContext';
 
 // Lazy load WebView only on native platforms
 let WebView: any = null;
@@ -35,6 +36,7 @@ interface InAppBrowserProps {
 }
 
 export default function InAppBrowser({ url, onClose, title }: InAppBrowserProps) {
+  const Colors = useColors();
   const [loading, setLoading] = useState(true);
   const [canGoBack, setCanGoBack] = useState(false);
   const webViewRef = React.useRef<any>(null);

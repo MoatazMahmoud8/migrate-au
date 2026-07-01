@@ -13,6 +13,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, Radius, FontSize, FontWeight } from '../constants/theme';
+import { useColors } from '../constants/ThemeContext';
 
 const { width } = Dimensions.get('window');
 
@@ -43,6 +44,7 @@ interface Props {
 }
 
 export default function OnboardingModal({ visible, onClose }: Props) {
+  const Colors = useColors();
   const scrollRef = useRef<ScrollView>(null);
   const [index, setIndex] = useState(0);
 

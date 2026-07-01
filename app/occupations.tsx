@@ -17,6 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Spacing, Radius, FontSize, FontWeight } from '../constants/theme';
+import { useColors } from '../constants/ThemeContext';
 import {
   SkilledOccupation,
   SkillList,
@@ -428,6 +429,7 @@ function formatSnapshot(date: string): string {
 }
 
 export default function OccupationsScreen() {
+  const Colors = useColors();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ state?: string }>();
@@ -547,7 +549,7 @@ export default function OccupationsScreen() {
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: Colors.background }]}>
         {/* Header */}
         <LinearGradient
           colors={[Colors.primaryDark, Colors.background]}

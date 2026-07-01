@@ -17,7 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { getProfile, saveProfile } from '../../utils/storage';
 import { UserProfile, JourneyEntry, JourneyStageKey, JourneyVisaType } from '../../constants/types';
-import { Colors, Spacing, Radius, FontSize, FontWeight } from '../../constants/theme';
+import { Colors, Spacing, Radius, FontSize, FontWeight } from '../../constants/theme';\nimport { useColors, useTheme } from '../../constants/ThemeContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { checkRenewalStatus } from '../../utils/billing';
@@ -121,6 +121,8 @@ function calculateAgeBracketAlert(birthDateISO: string | undefined): {
 }
 
 export default function ProfileScreen() {
+  const Colors = useColors();
+  const { isDark, setLightMode } = useTheme();
   const [profile, setProfile] = useState<UserProfile>({
     name: '',
     anzscoCode: '',
@@ -727,25 +729,26 @@ export default function ProfileScreen() {
       {/* Display Settings - Dark Mode for Premium */}
       {profile.isPremium && (
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Display</Text>
-          <View style={styles.card}>
+          <Text style={[styles.sectionLabel, { color: Colors.secondary }]}>Display</Text>
+          <View style={[styles.card, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
             <View style={styles.settingRow}>
               <View style={styles.settingContent}>
-                <Ionicons name="moon-outline" size={18} color={Colors.secondary} />
+                <Ionicons name={isDark ? 'sunny-outline' : 'moon-outline'} size={18} color={Colors.secondary} />
                 <View style={styles.settingTextContainer}>
-                  <Text style={styles.settingLabel}>Dark Mode</Text>
-                  <Text style={styles.settingValue}>Premium Feature</Text>
+                  <Text style={[styles.settingLabel, { color: Colors.textPrimary }]}>Light Mode</Text>
+                  <Text style={[styles.settingValue, { color: Colors.textSecondary }]}>Premium Feature</Text>
                 </View>
               </View>
               <Switch
-                value={profile.darkModeEnabled ?? false}
+                value={!isDark}
                 onValueChange={async (value) => {
-                  const updated = { ...profile, darkModeEnabled: value };
+                  setLightMode(value);
+                  const updated = { ...profile, darkModeEnabled: !value };
                   setProfile(updated);
-                  await saveProfile({ darkModeEnabled: value });
+                  await saveProfile({ darkModeEnabled: !value });
                 }}
                 trackColor={{ false: Colors.border, true: Colors.secondary + '50' }}
-                thumbColor={profile.darkModeEnabled ? Colors.secondary : Colors.textMuted}
+                thumbColor={!isDark ? Colors.secondary : Colors.textMuted}
               />
             </View>
           </View>

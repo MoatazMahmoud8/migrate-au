@@ -33,6 +33,42 @@ export const Colors = {
   infoLight: 'rgba(0,194,255,0.12)',
 };
 
+/** Light theme — same keys as Colors so they're interchangeable */
+export const LightColors: typeof Colors = {
+  // Brand (keep brand colors the same)
+  primary: '#002D62',
+  secondary: '#D4A600',       // Slightly deeper gold for contrast on white
+  primaryDark: '#001224',
+  primaryLight: '#E8EEF8',
+  accent: '#0096CC',          // Darker cyan for readability
+  accentPurple: '#6D28D9',
+
+  // UI
+  background: '#F5F7FA',      // Soft off-white
+  surface: '#FFFFFF',         // White cards
+  surfaceRaised: '#F0F2F5',   // Slightly tinted elevated surface
+  border: '#D1D9E6',
+  divider: '#E2E8F0',
+  glass: 'rgba(0,0,0,0.04)',
+  glassStrong: 'rgba(0,0,0,0.08)',
+
+  // Text
+  textPrimary: '#1A202C',     // Near-black for readability
+  textSecondary: '#4A5568',   // Dark grey
+  textMuted: '#A0AEC0',       // Medium grey
+  white: '#FFFFFF',
+
+  // Status
+  success: '#00B377',
+  successLight: 'rgba(0,179,119,0.12)',
+  warning: '#D99700',
+  warningLight: 'rgba(217,151,0,0.12)',
+  error: '#E53E3E',
+  errorLight: 'rgba(229,62,62,0.12)',
+  info: '#0096CC',
+  infoLight: 'rgba(0,150,204,0.10)',
+};
+
 export const Spacing = {
   xs: 4,
   sm: 8,

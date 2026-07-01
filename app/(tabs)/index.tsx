@@ -14,6 +14,7 @@ import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Colors, Spacing, Radius, FontSize, FontWeight } from '../../constants/theme';
+import { useColors } from '../../constants/ThemeContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import SearchModal from '../../components/SearchModal';
 import { ALL_VISAS, CATEGORY_META, VisaCategory } from '../../constants/visaData';
@@ -538,6 +539,7 @@ function GlanceRow({ input }: { input: PointsInput | null }) {
 // ─── Home Screen ──────────────────────────────────────────────────────────────
 
 export default function HomeScreen() {
+  const Colors = useColors();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [searchVisible, setSearchVisible] = useState(false);
@@ -557,7 +559,7 @@ export default function HomeScreen() {
 
   return (
     <ScrollView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: Colors.background }]}
       showsVerticalScrollIndicator={false}
       contentContainerStyle={{ paddingBottom: 100 }}
     >

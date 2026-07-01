@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors } from '../constants/theme';
+import { ThemeProvider, useColors, useTheme } from '../constants/ThemeContext';
 import { useEffect, useState } from 'react';
 import { initNotifications, subscribeToFeed } from '../utils/notifications';
 import { refreshLatestRound } from '../utils/latestRound';
@@ -59,15 +60,16 @@ function TabIcon({
 }
 
 function AriaFab({ focused }: { focused: boolean }) {
+  const C = useColors();
   return (
     <View style={tabStyles.fabWrap}>
       <LinearGradient
-        colors={focused ? [Colors.secondary, '#FFB800'] : ['#A78BFA', '#7C3AED']}
-        style={tabStyles.fab}
+        colors={focused ? [C.secondary, '#FFB800'] : ['#A78BFA', '#7C3AED']}
+        style={[tabStyles.fab, { borderColor: C.primaryDark }]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
       >
-        <Ionicons name="chatbubble-ellipses" size={26} color={focused ? Colors.primaryDark : Colors.white} />
+        <Ionicons name="chatbubble-ellipses" size={26} color={focused ? C.primaryDark : C.white} />
       </LinearGradient>
     </View>
   );
@@ -282,16 +284,31 @@ function RootLayout() {
   };
 
   return (
+    <ThemeProvider>
+      <RootLayoutContent unread={unread} onboardingVisible={onboardingVisible} closeOnboarding={closeOnboarding} />
+    </ThemeProvider>
+  );
+}
+
+function RootLayoutContent({ unread, onboardingVisible, closeOnboarding }: {
+  unread: number;
+  onboardingVisible: boolean;
+  closeOnboarding: () => void;
+}) {
+  const C = useColors();
+  const { isDark } = useTheme();
+
+  return (
     <>
-      <StatusBar style="light" />
+      <StatusBar style={isDark ? 'light' : 'dark'} />
       <Tabs
         screenOptions={{
           tabBarActiveTintColor: '#FFD700',
-          tabBarInactiveTintColor: Colors.textMuted,
+          tabBarInactiveTintColor: C.textMuted,
           tabBarBackground: () => (
             Platform.OS === 'ios'
-              ? <BlurView intensity={80} tint="dark" style={StyleSheet.absoluteFill} />
-              : <View style={[StyleSheet.absoluteFill, { backgroundColor: Colors.primaryDark }]} />
+              ? <BlurView intensity={80} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+              : <View style={[StyleSheet.absoluteFill, { backgroundColor: isDark ? C.primaryDark : '#FFFFFF' }]} />
           ),
           tabBarStyle: {
             position: 'absolute',
@@ -315,17 +332,17 @@ function RootLayout() {
           },
           headerTransparent: true,
           headerStyle: { backgroundColor: 'transparent' },
-          headerTintColor: Colors.textPrimary,
+          headerTintColor: C.textPrimary,
           headerTitleStyle: {
             fontWeight: '700',
             fontSize: 18,
-            color: Colors.textPrimary,
+            color: C.textPrimary,
           },
-          headerBlurEffect: 'dark',
+          headerBlurEffect: isDark ? 'dark' : 'light',
           headerBackground: () => (
             Platform.OS === 'ios'
-              ? <BlurView intensity={60} tint="dark" style={StyleSheet.absoluteFill} />
-              : <View style={[StyleSheet.absoluteFill, { backgroundColor: Colors.background }]} />
+              ? <BlurView intensity={60} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+              : <View style={[StyleSheet.absoluteFill, { backgroundColor: C.background }]} />
           ),
           headerShadowVisible: false,
         }}
