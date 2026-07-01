@@ -703,7 +703,10 @@ export default function ProfileScreen() {
             </View>
             <TouchableOpacity
               style={styles.manageBillingBtn}
-              onPress={() => Alert.alert('Manage Billing', 'To cancel or change your plan, go to:\n\niOS → Settings → Apple ID → Subscriptions\n\nAndroid → Play Store → Subscriptions')}
+              onPress={() => {
+                hapticTap();
+                setShowPaywall(true);
+              }}
             >
               <Text style={styles.manageBillingText}>Manage</Text>
             </TouchableOpacity>
@@ -765,9 +768,10 @@ export default function ProfileScreen() {
           />
           {profile.isPremium && (
             <SettingRow
-              icon="card-outline"
-              label="Manage Billing"
-              onPress={() => Alert.alert('Manage Billing', 'To cancel or change your plan, go to:\n\niOS → Settings → Apple ID → Subscriptions\n\nAndroid → Play Store → Subscriptions')}
+              icon="rocket-outline"
+              label="Upgrade Plan"
+              value="Save more with Annual or Lifetime"
+              onPress={() => { hapticTap(); setShowPaywall(true); }}
               showArrow
             />
           )}
