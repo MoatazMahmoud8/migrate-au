@@ -10,12 +10,14 @@ import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 
 RSS_FEEDS = [
+    # Major Australian media
     "https://www.abc.net.au/news/feed/51120/rss.xml",
     "https://www.theguardian.com/australia-news/rss",
     "https://www.theguardian.com/australia-news/australian-immigration-and-asylum/rss",
     "https://www.smh.com.au/rss/feed.xml",
-    "https://www.sbs.com.au/news/topic/immigration/feed",
-    "https://www.sbs.com.au/news/topic/visa/feed",
+    # Migration-specific websites
+    "https://www.visaenvoy.com/feed/",
+    "https://www.ozvisas.com/feed",
 ]
 
 KEYWORDS_HIGH = [
