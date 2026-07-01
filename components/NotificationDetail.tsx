@@ -51,11 +51,11 @@ export default function NotificationDetail({ notification, onClose, onReadSource
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: Colors.background }]}>
       {/* Header with close button */}
-      <View style={styles.header}>
+      <View style={[styles.header, { borderBottomColor: Colors.border }]}>
         <TouchableOpacity onPress={onClose} activeOpacity={0.7}>
           <Ionicons name="chevron-back" size={28} color={Colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Update Details</Text>
+        <Text style={[styles.headerTitle, { color: Colors.textPrimary }]}>Update Details</Text>
         <View style={{ width: 28 }} />
       </View>
 
@@ -71,42 +71,42 @@ export default function NotificationDetail({ notification, onClose, onReadSource
               {notification.category}
             </Text>
           </View>
-          <Text style={styles.timeAgo}>{timeAgo}</Text>
+          <Text style={[styles.timeAgo, { color: Colors.textMuted }]}>{timeAgo}</Text>
         </View>
 
         {/* Headline */}
-        <Text style={styles.headline}>{notification.title}</Text>
+        <Text style={[styles.headline, { color: Colors.textPrimary }]}>{notification.title}</Text>
 
         {/* Source attribution */}
         {notification.source && (
           <View style={styles.sourceSection}>
             <View style={[styles.sourceDot, { backgroundColor: categoryColor }]} />
-            <Text style={styles.sourceText}>Source: {notification.source}</Text>
+            <Text style={[styles.sourceText, { color: Colors.textSecondary }]}>Source: {notification.source}</Text>
           </View>
         )}
 
         {/* Body/Summary */}
         <View style={styles.bodySection}>
-          <Text style={styles.bodyText}>{notification.body}</Text>
+          <Text style={[styles.bodyText, { color: Colors.textPrimary }]}>{notification.body}</Text>
         </View>
 
         {/* Metadata section */}
         {notification.timestamp && (
-          <View style={styles.metaSection}>
+          <View style={[styles.metaSection, { borderTopColor: Colors.border }]}>
             <View style={styles.metaRow}>
               <Ionicons name="time-outline" size={14} color={Colors.textMuted} />
-              <Text style={styles.metaText}>{new Date(notification.timestamp).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</Text>
+              <Text style={[styles.metaText, { color: Colors.textMuted }]}>{new Date(notification.timestamp).toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</Text>
             </View>
             {notification.category && (
               <View style={styles.metaRow}>
                 <Ionicons name="pricetag-outline" size={14} color={Colors.textMuted} />
-                <Text style={styles.metaText}>{notification.category}</Text>
+                <Text style={[styles.metaText, { color: Colors.textMuted }]}>{notification.category}</Text>
               </View>
             )}
             {notification.topic && (
               <View style={styles.metaRow}>
                 <Ionicons name="layers-outline" size={14} color={Colors.textMuted} />
-                <Text style={styles.metaText}>Topic: {notification.topic}</Text>
+                <Text style={[styles.metaText, { color: Colors.textMuted }]}>Topic: {notification.topic}</Text>
               </View>
             )}
           </View>
@@ -172,7 +172,7 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 40) + 10 : Spacing.lg,
     paddingBottom: Spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
+    borderBottomColor: 'rgba(0,0,0,0.1)',
   },
   headerTitle: {
     fontSize: FontSize.lg,
