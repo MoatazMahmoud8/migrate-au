@@ -270,22 +270,27 @@ function registerBackgroundOpenHandler() {
       handleNotificationNavigation(remoteMessage.data as Record<string, string> | undefined);
     }
   });
+
+  // Handle taps on local notifications (shown in foreground via expo-notifications)
+  Notifications.addNotificationResponseReceivedListener((response) => {
+    const data = response.notification.request.content.data as Record<string, string> | undefined;
+    handleNotificationNavigation(data);
+  });
 }
 
 function handleNotificationNavigation(data?: Record<string, string>) {
-  if (!data) return;
   try {
-    const route = (data as any).route as string | undefined;
-    if (route) {
-      // Lazy import to avoid circular deps at module load
-      const { router } = require('expo-router');
-      router.push(route);
+    const { router } = require('expo-router');
+    // If explicit route provided, navigate there
+    if (data?.route) {
+      router.push(data.route);
       return;
     }
+    // Default: open the notifications/updates tab
+    router.navigate('/(tabs)/notifications');
   } catch (e) {
     console.warn('[notifications] navigation failed:', e);
   }
-  console.log('[notifications] Opened from notification:', data);
 }
 
 // ─── Firestore in-app feed ────────────────────────────────────────────────────
