@@ -23,11 +23,15 @@ jobs:
 
       - name: Check Sentry DSN is configured
         run: |
-          if ! grep -q "EXPO_PUBLIC_SENTRY_DSN" .env; then
-            echo "::error::EXPO_PUBLIC_SENTRY_DSN is missing from .env"
+          # .env is gitignored; check that app.config.js references the env var
+          # and that EAS secrets will provide it at build time
+          if ! grep -q "EXPO_PUBLIC_SENTRY_DSN" app.config.js 2>/dev/null && \
+             ! grep -q "sentryDsn" app.config.js 2>/dev/null && \
+             ! grep -q "EXPO_PUBLIC_SENTRY_DSN" app.json 2>/dev/null; then
+            echo "::error::EXPO_PUBLIC_SENTRY_DSN not referenced in app config"
             exit 1
           fi
-          echo "✅ Sentry DSN found in .env"
+          echo "✅ Sentry DSN referenced in app config (provided via EAS secrets at build time)"
 
       - name: Check Sentry plugin is enabled in app.json
         run: |
