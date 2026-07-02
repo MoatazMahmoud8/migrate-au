@@ -475,7 +475,7 @@ export default function RoundsScreen() {
       <View style={[styles.searchBar, { backgroundColor: Colors.surface }]}>
         <Ionicons name="search-outline" size={16} color={Colors.textMuted} />
         <TextInput
-          style={styles.searchInput}
+          style={[styles.searchInput, {color: Colors.textPrimary}]}
           value={query}
           onChangeText={setQuery}
           placeholder="Search your occupation..."

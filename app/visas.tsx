@@ -119,7 +119,7 @@ export default function VisasScreen() {
         <View style={styles.searchContainer}>
           <Ionicons name="search-outline" size={18} color={Colors.textMuted} />
           <TextInput
-            style={styles.searchInput}
+            style={[styles.searchInput, {color: Colors.textPrimary}]}
             placeholder="Search visas by code, name or conditions..."
             placeholderTextColor={Colors.textMuted}
             value={searchQuery}

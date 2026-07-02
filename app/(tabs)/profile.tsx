@@ -441,7 +441,7 @@ export default function ProfileScreen() {
         {editingName ? (
           <View style={styles.nameEditRow}>
             <TextInput
-              style={styles.nameInput}
+              style={[styles.nameInput, {color: Colors.textPrimary}]}
               value={nameInput}
               onChangeText={setNameInput}
               placeholder="Your name"
@@ -1023,7 +1023,7 @@ export default function ProfileScreen() {
 
             <Text style={[jStyles.fieldLabel, {color: Colors.textPrimary}]}>ANZSCO code or occupation name <Text style={[jStyles.fieldOptional, {color: Colors.textPrimary}]}>(optional)</Text></Text>
             <TextInput
-              style={jStyles.textInput}
+              style={[jStyles.textInput, {color: Colors.textPrimary}]}
               value={newAnzsco}
               onChangeText={setNewAnzsco}
               placeholder="e.g. 261313 or Software Engineer"

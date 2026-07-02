@@ -37,8 +37,8 @@ KEYWORDS_HIGH = [
     # ANZSCO & occupations
     "anzsco", "occupation list", "skilled occupation", "mltssl", "stsol",
     # State nominations
-    "state nomination", "state sponsorship", "sponsor",
-    "nomination", "priority processing",
+    "state nomination", "state sponsorship", "state sponsor",
+    "visa nomination", "priority processing",
     # Conditions & changes
     "condition 8105", "condition 8501", "condition 8202",
     "work rights", "work limitation", "visa condition change",
@@ -71,9 +71,20 @@ AUSTRALIA_MARKERS = [
 ]
 
 EXCLUDE_TERMS = [
+    # US politics
     "trump", "biden", "white house", "congress", "senate vote",
     "supreme court", "capitol", "republican", "democrat",
+    # UK politics
     "uk parliament", "westminster", "downing street", "brexit",
+    # Australian domestic politics (not migration)
+    "icac", "corruption", "branch-stacking", "branch stacking",
+    "election result", "polling", "ballot", "preselection",
+    "senator", "councillor", "council election",
+    "liberal party", "labor party", "greens party",
+    "property developer", "political donation", "fundrais",
+    "royal commission", "inquest", "murder", "assault",
+    "cricket", "football", "rugby", "nrl", "afl",
+    "bushfire", "flood warning", "weather",
 ]
 
 
@@ -107,7 +118,7 @@ def _categorize(title: str, desc: str) -> str:
         return "SkillSelect"
     if any(kw in text for kw in ["anzsco", "occupation list", "skilled occupation", "mltssl", "stsol"]):
         return "Occupation Lists"
-    if any(kw in text for kw in ["state nomination", "state sponsorship", "nomination"]):
+    if any(kw in text for kw in ["state nomination", "state sponsorship", "visa nomination"]):
         return "State Nomination"
     if any(kw in text for kw in ["visa fee", "visa charge"]):
         return "Visa Fees"
@@ -139,7 +150,7 @@ def scrape(db) -> list[dict]:
                 desc = re.sub(r"<[^>]+>", "", item.findtext("description") or "").strip()[:400]
                 link = (item.findtext("link") or "").strip()
                 score = _relevance_score(title, desc)
-                if title and link and score > 0 and _is_australian(title, desc):
+                if title and link and score >= 2 and _is_australian(title, desc):
                     candidates.append({
                         "title": title,
                         "desc": desc,

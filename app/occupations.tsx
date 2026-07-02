@@ -582,7 +582,7 @@ export default function OccupationsScreen() {
               onChangeText={setQuery}
               placeholder="ANZSCO code, occupation, visa, authority…"
               placeholderTextColor={Colors.textMuted}
-              style={styles.searchInput}
+              style={[styles.searchInput, {color: Colors.textPrimary}]}
               autoCorrect={false}
               autoCapitalize="none"
             />
