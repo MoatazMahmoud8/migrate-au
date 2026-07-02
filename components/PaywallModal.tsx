@@ -8,12 +8,13 @@ import {
   ActivityIndicator,
   ScrollView,
   Linking,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, Spacing, Radius, FontSize, FontWeight } from '../constants/theme';
 import { useColors } from '../constants/ThemeContext';
-import { startFreeTrialIAP, purchaseSubscription, getFormattedPrice, getYearlySavings, getLifetimeSavings, syncSubscriptionStatus } from '../utils/iap';
+import { startFreeTrialIAP, purchaseSubscription, restorePurchases, getFormattedPrice, getYearlySavings, getLifetimeSavings, syncSubscriptionStatus } from '../utils/iap';
 
 interface PaywallModalProps {
   visible: boolean;
@@ -223,6 +224,16 @@ export function PaywallModal({ visible, onClose, userId, title, message, feature
 
             {/* Required Apple links for subscriptions */}
             <View style={styles.legalLinks}>
+              <TouchableOpacity onPress={async () => {
+                setLoading(true);
+                const result = await restorePurchases();
+                setLoading(false);
+                if (result.restored) { await syncSubscriptionStatus(); onClose(); }
+                Alert.alert(result.restored ? 'Restored ✓' : 'Not Found', result.message);
+              }}>
+                <Text style={[styles.legalLinkText, {color: Colors.accent}]}>Restore Purchases</Text>
+              </TouchableOpacity>
+              <Text style={[styles.legalSeparator, {color: Colors.textPrimary}]}>·</Text>
               <TouchableOpacity onPress={() => Linking.openURL('https://jsmglobal.xyz/migration-privacy.html')}>
                 <Text style={[styles.legalLinkText, {color: Colors.textPrimary}]}>Privacy Policy</Text>
               </TouchableOpacity>
