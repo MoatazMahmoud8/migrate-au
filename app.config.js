@@ -3,6 +3,14 @@
 
 /** @type {import('expo/config').ExpoConfig} */
 module.exports = ({ config }) => {
+  // Only use env var if it has the correct platform prefix
+  const iosKey = (process.env.REVENUECAT_API_KEY_IOS || '').startsWith('appl_')
+    ? process.env.REVENUECAT_API_KEY_IOS
+    : config.extra?.revenueCatKeyIos || '';
+  const androidKey = (process.env.REVENUECAT_API_KEY_ANDROID || '').startsWith('goog_')
+    ? process.env.REVENUECAT_API_KEY_ANDROID
+    : config.extra?.revenueCatKeyAndroid || '';
+
   return {
     ...config,
     android: {
@@ -12,9 +20,9 @@ module.exports = ({ config }) => {
     },
     extra: {
       ...config.extra,
-      geminiApiKey:         process.env.GEMINI_API_KEY ?? '',
-      revenueCatKeyIos:     process.env.REVENUECAT_API_KEY_IOS ?? '',
-      revenueCatKeyAndroid: process.env.REVENUECAT_API_KEY_ANDROID ?? '',
+      geminiApiKey:         process.env.GEMINI_API_KEY ?? config.extra?.geminiApiKey ?? '',
+      revenueCatKeyIos:     iosKey,
+      revenueCatKeyAndroid: androidKey,
     },
   };
 };

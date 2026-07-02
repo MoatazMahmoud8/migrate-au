@@ -73,9 +73,15 @@ export async function initRevenueCat() {
       ? REVENUECAT_API_KEY_IOS
       : REVENUECAT_API_KEY_ANDROID;
 
+    if (!apiKey) {
+      console.error('[IAP] ❌ RevenueCat API key is EMPTY for', Platform.OS);
+      return;
+    }
+    console.log('[IAP] Configuring RevenueCat on', Platform.OS, 'key prefix:', apiKey.substring(0, 5));
+
     await Purchases.configure({ apiKey });
     rcInitialized = true;
-    console.log('[IAP] RevenueCat initialized on', Platform.OS);
+    console.log('[IAP] ✅ RevenueCat initialized on', Platform.OS);
   } catch (err) {
     console.warn('[IAP] RevenueCat init error:', err);
   }
