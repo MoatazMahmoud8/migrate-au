@@ -116,15 +116,15 @@ export default function SearchModal({ visible, onClose }: Props) {
             )}
           </View>
           <TouchableOpacity onPress={onClose} style={styles.cancelBtn}>
-            <Text style={styles.cancelText}>Cancel</Text>
+            <Text style={[styles.cancelText, {color: Colors.textPrimary}]}>Cancel</Text>
           </TouchableOpacity>
         </View>
 
         {results.length === 0 ? (
           <View style={styles.empty}>
             <Ionicons name="search-outline" size={48} color={Colors.textMuted} />
-            <Text style={styles.emptyText}>No results for "{query}"</Text>
-            <Text style={styles.emptySub}>Try a visa subclass (189, 482), a state (NSW, VIC), or a tool name.</Text>
+            <Text style={[styles.emptyText, {color: Colors.textPrimary}]}>No results for "{query}"</Text>
+            <Text style={[styles.emptySub, {color: Colors.textPrimary}]}>Try a visa subclass (189, 482), a state (NSW, VIC), or a tool name.</Text>
           </View>
         ) : (
           <FlatList
@@ -138,11 +138,11 @@ export default function SearchModal({ visible, onClose }: Props) {
                   <Ionicons name={item.icon as any} size={18} color={item.color} />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.rowTitle}>{item.title}</Text>
-                  <Text style={styles.rowSub}>{item.subtitle}</Text>
+                  <Text style={[styles.rowTitle, {color: Colors.textPrimary}]}>{item.title}</Text>
+                  <Text style={[styles.rowSub, {color: Colors.textPrimary}]}>{item.subtitle}</Text>
                 </View>
                 <View style={styles.rowTag}>
-                  <Text style={styles.rowTagText}>{CATEGORY_LABEL[item.category]}</Text>
+                  <Text style={[styles.rowTagText, {color: Colors.textPrimary}]}>{CATEGORY_LABEL[item.category]}</Text>
                 </View>
               </TouchableOpacity>
             )}

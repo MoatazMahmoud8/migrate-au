@@ -102,24 +102,24 @@ export default function ProcessingTimesScreen() {
             </TouchableOpacity>
             <View style={styles.headerBadge}>
               <Ionicons name="time-outline" size={12} color={Colors.accent} />
-              <Text style={styles.headerBadgeText}>Live data</Text>
+              <Text style={[styles.headerBadgeText, {color: Colors.textPrimary}]}>Live data</Text>
             </View>
             <View style={{ width: 32 }} />
           </View>
 
-          <Text style={styles.title}>Visa Processing Times</Text>
-          <Text style={styles.subtitle}>
+          <Text style={[styles.title, {color: Colors.textPrimary}]}>Visa Processing Times</Text>
+          <Text style={[styles.subtitle, {color: Colors.textPrimary}]}>
             Median and 90th percentile timeframes for recently decided applications.
           </Text>
 
           <View style={styles.metaRow}>
             <View style={[styles.metaPill, { backgroundColor: Colors.surface }]}>
               <Ionicons name="calendar-outline" size={11} color={Colors.textMuted} />
-              <Text style={styles.metaText}>Updated {formatSnapshot(snapshotDate)}</Text>
+              <Text style={[styles.metaText, {color: Colors.textPrimary}]}>Updated {formatSnapshot(snapshotDate)}</Text>
             </View>
             <View style={[styles.metaPill, { backgroundColor: Colors.surface }]}>
               <Ionicons name="refresh-outline" size={11} color={Colors.textMuted} />
-              <Text style={styles.metaText}>Checked {timeAgo(lastChecked)}</Text>
+              <Text style={[styles.metaText, {color: Colors.textPrimary}]}>Checked {timeAgo(lastChecked)}</Text>
             </View>
           </View>
         </LinearGradient>
@@ -162,23 +162,23 @@ export default function ProcessingTimesScreen() {
                   </View>
                   <View style={{ flex: 1 }}>
                     <View style={styles.cardTitleRow}>
-                      <Text style={styles.cardCode}>SC {p.subclass}</Text>
-                      <Text style={styles.cardCat}>{p.category}</Text>
+                      <Text style={[styles.cardCode, {color: Colors.textPrimary}]}>SC {p.subclass}</Text>
+                      <Text style={[styles.cardCat, {color: Colors.textPrimary}]}>{p.category}</Text>
                     </View>
-                    <Text style={styles.cardName}>{p.name}</Text>
-                    {p.stream && <Text style={styles.cardStream}>{p.stream}</Text>}
+                    <Text style={[styles.cardName, {color: Colors.textPrimary}]}>{p.name}</Text>
+                    {p.stream && <Text style={[styles.cardStream, {color: Colors.textPrimary}]}>{p.stream}</Text>}
                   </View>
                 </View>
 
                 <View style={styles.statsRow}>
                   <View style={styles.statBox}>
-                    <Text style={styles.statLabel}>Median (50%)</Text>
+                    <Text style={[styles.statLabel, {color: Colors.textPrimary}]}>Median (50%)</Text>
                     <Text style={[styles.statValue, { color: p.color }]}>{p.p50}</Text>
                   </View>
                   <View style={styles.statDivider} />
                   <View style={styles.statBox}>
-                    <Text style={styles.statLabel}>90% within</Text>
-                    <Text style={styles.statValue}>{p.p90}</Text>
+                    <Text style={[styles.statLabel, {color: Colors.textPrimary}]}>90% within</Text>
+                    <Text style={[styles.statValue, {color: Colors.textPrimary}]}>{p.p90}</Text>
                   </View>
                 </View>
               </View>
@@ -189,7 +189,7 @@ export default function ProcessingTimesScreen() {
         {/* Footer */}
         <View style={styles.footer}>
           <Ionicons name="information-circle-outline" size={13} color={Colors.textMuted} />
-          <Text style={styles.footerText}>
+          <Text style={[styles.footerText, {color: Colors.textPrimary}]}>
             Estimates only. Actual processing depends on application completeness and document
             verification. Source:{' '}
             <Text

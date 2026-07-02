@@ -105,12 +105,12 @@ export default function VisasScreen() {
             </TouchableOpacity>
             <View style={styles.headerBadge}>
               <Ionicons name="layers-outline" size={12} color={Colors.accent} />
-              <Text style={styles.headerBadgeText}>{totalCount} visas</Text>
+              <Text style={[styles.headerBadgeText, {color: Colors.textPrimary}]}>{totalCount} visas</Text>
             </View>
             <View style={{ width: 32 }} />
           </View>
-          <Text style={styles.title}>Visa Pathways</Text>
-          <Text style={styles.subtitle}>
+          <Text style={[styles.title, {color: Colors.textPrimary}]}>Visa Pathways</Text>
+          <Text style={[styles.subtitle, {color: Colors.textPrimary}]}>
             All Australian visa subclasses organised by category — streams, conditions and official links in one place.
           </Text>
         </LinearGradient>
@@ -185,7 +185,7 @@ export default function VisasScreen() {
                   <View style={[styles.sectionIcon, { backgroundColor: meta.bg }]}>
                     <Ionicons name={meta.icon as any} size={16} color={meta.color} />
                   </View>
-                  <Text style={styles.sectionTitle}>{category}</Text>
+                  <Text style={[styles.sectionTitle, {color: Colors.textPrimary}]}>{category}</Text>
                   <View style={[styles.sectionCount, { backgroundColor: meta.bg }]}>
                     <Text style={[styles.sectionCountText, { color: meta.color }]}>{items.length}</Text>
                   </View>
@@ -208,8 +208,8 @@ export default function VisasScreen() {
                         <Ionicons name="calculator-outline" size={18} color={Colors.secondary} />
                       </View>
                       <View style={{ flex: 1 }}>
-                        <Text style={styles.calcCardTitle}>Calculate Your Points</Text>
-                        <Text style={styles.calcCardSub}>See if you reach the 65-point threshold</Text>
+                        <Text style={[styles.calcCardTitle, {color: Colors.textPrimary}]}>Calculate Your Points</Text>
+                        <Text style={[styles.calcCardSub, {color: Colors.textPrimary}]}>See if you reach the 65-point threshold</Text>
                       </View>
                       <Ionicons name="chevron-forward" size={16} color={Colors.secondary} />
                     </LinearGradient>
@@ -238,14 +238,14 @@ export default function VisasScreen() {
 
                           <View style={styles.cardHeadContent}>
                             <View style={styles.codeRow}>
-                              <Text style={styles.cardCode}>SC {v.code}</Text>
+                              <Text style={[styles.cardCode, {color: Colors.textPrimary}]}>SC {v.code}</Text>
                               <View style={[styles.typeBadge, v.type === 'Permanent' ? styles.typePerm : v.type === 'Repealed' ? styles.typeRepealed : styles.typeTemp]}>
                                 <Text style={[styles.typeText, v.type === 'Permanent' ? styles.typeTextPerm : v.type === 'Repealed' ? styles.typeTextRepealed : styles.typeTextTemp]}>
                                   {v.type}
                                 </Text>
                               </View>
                             </View>
-                            <Text style={styles.cardName}>{v.name}</Text>
+                            <Text style={[styles.cardName, {color: Colors.textPrimary}]}>{v.name}</Text>
                             {fastestTime && (
                               <View style={styles.timeBadgeRow}>
                                 <Ionicons name="time-outline" size={11} color={meta.color} />
@@ -256,7 +256,7 @@ export default function VisasScreen() {
                                   {' '}median
                                 </Text>
                                 {times.length > 1 && (
-                                  <Text style={styles.timeBadgeStreams}>({times.length} streams)</Text>
+                                  <Text style={[styles.timeBadgeStreams, {color: Colors.textPrimary}]}>({times.length} streams)</Text>
                                 )}
                               </View>
                             )}
@@ -273,21 +273,21 @@ export default function VisasScreen() {
                             {/* Processing time stats */}
                             {times.length > 0 && (
                               <View style={styles.timesSection}>
-                                <Text style={styles.bodyLabel}>Processing Times</Text>
+                                <Text style={[styles.bodyLabel, {color: Colors.textPrimary}]}>Processing Times</Text>
                                 {times.map((t) => (
                                   <View key={`${t.subclass}|${t.stream ?? ''}`} style={styles.timeRow}>
                                     {t.stream && (
-                                      <Text style={styles.timeStream}>{t.stream}</Text>
+                                      <Text style={[styles.timeStream, {color: Colors.textPrimary}]}>{t.stream}</Text>
                                     )}
                                     <View style={styles.timeStats}>
                                       <View style={styles.timeStat}>
-                                        <Text style={styles.timeStatLabel}>Median (50%)</Text>
+                                        <Text style={[styles.timeStatLabel, {color: Colors.textPrimary}]}>Median (50%)</Text>
                                         <Text style={[styles.timeStatValue, { color: meta.color }]}>{t.p50}</Text>
                                       </View>
                                       <View style={styles.timeStatDivider} />
                                       <View style={styles.timeStat}>
-                                        <Text style={styles.timeStatLabel}>90% within</Text>
-                                        <Text style={styles.timeStatValue}>{t.p90}</Text>
+                                        <Text style={[styles.timeStatLabel, {color: Colors.textPrimary}]}>90% within</Text>
+                                        <Text style={[styles.timeStatValue, {color: Colors.textPrimary}]}>{t.p90}</Text>
                                       </View>
                                     </View>
                                   </View>
@@ -309,7 +309,7 @@ export default function VisasScreen() {
                               {v.conditions.map((c) => (
                                 <View key={c} style={styles.condRow}>
                                   <View style={[styles.condDot, { backgroundColor: meta.color }]} />
-                                  <Text style={styles.condText}>{c}</Text>
+                                  <Text style={[styles.condText, {color: Colors.textPrimary}]}>{c}</Text>
                                 </View>
                               ))}
                             </View>
@@ -335,9 +335,9 @@ export default function VisasScreen() {
 
         <View style={styles.footer}>
           <Ionicons name="information-circle-outline" size={13} color={Colors.textMuted} />
-          <Text style={styles.footerText}>
+          <Text style={[styles.footerText, {color: Colors.textPrimary}]}>
             Information is indicative. For formal advice consult a{' '}
-            <Text style={styles.footerLink} onPress={() => Linking.openURL('https://portal.mara.gov.au')}>
+            <Text style={[styles.footerLink, {color: Colors.textPrimary}]} onPress={() => Linking.openURL('https://portal.mara.gov.au')}>
               MARA-registered agent
             </Text>.
           </Text>

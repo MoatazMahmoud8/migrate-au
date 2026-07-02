@@ -429,7 +429,7 @@ export default function ProfileScreen() {
 
         <TouchableOpacity style={styles.avatarWrap} onPress={handleAvatarTap} activeOpacity={0.8}>
           <LinearGradient colors={[Colors.secondary, '#FFB800']} style={styles.avatar}>
-            <Text style={styles.avatarText}>{initials}</Text>
+            <Text style={[styles.avatarText, {color: Colors.textPrimary}]}>{initials}</Text>
           </LinearGradient>
           {profile.isPremium && (
             <View style={styles.premiumBadgeSmall}>
@@ -449,7 +449,7 @@ export default function ProfileScreen() {
               autoFocus
             />
             <TouchableOpacity onPress={saveName} style={styles.saveBtn}>
-              <Text style={styles.saveBtnText}>Save</Text>
+              <Text style={[styles.saveBtnText, {color: Colors.textPrimary}]}>Save</Text>
             </TouchableOpacity>
           </View>
         ) : (
@@ -457,14 +457,14 @@ export default function ProfileScreen() {
             onPress={() => { setNameInput(profile.name); setEditingName(true); }}
             style={styles.nameRow}
           >
-            <Text style={styles.profileName}>{profile.name || 'Tap to set your name'}</Text>
+            <Text style={[styles.profileName, {color: Colors.textPrimary}]}>{profile.name || 'Tap to set your name'}</Text>
             <Ionicons name="pencil" size={14} color={Colors.textMuted} />
           </TouchableOpacity>
         )}
 
         <View style={styles.planBadge}>
           {profile.isPremium
-            ? <><Ionicons name="star" size={12} color={Colors.secondary} /><Text style={styles.planText}>Premium Member</Text></>
+            ? <><Ionicons name="star" size={12} color={Colors.secondary} /><Text style={[styles.planText, {color: Colors.textPrimary}]}>Premium Member</Text></>
             : <>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.xs }}>
                   <Ionicons name="person-outline" size={12} color={Colors.textMuted} />
@@ -474,7 +474,7 @@ export default function ProfileScreen() {
                   onPress={handleUpgrade}
                   style={styles.subscribeNowBtn}
                 >
-                  <Text style={styles.subscribeNowText}>Upgrade Now</Text>
+                  <Text style={[styles.subscribeNowText, {color: Colors.textPrimary}]}>Upgrade Now</Text>
                 </TouchableOpacity>
               </>
           }
@@ -489,12 +489,12 @@ export default function ProfileScreen() {
             {journeyEntries.length > 0 && profile?.isPremium && (
               <TouchableOpacity style={[jStyles.exportBtn, { backgroundColor: Colors.surface }]} onPress={handleExportPDF} activeOpacity={0.8}>
                 <Ionicons name="document-outline" size={14} color={Colors.secondary} />
-                <Text style={jStyles.exportBtnText}>Export</Text>
+                <Text style={[jStyles.exportBtnText, {color: Colors.textPrimary}]}>Export</Text>
               </TouchableOpacity>
             )}
             <TouchableOpacity style={jStyles.addBtn} onPress={() => setShowAddJourney(true)} activeOpacity={0.8}>
               <Ionicons name="add" size={15} color={Colors.primaryDark} />
-              <Text style={jStyles.addBtnText}>Add</Text>
+              <Text style={[jStyles.addBtnText, {color: Colors.textPrimary}]}>Add</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -502,8 +502,8 @@ export default function ProfileScreen() {
         {journeyEntries.length === 0 && (
           <TouchableOpacity style={[jStyles.emptyCard, { backgroundColor: Colors.surface, borderColor: Colors.border }]} onPress={() => setShowAddJourney(true)} activeOpacity={0.8}>
             <Ionicons name="map-outline" size={28} color={Colors.textMuted} />
-            <Text style={jStyles.emptyTitle}>Track your visa journey</Text>
-            <Text style={jStyles.emptyDesc}>Add a visa application to track your progress and key milestone dates</Text>
+            <Text style={[jStyles.emptyTitle, {color: Colors.textPrimary}]}>Track your visa journey</Text>
+            <Text style={[jStyles.emptyDesc, {color: Colors.textPrimary}]}>Add a visa application to track your progress and key milestone dates</Text>
           </TouchableOpacity>
         )}
 
@@ -523,12 +523,12 @@ export default function ProfileScreen() {
                 </View>
                 {entry.state && (
                   <View style={jStyles.stateBadge}>
-                    <Text style={jStyles.stateBadgeText}>{entry.state}</Text>
+                    <Text style={[jStyles.stateBadgeText, {color: Colors.textPrimary}]}>{entry.state}</Text>
                   </View>
                 )}
                 <View style={{ flex: 1 }}>
                   {(entry.anzscoCode || entry.occupationName) && (
-                    <Text style={jStyles.entryAnzsco} numberOfLines={1}>
+                    <Text style={[jStyles.entryAnzsco, {color: Colors.textPrimary}]} numberOfLines={1}>
                       {entry.anzscoCode}{entry.occupationName ? ` · ${entry.occupationName}` : ''}
                     </Text>
                   )}
@@ -596,15 +596,15 @@ export default function ProfileScreen() {
                             {date ? (
                               <View style={jStyles.datePill}>
                                 <Ionicons name="calendar-outline" size={11} color={Colors.accent} />
-                                <Text style={jStyles.datePillText}>{formatJourneyDate(date)}</Text>
+                                <Text style={[jStyles.datePillText, {color: Colors.textPrimary}]}>{formatJourneyDate(date)}</Text>
                                 {gap !== null && (
                                   <View style={jStyles.gapPill}>
-                                    <Text style={jStyles.gapText}>+{daysLabel(gap)}</Text>
+                                    <Text style={[jStyles.gapText, {color: Colors.textPrimary}]}>+{daysLabel(gap)}</Text>
                                   </View>
                                 )}
                               </View>
                             ) : (
-                              <Text style={jStyles.addDateText}>+ Add date</Text>
+                              <Text style={[jStyles.addDateText, {color: Colors.textPrimary}]}>+ Add date</Text>
                             )}
                           </TouchableOpacity>
                         </View>
@@ -631,21 +631,21 @@ export default function ProfileScreen() {
                 <>
                   <View style={jStyles.bracketRow}>
                     <View>
-                      <Text style={jStyles.bracketLabel}>Current Age</Text>
-                      <Text style={jStyles.bracketValue}>{bracketAlert.currentAge}</Text>
+                      <Text style={[jStyles.bracketLabel, {color: Colors.textPrimary}]}>Current Age</Text>
+                      <Text style={[jStyles.bracketValue, {color: Colors.textPrimary}]}>{bracketAlert.currentAge}</Text>
                     </View>
                     <View>
-                      <Text style={jStyles.bracketLabel}>Next Milestone</Text>
-                      <Text style={jStyles.bracketValue}>{bracketAlert.nextMilestone}</Text>
+                      <Text style={[jStyles.bracketLabel, {color: Colors.textPrimary}]}>Next Milestone</Text>
+                      <Text style={[jStyles.bracketValue, {color: Colors.textPrimary}]}>{bracketAlert.nextMilestone}</Text>
                     </View>
                     <View>
-                      <Text style={jStyles.bracketLabel}>Days Until</Text>
-                      <Text style={jStyles.bracketValue}>{daysLabel(bracketAlert.daysUntilMilestone)}</Text>
+                      <Text style={[jStyles.bracketLabel, {color: Colors.textPrimary}]}>Days Until</Text>
+                      <Text style={[jStyles.bracketValue, {color: Colors.textPrimary}]}>{daysLabel(bracketAlert.daysUntilMilestone)}</Text>
                     </View>
                   </View>
                   {bracketAlert.alert && (
                     <View style={jStyles.bracketAlert}>
-                      <Text style={jStyles.bracketAlertText}>{bracketAlert.alert}</Text>
+                      <Text style={[jStyles.bracketAlertText, {color: Colors.textPrimary}]}>{bracketAlert.alert}</Text>
                     </View>
                   )}
                   <TouchableOpacity
@@ -655,7 +655,7 @@ export default function ProfileScreen() {
                     }}
                     style={jStyles.editBirthDateBtn}
                   >
-                    <Text style={jStyles.editBirthDateText}>Edit Birth Date</Text>
+                    <Text style={[jStyles.editBirthDateText, {color: Colors.textPrimary}]}>Edit Birth Date</Text>
                   </TouchableOpacity>
                 </>
               );
@@ -665,7 +665,7 @@ export default function ProfileScreen() {
                 style={jStyles.addBirthDateBtn}
               >
                 <Ionicons name="calendar-outline" size={16} color={Colors.secondary} />
-                <Text style={jStyles.addBirthDateText}>Add your birth date to track age milestones</Text>
+                <Text style={[jStyles.addBirthDateText, {color: Colors.textPrimary}]}>Add your birth date to track age milestones</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -687,7 +687,7 @@ export default function ProfileScreen() {
                 <Ionicons name="checkmark-circle" size={20} color={Colors.success} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.premiumTitle}>Premium Plan</Text>
+                <Text style={[styles.premiumTitle, {color: Colors.textPrimary}]}>Premium Plan</Text>
                 {renewalDays !== null ? (
                   <Text style={[
                     styles.premiumSub,
@@ -698,7 +698,7 @@ export default function ProfileScreen() {
                       : `Renews in ${renewalDays} days`}
                   </Text>
                 ) : (
-                  <Text style={styles.premiumSub}>Active subscription</Text>
+                  <Text style={[styles.premiumSub, {color: Colors.textPrimary}]}>Active subscription</Text>
                 )}
               </View>
             </View>
@@ -709,7 +709,7 @@ export default function ProfileScreen() {
                 setShowPaywall(true);
               }}
             >
-              <Text style={styles.manageBillingText}>Manage</Text>
+              <Text style={[styles.manageBillingText, {color: Colors.textPrimary}]}>Manage</Text>
             </TouchableOpacity>
           </LinearGradient>
         </View>
@@ -875,7 +875,7 @@ export default function ProfileScreen() {
 
       <View style={[styles.disclaimer, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
         <Ionicons name="alert-circle-outline" size={14} color={Colors.textMuted} />
-        <Text style={styles.disclaimerText}>
+        <Text style={[styles.disclaimerText, {color: Colors.textPrimary}]}>
           Information is general in nature. Always consult a{' '}
           <Text
             style={styles.disclaimerLink}
@@ -907,8 +907,8 @@ export default function ProfileScreen() {
       >
         <View style={jStyles.dateBackdrop}>
           <View style={jStyles.dateSheet}>
-            <Text style={jStyles.modalTitle}>Birth Date</Text>
-            <Text style={jStyles.modalSub}>For age bracket milestone alerts</Text>
+            <Text style={[jStyles.modalTitle, {color: Colors.textPrimary}]}>Birth Date</Text>
+            <Text style={[jStyles.modalSub, {color: Colors.textPrimary}]}>For age bracket milestone alerts</Text>
 
             {Platform.OS === 'web' ? (
               <input
@@ -955,7 +955,7 @@ export default function ProfileScreen() {
                 onPress={() => saveBirthDate(birthDateInput)}
                 activeOpacity={0.85}
               >
-                <Text style={jStyles.saveBtnText}>Save</Text>
+                <Text style={[jStyles.saveBtnText, {color: Colors.textPrimary}]}>Save</Text>
               </TouchableOpacity>
               {profile.birthDate && (
                 <TouchableOpacity
@@ -967,7 +967,7 @@ export default function ProfileScreen() {
               )}
             </View>
             <TouchableOpacity onPress={() => setShowBirthDatePicker(false)} style={{ marginTop: Spacing.sm, alignItems: 'center' }}>
-              <Text style={jStyles.cancelBtnText}>Dismiss</Text>
+              <Text style={[jStyles.cancelBtnText, {color: Colors.textPrimary}]}>Dismiss</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -983,10 +983,10 @@ export default function ProfileScreen() {
         <View style={jStyles.modalBackdrop}>
           <View style={[jStyles.modalSheet, { paddingBottom: insets.bottom + 24 }]}>
             <View style={jStyles.modalHandle} />
-            <Text style={jStyles.modalTitle}>New Visa Journey</Text>
-            <Text style={jStyles.modalSub}>Track progress and dates for one application</Text>
+            <Text style={[jStyles.modalTitle, {color: Colors.textPrimary}]}>New Visa Journey</Text>
+            <Text style={[jStyles.modalSub, {color: Colors.textPrimary}]}>Track progress and dates for one application</Text>
 
-            <Text style={jStyles.fieldLabel}>Visa subclass</Text>
+            <Text style={[jStyles.fieldLabel, {color: Colors.textPrimary}]}>Visa subclass</Text>
             <View style={jStyles.pillRow}>
               {VISA_TYPES.map((v) => {
                 const active = newVisa === v;
@@ -1004,7 +1004,7 @@ export default function ProfileScreen() {
               })}
             </View>
 
-            <Text style={jStyles.fieldLabel}>State / jurisdiction</Text>
+            <Text style={[jStyles.fieldLabel, {color: Colors.textPrimary}]}>State / jurisdiction</Text>
             <View style={jStyles.pillRow}>
               {STATE_OPTS.map((s) => {
                 const active = newState === s;
@@ -1021,7 +1021,7 @@ export default function ProfileScreen() {
               })}
             </View>
 
-            <Text style={jStyles.fieldLabel}>ANZSCO code or occupation name <Text style={jStyles.fieldOptional}>(optional)</Text></Text>
+            <Text style={[jStyles.fieldLabel, {color: Colors.textPrimary}]}>ANZSCO code or occupation name <Text style={[jStyles.fieldOptional, {color: Colors.textPrimary}]}>(optional)</Text></Text>
             <TextInput
               style={jStyles.textInput}
               value={newAnzsco}
@@ -1033,10 +1033,10 @@ export default function ProfileScreen() {
             />
 
             <TouchableOpacity style={jStyles.saveBtn} onPress={addJourneyEntry} activeOpacity={0.85}>
-              <Text style={jStyles.saveBtnText}>Add Journey</Text>
+              <Text style={[jStyles.saveBtnText, {color: Colors.textPrimary}]}>Add Journey</Text>
             </TouchableOpacity>
             <TouchableOpacity style={jStyles.cancelBtn} onPress={() => setShowAddJourney(false)}>
-              <Text style={jStyles.cancelBtnText}>Cancel</Text>
+              <Text style={[jStyles.cancelBtnText, {color: Colors.textPrimary}]}>Cancel</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -1051,10 +1051,10 @@ export default function ProfileScreen() {
       >
         <View style={jStyles.dateBackdrop}>
           <View style={jStyles.dateSheet}>
-            <Text style={jStyles.modalTitle}>
+            <Text style={[jStyles.modalTitle, {color: Colors.textPrimary}]}>
               {dateTarget ? JOURNEY_STAGES.find(s => s.key === dateTarget.stageKey)?.label : 'Date'}
             </Text>
-            <Text style={jStyles.modalSub}>Pick the date for this milestone</Text>
+            <Text style={[jStyles.modalSub, {color: Colors.textPrimary}]}>Pick the date for this milestone</Text>
             
             {Platform.OS === 'web' ? (
               <input
@@ -1100,7 +1100,7 @@ export default function ProfileScreen() {
                 onPress={saveStageDateInput}
                 activeOpacity={0.85}
               >
-                <Text style={jStyles.saveBtnText}>Save</Text>
+                <Text style={[jStyles.saveBtnText, {color: Colors.textPrimary}]}>Save</Text>
               </TouchableOpacity>
               {dateInput.trim() !== '' && (
                 <TouchableOpacity
@@ -1122,7 +1122,7 @@ export default function ProfileScreen() {
               )}
             </View>
             <TouchableOpacity onPress={() => setShowDateModal(false)} style={{ marginTop: Spacing.sm, alignItems: 'center' }}>
-              <Text style={jStyles.cancelBtnText}>Dismiss</Text>
+              <Text style={[jStyles.cancelBtnText, {color: Colors.textPrimary}]}>Dismiss</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -1138,8 +1138,8 @@ export default function ProfileScreen() {
         <View style={feedbackStyles.backdrop}>
           <View style={[feedbackStyles.sheet, { paddingBottom: insets.bottom + 24 }]}>
             <View style={feedbackStyles.handle} />
-            <Text style={feedbackStyles.title}>Get in Touch</Text>
-            <Text style={feedbackStyles.subtitle}>We read every message and aim to reply within 48 hours.</Text>
+            <Text style={[feedbackStyles.title, {color: Colors.textPrimary}]}>Get in Touch</Text>
+            <Text style={[feedbackStyles.subtitle, {color: Colors.textPrimary}]}>We read every message and aim to reply within 48 hours.</Text>
 
             {([
               {
@@ -1185,8 +1185,8 @@ export default function ProfileScreen() {
                   <Ionicons name={item.icon as any} size={20} color={Colors.accent} />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={feedbackStyles.optionLabel}>{item.label}</Text>
-                  <Text style={feedbackStyles.optionDesc}>{item.desc}</Text>
+                  <Text style={[feedbackStyles.optionLabel, {color: Colors.textPrimary}]}>{item.label}</Text>
+                  <Text style={[feedbackStyles.optionDesc, {color: Colors.textPrimary}]}>{item.desc}</Text>
                 </View>
                 <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} />
               </TouchableOpacity>
@@ -1197,7 +1197,7 @@ export default function ProfileScreen() {
               onPress={() => setShowFeedback(false)}
               activeOpacity={0.8}
             >
-              <Text style={feedbackStyles.cancelText}>Cancel</Text>
+              <Text style={[feedbackStyles.cancelText, {color: Colors.textPrimary}]}>Cancel</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -1266,7 +1266,7 @@ function SettingRow({
           ? <ActivityIndicator size="small" color={Colors.textMuted} />
           : <>
               {value && <Text style={[rowStyles.value, { color: Colors.textMuted }]}>{value}</Text>}
-              {badge && <View style={rowStyles.badge}><Text style={rowStyles.badgeText}>{badge}</Text></View>}
+              {badge && <View style={rowStyles.badge}><Text style={[rowStyles.badgeText, {color: Colors.textPrimary}]}>{badge}</Text></View>}
               {locked && <Ionicons name="lock-closed" size={14} color={Colors.textMuted} />}
               {showArrow && <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} />}
             </>

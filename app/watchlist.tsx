@@ -208,7 +208,7 @@ export default function WatchlistScreen() {
         <TouchableOpacity onPress={() => router.back()} hitSlop={12}>
           <Ionicons name="chevron-back" size={26} color={Colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Watchlist</Text>
+        <Text style={[styles.headerTitle, {color: Colors.textPrimary}]}>Watchlist</Text>
         <View style={{ width: 26 }} />
       </View>
 
@@ -221,7 +221,7 @@ export default function WatchlistScreen() {
               size={18}
               color={Colors.secondary}
             />
-            <Text style={styles.bannerText}>
+            <Text style={[styles.bannerText, {color: Colors.textPrimary}]}>
               {isPremium
                 ? 'Pro — unlimited watchlist items'
                 : `Free — ${items.length}/${FREE_LIMIT} item${
@@ -238,8 +238,8 @@ export default function WatchlistScreen() {
             ListEmptyComponent={
               <View style={styles.empty}>
                 <Ionicons name="notifications-outline" size={42} color={Colors.textMuted} />
-                <Text style={styles.emptyTitle}>No watchlist items yet</Text>
-                <Text style={styles.emptyBody}>
+                <Text style={[styles.emptyTitle, {color: Colors.textPrimary}]}>No watchlist items yet</Text>
+                <Text style={[styles.emptyBody, {color: Colors.textPrimary}]}>
                   Add an occupation to get pinged the moment its SkillSelect round drops at-or-below your points.
                 </Text>
               </View>
@@ -247,14 +247,14 @@ export default function WatchlistScreen() {
             renderItem={({ item }) => (
               <View style={[styles.card, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.cardTitle} numberOfLines={2}>
+                  <Text style={[styles.cardTitle, {color: Colors.textPrimary}]} numberOfLines={2}>
                     {item.anzscoTitle}
                   </Text>
-                  <Text style={styles.cardMeta}>
+                  <Text style={[styles.cardMeta, {color: Colors.textPrimary}]}>
                     ANZSCO {item.anzsco} · Subclass {item.visaSubclass} · ≤{item.minPoints} pts
                   </Text>
                   {item.states && item.states.length > 0 && (
-                    <Text style={styles.cardStates}>{item.states.join(' · ')}</Text>
+                    <Text style={[styles.cardStates, {color: Colors.textPrimary}]}>{item.states.join(' · ')}</Text>
                   )}
                 </View>
                 <TouchableOpacity onPress={() => handleRemove(item)} hitSlop={12}>
@@ -270,7 +270,7 @@ export default function WatchlistScreen() {
             onPress={handleAddPress}
           >
             <Ionicons name="add" size={22} color={Colors.primaryDark} />
-            <Text style={styles.addBtnText}>Add to watchlist</Text>
+            <Text style={[styles.addBtnText, {color: Colors.textPrimary}]}>Add to watchlist</Text>
           </TouchableOpacity>
         </>
       ) : (
@@ -282,12 +282,12 @@ export default function WatchlistScreen() {
             contentContainerStyle={{ padding: Spacing.lg, paddingBottom: 120 }}
             keyboardShouldPersistTaps="handled"
           >
-            <Text style={styles.label}>Occupation</Text>
+            <Text style={[styles.label, {color: Colors.textPrimary}]}>Occupation</Text>
             {selectedOcc ? (
               <View style={[styles.selectedOcc, { backgroundColor: Colors.surface }]}>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.cardTitle}>{selectedOcc.name}</Text>
-                  <Text style={styles.cardMeta}>ANZSCO {selectedOcc.anzsco}</Text>
+                  <Text style={[styles.cardTitle, {color: Colors.textPrimary}]}>{selectedOcc.name}</Text>
+                  <Text style={[styles.cardMeta, {color: Colors.textPrimary}]}>ANZSCO {selectedOcc.anzsco}</Text>
                 </View>
                 <TouchableOpacity onPress={() => setSelectedOcc(null)} hitSlop={10}>
                   <Ionicons name="close-circle" size={22} color={Colors.textSecondary} />
@@ -313,20 +313,20 @@ export default function WatchlistScreen() {
                         setQuery('');
                       }}
                     >
-                      <Text style={styles.resultCode}>{occ.anzsco}</Text>
-                      <Text style={styles.resultName} numberOfLines={1}>
+                      <Text style={[styles.resultCode, {color: Colors.textPrimary}]}>{occ.anzsco}</Text>
+                      <Text style={[styles.resultName, {color: Colors.textPrimary}]} numberOfLines={1}>
                         {occ.name}
                       </Text>
                     </TouchableOpacity>
                   ))}
                   {query && results.length === 0 && (
-                    <Text style={styles.noResults}>No matches</Text>
+                    <Text style={[styles.noResults, {color: Colors.textPrimary}]}>No matches</Text>
                   )}
                 </View>
               </>
             )}
 
-            <Text style={styles.label}>Visa subclass</Text>
+            <Text style={[styles.label, {color: Colors.textPrimary}]}>Visa subclass</Text>
             <View style={styles.chipRow}>
               {VISA_SUBCLASSES.map((vc) => (
                 <TouchableOpacity
@@ -346,7 +346,7 @@ export default function WatchlistScreen() {
               ))}
             </View>
 
-            <Text style={styles.label}>Notify when round cutoff is at or below</Text>
+            <Text style={[styles.label, {color: Colors.textPrimary}]}>Notify when round cutoff is at or below</Text>
             <View style={styles.pointsRow}>
               <TextInput
                 value={minPoints}
@@ -355,16 +355,16 @@ export default function WatchlistScreen() {
                 style={[styles.input, { flex: 1 }]}
                 placeholderTextColor={Colors.textMuted}
               />
-              <Text style={styles.pointsSuffix}>points</Text>
+              <Text style={[styles.pointsSuffix, {color: Colors.textPrimary}]}>points</Text>
             </View>
-            <Text style={styles.hint}>
+            <Text style={[styles.hint, {color: Colors.textPrimary}]}>
               Tip: enter your own EOI points so you only get alerted when you'd realistically be invited.
             </Text>
 
             {(subclass === '190' || subclass === '491') && (
               <>
                 <View style={{ opacity: isPremium ? 1 : 0.5 }}>
-                  <Text style={styles.label}>
+                  <Text style={[styles.label, {color: Colors.textPrimary}]}>
                     States (optional{!isPremium ? ' — Premium feature' : ' — leave empty for all'})
                   </Text>
                   <View style={styles.chipRow}>
@@ -401,7 +401,7 @@ export default function WatchlistScreen() {
               style={[styles.cancelBtn, { backgroundColor: Colors.surface }]}
               onPress={() => setAdding(false)}
             >
-              <Text style={styles.cancelBtnText}>Cancel</Text>
+              <Text style={[styles.cancelBtnText, {color: Colors.textPrimary}]}>Cancel</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[
@@ -414,7 +414,7 @@ export default function WatchlistScreen() {
               {saving ? (
                 <ActivityIndicator color={Colors.primaryDark} />
               ) : (
-                <Text style={styles.saveBtnText}>Save</Text>
+                <Text style={[styles.saveBtnText, {color: Colors.textPrimary}]}>Save</Text>
               )}
             </TouchableOpacity>
           </View>

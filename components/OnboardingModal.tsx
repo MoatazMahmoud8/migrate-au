@@ -65,7 +65,7 @@ export default function OnboardingModal({ visible, onClose }: Props) {
     <Modal visible={visible} animationType="fade" transparent={false}>
       <View style={[styles.container, { backgroundColor: Colors.background }]}>
         <TouchableOpacity style={styles.skipBtn} onPress={onClose}>
-          <Text style={styles.skipText}>Skip</Text>
+          <Text style={[styles.skipText, {color: Colors.textPrimary}]}>Skip</Text>
         </TouchableOpacity>
 
         <ScrollView
@@ -85,8 +85,8 @@ export default function OnboardingModal({ visible, onClose }: Props) {
               >
                 <Ionicons name={s.icon as any} size={64} color={s.color} />
               </LinearGradient>
-              <Text style={styles.title}>{s.title}</Text>
-              <Text style={styles.desc}>{s.desc}</Text>
+              <Text style={[styles.title, {color: Colors.textPrimary}]}>{s.title}</Text>
+              <Text style={[styles.desc, {color: Colors.textPrimary}]}>{s.desc}</Text>
             </View>
           ))}
         </ScrollView>
@@ -103,7 +103,7 @@ export default function OnboardingModal({ visible, onClose }: Props) {
               start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
               style={styles.nextBtn}
             >
-              <Text style={styles.nextText}>
+              <Text style={[styles.nextText, {color: Colors.textPrimary}]}>
                 {index === SLIDES.length - 1 ? "Let's Go" : 'Next'}
               </Text>
               <Ionicons name="arrow-forward" size={16} color={Colors.primaryDark} />

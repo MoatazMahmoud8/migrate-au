@@ -262,10 +262,10 @@ export default function StatesScreen() {
       >
         <View style={styles.headerBadge}>
           <Ionicons name="map" size={14} color={Colors.accent} />
-          <Text style={styles.headerBadgeText}>8 States & Territories</Text>
+          <Text style={[styles.headerBadgeText, {color: Colors.textPrimary}]}>8 States & Territories</Text>
         </View>
-        <Text style={styles.headerTitle}>State Nomination</Text>
-        <Text style={styles.headerSub}>
+        <Text style={[styles.headerTitle, {color: Colors.textPrimary}]}>State Nomination</Text>
+        <Text style={[styles.headerSub, {color: Colors.textPrimary}]}>
           Explore migration programs across Australia and visit official portals.
         </Text>
       </LinearGradient>
@@ -273,7 +273,7 @@ export default function StatesScreen() {
       {/* Trust badge */}
       <View style={styles.trustBadge}>
         <Ionicons name="shield-checkmark-outline" size={14} color={Colors.success} />
-        <Text style={styles.trustText}>All links go directly to official state government portals</Text>
+        <Text style={[styles.trustText, {color: Colors.textPrimary}]}>All links go directly to official state government portals</Text>
       </View>
 
       <View style={styles.list}>
@@ -298,8 +298,8 @@ export default function StatesScreen() {
                     </View>
 
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.stateName}>{state.name}</Text>
-                      <Text style={styles.stateDesc} numberOfLines={isOpen ? undefined : 1}>
+                      <Text style={[styles.stateName, {color: Colors.textPrimary}]}>{state.name}</Text>
+                      <Text style={[styles.stateDesc, {color: Colors.textPrimary}]} numberOfLines={isOpen ? undefined : 1}>
                         {state.desc}
                       </Text>
                     </View>
@@ -339,8 +339,8 @@ export default function StatesScreen() {
                                 <Text style={[styles.visaSubText, { color: state.color }]}>SC {v.sub}</Text>
                               </View>
                               <View style={{ flex: 1 }}>
-                                <Text style={styles.visaRowName}>{v.label}</Text>
-                                <Text style={styles.visaRowDesc}>{v.desc}</Text>
+                                <Text style={[styles.visaRowName, {color: Colors.textPrimary}]}>{v.label}</Text>
+                                <Text style={[styles.visaRowDesc, {color: Colors.textPrimary}]}>{v.desc}</Text>
                               </View>
                             </View>
                           ))}
@@ -394,7 +394,7 @@ export default function StatesScreen() {
       {/* Footer source note */}
       <View style={styles.sourceNote}>
         <Ionicons name="information-circle-outline" size={13} color={Colors.textMuted} />
-        <Text style={styles.sourceNoteText}>
+        <Text style={[styles.sourceNoteText, {color: Colors.textPrimary}]}>
           Data sourced from official state/territory migration portals. Eligibility criteria change — always confirm on the official site.
         </Text>
       </View>

@@ -56,10 +56,10 @@ export class ErrorBoundary extends React.Component<Props, State> {
         <SafeAreaView style={styles.container}>
           <View style={styles.content}>
             <Ionicons name="alert-circle" size={48} color={Colors.error} />
-            <Text style={styles.title}>Something Went Wrong</Text>
-            <Text style={styles.message}>{this.state.error?.message || 'An unexpected error occurred'}</Text>
+            <Text style={[styles.title, {color: Colors.textPrimary}]}>Something Went Wrong</Text>
+            <Text style={[styles.message, {color: Colors.textPrimary}]}>{this.state.error?.message || 'An unexpected error occurred'}</Text>
             <TouchableOpacity style={[styles.button, { backgroundColor: Colors.primary }]} onPress={this.retry}>
-              <Text style={styles.buttonText}>Try Again</Text>
+              <Text style={[styles.buttonText, {color: Colors.textPrimary}]}>Try Again</Text>
             </TouchableOpacity>
           </View>
         </SafeAreaView>

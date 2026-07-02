@@ -294,7 +294,7 @@ export default function NotificationsScreen() {
         <Text style={[styles.heading, { color: Colors.textPrimary }]}>Updates</Text>
         {unreadCount > 0 && (
           <View style={styles.badge}>
-            <Text style={styles.badgeText}>{unreadCount}</Text>
+            <Text style={[styles.badgeText, {color: Colors.textPrimary}]}>{unreadCount}</Text>
           </View>
         )}
       </View>
@@ -362,7 +362,7 @@ export default function NotificationsScreen() {
               console.error('[notifications] Error rendering NotificationCard at index', index, ':', err);
               return (
                 <View style={styles.errorItem}>
-                  <Text style={styles.errorText}>Error loading notification</Text>
+                  <Text style={[styles.errorText, {color: Colors.textPrimary}]}>Error loading notification</Text>
                 </View>
               );
             }

@@ -66,8 +66,8 @@ function StepperRow({
   return (
     <View style={styles.row}>
       <View style={{ flex: 1 }}>
-        <Text style={styles.rowLabel}>{label}</Text>
-        {hint ? <Text style={styles.rowHint}>{hint}</Text> : null}
+        <Text style={[styles.rowLabel, {color: Colors.textPrimary}]}>{label}</Text>
+        {hint ? <Text style={[styles.rowHint, {color: Colors.textPrimary}]}>{hint}</Text> : null}
       </View>
       <View style={styles.stepper}>
         <TouchableOpacity
@@ -76,7 +76,7 @@ function StepperRow({
         >
           <Ionicons name="remove" size={16} color={value <= min ? Colors.textMuted : Colors.secondary} />
         </TouchableOpacity>
-        <Text style={styles.stepValue}>{value}</Text>
+        <Text style={[styles.stepValue, {color: Colors.textPrimary}]}>{value}</Text>
         <TouchableOpacity
           onPress={() => onChange(Math.min(max, value + 1))}
           style={[styles.stepBtn, value >= max && styles.stepBtnDisabled]}
@@ -92,8 +92,8 @@ function SwitchRow({ label, value, onChange, pts }: { label: string; value: bool
   return (
     <View style={styles.row}>
       <View style={{ flex: 1 }}>
-        <Text style={styles.rowLabel}>{label}</Text>
-        {pts !== undefined && <Text style={styles.rowHint}>+{pts} points when enabled</Text>}
+        <Text style={[styles.rowLabel, {color: Colors.textPrimary}]}>{label}</Text>
+        {pts !== undefined && <Text style={[styles.rowHint, {color: Colors.textPrimary}]}>+{pts} points when enabled</Text>}
       </View>
       <Switch
         value={value}
@@ -121,9 +121,9 @@ function ScoreRing({ score, eligible }: { score: number; eligible: boolean }) {
         <View style={[ring.glow, { backgroundColor: color + '20' }]} />
 
         <View style={ring.inner}>
-          <Text style={ring.label}>Your Score</Text>
+          <Text style={[ring.label, {color: Colors.textPrimary}]}>Your Score</Text>
           <Text style={[ring.score, { color }]}>{score}</Text>
-          <Text style={ring.pts}>points</Text>
+          <Text style={[ring.pts, {color: Colors.textPrimary}]}>points</Text>
           <View style={[ring.badge, { backgroundColor: color + '20', borderColor: color + '40' }]}>
             <Text style={[ring.badgeText, { color }]}>
               {eligible ? '✓ Eligible' : `Need ${65 - score} more`}
@@ -136,9 +136,9 @@ function ScoreRing({ score, eligible }: { score: number; eligible: boolean }) {
           <View style={[ring.barFill, { width: `${pct * 100}%` as any, backgroundColor: color }]} />
         </View>
         <View style={ring.barLabels}>
-          <Text style={ring.barLabel}>0</Text>
+          <Text style={[ring.barLabel, {color: Colors.textPrimary}]}>0</Text>
           <Text style={[ring.barLabel, { color }]}>65 min</Text>
-          <Text style={ring.barLabel}>100+</Text>
+          <Text style={[ring.barLabel, {color: Colors.textPrimary}]}>100+</Text>
         </View>
       </LinearGradient>
     </View>
@@ -234,7 +234,7 @@ export default function CalculatorScreen() {
       <View style={[styles.card, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
         <View style={styles.cardHeader}>
           <Ionicons name="card-outline" size={18} color={Colors.secondary} />
-          <Text style={styles.cardTitle}>Visa Subclass</Text>
+          <Text style={[styles.cardTitle, {color: Colors.textPrimary}]}>Visa Subclass</Text>
         </View>
         <SegmentControl<VisaSubclass>
           options={['189', '190', '491']}
@@ -248,9 +248,9 @@ export default function CalculatorScreen() {
       <View style={[styles.card, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
         <View style={styles.cardHeader}>
           <Ionicons name="person-outline" size={18} color={Colors.secondary} />
-          <Text style={styles.cardTitle}>Age</Text>
+          <Text style={[styles.cardTitle, {color: Colors.textPrimary}]}>Age</Text>
           <View style={styles.cardBadge}>
-            <Text style={styles.cardBadgeText}>{breakdown.age} pts</Text>
+            <Text style={[styles.cardBadgeText, {color: Colors.textPrimary}]}>{breakdown.age} pts</Text>
           </View>
         </View>
         <StepperRow
@@ -267,9 +267,9 @@ export default function CalculatorScreen() {
       <View style={[styles.card, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
         <View style={styles.cardHeader}>
           <Ionicons name="chatbubble-ellipses-outline" size={18} color={Colors.secondary} />
-          <Text style={styles.cardTitle}>English Proficiency</Text>
+          <Text style={[styles.cardTitle, {color: Colors.textPrimary}]}>English Proficiency</Text>
           <View style={styles.cardBadge}>
-            <Text style={styles.cardBadgeText}>{breakdown.english} pts</Text>
+            <Text style={[styles.cardBadgeText, {color: Colors.textPrimary}]}>{breakdown.english} pts</Text>
           </View>
         </View>
         <SegmentControl<EnglishLevel>
@@ -284,9 +284,9 @@ export default function CalculatorScreen() {
       <View style={[styles.card, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
         <View style={styles.cardHeader}>
           <Ionicons name="briefcase-outline" size={18} color={Colors.secondary} />
-          <Text style={styles.cardTitle}>Work Experience</Text>
+          <Text style={[styles.cardTitle, {color: Colors.textPrimary}]}>Work Experience</Text>
           <View style={styles.cardBadge}>
-            <Text style={styles.cardBadgeText}>{breakdown.australianWork + breakdown.overseasWork} pts</Text>
+            <Text style={[styles.cardBadgeText, {color: Colors.textPrimary}]}>{breakdown.australianWork + breakdown.overseasWork} pts</Text>
           </View>
         </View>
         <StepperRow
@@ -309,9 +309,9 @@ export default function CalculatorScreen() {
       <View style={[styles.card, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
         <View style={styles.cardHeader}>
           <Ionicons name="heart-outline" size={18} color={Colors.secondary} />
-          <Text style={styles.cardTitle}>Partner Skills</Text>
+          <Text style={[styles.cardTitle, {color: Colors.textPrimary}]}>Partner Skills</Text>
           <View style={styles.cardBadge}>
-            <Text style={styles.cardBadgeText}>{breakdown.partner} pts</Text>
+            <Text style={[styles.cardBadgeText, {color: Colors.textPrimary}]}>{breakdown.partner} pts</Text>
           </View>
         </View>
         <SwitchRow
@@ -332,7 +332,7 @@ export default function CalculatorScreen() {
       <View style={[styles.card, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
         <View style={styles.cardHeader}>
           <Ionicons name="star-outline" size={18} color={Colors.secondary} />
-          <Text style={styles.cardTitle}>Bonus Points</Text>
+          <Text style={[styles.cardTitle, {color: Colors.textPrimary}]}>Bonus Points</Text>
         </View>
         {input.visaSubclass !== '189' && (
           <SwitchRow
@@ -372,7 +372,7 @@ export default function CalculatorScreen() {
       <View style={[styles.card, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
         <View style={styles.cardHeader}>
           <Ionicons name="bar-chart-outline" size={18} color={Colors.secondary} />
-          <Text style={styles.cardTitle}>Full Breakdown</Text>
+          <Text style={[styles.cardTitle, {color: Colors.textPrimary}]}>Full Breakdown</Text>
         </View>
         {BREAKDOWN_ITEMS.map(({ label, pts, icon }) => (
           <View key={label} style={styles.breakdownRow}>
@@ -386,7 +386,7 @@ export default function CalculatorScreen() {
           </View>
         ))}
         <View style={styles.breakdownTotal}>
-          <Text style={styles.breakdownTotalLabel}>Total Score</Text>
+          <Text style={[styles.breakdownTotalLabel, {color: Colors.textPrimary}]}>Total Score</Text>
           <Text style={[styles.breakdownTotalNum, breakdown.likelyEligible && { color: Colors.success }]}>
             {breakdown.total} pts
           </Text>
@@ -444,7 +444,7 @@ export default function CalculatorScreen() {
           <View style={[styles.card, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
             <View style={styles.cardHeader}>
               <Ionicons name="trending-up" size={18} color={Colors.warning} />
-              <Text style={styles.cardTitle}>🏆 Gap Filler — Reach {nextBracket}+ Points</Text>
+              <Text style={[styles.cardTitle, {color: Colors.textPrimary}]}>🏆 Gap Filler — Reach {nextBracket}+ Points</Text>
             </View>
             <Text style={[styles.rowHint, { marginBottom: 12 }]}>
               You need {gap} more point{gap === 1 ? '' : 's'} for the next bracket. Here's how:
@@ -453,10 +453,10 @@ export default function CalculatorScreen() {
               <View key={tip.label} style={styles.gapRow}>
                 <View style={styles.gapLeft}>
                   <Ionicons name="add-circle-outline" size={16} color={Colors.success} />
-                  <Text style={styles.gapLabel}>{tip.label}</Text>
+                  <Text style={[styles.gapLabel, {color: Colors.textPrimary}]}>{tip.label}</Text>
                 </View>
                 <View style={styles.gapPill}>
-                  <Text style={styles.gapPts}>+{tip.pts} pts</Text>
+                  <Text style={[styles.gapPts, {color: Colors.textPrimary}]}>+{tip.pts} pts</Text>
                 </View>
               </View>
             ))}

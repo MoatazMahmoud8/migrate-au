@@ -56,7 +56,7 @@ export default function InAppBrowser({ url, onClose, title }: InAppBrowserProps)
           <TouchableOpacity onPress={onClose} activeOpacity={0.7}>
             <Ionicons name="chevron-back" size={28} color={Colors.textPrimary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle} numberOfLines={1}>
+          <Text style={[styles.headerTitle, {color: Colors.textPrimary}]} numberOfLines={1}>
             {title || 'Official Source'}
           </Text>
           <TouchableOpacity onPress={onClose} activeOpacity={0.7}>
@@ -94,7 +94,7 @@ export default function InAppBrowser({ url, onClose, title }: InAppBrowserProps)
           >
             <Ionicons name="chevron-back" size={28} color={Colors.textPrimary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle} numberOfLines={1}>
+          <Text style={[styles.headerTitle, {color: Colors.textPrimary}]} numberOfLines={1}>
             {title || 'Official Source'}
           </Text>
           <TouchableOpacity onPress={onClose} activeOpacity={0.7}>
@@ -106,7 +106,7 @@ export default function InAppBrowser({ url, onClose, title }: InAppBrowserProps)
         {loading && (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color={Colors.primary} />
-            <Text style={styles.loadingText}>Loading content...</Text>
+            <Text style={[styles.loadingText, {color: Colors.textPrimary}]}>Loading content...</Text>
           </View>
         )}
 
@@ -140,14 +140,14 @@ export default function InAppBrowser({ url, onClose, title }: InAppBrowserProps)
         <TouchableOpacity onPress={onClose} activeOpacity={0.7}>
           <Ionicons name="chevron-back" size={28} color={Colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Official Source</Text>
+        <Text style={[styles.headerTitle, {color: Colors.textPrimary}]}>Official Source</Text>
         <View style={{ width: 28 }} />
       </View>
 
       <View style={styles.fallbackContainer}>
         <Ionicons name="warning-outline" size={48} color={Colors.warning} />
-        <Text style={styles.fallbackTitle}>Unable to Load</Text>
-        <Text style={styles.fallbackText}>
+        <Text style={[styles.fallbackTitle, {color: Colors.textPrimary}]}>Unable to Load</Text>
+        <Text style={[styles.fallbackText, {color: Colors.textPrimary}]}>
           The in-app browser is not available. Please update the app to use this feature.
         </Text>
         <TouchableOpacity
@@ -155,7 +155,7 @@ export default function InAppBrowser({ url, onClose, title }: InAppBrowserProps)
           onPress={onClose}
           activeOpacity={0.85}
         >
-          <Text style={styles.fallbackButtonText}>Go Back</Text>
+          <Text style={[styles.fallbackButtonText, {color: Colors.textPrimary}]}>Go Back</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

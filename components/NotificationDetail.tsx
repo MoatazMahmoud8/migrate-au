@@ -124,7 +124,7 @@ export default function NotificationDetail({ notification, onClose, onReadSource
             onPress={handleReadSource}
             activeOpacity={0.85}
           >
-            <Text style={styles.buttonText}>Read Official Source</Text>
+            <Text style={[styles.buttonText, {color: Colors.textPrimary}]}>Read Official Source</Text>
             <Ionicons
               name="arrow-forward"
               size={16}

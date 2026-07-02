@@ -165,7 +165,7 @@ export default function AdminDashboard() {
   if (!isAdmin) {
     return (
       <View style={[styles.container, { paddingTop: insets.top }]}>
-        <Text style={styles.errorText}>Access Denied</Text>
+        <Text style={[styles.errorText, {color: Colors.textPrimary}]}>Access Denied</Text>
       </View>
     );
   }
@@ -180,7 +180,7 @@ export default function AdminDashboard() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="chevron-back" size={24} color={Colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>📢 Admin Dashboard</Text>
+        <Text style={[styles.headerTitle, {color: Colors.textPrimary}]}>📢 Admin Dashboard</Text>
         <View style={{ width: 24 }} />
       </View>
 
@@ -206,7 +206,7 @@ export default function AdminDashboard() {
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Title Input */}
         <View style={styles.section}>
-          <Text style={styles.label}>Notification Title</Text>
+          <Text style={[styles.label, {color: Colors.textPrimary}]}>Notification Title</Text>
           <TextInput
             style={styles.input}
             placeholder="e.g., SkillSelect Round 2026 Opened"
@@ -215,12 +215,12 @@ export default function AdminDashboard() {
             onChangeText={(text) => setDraft({ ...draft, title: text })}
             maxLength={100}
           />
-          <Text style={styles.charCount}>{draft.title.length}/100</Text>
+          <Text style={[styles.charCount, {color: Colors.textPrimary}]}>{draft.title.length}/100</Text>
         </View>
 
         {/* Body Input */}
         <View style={styles.section}>
-          <Text style={styles.label}>Notification Body</Text>
+          <Text style={[styles.label, {color: Colors.textPrimary}]}>Notification Body</Text>
           <TextInput
             style={[styles.input, styles.bodyInput]}
             placeholder="Message content (markdown supported)"
@@ -231,24 +231,24 @@ export default function AdminDashboard() {
             multiline
             textAlignVertical="top"
           />
-          <Text style={styles.charCount}>{draft.body.length}/500</Text>
+          <Text style={[styles.charCount, {color: Colors.textPrimary}]}>{draft.body.length}/500</Text>
         </View>
 
         {/* Category Picker */}
         <View style={styles.section}>
-          <Text style={styles.label}>Category</Text>
+          <Text style={[styles.label, {color: Colors.textPrimary}]}>Category</Text>
           <TouchableOpacity
             style={styles.categoryBtn}
             onPress={() => setShowCategoryPicker(true)}
           >
-            <Text style={styles.categoryText}>{draft.category}</Text>
+            <Text style={[styles.categoryText, {color: Colors.textPrimary}]}>{draft.category}</Text>
             <Ionicons name="chevron-down" size={20} color={Colors.secondary} />
           </TouchableOpacity>
         </View>
 
         {/* Source Input */}
         <View style={styles.section}>
-          <Text style={styles.label}>Source</Text>
+          <Text style={[styles.label, {color: Colors.textPrimary}]}>Source</Text>
           <TextInput
             style={styles.input}
             placeholder="e.g., Department of Home Affairs"
@@ -260,7 +260,7 @@ export default function AdminDashboard() {
 
         {/* Link Input */}
         <View style={styles.section}>
-          <Text style={styles.label}>Optional Link</Text>
+          <Text style={[styles.label, {color: Colors.textPrimary}]}>Optional Link</Text>
           <TextInput
             style={styles.input}
             placeholder="https://example.com"
@@ -280,7 +280,7 @@ export default function AdminDashboard() {
             }}
           >
             <Ionicons name="eye" size={18} color={Colors.textPrimary} />
-            <Text style={styles.previewBtnText}>Preview</Text>
+            <Text style={[styles.previewBtnText, {color: Colors.textPrimary}]}>Preview</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -293,7 +293,7 @@ export default function AdminDashboard() {
             ) : (
               <>
                 <Ionicons name="document-text" size={18} color={Colors.primaryDark} />
-                <Text style={styles.sendBtnText}>Save as Draft</Text>
+                <Text style={[styles.sendBtnText, {color: Colors.textPrimary}]}>Save as Draft</Text>
               </>
             )}
           </TouchableOpacity>
@@ -310,16 +310,16 @@ export default function AdminDashboard() {
           <>
             {/* Drafts Section */}
             <View style={styles.section}>
-              <Text style={styles.label}>📝 Pending Drafts ({drafts.length})</Text>
+              <Text style={[styles.label, {color: Colors.textPrimary}]}>📝 Pending Drafts ({drafts.length})</Text>
               {drafts.length === 0 && (
                 <Text style={{ color: Colors.textMuted, fontSize: FontSize.sm, marginTop: 8 }}>No drafts. Compose a notification first.</Text>
               )}
               {drafts.map(d => (
                 <View key={d.id} style={styles.manageCard}>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.manageTitle}>{d.title}</Text>
-                    <Text style={styles.manageBody} numberOfLines={2}>{d.body}</Text>
-                    <Text style={styles.manageMeta}>{d.category} · {d.timestamp?.substring(0, 16)}</Text>
+                    <Text style={[styles.manageTitle, {color: Colors.textPrimary}]}>{d.title}</Text>
+                    <Text style={[styles.manageBody, {color: Colors.textPrimary}]} numberOfLines={2}>{d.body}</Text>
+                    <Text style={[styles.manageMeta, {color: Colors.textPrimary}]}>{d.category} · {d.timestamp?.substring(0, 16)}</Text>
                   </View>
                   <View style={styles.manageActions}>
                     <TouchableOpacity style={styles.approveBtn} onPress={() => handleApprove(d.id, d.title)}>
@@ -335,12 +335,12 @@ export default function AdminDashboard() {
 
             {/* Published Section */}
             <View style={[styles.section, { marginTop: Spacing.xl }]}>
-              <Text style={styles.label}>📤 Published ({published.length})</Text>
+              <Text style={[styles.label, {color: Colors.textPrimary}]}>📤 Published ({published.length})</Text>
               {published.map(n => (
                 <View key={n.id} style={styles.manageCard}>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.manageTitle}>{n.title}</Text>
-                    <Text style={styles.manageMeta}>{n.category} · {n.timestamp?.substring(0, 16)}</Text>
+                    <Text style={[styles.manageTitle, {color: Colors.textPrimary}]}>{n.title}</Text>
+                    <Text style={[styles.manageMeta, {color: Colors.textPrimary}]}>{n.category} · {n.timestamp?.substring(0, 16)}</Text>
                   </View>
                   <TouchableOpacity style={styles.deleteBtn} onPress={() => handleDeletePublished(n.id, n.title)}>
                     <Ionicons name="trash" size={22} color={Colors.error} />
@@ -363,7 +363,7 @@ export default function AdminDashboard() {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Select Category</Text>
+            <Text style={[styles.modalTitle, {color: Colors.textPrimary}]}>Select Category</Text>
             <ScrollView style={styles.categoryList}>
               {NOTIFICATION_CATEGORIES.map((cat) => (
                 <TouchableOpacity
@@ -408,7 +408,7 @@ export default function AdminDashboard() {
             <TouchableOpacity onPress={() => setShowPreview(false)}>
               <Ionicons name="close" size={28} color={Colors.textPrimary} />
             </TouchableOpacity>
-            <Text style={styles.previewTitle}>Preview</Text>
+            <Text style={[styles.previewTitle, {color: Colors.textPrimary}]}>Preview</Text>
             <View style={{ width: 28 }} />
           </View>
 
@@ -421,30 +421,30 @@ export default function AdminDashboard() {
               </View>
 
               <View style={styles.previewText}>
-                <Text style={styles.previewCategory}>{draft.category}</Text>
-                <Text style={styles.previewNotifTitle} numberOfLines={2}>
+                <Text style={[styles.previewCategory, {color: Colors.textPrimary}]}>{draft.category}</Text>
+                <Text style={[styles.previewNotifTitle, {color: Colors.textPrimary}]} numberOfLines={2}>
                   {draft.title || 'Notification Title'}
                 </Text>
-                <Text style={styles.previewBody} numberOfLines={3}>
+                <Text style={[styles.previewBody, {color: Colors.textPrimary}]} numberOfLines={3}>
                   {draft.body || 'Notification body text...'}
                 </Text>
-                <Text style={styles.previewSource}>Source: {draft.source}</Text>
+                <Text style={[styles.previewSource, {color: Colors.textPrimary}]}>Source: {draft.source}</Text>
               </View>
             </View>
 
             <View style={styles.previewInfo}>
-              <Text style={styles.previewInfoTitle}>Preview Info</Text>
-              <Text style={styles.previewInfoText}>
+              <Text style={[styles.previewInfoTitle, {color: Colors.textPrimary}]}>Preview Info</Text>
+              <Text style={[styles.previewInfoText, {color: Colors.textPrimary}]}>
                 ✅ Title: {draft.title.length}/100 characters
               </Text>
-              <Text style={styles.previewInfoText}>
+              <Text style={[styles.previewInfoText, {color: Colors.textPrimary}]}>
                 ✅ Body: {draft.body.length}/500 characters
               </Text>
-              <Text style={styles.previewInfoText}>
+              <Text style={[styles.previewInfoText, {color: Colors.textPrimary}]}>
                 ✅ Category: {draft.category}
               </Text>
               {draft.link && (
-                <Text style={styles.previewInfoText}>
+                <Text style={[styles.previewInfoText, {color: Colors.textPrimary}]}>
                   ✅ Link: {draft.link.substring(0, 40)}...
                 </Text>
               )}

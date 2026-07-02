@@ -145,7 +145,7 @@ export function PaywallModal({ visible, onClose, userId, title, message, feature
               >
                 <View style={styles.badgeWrap} pointerEvents="none">
                   <View style={styles.saveBadge}>
-                    <Text style={styles.saveBadgeText} numberOfLines={1}>POPULAR</Text>
+                    <Text style={[styles.saveBadgeText, {color: Colors.textPrimary}]} numberOfLines={1}>POPULAR</Text>
                   </View>
                 </View>
                 {selectedCycle === 'yearly' && (
@@ -168,7 +168,7 @@ export function PaywallModal({ visible, onClose, userId, title, message, feature
               >
                 <View style={styles.badgeWrap} pointerEvents="none">
                   <View style={[styles.saveBadge, styles.lifetimeBadge]}>
-                    <Text style={styles.saveBadgeText} numberOfLines={1}>BEST DEAL</Text>
+                    <Text style={[styles.saveBadgeText, {color: Colors.textPrimary}]} numberOfLines={1}>BEST DEAL</Text>
                   </View>
                 </View>
                 {selectedCycle === 'lifetime' && (
@@ -203,7 +203,7 @@ export function PaywallModal({ visible, onClose, userId, title, message, feature
                   ) : (
                     <>
                       <Ionicons name="flash" size={18} color={Colors.primaryDark} />
-                      <Text style={styles.primaryBtnText}>
+                      <Text style={[styles.primaryBtnText, {color: Colors.textPrimary}]}>
                         {selectedCycle === 'lifetime'
                           ? `Buy Lifetime — ${lifetimePrice.amount}`
                           : `Subscribe — ${selectedCycle === 'monthly' ? `${monthlyPrice.amount}/mo` : `${yearlyPrice.amount}/yr`}`}
@@ -224,15 +224,15 @@ export function PaywallModal({ visible, onClose, userId, title, message, feature
             {/* Required Apple links for subscriptions */}
             <View style={styles.legalLinks}>
               <TouchableOpacity onPress={() => Linking.openURL('https://jsmglobal.xyz/migration-privacy.html')}>
-                <Text style={styles.legalLinkText}>Privacy Policy</Text>
+                <Text style={[styles.legalLinkText, {color: Colors.textPrimary}]}>Privacy Policy</Text>
               </TouchableOpacity>
-              <Text style={styles.legalSeparator}>·</Text>
+              <Text style={[styles.legalSeparator, {color: Colors.textPrimary}]}>·</Text>
               <TouchableOpacity onPress={() => Linking.openURL('https://www.apple.com/legal/internet-services/itunes/dev/stdeula/')}>
-                <Text style={styles.legalLinkText}>Terms of Use (EULA)</Text>
+                <Text style={[styles.legalLinkText, {color: Colors.textPrimary}]}>Terms of Use (EULA)</Text>
               </TouchableOpacity>
-              <Text style={styles.legalSeparator}>·</Text>
+              <Text style={[styles.legalSeparator, {color: Colors.textPrimary}]}>·</Text>
               <TouchableOpacity onPress={() => Linking.openURL('https://apps.apple.com/account/subscriptions')}>
-                <Text style={styles.legalLinkText}>Manage Subscriptions</Text>
+                <Text style={[styles.legalLinkText, {color: Colors.textPrimary}]}>Manage Subscriptions</Text>
               </TouchableOpacity>
             </View>
 
@@ -263,7 +263,7 @@ function BenefitRow({ icon, text }: { icon: string; text: string }) {
   return (
     <View style={styles.benefitRow}>
       <Ionicons name={icon as any} size={18} color={Colors.success} />
-      <Text style={styles.benefitText}>{text}</Text>
+      <Text style={[styles.benefitText, {color: Colors.textPrimary}]}>{text}</Text>
     </View>
   );
 }

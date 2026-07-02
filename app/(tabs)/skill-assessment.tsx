@@ -417,10 +417,10 @@ export default function SkillAssessmentScreen() {
       >
         <View style={styles.headerBadge}>
           <Ionicons name="ribbon-outline" size={14} color={Colors.secondary} />
-          <Text style={styles.headerBadgeText}>{AUTHORITIES.length} assessment bodies</Text>
+          <Text style={[styles.headerBadgeText, {color: Colors.textPrimary}]}>{AUTHORITIES.length} assessment bodies</Text>
         </View>
-        <Text style={styles.headerTitle}>Skills Assessment</Text>
-        <Text style={styles.headerSub}>
+        <Text style={[styles.headerTitle, {color: Colors.textPrimary}]}>Skills Assessment</Text>
+        <Text style={[styles.headerSub, {color: Colors.textPrimary}]}>
           Find the right assessing authority for your occupation and understand what your assessment involves.
         </Text>
       </LinearGradient>
@@ -477,7 +477,7 @@ export default function SkillAssessmentScreen() {
 
       {/* Result count */}
       <View style={styles.resultRow}>
-        <Text style={styles.resultText}>
+        <Text style={[styles.resultText, {color: Colors.textPrimary}]}>
           {filtered.length} {filtered.length === 1 ? 'authority' : 'authorities'}
           {query ? ` for "${query}"` : category !== 'All' ? ` in ${category}` : ''}
         </Text>
@@ -488,9 +488,9 @@ export default function SkillAssessmentScreen() {
         {filtered.length === 0 ? (
           <View style={styles.empty}>
             <Ionicons name="search-outline" size={32} color={Colors.textMuted} />
-            <Text style={styles.emptyText}>No authorities match your search</Text>
+            <Text style={[styles.emptyText, {color: Colors.textPrimary}]}>No authorities match your search</Text>
             <TouchableOpacity onPress={() => { setQuery(''); setCategory('All'); }}>
-              <Text style={styles.emptyReset}>Clear filters</Text>
+              <Text style={[styles.emptyReset, {color: Colors.textPrimary}]}>Clear filters</Text>
             </TouchableOpacity>
           </View>
         ) : (
@@ -515,12 +515,12 @@ export default function SkillAssessmentScreen() {
                         </Text>
                       </View>
                       <View style={{ flex: 1 }}>
-                        <Text style={styles.authName} numberOfLines={isOpen ? undefined : 1}>
+                        <Text style={[styles.authName, {color: Colors.textPrimary}]} numberOfLines={isOpen ? undefined : 1}>
                           {auth.name}
                         </Text>
                         <View style={styles.catRow}>
                           <Ionicons name={CAT_ICONS[auth.category] as any} size={10} color={Colors.textMuted} />
-                          <Text style={styles.catLabel}>{auth.category}</Text>
+                          <Text style={[styles.catLabel, {color: Colors.textPrimary}]}>{auth.category}</Text>
                         </View>
                       </View>
                       <Ionicons
@@ -531,7 +531,7 @@ export default function SkillAssessmentScreen() {
                     </View>
 
                     {/* Assesses summary (always visible) */}
-                    <Text style={styles.assessesSummary} numberOfLines={isOpen ? undefined : 2}>
+                    <Text style={[styles.assessesSummary, {color: Colors.textPrimary}]} numberOfLines={isOpen ? undefined : 2}>
                       {auth.assesses}
                     </Text>
 
@@ -542,7 +542,7 @@ export default function SkillAssessmentScreen() {
                           <View style={styles.metaItem}>
                             <Ionicons name="time-outline" size={13} color={Colors.textMuted} />
                             <View>
-                              <Text style={styles.metaLabel}>Typical time</Text>
+                              <Text style={[styles.metaLabel, {color: Colors.textPrimary}]}>Typical time</Text>
                               <Text style={[styles.metaVal, { color: auth.color }]}>{auth.typicalTime}</Text>
                             </View>
                           </View>
@@ -550,7 +550,7 @@ export default function SkillAssessmentScreen() {
                           <View style={styles.metaItem}>
                             <Ionicons name="cash-outline" size={13} color={Colors.textMuted} />
                             <View>
-                              <Text style={styles.metaLabel}>Approx. fee</Text>
+                              <Text style={[styles.metaLabel, {color: Colors.textPrimary}]}>Approx. fee</Text>
                               <Text style={[styles.metaVal, { color: auth.color }]}>{auth.feeRange}</Text>
                             </View>
                           </View>
@@ -561,7 +561,7 @@ export default function SkillAssessmentScreen() {
                             {auth.notes.map((n, i) => (
                               <View key={i} style={styles.noteRow}>
                                 <View style={[styles.noteDot, { backgroundColor: auth.color }]} />
-                                <Text style={styles.noteText}>{n}</Text>
+                                <Text style={[styles.noteText, {color: Colors.textPrimary}]}>{n}</Text>
                               </View>
                             ))}
                           </View>
@@ -590,7 +590,7 @@ export default function SkillAssessmentScreen() {
       {/* Footer note */}
       <View style={styles.footerNote}>
         <Ionicons name="information-circle-outline" size={13} color={Colors.textMuted} />
-        <Text style={styles.footerNoteText}>
+        <Text style={[styles.footerNoteText, {color: Colors.textPrimary}]}>
           Fees and processing times are indicative. Always confirm current requirements on the authority's official website.
         </Text>
       </View>

@@ -246,8 +246,8 @@ function OverviewRow({ icon, label, value }: { icon: string; label: string; valu
   return (
     <View style={ov.row}>
       <Ionicons name={icon as any} size={13} color={Colors.textMuted} style={{ width: 18 }} />
-      <Text style={ov.label}>{label}</Text>
-      <Text style={ov.value}>{value}</Text>
+      <Text style={[ov.label, {color: Colors.textPrimary}]}>{label}</Text>
+      <Text style={[ov.value, {color: Colors.textPrimary}]}>{value}</Text>
     </View>
   );
 }
@@ -291,17 +291,17 @@ export default function EnglishTestsScreen() {
         </TouchableOpacity>
         <View style={styles.headerBadge}>
           <Ionicons name="language" size={14} color={Colors.accent} />
-          <Text style={styles.headerBadgeText}>DHA Approved Tests</Text>
+          <Text style={[styles.headerBadgeText, {color: Colors.textPrimary}]}>DHA Approved Tests</Text>
         </View>
-        <Text style={styles.headerTitle}>English Requirements</Text>
-        <Text style={styles.headerSub}>
+        <Text style={[styles.headerTitle, {color: Colors.textPrimary}]}>English Requirements</Text>
+        <Text style={[styles.headerSub, {color: Colors.textPrimary}]}>
           Select a test to see proficiency levels, visa score requirements and booking centres.
         </Text>
       </LinearGradient>
 
       {/* ── Test selector ── */}
       <View style={styles.selectorSection}>
-        <Text style={styles.selectorLabel}>Select an approved test</Text>
+        <Text style={[styles.selectorLabel, {color: Colors.textPrimary}]}>Select an approved test</Text>
 
         <TouchableOpacity
           style={[
@@ -323,10 +323,10 @@ export default function EnglishTestsScreen() {
             {selectedTest ? (
               <>
                 <Text style={[styles.selectorName, { color: selectedTest.color }]}>{selectedTest.name}</Text>
-                <Text style={styles.selectorFull} numberOfLines={1}>{selectedTest.full}</Text>
+                <Text style={[styles.selectorFull, {color: Colors.textPrimary}]} numberOfLines={1}>{selectedTest.full}</Text>
               </>
             ) : (
-              <Text style={styles.selectorPlaceholder}>Choose a test…</Text>
+              <Text style={[styles.selectorPlaceholder, {color: Colors.textPrimary}]}>Choose a test…</Text>
             )}
           </View>
           <Ionicons
@@ -354,7 +354,7 @@ export default function EnglishTestsScreen() {
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.dropdownName, { color: t.color }]}>{t.name}</Text>
-                  <Text style={styles.dropdownFull} numberOfLines={1}>{t.full}</Text>
+                  <Text style={[styles.dropdownFull, {color: Colors.textPrimary}]} numberOfLines={1}>{t.full}</Text>
                 </View>
                 {selectedTest?.name === t.name && (
                   <Ionicons name="checkmark-circle" size={16} color={t.color} />
@@ -371,8 +371,8 @@ export default function EnglishTestsScreen() {
           <View style={styles.emptyIconWrap}>
             <Ionicons name="language-outline" size={32} color={Colors.textMuted} />
           </View>
-          <Text style={styles.emptyTitle}>6 DHA-approved tests</Text>
-          <Text style={styles.emptySub}>
+          <Text style={[styles.emptyTitle, {color: Colors.textPrimary}]}>6 DHA-approved tests</Text>
+          <Text style={[styles.emptySub, {color: Colors.textPrimary}]}>
             Select a test above to see proficiency scores, visa requirements and how to book.
           </Text>
           <View style={styles.emptyPills}>
@@ -404,7 +404,7 @@ export default function EnglishTestsScreen() {
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.cardMainTitle, { color: selectedTest.color }]}>{selectedTest.name}</Text>
-                  <Text style={styles.cardFullName}>{selectedTest.full}</Text>
+                  <Text style={[styles.cardFullName, {color: Colors.textPrimary}]}>{selectedTest.full}</Text>
                 </View>
                 <TouchableOpacity
                   style={[styles.webBtn, { borderColor: selectedTest.color + '40' }]}
@@ -415,7 +415,7 @@ export default function EnglishTestsScreen() {
                 </TouchableOpacity>
               </View>
 
-              <Text style={styles.overviewText}>{selectedTest.overview}</Text>
+              <Text style={[styles.overviewText, {color: Colors.textPrimary}]}>{selectedTest.overview}</Text>
 
               <OverviewRow icon="construct-outline"  label="Format"      value={selectedTest.format} />
               <OverviewRow icon="location-outline"   label="Delivery"    value={selectedTest.delivery} />
@@ -427,8 +427,8 @@ export default function EnglishTestsScreen() {
           {/* ② Proficiency levels */}
           <View style={[styles.card, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
             <View style={styles.cardInner}>
-              <Text style={styles.sectionHead}>Proficiency Levels</Text>
-              <Text style={styles.sectionSub}>DHA-defined thresholds for {selectedTest.name}</Text>
+              <Text style={[styles.sectionHead, {color: Colors.textPrimary}]}>Proficiency Levels</Text>
+              <Text style={[styles.sectionSub, {color: Colors.textPrimary}]}>DHA-defined thresholds for {selectedTest.name}</Text>
               {selectedTest.proficiency.map((lv) => (
                 <View key={lv.label} style={[styles.levelRow, { borderLeftColor: lv.color }]}>
                   <View style={styles.levelTop}>
@@ -439,8 +439,8 @@ export default function EnglishTestsScreen() {
                       </View>
                     )}
                   </View>
-                  <Text style={styles.levelScore}>{lv.score}</Text>
-                  <Text style={styles.levelDesc}>{lv.description}</Text>
+                  <Text style={[styles.levelScore, {color: Colors.textPrimary}]}>{lv.score}</Text>
+                  <Text style={[styles.levelDesc, {color: Colors.textPrimary}]}>{lv.description}</Text>
                 </View>
               ))}
             </View>
@@ -449,8 +449,8 @@ export default function EnglishTestsScreen() {
           {/* ③ Visa requirements */}
           <View style={[styles.card, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
             <View style={styles.cardInner}>
-              <Text style={styles.sectionHead}>Visa Subclass Requirements</Text>
-              <Text style={styles.sectionSub}>Minimum {selectedTest.name} scores per visa — tap to expand</Text>
+              <Text style={[styles.sectionHead, {color: Colors.textPrimary}]}>Visa Subclass Requirements</Text>
+              <Text style={[styles.sectionSub, {color: Colors.textPrimary}]}>Minimum {selectedTest.name} scores per visa — tap to expand</Text>
               {selectedTest.visaRequirements.map((v) => {
                 const open = expandedVisa === v.code;
                 return (
@@ -467,7 +467,7 @@ export default function EnglishTestsScreen() {
                           <Text style={[styles.visaCode, { color: v.color }]}>{v.code}</Text>
                         </View>
                         <View style={{ flex: 1 }}>
-                          <Text style={styles.visaName}>{v.name}</Text>
+                          <Text style={[styles.visaName, {color: Colors.textPrimary}]}>{v.name}</Text>
                           <View style={styles.visaScoreRow}>
                             <Ionicons name="checkmark-circle-outline" size={11} color={v.color} />
                             <Text style={[styles.visaScore, { color: v.color }]}>{v.score}</Text>
@@ -480,7 +480,7 @@ export default function EnglishTestsScreen() {
                           {v.notes.map((n, i) => (
                             <View key={i} style={styles.noteRow}>
                               <View style={[styles.noteDot, { backgroundColor: v.color }]} />
-                              <Text style={styles.noteText}>{n}</Text>
+                              <Text style={[styles.noteText, {color: Colors.textPrimary}]}>{n}</Text>
                             </View>
                           ))}
                           <TouchableOpacity
@@ -502,8 +502,8 @@ export default function EnglishTestsScreen() {
           {/* ④ Test centres */}
           <View style={[styles.card, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
             <View style={styles.cardInner}>
-              <Text style={styles.sectionHead}>Book a Test</Text>
-              <Text style={styles.sectionSub}>Official booking portals for {selectedTest.name}</Text>
+              <Text style={[styles.sectionHead, {color: Colors.textPrimary}]}>Book a Test</Text>
+              <Text style={[styles.sectionSub, {color: Colors.textPrimary}]}>Official booking portals for {selectedTest.name}</Text>
               {selectedTest.centers.map((c) => (
                 <TouchableOpacity
                   key={c.url}
@@ -515,8 +515,8 @@ export default function EnglishTestsScreen() {
                     <Ionicons name="location-outline" size={16} color={selectedTest.color} />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.centerLabel}>{c.label}</Text>
-                    <Text style={styles.centerSub}>{c.sublabel}</Text>
+                    <Text style={[styles.centerLabel, {color: Colors.textPrimary}]}>{c.label}</Text>
+                    <Text style={[styles.centerSub, {color: Colors.textPrimary}]}>{c.sublabel}</Text>
                   </View>
                   <View style={styles.centerRight}>
                     {c.badge && (
@@ -545,13 +545,13 @@ export default function EnglishTestsScreen() {
               <Ionicons name="megaphone-outline" size={18} color={Colors.secondary} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.partnerTitle}>Are you a test prep centre?</Text>
-              <Text style={styles.partnerSub}>Reach thousands of skilled migration applicants — tap to get in touch</Text>
+              <Text style={[styles.partnerTitle, {color: Colors.textPrimary}]}>Are you a test prep centre?</Text>
+              <Text style={[styles.partnerSub, {color: Colors.textPrimary}]}>Reach thousands of skilled migration applicants — tap to get in touch</Text>
             </View>
           </View>
           <View style={styles.partnerCta}>
             <Ionicons name="mail-outline" size={14} color={Colors.secondary} />
-            <Text style={styles.partnerCtaText}>Partner with us</Text>
+            <Text style={[styles.partnerCtaText, {color: Colors.textPrimary}]}>Partner with us</Text>
           </View>
         </LinearGradient>
       </TouchableOpacity>
@@ -559,11 +559,11 @@ export default function EnglishTestsScreen() {
       {/* Disclaimer */}
       <View style={[styles.disclaimer, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
         <Ionicons name="alert-circle-outline" size={14} color={Colors.textMuted} />
-        <Text style={styles.disclaimerText}>
+        <Text style={[styles.disclaimerText, {color: Colors.textPrimary}]}>
           Requirements may change. Always verify on{' '}
-          <Text style={styles.disclaimerLink} onPress={() => Linking.openURL('https://immi.homeaffairs.gov.au')}>immi.homeaffairs.gov.au</Text>
+          <Text style={[styles.disclaimerLink, {color: Colors.textPrimary}]} onPress={() => Linking.openURL('https://immi.homeaffairs.gov.au')}>immi.homeaffairs.gov.au</Text>
           {' '}or consult a{' '}
-          <Text style={styles.disclaimerLink} onPress={() => Linking.openURL('https://portal.mara.gov.au')}>MARA-registered agent</Text>.
+          <Text style={[styles.disclaimerLink, {color: Colors.textPrimary}]} onPress={() => Linking.openURL('https://portal.mara.gov.au')}>MARA-registered agent</Text>.
         </Text>
       </View>
     </ScrollView>

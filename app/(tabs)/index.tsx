@@ -259,7 +259,7 @@ function VisaFinder() {
             onPress={() => router.push('/visas' as any)}
             activeOpacity={0.7}
           >
-            <Text style={styles.recViewAllText}>Explore all visa subclasses</Text>
+            <Text style={[styles.recViewAllText, {color: Colors.textPrimary}]}>Explore all visa subclasses</Text>
             <Ionicons name="arrow-forward" size={13} color={Colors.accent} />
           </TouchableOpacity>
         </Animated.View>
@@ -292,7 +292,7 @@ function VisaPathwaysGrid() {
       >
         <Text style={[pw.title, { color: Colors.textPrimary }]}>Visa Pathways</Text>
         <View style={{ flex: 1 }} />
-        <Text style={pw.viewAll}>View all</Text>
+        <Text style={[pw.viewAll, {color: Colors.textPrimary}]}>View all</Text>
         <Ionicons name="chevron-forward" size={13} color={Colors.accent} />
       </TouchableOpacity>
 
@@ -340,7 +340,7 @@ function VisaPathwaysGrid() {
         onPress={() => router.push('/visas' as any)}
         activeOpacity={0.7}
       >
-        <Text style={pw.moreText}>
+        <Text style={[pw.moreText, {color: Colors.textPrimary}]}>
           + Student, Visitor, Humanitarian & {ALL_VISAS.length - PATHWAY_CARDS.reduce(
             (acc, { key }) => acc + ALL_VISAS.filter(v => v.category === key).length, 0
           )} more subclasses
@@ -354,6 +354,7 @@ function VisaPathwaysGrid() {
 // ─── Score Card (personalized hero) ──────────────────────────────────────────
 
 function ScoreCard({ input, onCalcPress }: { input: PointsInput | null; onCalcPress: () => void }) {
+  const Colors = useColors();
   if (!input) {
     // CTA state — no score yet
     return (
@@ -367,10 +368,10 @@ function ScoreCard({ input, onCalcPress }: { input: PointsInput | null; onCalcPr
           <View style={sc.orb} />
           <View style={sc.badge}>
             <View style={sc.badgeDot} />
-            <Text style={sc.badgeText}>🇦🇺 Skilled Migration</Text>
+            <Text style={[sc.badgeText, {color: Colors.textPrimary}]}>🇦🇺 Skilled Migration</Text>
           </View>
-          <Text style={sc.ctaTitle}>Your Path to{'\n'}Australia Starts Here</Text>
-          <Text style={sc.ctaSub}>
+          <Text style={[sc.ctaTitle, {color: Colors.textPrimary}]}>Your Path to{'\n'}Australia Starts Here</Text>
+          <Text style={[sc.ctaSub, {color: Colors.textPrimary}]}>
             Calculate your points to see if you qualify for a skilled migration visa.
           </Text>
           <TouchableOpacity style={sc.ctaBtn} onPress={onCalcPress} activeOpacity={0.85}>
@@ -380,7 +381,7 @@ function ScoreCard({ input, onCalcPress }: { input: PointsInput | null; onCalcPr
               end={{ x: 1, y: 0 }}
               style={sc.ctaBtnGrad}
             >
-              <Text style={sc.ctaBtnText}>Calculate My Points</Text>
+              <Text style={[sc.ctaBtnText, {color: Colors.textPrimary}]}>Calculate My Points</Text>
               <Ionicons name="arrow-forward" size={16} color={Colors.primaryDark} />
             </LinearGradient>
           </TouchableOpacity>
@@ -407,7 +408,7 @@ function ScoreCard({ input, onCalcPress }: { input: PointsInput | null; onCalcPr
 
         {/* Header row */}
         <View style={sc.cardTopRow}>
-          <Text style={sc.cardLabel}>Your SkillSelect Score</Text>
+          <Text style={[sc.cardLabel, {color: Colors.textPrimary}]}>Your SkillSelect Score</Text>
           <View style={[sc.subclassBadge, { borderColor: color + '50', backgroundColor: color + '18' }]}>
             <Text style={[sc.subclassText, { color }]}>SC {input.visaSubclass}</Text>
           </View>
@@ -417,7 +418,7 @@ function ScoreCard({ input, onCalcPress }: { input: PointsInput | null; onCalcPr
         <View style={sc.scoreRow}>
           <Text style={[sc.scoreNum, { color }]}>{total}</Text>
           <View style={sc.scoreRight}>
-            <Text style={sc.scorePts}>points</Text>
+            <Text style={[sc.scorePts, {color: Colors.textPrimary}]}>points</Text>
             <View style={[sc.statusBadge, { backgroundColor: color + '20', borderColor: color + '40' }]}>
               <Ionicons
                 name={likelyEligible ? 'checkmark-circle' : 'time-outline'}
@@ -438,12 +439,12 @@ function ScoreCard({ input, onCalcPress }: { input: PointsInput | null; onCalcPr
           <View style={sc.cutoffMark} />
         </View>
         <View style={sc.barLabels}>
-          <Text style={sc.barLbl}>0</Text>
+          <Text style={[sc.barLbl, {color: Colors.textPrimary}]}>0</Text>
           <Text style={[sc.barLbl, { color, fontWeight: FontWeight.semiBold }]}>65 min</Text>
-          <Text style={sc.barLbl}>100</Text>
+          <Text style={[sc.barLbl, {color: Colors.textPrimary}]}>100</Text>
         </View>
 
-        <Text style={sc.editHint}>Tap to update your inputs →</Text>
+        <Text style={[sc.editHint, {color: Colors.textPrimary}]}>Tap to update your inputs →</Text>
       </LinearGradient>
     </TouchableOpacity>
   );
@@ -620,14 +621,14 @@ export default function HomeScreen() {
               <Ionicons name="sparkles" size={22} color={Colors.secondary} />
             </View>
             <View>
-              <Text style={styles.ariaTitle}>Ask Aria</Text>
-              <Text style={styles.ariaSub}>AI migration guide · instant answers</Text>
+              <Text style={[styles.ariaTitle, {color: Colors.textPrimary}]}>Ask Aria</Text>
+              <Text style={[styles.ariaSub, {color: Colors.textPrimary}]}>AI migration guide · instant answers</Text>
             </View>
           </View>
           <View style={styles.ariaChips}>
             {['Am I eligible for PR?', 'Best visa for my job?', 'Which state to nominate?'].map((q) => (
               <View key={q} style={styles.ariaChip}>
-                <Text style={styles.ariaChipText}>{q}</Text>
+                <Text style={[styles.ariaChipText, {color: Colors.textPrimary}]}>{q}</Text>
               </View>
             ))}
           </View>
@@ -637,7 +638,7 @@ export default function HomeScreen() {
       {/* Disclaimer */}
       <View style={styles.disclaimer}>
         <Ionicons name="shield-checkmark-outline" size={14} color={Colors.textMuted} />
-        <Text style={styles.disclaimerText}>
+        <Text style={[styles.disclaimerText, {color: Colors.textPrimary}]}>
           Points are indicative only. Consult a{' '}
           <Text
             style={styles.disclaimerLink}
@@ -651,7 +652,7 @@ export default function HomeScreen() {
 
       <View style={styles.independentBanner}>
         <Ionicons name="information-circle-outline" size={14} color={Colors.accent} />
-        <Text style={styles.independentText}>
+        <Text style={[styles.independentText, {color: Colors.textPrimary}]}>
           Independent Guide — Not affiliated with the Australian Government
         </Text>
       </View>

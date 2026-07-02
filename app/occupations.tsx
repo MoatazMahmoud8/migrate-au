@@ -565,13 +565,13 @@ export default function OccupationsScreen() {
             </TouchableOpacity>
             <View style={styles.headerBadge}>
               <Ionicons name="briefcase-outline" size={12} color={Colors.accent} />
-              <Text style={styles.headerBadgeText}>Federal lists</Text>
+              <Text style={[styles.headerBadgeText, {color: Colors.textPrimary}]}>Federal lists</Text>
             </View>
             <View style={{ width: 32 }} />
           </View>
 
-          <Text style={styles.title}>Skilled Occupations</Text>
-          <Text style={styles.subtitle}>
+          <Text style={[styles.title, {color: Colors.textPrimary}]}>Skilled Occupations</Text>
+          <Text style={[styles.subtitle, {color: Colors.textPrimary}]}>
             Search every federal and state-nominated list in one place.
           </Text>
 
@@ -596,15 +596,15 @@ export default function OccupationsScreen() {
           <View style={styles.metaRow}>
             <View style={[styles.metaPill, { backgroundColor: Colors.surface }]}>
               <Ionicons name="calendar-outline" size={11} color={Colors.textMuted} />
-              <Text style={styles.metaText}>Updated {formatSnapshot(snapshotDate)}</Text>
+              <Text style={[styles.metaText, {color: Colors.textPrimary}]}>Updated {formatSnapshot(snapshotDate)}</Text>
             </View>
             <View style={[styles.metaPill, { backgroundColor: Colors.surface }]}>
               <Ionicons name="refresh-outline" size={11} color={Colors.textMuted} />
-              <Text style={styles.metaText}>Checked {timeAgo(lastChecked)}</Text>
+              <Text style={[styles.metaText, {color: Colors.textPrimary}]}>Checked {timeAgo(lastChecked)}</Text>
             </View>
             <View style={[styles.metaPill, { backgroundColor: Colors.surface }]}>
               <Ionicons name="list-outline" size={11} color={Colors.textMuted} />
-              <Text style={styles.metaText}>{filtered.length} results</Text>
+              <Text style={[styles.metaText, {color: Colors.textPrimary}]}>{filtered.length} results</Text>
             </View>
           </View>
         </LinearGradient>
@@ -699,11 +699,11 @@ export default function OccupationsScreen() {
             >
               <View style={styles.cardHead}>
                 <View style={styles.codePill}>
-                  <Text style={styles.codePillText}>{item.anzsco}</Text>
+                  <Text style={[styles.codePillText, {color: Colors.textPrimary}]}>{item.anzsco}</Text>
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.cardName} numberOfLines={2}>{item.name}</Text>
-                  <Text style={styles.cardGroup}>{item.group}</Text>
+                  <Text style={[styles.cardName, {color: Colors.textPrimary}]} numberOfLines={2}>{item.name}</Text>
+                  <Text style={[styles.cardGroup, {color: Colors.textPrimary}]}>{item.group}</Text>
                 </View>
                 {savedAnzsco === item.anzsco
                   ? <Ionicons name="checkmark-circle" size={18} color={Colors.success} />
@@ -730,11 +730,11 @@ export default function OccupationsScreen() {
                   {salary && (
                     <View style={styles.salaryChip}>
                       <Ionicons name="cash-outline" size={11} color={Colors.success} />
-                      <Text style={styles.salaryChipText}>{formatAnnualShort(salary.annualSalary)}/yr</Text>
+                      <Text style={[styles.salaryChipText, {color: Colors.textPrimary}]}>{formatAnnualShort(salary.annualSalary)}/yr</Text>
                     </View>
                   )}
                 </View>
-                <Text style={styles.visasText} numberOfLines={1}>
+                <Text style={[styles.visasText, {color: Colors.textPrimary}]} numberOfLines={1}>
                   {item.visas.map((v) => `SC ${v}`).join(' · ')}
                 </Text>
               </View>
@@ -744,7 +744,7 @@ export default function OccupationsScreen() {
           ListEmptyComponent={
             <View style={styles.empty}>
               <Ionicons name="search-outline" size={32} color={Colors.textMuted} />
-              <Text style={styles.emptyText}>No occupations match your search.</Text>
+              <Text style={[styles.emptyText, {color: Colors.textPrimary}]}>No occupations match your search.</Text>
             </View>
           }
         />
@@ -765,15 +765,15 @@ export default function OccupationsScreen() {
                 <ScrollView showsVerticalScrollIndicator={false}>
                   <View style={styles.modalHead}>
                     <View style={styles.codePillLg}>
-                      <Text style={styles.codePillLgText}>ANZSCO {selected.anzsco}</Text>
+                      <Text style={[styles.codePillLgText, {color: Colors.textPrimary}]}>ANZSCO {selected.anzsco}</Text>
                     </View>
                     <TouchableOpacity onPress={() => setSelected(null)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
                       <Ionicons name="close" size={22} color={Colors.textPrimary} />
                     </TouchableOpacity>
                   </View>
 
-                  <Text style={styles.modalTitle}>{selected.name}</Text>
-                  <Text style={styles.modalGroup}>{selected.group}</Text>
+                  <Text style={[styles.modalTitle, {color: Colors.textPrimary}]}>{selected.name}</Text>
+                  <Text style={[styles.modalGroup, {color: Colors.textPrimary}]}>{selected.group}</Text>
 
                   {(() => {
                     const salary = getSalaryFor(salaries, selected.anzsco);
@@ -782,15 +782,15 @@ export default function OccupationsScreen() {
                       <View style={styles.salaryCard}>
                         <View style={styles.salaryCardHead}>
                           <Ionicons name="cash-outline" size={16} color={Colors.success} />
-                          <Text style={styles.salaryCardTitle}>Median earnings (national)</Text>
+                          <Text style={[styles.salaryCardTitle, {color: Colors.textPrimary}]}>Median earnings (national)</Text>
                         </View>
                         <View style={styles.salaryCardRow}>
-                          <Text style={styles.salaryCardValue}>
+                          <Text style={[styles.salaryCardValue, {color: Colors.textPrimary}]}>
                             {formatAnnualFull(salary.annualSalary)}
                           </Text>
-                          <Text style={styles.salaryCardUnit}>AUD / year</Text>
+                          <Text style={[styles.salaryCardUnit, {color: Colors.textPrimary}]}>AUD / year</Text>
                         </View>
-                        <Text style={styles.salaryCardSub}>
+                        <Text style={[styles.salaryCardSub, {color: Colors.textPrimary}]}>
                           ${salary.weeklyEarnings.toLocaleString('en-AU')} / week
                           {salary.sourceLevel === '4-digit' ? ' · unit-group figure' : ''}
                         </Text>
@@ -798,7 +798,7 @@ export default function OccupationsScreen() {
                           onPress={() => { hapticTap(); Linking.openURL(salary.sourceUrl); }}
                           style={styles.salaryCardLink}
                         >
-                          <Text style={styles.salaryCardLinkText}>
+                          <Text style={[styles.salaryCardLinkText, {color: Colors.textPrimary}]}>
                             Source: Jobs and Skills Australia
                           </Text>
                           <Ionicons name="open-outline" size={12} color={Colors.accent} />
@@ -807,7 +807,7 @@ export default function OccupationsScreen() {
                     );
                   })()}
 
-                  <Text style={styles.sectionLabel}>Appears on</Text>
+                  <Text style={[styles.sectionLabel, {color: Colors.textPrimary}]}>Appears on</Text>
                   <View style={styles.chipRow}>
                     {selected.lists.map((l) => (
                       <View
@@ -819,16 +819,16 @@ export default function OccupationsScreen() {
                     ))}
                   </View>
 
-                  <Text style={styles.sectionLabel}>Eligible visas (federal)</Text>
+                  <Text style={[styles.sectionLabel, {color: Colors.textPrimary}]}>Eligible visas (federal)</Text>
                   <View style={styles.chipRow}>
                     {selected.visas.map((v) => (
                       <View key={v} style={styles.visaChip}>
-                        <Text style={styles.visaChipText}>SC {v}</Text>
+                        <Text style={[styles.visaChipText, {color: Colors.textPrimary}]}>SC {v}</Text>
                       </View>
                     ))}
                   </View>
 
-                  <Text style={styles.sectionLabel}>State / territory eligibility</Text>
+                  <Text style={[styles.sectionLabel, {color: Colors.textPrimary}]}>State / territory eligibility</Text>
                   {(() => {
                     const hasAnyData = !!selected.stateRequirements && Object.keys(selected.stateRequirements).length > 0;
                     const hasSeed = !!selected.states && Object.keys(selected.states).length > 0;
@@ -869,7 +869,7 @@ export default function OccupationsScreen() {
                               <Text style={[styles.stateCellCode, { color: eligible ? STATE_COLORS[s] : tappable ? Colors.warning : Colors.textMuted }]}>
                                 {s}
                               </Text>
-                              <Text style={styles.stateCellVisas}>
+                              <Text style={[styles.stateCellVisas, {color: Colors.textPrimary}]}>
                                 {visas.length > 0 ? visas.join(' · ') : tappable ? 'Not sponsored' : '—'}
                               </Text>
                               {tappable && (
@@ -942,11 +942,11 @@ export default function OccupationsScreen() {
                               <View style={styles.notSponsoredCard}>
                                 <View style={styles.notSponsoredHeader}>
                                   <Ionicons name="close-circle" size={18} color={Colors.warning} />
-                                  <Text style={styles.notSponsoredTitle}>
+                                  <Text style={[styles.notSponsoredTitle, {color: Colors.textPrimary}]}>
                                     Not eligible — SC {selectedVisa} in {expandedState}
                                   </Text>
                                 </View>
-                                <Text style={styles.notSponsoredReason}>
+                                <Text style={[styles.notSponsoredReason, {color: Colors.textPrimary}]}>
                                   {req.reason || `This occupation is not on the ${expandedState} nomination list for SC ${selectedVisa}.`}
                                 </Text>
                                 {req.notes && req.notes.length > 0 && (
@@ -957,7 +957,7 @@ export default function OccupationsScreen() {
                                   </View>
                                 )}
                                 {req.sourceUrl ? (
-                                  <Text style={styles.notSponsoredSource}>
+                                  <Text style={[styles.notSponsoredSource, {color: Colors.textPrimary}]}>
                                     Official source: {req.sourceUrl}
                                   </Text>
                                 ) : null}
@@ -1009,7 +1009,7 @@ export default function OccupationsScreen() {
                                   {req.minSalary != null ? (
                                     <View style={styles.stateReqRow}>
                                       <Ionicons name="cash-outline" size={13} color={Colors.textMuted} />
-                                      <Text style={styles.stateReqKey}>Min. salary</Text>
+                                      <Text style={[styles.stateReqKey, {color: Colors.textPrimary}]}>Min. salary</Text>
                                       <Text style={[styles.stateReqVal, { color: col }]}>
                                         ${req.minSalary.toLocaleString('en-AU')} AUD/yr
                                       </Text>
@@ -1017,7 +1017,7 @@ export default function OccupationsScreen() {
                                   ) : req.salaryDataAvailable === false ? (
                                     <View style={styles.stateReqRow}>
                                       <Ionicons name="cash-outline" size={13} color={Colors.textMuted} />
-                                      <Text style={styles.stateReqKey}>Min. salary</Text>
+                                      <Text style={[styles.stateReqKey, {color: Colors.textPrimary}]}>Min. salary</Text>
                                       <Text style={[styles.stateReqVal, { color: Colors.textMuted, fontStyle: 'italic' }]}>
                                         Data not available
                                       </Text>
@@ -1026,7 +1026,7 @@ export default function OccupationsScreen() {
                                   {req.minExperienceYears != null && (
                                     <View style={styles.stateReqRow}>
                                       <Ionicons name="briefcase-outline" size={13} color={Colors.textMuted} />
-                                      <Text style={styles.stateReqKey}>Min. experience</Text>
+                                      <Text style={[styles.stateReqKey, {color: Colors.textPrimary}]}>Min. experience</Text>
                                       <Text style={[styles.stateReqVal, { color: col }]}>
                                         {req.minExperienceYears} year{req.minExperienceYears !== 1 ? 's' : ''}
                                       </Text>
@@ -1035,33 +1035,33 @@ export default function OccupationsScreen() {
                                   {req.minPoints != null ? (
                                     <View style={styles.stateReqRow}>
                                       <Ionicons name="stats-chart-outline" size={13} color={Colors.textMuted} />
-                                      <Text style={styles.stateReqKey}>Min. EOI points</Text>
+                                      <Text style={[styles.stateReqKey, {color: Colors.textPrimary}]}>Min. EOI points</Text>
                                       <Text style={[styles.stateReqVal, { color: col }]}>{req.minPoints} pts</Text>
                                     </View>
                                   ) : (
                                     <View style={styles.stateReqRow}>
                                       <Ionicons name="stats-chart-outline" size={13} color={Colors.textMuted} />
-                                      <Text style={styles.stateReqKey}>Points test</Text>
+                                      <Text style={[styles.stateReqKey, {color: Colors.textPrimary}]}>Points test</Text>
                                       <Text style={[styles.stateReqVal, { color: Colors.success }]}>Not required</Text>
                                     </View>
                                   )}
                                   {req.maxAge != null && (
                                     <View style={styles.stateReqRow}>
                                       <Ionicons name="person-outline" size={13} color={Colors.textMuted} />
-                                      <Text style={styles.stateReqKey}>Max. age</Text>
+                                      <Text style={[styles.stateReqKey, {color: Colors.textPrimary}]}>Max. age</Text>
                                       <Text style={[styles.stateReqVal, { color: col }]}>{req.maxAge}</Text>
                                     </View>
                                   )}
                                   <View style={styles.stateReqRow}>
                                     <Ionicons name="checkmark-circle-outline" size={13} color={Colors.textMuted} />
-                                    <Text style={styles.stateReqKey}>Skills assessment</Text>
+                                    <Text style={[styles.stateReqKey, {color: Colors.textPrimary}]}>Skills assessment</Text>
                                     <Text style={[styles.stateReqVal, { color: req.skillsAssessmentRequired ? Colors.warning : Colors.success }]}>
                                       {req.skillsAssessmentRequired ? 'Required' : 'Check with state'}
                                     </Text>
                                   </View>
                                   <View style={styles.stateReqRow}>
                                     <Ionicons name="document-text-outline" size={13} color={req.jobOfferRequired ? Colors.warning : Colors.success} />
-                                    <Text style={styles.stateReqKey}>Job offer</Text>
+                                    <Text style={[styles.stateReqKey, {color: Colors.textPrimary}]}>Job offer</Text>
                                     <Text style={[styles.stateReqVal, { color: req.jobOfferRequired ? Colors.warning : Colors.success }]}>
                                       {req.jobOfferRequired ? '🔴 REQUIRED' : 'Not required'}
                                     </Text>
@@ -1069,7 +1069,7 @@ export default function OccupationsScreen() {
                                   {req.residencyRequired && (
                                     <View style={styles.stateReqRow}>
                                       <Ionicons name="home-outline" size={13} color={Colors.textMuted} />
-                                      <Text style={styles.stateReqKey}>State residency</Text>
+                                      <Text style={[styles.stateReqKey, {color: Colors.textPrimary}]}>State residency</Text>
                                       <Text style={[styles.stateReqVal, { color: Colors.warning }]}>Required</Text>
                                     </View>
                                   )}
@@ -1080,7 +1080,7 @@ export default function OccupationsScreen() {
                                     {req.notes.map((n, i) => (
                                       <View key={i} style={styles.stateReqNoteRow}>
                                         <View style={[styles.stateReqNoteDot, { backgroundColor: col }]} />
-                                        <Text style={styles.stateReqNoteText}>{n}</Text>
+                                        <Text style={[styles.stateReqNoteText, {color: Colors.textPrimary}]}>{n}</Text>
                                       </View>
                                     ))}
                                   </View>
@@ -1095,7 +1095,7 @@ export default function OccupationsScreen() {
                                         🎓 {expandedState} Graduate Pathway Available
                                       </Text>
                                     </View>
-                                    <Text style={styles.gradPathwayDesc}>
+                                    <Text style={[styles.gradPathwayDesc, {color: Colors.textPrimary}]}>
                                       Graduates of {expandedState} universities get an easier, faster nomination pathway with reduced salary requirements.
                                     </Text>
                                     <Text style={[styles.gradPathwaySubtitle, { color: col }]}>
@@ -1105,11 +1105,11 @@ export default function OccupationsScreen() {
                                       {(STATE_UNIVERSITIES[expandedState] || []).slice(0, 4).map((uni, i) => (
                                         <View key={i} style={styles.gradPathwayUniRow}>
                                           <Ionicons name="checkmark-circle" size={12} color={col} />
-                                          <Text style={styles.gradPathwayUniText}>{uni}</Text>
+                                          <Text style={[styles.gradPathwayUniText, {color: Colors.textPrimary}]}>{uni}</Text>
                                         </View>
                                       ))}
                                       {STATE_UNIVERSITIES[expandedState]?.length > 4 && (
-                                        <Text style={styles.gradPathwayUniMore}>
+                                        <Text style={[styles.gradPathwayUniMore, {color: Colors.textPrimary}]}>
                                           +{STATE_UNIVERSITIES[expandedState].length - 4} more universities
                                         </Text>
                                       )}
@@ -1120,7 +1120,7 @@ export default function OccupationsScreen() {
                                     {(GRADUATE_BENEFITS[expandedState] || []).map((benefit, i) => (
                                       <View key={i} style={styles.gradPathwayBenefitRow}>
                                         <Text style={[styles.gradPathwayBenefitDot, { color: col }]}>⚡</Text>
-                                        <Text style={styles.gradPathwayBenefitText}>{benefit}</Text>
+                                        <Text style={[styles.gradPathwayBenefitText, {color: Colors.textPrimary}]}>{benefit}</Text>
                                       </View>
                                     ))}
                                   </View>
@@ -1133,7 +1133,7 @@ export default function OccupationsScreen() {
                                 >
                                   <Ionicons name="open-outline" size={12} color={col} />
                                   <Text style={[styles.stateReqLinkText, { color: col }]}>View {expandedState} nomination page</Text>
-                                  <Text style={styles.stateReqUpdated}>Updated {req.updatedAt}</Text>
+                                  <Text style={[styles.stateReqUpdated, {color: Colors.textPrimary}]}>Updated {req.updatedAt}</Text>
                                 </TouchableOpacity>
                               </>
                             )}
@@ -1156,7 +1156,7 @@ export default function OccupationsScreen() {
                               {expandedState} — No requirements found
                             </Text>
                           </View>
-                          <Text style={styles.bodyMuted}>
+                          <Text style={[styles.bodyMuted, {color: Colors.textPrimary}]}>
                             State-specific requirements for this occupation are not currently available. Contact the {expandedState} state migration authority for nomination eligibility criteria.
                           </Text>
                         </View>
@@ -1179,7 +1179,7 @@ export default function OccupationsScreen() {
                     });
                     return (
                       <>
-                        <Text style={styles.sectionLabel}>English requirements</Text>
+                        <Text style={[styles.sectionLabel, {color: Colors.textPrimary}]}>English requirements</Text>
                         {deduped.map(({ req }) => (
                           <View key={req!.level} style={[styles.engCard, { borderLeftColor: req!.color }]}>
                             <View style={styles.engCardTop}>
@@ -1188,21 +1188,21 @@ export default function OccupationsScreen() {
                                 <Text style={[styles.engLevelText, { color: req!.color }]}>{req!.level}</Text>
                               </View>
                             </View>
-                            <Text style={styles.engDesc}>{req!.description}</Text>
+                            <Text style={[styles.engDesc, {color: Colors.textPrimary}]}>{req!.description}</Text>
                             <View style={styles.engScores}>
                               <View style={styles.engScore}>
-                                <Text style={styles.engScoreLabel}>IELTS</Text>
-                                <Text style={styles.engScoreVal}>{req!.ielts}</Text>
+                                <Text style={[styles.engScoreLabel, {color: Colors.textPrimary}]}>IELTS</Text>
+                                <Text style={[styles.engScoreVal, {color: Colors.textPrimary}]}>{req!.ielts}</Text>
                               </View>
                               <View style={styles.engDivider} />
                               <View style={styles.engScore}>
-                                <Text style={styles.engScoreLabel}>PTE Academic</Text>
-                                <Text style={styles.engScoreVal}>{req!.pte}</Text>
+                                <Text style={[styles.engScoreLabel, {color: Colors.textPrimary}]}>PTE Academic</Text>
+                                <Text style={[styles.engScoreVal, {color: Colors.textPrimary}]}>{req!.pte}</Text>
                               </View>
                               <View style={styles.engDivider} />
                               <View style={styles.engScore}>
-                                <Text style={styles.engScoreLabel}>TOEFL iBT</Text>
-                                <Text style={styles.engScoreVal}>{req!.toefl}</Text>
+                                <Text style={[styles.engScoreLabel, {color: Colors.textPrimary}]}>TOEFL iBT</Text>
+                                <Text style={[styles.engScoreVal, {color: Colors.textPrimary}]}>{req!.toefl}</Text>
                               </View>
                             </View>
                           </View>
@@ -1219,15 +1219,15 @@ export default function OccupationsScreen() {
                     const info = authorityKey ? AUTHORITY_INFO[authorityKey] : null;
                     return (
                       <>
-                        <Text style={styles.sectionLabel}>Skills assessment</Text>
+                        <Text style={[styles.sectionLabel, {color: Colors.textPrimary}]}>Skills assessment</Text>
                         <View style={[styles.authCard, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
                           <View style={styles.authHeader}>
                             <View style={styles.authIcon}>
                               <Ionicons name="shield-checkmark-outline" size={16} color={Colors.accent} />
                             </View>
                             <View style={{ flex: 1 }}>
-                              <Text style={styles.authName}>{info ? info.name : selected.assessingAuthority}</Text>
-                              {info && <Text style={styles.authAssesses}>{info.assesses}</Text>}
+                              <Text style={[styles.authName, {color: Colors.textPrimary}]}>{info ? info.name : selected.assessingAuthority}</Text>
+                              {info && <Text style={[styles.authAssesses, {color: Colors.textPrimary}]}>{info.assesses}</Text>}
                             </View>
                           </View>
 
@@ -1235,8 +1235,8 @@ export default function OccupationsScreen() {
                             <>
                               <View style={styles.authRow}>
                                 <Ionicons name="time-outline" size={13} color={Colors.textMuted} />
-                                <Text style={styles.authRowKey}>Typical time</Text>
-                                <Text style={styles.authRowVal}>{info.typicalTime}</Text>
+                                <Text style={[styles.authRowKey, {color: Colors.textPrimary}]}>Typical time</Text>
+                                <Text style={[styles.authRowVal, {color: Colors.textPrimary}]}>{info.typicalTime}</Text>
                               </View>
 
                               {info.notes.length > 0 && (
@@ -1244,7 +1244,7 @@ export default function OccupationsScreen() {
                                   {info.notes.map((n, i) => (
                                     <View key={i} style={styles.authNoteRow}>
                                       <View style={styles.authNoteDot} />
-                                      <Text style={styles.authNoteText}>{n}</Text>
+                                      <Text style={[styles.authNoteText, {color: Colors.textPrimary}]}>{n}</Text>
                                     </View>
                                   ))}
                                 </View>
@@ -1256,7 +1256,7 @@ export default function OccupationsScreen() {
                                 onPress={() => Linking.openURL(info.website)}
                               >
                                 <Ionicons name="open-outline" size={12} color={Colors.accent} />
-                                <Text style={styles.authLinkText}>Visit {info.name} website</Text>
+                                <Text style={[styles.authLinkText, {color: Colors.textPrimary}]}>Visit {info.name} website</Text>
                               </TouchableOpacity>
                             </>
                           )}
@@ -1279,7 +1279,7 @@ export default function OccupationsScreen() {
                       size={14}
                       color={savedAnzsco === selected.anzsco ? Colors.primaryDark : Colors.primaryDark}
                     />
-                    <Text style={styles.modalCtaText}>
+                    <Text style={[styles.modalCtaText, {color: Colors.textPrimary}]}>
                       {savedAnzsco === selected.anzsco ? 'My occupation ✓' : 'Set as my occupation'}
                     </Text>
                   </TouchableOpacity>

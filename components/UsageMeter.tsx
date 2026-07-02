@@ -38,8 +38,8 @@ export function UsageMeter({ feature, remaining, onUpgradePress, isPremium }: Us
           />
         </View>
         <View style={styles.textContainer}>
-          <Text style={styles.label}>{name}</Text>
-          <Text style={styles.remaining}>
+          <Text style={[styles.label, {color: Colors.textPrimary}]}>{name}</Text>
+          <Text style={[styles.remaining, {color: Colors.textPrimary}]}>
             {remaining > 0 ? `${remaining} of ${total} remaining this month` : 'Free tier exhausted'}
           </Text>
         </View>
@@ -47,7 +47,7 @@ export function UsageMeter({ feature, remaining, onUpgradePress, isPremium }: Us
 
       {remaining === 0 && (
         <TouchableOpacity onPress={onUpgradePress}>
-          <Text style={styles.upgradeBtn}>Upgrade →</Text>
+          <Text style={[styles.upgradeBtn, {color: Colors.textPrimary}]}>Upgrade →</Text>
         </TouchableOpacity>
       )}
     </View>

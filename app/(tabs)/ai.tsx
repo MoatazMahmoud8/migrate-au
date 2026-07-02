@@ -141,7 +141,7 @@ export default function AiScreen() {
         <View style={[styles.bubbleInner, isUser ? styles.userInner : styles.aiInner]}>
           {isUser ? (
             <LinearGradient colors={[Colors.primary, Colors.primaryDark]} style={styles.userBubbleGrad}>
-              <Text style={styles.userText}>{item.text}</Text>
+              <Text style={[styles.userText, {color: Colors.textPrimary}]}>{item.text}</Text>
             </LinearGradient>
           ) : (
             <Markdown style={markdownStyles}>{item.text}</Markdown>
@@ -179,21 +179,21 @@ export default function AiScreen() {
             </View>
           </LinearGradient>
 
-          <Text style={styles.emptyTitle}>Hi, I'm Aria ✨</Text>
-          <Text style={styles.emptySub}>Your AI-powered Australian migration consultant</Text>
+          <Text style={[styles.emptyTitle, {color: Colors.textPrimary}]}>Hi, I'm Aria ✨</Text>
+          <Text style={[styles.emptySub, {color: Colors.textPrimary}]}>Your AI-powered Australian migration consultant</Text>
 
           <View style={styles.suggestions}>
             {SUGGESTIONS.map((s) => (
               <TouchableOpacity key={s} style={[styles.chip, { backgroundColor: Colors.surface, borderColor: Colors.border }]} onPress={() => send(s)}>
                 <Ionicons name="chevron-forward-circle-outline" size={14} color={Colors.accent} />
-                <Text style={styles.chipText}>{s}</Text>
+                <Text style={[styles.chipText, {color: Colors.textPrimary}]}>{s}</Text>
               </TouchableOpacity>
             ))}
           </View>
 
           <View style={[styles.disclaimer, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
             <Ionicons name="shield-checkmark-outline" size={13} color={Colors.textMuted} />
-            <Text style={styles.disclaimerText}>
+            <Text style={[styles.disclaimerText, {color: Colors.textPrimary}]}>
               Aria provides info based on official docs. Double-check on{' '}
               <Text
                 style={styles.disclaimerLink}
@@ -221,13 +221,13 @@ export default function AiScreen() {
           <View style={[styles.typingDots, { backgroundColor: Colors.surface }]}>
             <ActivityIndicator size="small" color={Colors.accent} />
           </View>
-          <Text style={styles.typingText}>Aria is thinking…</Text>
+          <Text style={[styles.typingText, {color: Colors.textPrimary}]}>Aria is thinking…</Text>
         </View>
       )}
 
       <View style={styles.sourceNote}>
         <Ionicons name="globe-outline" size={11} color={Colors.accent} style={{ opacity: 0.6 }} />
-        <Text style={styles.sourceNoteText}>
+        <Text style={[styles.sourceNoteText, {color: Colors.textPrimary}]}>
           Verify on{' '}
           <Text
             style={styles.sourceNoteLink}
