@@ -1,23 +1,77 @@
 """
 RSS News scraper — pulls migration-relevant news from Australian media.
-Sends notifications for articles that match migration/visa/cost-of-living keywords.
+Sends notifications for articles that match migration/visa/citizenship keywords.
 Uses Firestore to track already-sent article URLs (deduplication).
+
+Only sends articles that are:
+  1. Published within the last 72 hours (MAX_AGE_HOURS)
+  2. Migration-relevant (MUST_MATCH terms present)
+  3. Australian-focused (AUSTRALIA_MARKERS present)
+  4. Not excluded by EXCLUDE_TERMS
+  5. Score >= 2 from keyword matching
 """
 
 import re
 import requests
 import xml.etree.ElementTree as ET
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
+from email.utils import parsedate_to_datetime
 
 RSS_FEEDS = [
-    # Major Australian media
-    "https://www.abc.net.au/news/feed/51120/rss.xml",
-    "https://www.theguardian.com/australia-news/rss",
-    "https://www.theguardian.com/australia-news/australian-immigration-and-asylum/rss",
-    "https://www.smh.com.au/rss/feed.xml",
-    # Migration-specific websites
+    # Migration-specific blogs — high quality, low noise
     "https://www.visaenvoy.com/feed/",
-    "https://www.ozvisas.com/feed",
+    "https://pathwaytoaus.com/feed/",
+    # Mainstream media — migration sections (filtered by MUST_MATCH)
+    "https://www.theguardian.com/australia-news/australian-immigration-and-asylum/rss",
+    "https://www.sbs.com.au/news/feed",
+]
+
+# Only articles published within this window are considered.
+# Prevents old articles re-surfacing from feed pagination.
+# Set to 7 days — migration blogs post infrequently; deduplication
+# prevents re-sending the same article twice.
+MAX_AGE_HOURS = 168
+
+# Articles MUST contain at least one of these to be considered migration-relevant.
+# This prevents "visa" matching sports stories or "migration" matching political commentary.
+MUST_MATCH = [
+    # Visa applications & processing
+    "visa application", "visa grant", "visa refusal", "visa cancel", "visa processing",
+    "visa fee", "visa charge", "visa change", "visa condition", "visa holder",
+    "visa expir", "visa extension", "visa renewal",
+    # Specific visa types
+    "skilled visa", "student visa", "partner visa", "work visa", "temporary visa",
+    "bridging visa", "protection visa", "graduate visa", "employer sponsored",
+    "subclass 189", "subclass 190", "subclass 491", "subclass 500", "subclass 482",
+    "subclass 186", "subclass 485", "subclass 820", "subclass 801", "subclass 600",
+    "subclass 417", "subclass 462", "subclass 407", "subclass 494",
+    "189 visa", "190 visa", "491 visa", "482 visa", "500 visa",
+    # SkillSelect & points
+    "points test", "skillselect", "skill select", "invitation round",
+    "expression of interest",
+    # Occupations & skills
+    "anzsco", "occupation list", "skilled occupation", "mltssl", "stsol",
+    "skills assessment", "skill assessment", "core skills",
+    # State nominations
+    "state nomination", "state sponsorship",
+    # Official systems
+    "home affairs", "immi.homeaffairs", "immiaccount",
+    "migration program", "migration strategy", "migration review",
+    "immigration change", "immigration policy", "immigration reform",
+    "migration level", "migration cap", "intake",
+    # Specific migration concepts
+    "permanent residency", "permanent resident", "pr pathway", "pr visa",
+    "migration agent", "registered migration", "mara",
+    "labour agreement", "dama",
+    "english requirement", "ielts requirement", "pte requirement",
+    # Citizenship & settlement (for people settling in Australia)
+    "australian citizenship", "citizenship test", "citizenship ceremony",
+    "citizenship application", "citizenship by conferral", "pledge of commitment",
+    "citizenship waiting", "citizenship processing",
+    "settled in australia", "settling in australia", "new migrant",
+    "medicare enrol", "centrelink", "tax file number",
+    # Cost-of-living for migrants
+    "visa price", "visa cost increase", "migration cost",
 ]
 
 KEYWORDS_HIGH = [
@@ -74,30 +128,81 @@ EXCLUDE_TERMS = [
     # US politics
     "trump", "biden", "white house", "congress", "senate vote",
     "supreme court", "capitol", "republican", "democrat",
+    "desantis", "ron desantis", "kamala", "oval office",
     # UK politics
     "uk parliament", "westminster", "downing street", "brexit",
+    # European / international (non-AU)
+    "european union", "eu migration", "schengen",
     # Australian domestic politics (not migration)
     "icac", "corruption", "branch-stacking", "branch stacking",
     "election result", "polling", "ballot", "preselection",
     "senator", "councillor", "council election",
-    "liberal party", "labor party", "greens party",
+    "liberal party", "labor party", "greens party", "one nation",
     "property developer", "political donation", "fundrais",
-    "royal commission", "inquest", "murder", "assault",
-    "cricket", "football", "rugby", "nrl", "afl",
-    "bushfire", "flood warning", "weather",
+    "royal commission", "inquest",
+    # Crime & tragedy
+    "murder", "assault", "killed", "convicted", "prison",
+    "detention centre", "dies in", "death in", "stabbed", "shot",
+    "domestic violence", "manslaughter", "abduct",
+    "blunt-force", "blunt force", "autopsy", "inquest",
+    # Sports
+    "cricket", "football", "rugby", "nrl", "afl", "nbl",
+    "basketball", "mvp", "boomers", "player", "coach", "game",
+    "olympic", "medal", "tournament", "grand final",
+    "matildas", "socceroos", "wallabies",
+    # Entertainment & lifestyle
+    "eminem", "rapper", "trademark battle", "celebrity",
+    "reality tv", "masterchef", "big brother",
+    "movie", "box office", "netflix", "streaming",
+    # Transport & weather
+    "train disruption", "v/line", "bus route", "flight delay",
+    "bushfire", "flood warning", "weather", "cyclone",
+    "traffic accident", "road closure",
+    # General non-migration
+    "water catchment", "climate change", "real estate",
+    "stock market", "asx", "interest rate",
+    "housing market", "auction clearance",
+    # Animal / wildlife
+    "animal", "wildlife", "koala", "kangaroo", "shark attack",
+    "whale", "bird flu",
 ]
 
 
 def _is_australian(title: str, desc: str) -> bool:
     """Return True only if the article is clearly about Australia."""
     text = (title + " " + desc).lower()
-    # Reject if it contains US/UK political terms
-    if any(term in text for term in EXCLUDE_TERMS):
-        return False
+    # Reject if it contains exclusion terms (word-boundary match to avoid
+    # "killed" matching inside "skilled", etc.)
+    for term in EXCLUDE_TERMS:
+        pattern = r'(?<!\w)' + re.escape(term) + r'(?!\w)'
+        if re.search(pattern, text):
+            return False
     # Accept if it mentions Australian markers
     if any(marker in text for marker in AUSTRALIA_MARKERS):
         return True
     return False
+
+
+def _is_recent(pub_date_str: str) -> bool:
+    """Return True if the article was published within MAX_AGE_HOURS."""
+    if not pub_date_str:
+        return False
+    try:
+        pub_date = parsedate_to_datetime(pub_date_str)
+        # Ensure timezone-aware comparison
+        if pub_date.tzinfo is None:
+            pub_date = pub_date.replace(tzinfo=timezone.utc)
+        age = datetime.now(timezone.utc) - pub_date
+        return age <= timedelta(hours=MAX_AGE_HOURS)
+    except Exception:
+        # If we can't parse the date, reject the article
+        return False
+
+
+def _is_migration_relevant(title: str, desc: str) -> bool:
+    """Return True only if article is specifically about migration/visa topics."""
+    text = (title + " " + desc).lower()
+    return any(term in text for term in MUST_MATCH)
 
 
 def _relevance_score(title: str, desc: str) -> int:
@@ -149,13 +254,20 @@ def scrape(db) -> list[dict]:
                 title = (item.findtext("title") or "").strip()
                 desc = re.sub(r"<[^>]+>", "", item.findtext("description") or "").strip()[:400]
                 link = (item.findtext("link") or "").strip()
+                pub_date = (item.findtext("pubDate") or "").strip()
+
+                # Skip articles older than MAX_AGE_HOURS
+                if not _is_recent(pub_date):
+                    continue
+
                 score = _relevance_score(title, desc)
-                if title and link and score >= 2 and _is_australian(title, desc):
+                if title and link and score >= 2 and _is_migration_relevant(title, desc) and _is_australian(title, desc):
                     candidates.append({
                         "title": title,
                         "desc": desc,
                         "link": link,
                         "score": score,
+                        "pub_date": pub_date,
                     })
         except Exception as e:
             print(f"  [news_rss] ⚠️  RSS error ({url}): {e}")
