@@ -98,7 +98,7 @@ export function PaywallModal({ visible, onClose, userId, title, message, feature
 
   return (
     <Modal visible={visible} transparent animationType="slide">
-      <View style={styles.backdrop}>
+      <View style={[styles.backdrop, { backgroundColor: 'rgba(0,0,0,0.6)' }]}>
         <View style={[styles.modal, { backgroundColor: Colors.background }]}>
           {/* Handle bar */}
           <View style={[styles.handle, { backgroundColor: Colors.divider }]} />
@@ -286,7 +286,6 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modal: {
-    backgroundColor: Colors.background,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     paddingHorizontal: Spacing.lg,
@@ -297,7 +296,6 @@ const styles = StyleSheet.create({
   handle: {
     width: 40, height: 4,
     borderRadius: 2,
-    backgroundColor: Colors.divider,
     alignSelf: 'center',
     marginBottom: Spacing.lg,
   },
@@ -308,7 +306,6 @@ const styles = StyleSheet.create({
     zIndex: 10,
     width: 32, height: 32,
     borderRadius: 16,
-    backgroundColor: Colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -325,13 +322,11 @@ const styles = StyleSheet.create({
   heroTitle: {
     fontSize: FontSize.lg,
     fontWeight: FontWeight.extraBold,
-    color: Colors.textPrimary,
     textAlign: 'center',
     marginBottom: Spacing.xs,
   },
   heroSub: {
     fontSize: FontSize.xs,
-    color: Colors.textSecondary,
     textAlign: 'center',
     lineHeight: 18,
     paddingHorizontal: Spacing.xl,
@@ -345,10 +340,8 @@ const styles = StyleSheet.create({
   },
   planCard: {
     flex: 1,
-    backgroundColor: Colors.surface,
     borderRadius: Radius.xl,
     borderWidth: 2,
-    borderColor: Colors.border,
     padding: Spacing.md,
     alignItems: 'center',
     paddingTop: Spacing.xl,
@@ -357,10 +350,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   planCardYearly: {
-    borderColor: Colors.divider,
   },
   planCardActive: {
-    borderColor: Colors.secondary,
     backgroundColor: `${Colors.secondary}12`,
   },
   planCheck: {
@@ -377,25 +368,21 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
   saveBadge: {
-    backgroundColor: Colors.success,
     paddingHorizontal: Spacing.sm,
     paddingVertical: 3,
     borderRadius: Radius.full,
     maxWidth: '95%',
   },
   lifetimeBadge: {
-    backgroundColor: Colors.secondary,
   },
   saveBadgeText: {
     fontSize: FontSize.xxs ?? 10,
     fontWeight: FontWeight.bold,
-    color: Colors.primaryDark,
     letterSpacing: 0.4,
   },
   planCycle: {
     fontSize: FontSize.xs,
     fontWeight: FontWeight.semiBold,
-    color: Colors.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.6,
     marginBottom: Spacing.xs,
@@ -404,12 +391,10 @@ const styles = StyleSheet.create({
   planPrice: {
     fontSize: FontSize.xxl,
     fontWeight: FontWeight.extraBold,
-    color: Colors.textPrimary,
   },
   planPriceActive: { color: Colors.textPrimary },
   planSub: {
     fontSize: FontSize.xs,
-    color: Colors.textMuted,
     marginTop: 2,
   },
 
@@ -424,20 +409,16 @@ const styles = StyleSheet.create({
   benefitsDividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: Colors.divider,
   },
   benefitsDividerText: {
     fontSize: FontSize.xs,
-    color: Colors.textMuted,
     fontWeight: '600',
     letterSpacing: 0.5,
     textTransform: 'uppercase',
   },
   benefits: {
-    backgroundColor: Colors.surface,
     borderRadius: Radius.xl,
     borderWidth: 1,
-    borderColor: Colors.border,
     padding: Spacing.md,
     gap: Spacing.sm,
     marginBottom: Spacing.xl,
@@ -457,7 +438,6 @@ const styles = StyleSheet.create({
   benefitText: {
     flex: 1,
     fontSize: FontSize.xs,
-    color: Colors.textSecondary,
     lineHeight: 17,
   },
 
@@ -477,7 +457,6 @@ const styles = StyleSheet.create({
   primaryBtnText: {
     fontSize: FontSize.md,
     fontWeight: FontWeight.bold,
-    color: Colors.primaryDark,
   },
   secondaryBtn: {
     flexDirection: 'row',
@@ -486,19 +465,15 @@ const styles = StyleSheet.create({
     gap: Spacing.xs,
     borderRadius: Radius.lg,
     borderWidth: 1.5,
-    borderColor: Colors.border,
     paddingVertical: Spacing.md,
-    backgroundColor: Colors.surface,
   },
   secondaryBtnText: {
     fontSize: FontSize.sm,
     fontWeight: FontWeight.semiBold,
-    color: Colors.textPrimary,
   },
 
   fineprint: {
     fontSize: FontSize.xs,
-    color: Colors.textMuted,
     textAlign: 'center',
     lineHeight: 16,
   },
@@ -511,12 +486,10 @@ const styles = StyleSheet.create({
   },
   legalLinkText: {
     fontSize: FontSize.xs,
-    color: Colors.secondary,
     textDecorationLine: 'underline',
   },
   legalSeparator: {
     fontSize: FontSize.xs,
-    color: Colors.textMuted,
     marginHorizontal: 6,
   },
 });

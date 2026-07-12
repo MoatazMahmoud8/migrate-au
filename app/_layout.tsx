@@ -438,7 +438,6 @@ const tabStyles = StyleSheet.create({
     position: 'absolute',
     top: -2,
     right: -6,
-    backgroundColor: Colors.error,
     borderRadius: 8,
     minWidth: 16,
     height: 16,
@@ -447,7 +446,6 @@ const tabStyles = StyleSheet.create({
     paddingHorizontal: 3,
   },
   badgeText: {
-    color: Colors.white,
     fontSize: 9,
     fontWeight: '800',
   },
@@ -474,7 +472,6 @@ const tabStyles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     elevation: 8,
     borderWidth: 3,
-    borderColor: Colors.primaryDark,
   },
 });
 

@@ -142,14 +142,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: FontSize.xxl,
     fontWeight: FontWeight.extraBold,
-    color: Colors.textPrimary,
     textAlign: 'center',
     marginBottom: Spacing.md,
     letterSpacing: -0.5,
   },
   desc: {
     fontSize: FontSize.md,
-    color: Colors.textSecondary,
     textAlign: 'center',
     lineHeight: 24,
     maxWidth: 320,
@@ -168,11 +166,9 @@ const styles = StyleSheet.create({
   dot: {
     width: 8, height: 8,
     borderRadius: 4,
-    backgroundColor: Colors.border,
   },
   dotActive: {
     width: 24,
-    backgroundColor: Colors.secondary,
   },
   nextBtn: {
     flexDirection: 'row',
@@ -185,6 +181,5 @@ const styles = StyleSheet.create({
   nextText: {
     fontSize: FontSize.md,
     fontWeight: FontWeight.bold,
-    color: Colors.primaryDark,
   },
 });

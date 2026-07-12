@@ -244,19 +244,16 @@ const styles = StyleSheet.create({
   headerBadgeText: {
     fontSize: 10,
     fontWeight: '700',
-    color: Colors.accent,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   title: {
     fontSize: FontSize.xxl,
     fontWeight: FontWeight.bold as any,
-    color: Colors.textPrimary,
     marginBottom: 6,
   },
   subtitle: {
     fontSize: FontSize.sm,
-    color: Colors.textMuted,
     lineHeight: 20,
     marginBottom: Spacing.md,
   },
@@ -267,10 +264,8 @@ const styles = StyleSheet.create({
     gap: 4,
     paddingHorizontal: 8,
     paddingVertical: 4,
-    backgroundColor: Colors.surface,
     borderRadius: Radius.full,
     borderWidth: 1,
-    borderColor: Colors.border,
   },
   metaText: { fontSize: 10, color: Colors.textMuted, fontWeight: '600' },
 
@@ -283,13 +278,10 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
     borderRadius: Radius.full,
     borderWidth: 1,
-    borderColor: Colors.border,
-    backgroundColor: Colors.surface,
     marginRight: 8,
   },
   pillActive: {
     backgroundColor: 'rgba(255,205,0,0.12)',
-    borderColor: Colors.secondary,
   },
   pillText: { fontSize: FontSize.xs, fontWeight: '600', color: Colors.textMuted },
   pillTextActive: { color: Colors.secondary },
@@ -297,10 +289,8 @@ const styles = StyleSheet.create({
   list: { paddingHorizontal: Spacing.lg, gap: 10 },
   card: {
     flexDirection: 'row',
-    backgroundColor: Colors.surface,
     borderRadius: Radius.lg,
     borderWidth: 1,
-    borderColor: Colors.border,
     overflow: 'hidden',
   },
   cardAccent: { width: 4 },
@@ -316,7 +306,6 @@ const styles = StyleSheet.create({
   cardCode: {
     fontSize: 10,
     fontWeight: '800',
-    color: Colors.textPrimary,
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: Radius.full,
@@ -328,7 +317,6 @@ const styles = StyleSheet.create({
   statsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.background,
     borderRadius: Radius.md,
     paddingVertical: Spacing.sm,
     paddingHorizontal: Spacing.md,

@@ -63,17 +63,14 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
-    backgroundColor: Colors.secondary + '10',
     borderRadius: Radius.md,
     borderLeftWidth: 3,
     borderLeftColor: Colors.secondary,
   },
   meterWarning: {
-    backgroundColor: Colors.warning + '15',
     borderLeftColor: Colors.warning,
   },
   meterCritical: {
-    backgroundColor: Colors.error + '15',
     borderLeftColor: Colors.error,
   },
   content: {
@@ -86,7 +83,6 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: Colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -96,18 +92,15 @@ const styles = StyleSheet.create({
   label: {
     fontSize: FontSize.xs,
     fontWeight: FontWeight.semiBold,
-    color: Colors.textPrimary,
     textTransform: 'uppercase',
     letterSpacing: 0.4,
   },
   remaining: {
     fontSize: FontSize.xs,
-    color: Colors.textSecondary,
     marginTop: 2,
   },
   upgradeBtn: {
     fontSize: FontSize.sm,
     fontWeight: FontWeight.bold,
-    color: Colors.secondary,
   },
 });

@@ -395,7 +395,7 @@ export default function EnglishTestsScreen() {
       {selectedTest && (
         <View style={styles.detailWrap}>
           {/* ① Overview */}
-          <View style={[styles.card, { borderColor: selectedTest.color + '35' }]}>
+          <View style={[styles.card, { backgroundColor: Colors.surface, borderColor: selectedTest.color + '35' }]}>
             <View style={[styles.cardTopStrip, { backgroundColor: selectedTest.color }]} />
             <View style={styles.cardInner}>
               <View style={styles.cardTitleRow}>
@@ -609,7 +609,6 @@ const styles = StyleSheet.create({
   selectorPlaceholder: { fontSize: FontSize.sm, color: Colors.textMuted },
 
   dropdown: {
-    backgroundColor: Colors.surface,
     borderWidth: 1, borderTopWidth: 0, borderColor: Colors.border,
     borderBottomLeftRadius: Radius.lg, borderBottomRightRadius: Radius.lg,
     overflow: 'hidden',
@@ -696,7 +695,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: Spacing.md,
     borderWidth: 1, borderRadius: Radius.md,
     padding: Spacing.md, marginBottom: Spacing.sm,
-    backgroundColor: Colors.background,
   },
   centerIcon: { width: 38, height: 38, borderRadius: Radius.sm, alignItems: 'center', justifyContent: 'center' },
   centerLabel: { fontSize: FontSize.sm, fontWeight: FontWeight.semiBold as any, color: Colors.textPrimary },

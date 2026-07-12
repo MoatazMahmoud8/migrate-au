@@ -671,7 +671,6 @@ const styles = StyleSheet.create({
   topBar: {
     flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between',
     paddingHorizontal: Spacing.lg, paddingBottom: Spacing.md,
-    backgroundColor: Colors.background,
   },
   greeting: {
     color: Colors.textPrimary, fontSize: FontSize.lg,
@@ -680,7 +679,6 @@ const styles = StyleSheet.create({
   dateText: { color: Colors.textMuted, fontSize: FontSize.sm, marginTop: 2 },
   searchBtn: {
     width: 40, height: 40, borderRadius: 20,
-    backgroundColor: Colors.surface,
     borderWidth: 1, borderColor: Colors.border,
     alignItems: 'center', justifyContent: 'center',
   },
@@ -698,11 +696,9 @@ const styles = StyleSheet.create({
   finderSection: {
     marginHorizontal: Spacing.lg,
     marginTop: Spacing.xl,
-    backgroundColor: Colors.surface,
     borderRadius: Radius.xl,
     padding: Spacing.xl,
     borderWidth: 1,
-    borderColor: Colors.border,
   },
   finderHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginBottom: Spacing.xs },
   finderTitle: { fontSize: FontSize.lg, fontWeight: FontWeight.bold, color: Colors.textPrimary },
@@ -739,7 +735,6 @@ const styles = StyleSheet.create({
   // Recommendation panel
   recPanel: {
     marginTop: Spacing.lg,
-    backgroundColor: Colors.primaryDark,
     borderRadius: Radius.lg,
     borderWidth: 1,
     overflow: 'hidden',
@@ -924,7 +919,6 @@ const gl = StyleSheet.create({
   },
   card: {
     width: 140,
-    backgroundColor: Colors.surface,
     borderRadius: Radius.lg,
     borderWidth: 1, borderColor: Colors.border,
     padding: Spacing.md,
@@ -961,7 +955,6 @@ const pw = StyleSheet.create({
   },
   card: {
     width: '48.2%',
-    backgroundColor: Colors.surface,
     borderRadius: Radius.xl,
     borderWidth: 1,
     padding: Spacing.lg,

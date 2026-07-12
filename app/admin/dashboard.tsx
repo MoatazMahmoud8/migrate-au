@@ -459,7 +459,6 @@ export default function AdminDashboard() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -468,7 +467,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
   },
   backBtn: {
     width: 32,
@@ -479,7 +477,6 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: FontSize.lg,
     fontWeight: FontWeight.bold,
-    color: Colors.textPrimary,
   },
   content: {
     flex: 1,
@@ -491,17 +488,13 @@ const styles = StyleSheet.create({
   label: {
     fontSize: FontSize.sm,
     fontWeight: FontWeight.semiBold,
-    color: Colors.textPrimary,
     marginBottom: Spacing.sm,
   },
   input: {
-    backgroundColor: Colors.surface,
     borderWidth: 1,
-    borderColor: Colors.border,
     borderRadius: Radius.md,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.md,
-    color: Colors.textPrimary,
     fontSize: FontSize.md,
   },
   bodyInput: {
@@ -510,7 +503,6 @@ const styles = StyleSheet.create({
   },
   charCount: {
     fontSize: FontSize.xs,
-    color: Colors.textMuted,
     marginTop: Spacing.xs,
     alignSelf: 'flex-end',
   },
@@ -518,15 +510,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: Colors.surface,
     borderWidth: 1,
-    borderColor: Colors.border,
     borderRadius: Radius.md,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.md,
   },
   categoryText: {
-    color: Colors.textPrimary,
     fontSize: FontSize.md,
     fontWeight: FontWeight.semiBold,
   },
@@ -541,15 +530,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.surface,
     borderWidth: 1,
-    borderColor: Colors.secondary,
     borderRadius: Radius.lg,
     paddingVertical: Spacing.md,
     gap: Spacing.sm,
   },
   previewBtnText: {
-    color: Colors.textPrimary,
     fontSize: FontSize.md,
     fontWeight: FontWeight.semiBold,
   },
@@ -558,13 +544,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.secondary,
     borderRadius: Radius.lg,
     paddingVertical: Spacing.md,
     gap: Spacing.sm,
   },
   sendBtnText: {
-    color: Colors.primaryDark,
     fontSize: FontSize.md,
     fontWeight: FontWeight.bold,
   },
@@ -574,7 +558,6 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: Colors.surface,
     borderTopLeftRadius: Radius.xl,
     borderTopRightRadius: Radius.xl,
     maxHeight: '80%',
@@ -582,11 +565,9 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: FontSize.lg,
     fontWeight: FontWeight.bold,
-    color: Colors.textPrimary,
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
   },
   categoryList: {
     paddingHorizontal: Spacing.lg,
@@ -605,15 +586,12 @@ const styles = StyleSheet.create({
   },
   categoryOptionText: {
     fontSize: FontSize.md,
-    color: Colors.textPrimary,
   },
   categoryOptionTextActive: {
     fontWeight: FontWeight.bold,
-    color: Colors.secondary,
   },
   previewContainer: {
     flex: 1,
-    backgroundColor: Colors.background,
   },
   previewHeader: {
     flexDirection: 'row',
@@ -622,12 +600,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
     paddingVertical: Spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
   },
   previewTitle: {
     fontSize: FontSize.lg,
     fontWeight: FontWeight.bold,
-    color: Colors.textPrimary,
   },
   previewContent: {
     flex: 1,
@@ -637,10 +613,8 @@ const styles = StyleSheet.create({
   notificationPreview: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    backgroundColor: Colors.surface,
     borderRadius: Radius.lg,
     borderWidth: 1,
-    borderColor: Colors.border,
     overflow: 'hidden',
     gap: 12,
     padding: 12,
@@ -649,7 +623,6 @@ const styles = StyleSheet.create({
   previewAccent: {
     width: 3,
     height: '100%',
-    backgroundColor: Colors.secondary,
     borderRadius: 2,
   },
   previewIcon: {
@@ -668,24 +641,20 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 0.4,
-    color: Colors.textMuted,
     marginBottom: 4,
   },
   previewNotifTitle: {
     fontSize: FontSize.md,
     fontWeight: FontWeight.bold,
-    color: Colors.textPrimary,
     lineHeight: 18,
   },
   previewBody: {
     fontSize: 12,
-    color: Colors.textSecondary,
     lineHeight: 16,
     marginTop: 4,
   },
   previewSource: {
     fontSize: 10,
-    color: Colors.textMuted,
     marginTop: 6,
     fontStyle: 'italic',
   },
@@ -700,24 +669,20 @@ const styles = StyleSheet.create({
   previewInfoTitle: {
     fontSize: FontSize.sm,
     fontWeight: FontWeight.bold,
-    color: Colors.accent,
     marginBottom: Spacing.sm,
   },
   previewInfoText: {
     fontSize: FontSize.sm,
-    color: Colors.textSecondary,
     marginBottom: Spacing.xs,
   },
   errorText: {
     fontSize: FontSize.lg,
-    color: Colors.error,
     textAlign: 'center',
     marginTop: Spacing.xl,
   },
   tabs: {
     flexDirection: 'row',
     borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
   },
   tab: {
     flex: 1,
@@ -726,39 +691,31 @@ const styles = StyleSheet.create({
   },
   tabActive: {
     borderBottomWidth: 2,
-    borderBottomColor: Colors.secondary,
   },
   tabText: {
     fontSize: FontSize.md,
-    color: Colors.textMuted,
     fontWeight: FontWeight.semiBold,
   },
   tabTextActive: {
-    color: Colors.secondary,
   },
   manageCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.surface,
     borderRadius: Radius.md,
     padding: Spacing.md,
     marginTop: Spacing.sm,
     borderWidth: 1,
-    borderColor: Colors.border,
   },
   manageTitle: {
     fontSize: FontSize.sm,
     fontWeight: FontWeight.bold,
-    color: Colors.textPrimary,
   },
   manageBody: {
     fontSize: FontSize.xs,
-    color: Colors.textSecondary,
     marginTop: 2,
   },
   manageMeta: {
     fontSize: FontSize.xs,
-    color: Colors.textMuted,
     marginTop: 4,
   },
   manageActions: {

@@ -53,7 +53,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
       }
 
       return (
-        <SafeAreaView style={styles.container}>
+        <SafeAreaView style={[styles.container, { backgroundColor: Colors.background }]}>
           <View style={styles.content}>
             <Ionicons name="alert-circle" size={48} color={Colors.error} />
             <Text style={[styles.title, {color: Colors.textPrimary}]}>Something Went Wrong</Text>
@@ -73,7 +73,6 @@ export class ErrorBoundary extends React.Component<Props, State> {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
   },
   content: {
     flex: 1,
@@ -84,13 +83,11 @@ const styles = StyleSheet.create({
   title: {
     fontSize: FontSize.xl,
     fontWeight: FontWeight.bold,
-    color: Colors.textPrimary,
     marginTop: Spacing.lg,
     marginBottom: Spacing.md,
   },
   message: {
     fontSize: FontSize.md,
-    color: Colors.textSecondary,
     textAlign: 'center',
     marginBottom: Spacing.xl,
   },

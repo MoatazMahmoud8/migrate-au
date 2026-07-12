@@ -383,7 +383,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12, paddingVertical: 8,
     borderRadius: Radius.full,
     borderWidth: 1, borderColor: Colors.border,
-    backgroundColor: Colors.surface,
     marginRight: 8,
   },
   tabActive: { backgroundColor: 'rgba(255,255,255,0.05)', borderColor: Colors.secondary + '80' },
@@ -421,7 +420,6 @@ const styles = StyleSheet.create({
   /* Card list */
   cardList: { gap: 8 },
   card: {
-    backgroundColor: Colors.surface,
     borderRadius: Radius.lg,
     borderWidth: 1, borderColor: Colors.border,
     overflow: 'hidden',
@@ -465,7 +463,6 @@ const styles = StyleSheet.create({
   /* Processing time stats (expanded) */
   timesSection: { gap: 8 },
   timeRow: {
-    backgroundColor: Colors.background,
     borderRadius: Radius.md,
     padding: Spacing.sm,
     gap: 6,
@@ -479,7 +476,6 @@ const styles = StyleSheet.create({
   streamList: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   streamChip: {
     paddingHorizontal: 10, paddingVertical: 5,
-    backgroundColor: Colors.background,
     borderRadius: Radius.full,
     borderWidth: 1,
   },
@@ -531,9 +527,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 12, paddingVertical: 10,
     borderRadius: Radius.lg,
-    backgroundColor: Colors.surface,
     borderWidth: 1, borderColor: Colors.border,
-    color: Colors.textPrimary,
     fontSize: FontSize.sm,
   },
 

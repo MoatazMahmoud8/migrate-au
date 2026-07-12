@@ -502,7 +502,7 @@ export default function SkillAssessmentScreen() {
                 onPress={() => toggle(auth.id)}
                 activeOpacity={0.85}
               >
-                <View style={[styles.card, isOpen && { borderColor: `${auth.color}50` }]}>
+                <View style={[styles.card, { backgroundColor: Colors.surface }, isOpen && { borderColor: `${auth.color}50` }]}>
                   {/* Accent bar */}
                   <View style={[styles.cardAccent, { backgroundColor: auth.color }]} />
 
@@ -618,7 +618,6 @@ const styles = StyleSheet.create({
   searchWrap: { paddingHorizontal: Spacing.lg, paddingTop: Spacing.md, paddingBottom: Spacing.sm },
   searchBox: {
     flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
-    backgroundColor: Colors.surface,
     borderRadius: Radius.lg, borderWidth: 1, borderColor: Colors.border,
     paddingHorizontal: Spacing.md, paddingVertical: 10,
   },
@@ -642,7 +641,6 @@ const styles = StyleSheet.create({
 
   card: {
     flexDirection: 'row',
-    backgroundColor: Colors.surface,
     borderRadius: Radius.lg,
     borderWidth: 1, borderColor: Colors.border,
     marginBottom: Spacing.sm,
@@ -667,7 +665,6 @@ const styles = StyleSheet.create({
   detail: { marginTop: Spacing.sm },
   metaRow: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: Colors.glass,
     borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.border,
     marginBottom: Spacing.sm, overflow: 'hidden',
   },

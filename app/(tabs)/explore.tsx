@@ -140,12 +140,10 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: FontSize.display,
     fontWeight: FontWeight.extraBold,
-    color: Colors.textPrimary,
     letterSpacing: -0.5,
   },
   headerSub: {
     fontSize: FontSize.md,
-    color: Colors.textMuted,
     marginTop: Spacing.xs,
   },
 
@@ -156,7 +154,6 @@ const styles = StyleSheet.create({
   },
   card: {
     width: CARD_W,
-    backgroundColor: Colors.surface,
     borderRadius: Radius.xl,
     borderWidth: 1,
     padding: Spacing.lg,
@@ -173,12 +170,10 @@ const styles = StyleSheet.create({
   cardLabel: {
     fontSize: FontSize.md,
     fontWeight: FontWeight.bold,
-    color: Colors.textPrimary,
     lineHeight: 20,
   },
   cardDesc: {
     fontSize: FontSize.xs,
-    color: Colors.textMuted,
     lineHeight: 16,
   },
   cardArrow: {

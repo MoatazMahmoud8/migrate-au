@@ -980,9 +980,9 @@ export default function ProfileScreen() {
         animationType="slide"
         onRequestClose={() => setShowAddJourney(false)}
       >
-        <View style={jStyles.modalBackdrop}>
-          <View style={[jStyles.modalSheet, { paddingBottom: insets.bottom + 24 }]}>
-            <View style={jStyles.modalHandle} />
+        <View style={[jStyles.modalBackdrop, { backgroundColor: 'rgba(0,0,0,0.6)' }]}>
+          <View style={[jStyles.modalSheet, { backgroundColor: Colors.surface, paddingBottom: insets.bottom + 24 }]}>
+            <View style={[jStyles.modalHandle, { backgroundColor: Colors.border }]} />
             <Text style={[jStyles.modalTitle, {color: Colors.textPrimary}]}>New Visa Journey</Text>
             <Text style={[jStyles.modalSub, {color: Colors.textPrimary}]}>Track progress and dates for one application</Text>
 
@@ -1135,9 +1135,9 @@ export default function ProfileScreen() {
         animationType="slide"
         onRequestClose={() => setShowFeedback(false)}
       >
-        <View style={feedbackStyles.backdrop}>
-          <View style={[feedbackStyles.sheet, { paddingBottom: insets.bottom + 24 }]}>
-            <View style={feedbackStyles.handle} />
+        <View style={[feedbackStyles.backdrop, { backgroundColor: 'rgba(0,0,0,0.6)' }]}>
+          <View style={[feedbackStyles.sheet, { backgroundColor: Colors.surface, paddingBottom: insets.bottom + 24 }]}>
+            <View style={[feedbackStyles.handle, { backgroundColor: Colors.border }]} />
             <Text style={[feedbackStyles.title, {color: Colors.textPrimary}]}>Get in Touch</Text>
             <Text style={[feedbackStyles.subtitle, {color: Colors.textPrimary}]}>We read every message and aim to reply within 48 hours.</Text>
 
@@ -1288,7 +1288,6 @@ const rowStyles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: Radius.md,
-    backgroundColor: Colors.background,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1297,7 +1296,6 @@ const rowStyles = StyleSheet.create({
   right: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
   value: { fontSize: FontSize.sm, color: Colors.textMuted },
   badge: {
-    backgroundColor: Colors.secondary + '20',
     borderRadius: Radius.full,
     paddingHorizontal: Spacing.sm,
     paddingVertical: 2,
@@ -1312,7 +1310,6 @@ const feedbackStyles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   sheet: {
-    backgroundColor: Colors.surface,
     borderTopLeftRadius: Radius.xl,
     borderTopRightRadius: Radius.xl,
     paddingHorizontal: Spacing.lg,
@@ -1321,19 +1318,16 @@ const feedbackStyles = StyleSheet.create({
   handle: {
     width: 36, height: 4,
     borderRadius: 2,
-    backgroundColor: Colors.border,
     alignSelf: 'center',
     marginBottom: Spacing.lg,
   },
   title: {
     fontSize: FontSize.lg,
     fontWeight: FontWeight.bold,
-    color: Colors.textPrimary,
     marginBottom: 4,
   },
   subtitle: {
     fontSize: FontSize.sm,
-    color: Colors.textMuted,
     marginBottom: Spacing.lg,
   },
   option: {
@@ -1353,14 +1347,12 @@ const feedbackStyles = StyleSheet.create({
   optionLabel: {
     fontSize: FontSize.md,
     fontWeight: FontWeight.semiBold,
-    color: Colors.textPrimary,
   },
   optionDesc: { fontSize: FontSize.xs, color: Colors.textMuted, marginTop: 2 },
   cancelBtn: {
     marginTop: Spacing.lg,
     paddingVertical: 14,
     borderRadius: Radius.md,
-    backgroundColor: Colors.glass,
     alignItems: 'center',
   },
   cancelText: { fontSize: FontSize.md, color: Colors.textSecondary, fontWeight: FontWeight.semiBold },
@@ -1533,7 +1525,6 @@ const styles = StyleSheet.create({
     width: 200,
     height: 200,
     borderRadius: 100,
-    backgroundColor: Colors.secondary,
     opacity: 0.04,
     top: -60,
     right: -40,
@@ -1556,7 +1547,6 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.2)',
   },
   manageBillingText: {
-    color: Colors.textPrimary,
     fontSize: FontSize.sm,
     fontWeight: FontWeight.semiBold,
   },
@@ -1567,27 +1557,22 @@ const styles = StyleSheet.create({
     width: 22,
     height: 22,
     borderRadius: 11,
-    backgroundColor: Colors.secondary,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
-    borderColor: Colors.primaryDark,
   },
 
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginBottom: Spacing.sm },
   profileName: { color: Colors.textPrimary, fontSize: FontSize.xl, fontWeight: FontWeight.bold },
   nameEditRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginBottom: Spacing.sm },
   nameInput: {
-    color: Colors.textPrimary,
     fontSize: FontSize.xl,
     fontWeight: FontWeight.bold,
     borderBottomWidth: 2,
-    borderBottomColor: Colors.secondary,
     minWidth: 160,
     paddingBottom: 2,
   },
   saveBtn: {
-    backgroundColor: Colors.secondary,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.xs,
     borderRadius: Radius.full,
@@ -1607,7 +1592,6 @@ const styles = StyleSheet.create({
   },
   planText: { fontSize: FontSize.sm, fontWeight: FontWeight.semiBold, color: Colors.secondary },
   subscribeNowBtn: {
-    backgroundColor: Colors.secondary,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.xs,
     borderRadius: Radius.full,
@@ -1619,11 +1603,9 @@ const styles = StyleSheet.create({
   sectionLabel: { fontSize: FontSize.xs, fontWeight: FontWeight.semiBold, color: Colors.textMuted, letterSpacing: 1, textTransform: 'uppercase', marginBottom: Spacing.sm },
 
   card: {
-    backgroundColor: Colors.surface,
     borderRadius: Radius.xl,
     paddingHorizontal: Spacing.lg,
     borderWidth: 1,
-    borderColor: Colors.border,
   },
 
   // Settings row with switch
@@ -1645,12 +1627,10 @@ const styles = StyleSheet.create({
   settingLabel: {
     fontSize: FontSize.sm,
     fontWeight: FontWeight.semiBold,
-    color: Colors.textPrimary,
     marginBottom: 2,
   },
   settingValue: {
     fontSize: FontSize.xs,
-    color: Colors.textMuted,
   },
 
   // Premium card
@@ -1699,10 +1679,8 @@ const styles = StyleSheet.create({
     marginHorizontal: Spacing.lg,
     marginTop: Spacing.xl,
     padding: Spacing.md,
-    backgroundColor: Colors.surface,
     borderRadius: Radius.md,
     borderWidth: 1,
-    borderColor: Colors.border,
   },
   disclaimerText: { flex: 1, fontSize: FontSize.xs, color: Colors.textMuted, lineHeight: 16 },
   disclaimerLink: { color: Colors.accent, textDecorationLine: 'underline' },

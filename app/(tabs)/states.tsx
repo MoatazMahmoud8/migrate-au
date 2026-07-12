@@ -286,7 +286,7 @@ export default function StatesScreen() {
               onPress={() => setExpanded(isOpen ? null : state.code)}
               activeOpacity={0.85}
             >
-              <View style={[styles.card, isOpen && styles.cardOpen]}>
+              <View style={[styles.card, { backgroundColor: Colors.surface }, isOpen && styles.cardOpen]}>
                 {/* Left color accent */}
                 <View style={[styles.cardAccent, { backgroundColor: state.color }]} />
 
@@ -422,9 +422,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.xs,
     alignSelf: 'flex-start',
-    backgroundColor: Colors.infoLight,
     borderWidth: 1,
-    borderColor: Colors.accent + '30',
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.xs,
     borderRadius: Radius.full,
@@ -450,7 +448,6 @@ const styles = StyleSheet.create({
   trustText: {
     flex: 1,
     fontSize: FontSize.xs,
-    color: Colors.success,
     fontWeight: '500',
     lineHeight: 16,
   },
@@ -463,15 +460,12 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.xl,
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
-    backgroundColor: Colors.surface,
     borderRadius: Radius.md,
     borderWidth: 1,
-    borderColor: Colors.border,
   },
   sourceNoteText: {
     flex: 1,
     fontSize: FontSize.xs,
-    color: Colors.textMuted,
     lineHeight: 16,
   },
 
@@ -479,11 +473,9 @@ const styles = StyleSheet.create({
 
   card: {
     flexDirection: 'row',
-    backgroundColor: Colors.surface,
     borderRadius: Radius.xl,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: Colors.border,
   },
   cardOpen: { borderColor: Colors.divider },
   cardAccent: { width: 4 },
@@ -546,7 +538,6 @@ const styles = StyleSheet.create({
     borderRadius: Radius.sm,
     borderWidth: 1,
     marginBottom: 4,
-    backgroundColor: Colors.glass,
   },
   visaSubBadge: {
     paddingHorizontal: 7,

@@ -165,7 +165,6 @@ export default function InAppBrowser({ url, onClose, title }: InAppBrowserProps)
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -173,14 +172,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.md,
-    backgroundColor: Colors.background,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
   },
   headerTitle: {
     fontSize: FontSize.md,
     fontWeight: FontWeight.semiBold,
-    color: Colors.textPrimary,
     flex: 1,
     marginHorizontal: Spacing.md,
     textAlign: 'center',
@@ -193,12 +189,10 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: Colors.background,
   },
   loadingText: {
     marginTop: Spacing.md,
     fontSize: FontSize.sm,
-    color: Colors.textMuted,
     fontWeight: FontWeight.regular,
   },
   fallbackContainer: {
@@ -210,12 +204,10 @@ const styles = StyleSheet.create({
   fallbackTitle: {
     fontSize: FontSize.lg,
     fontWeight: FontWeight.bold,
-    color: Colors.textPrimary,
     marginTop: Spacing.md,
   },
   fallbackText: {
     fontSize: FontSize.md,
-    color: Colors.textMuted,
     textAlign: 'center',
     marginTop: Spacing.md,
     marginBottom: Spacing.lg,

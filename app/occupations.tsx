@@ -693,7 +693,7 @@ export default function OccupationsScreen() {
             const salary = getSalaryFor(salaries, item.anzsco);
             return (
             <TouchableOpacity
-              style={[styles.card, savedAnzsco === item.anzsco && styles.cardSaved]}
+              style={[styles.card, { backgroundColor: Colors.surface }, savedAnzsco === item.anzsco && styles.cardSaved]}
               activeOpacity={0.85}
               onPress={() => { hapticTap(); setSelected(item); setExpandedState(null); }}
             >
@@ -757,11 +757,11 @@ export default function OccupationsScreen() {
         animationType="slide"
         onRequestClose={() => setSelected(null)}
       >
-        <View style={styles.modalBackdrop}>
-          <View style={[styles.modalSheet, { paddingBottom: insets.bottom + 16 }]}>
+        <View style={[styles.modalBackdrop, { backgroundColor: 'rgba(0,0,0,0.6)' }]}>
+          <View style={[styles.modalSheet, { backgroundColor: Colors.surface, paddingBottom: insets.bottom + 16 }]}>
             {selected && (
               <>
-                <View style={styles.modalHandle} />
+                <View style={[styles.modalHandle, { backgroundColor: Colors.border }]} />
                 <ScrollView showsVerticalScrollIndicator={false}>
                   <View style={styles.modalHead}>
                     <View style={styles.codePillLg}>
@@ -1332,7 +1332,6 @@ const styles = StyleSheet.create({
   backBtn: {
     width: 32, height: 32, borderRadius: 16,
     alignItems: 'center', justifyContent: 'center',
-    backgroundColor: Colors.glass,
   },
   headerBadge: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
@@ -1349,17 +1348,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: Colors.surface,
     borderRadius: Radius.md,
     paddingHorizontal: Spacing.md,
     paddingVertical: 10,
     borderWidth: 1,
-    borderColor: Colors.border,
     marginBottom: Spacing.md,
   },
   searchInput: {
     flex: 1,
-    color: Colors.textPrimary,
     fontSize: FontSize.sm,
     padding: 0,
   },
@@ -1389,8 +1385,6 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
     borderRadius: Radius.full,
     borderWidth: 1,
-    borderColor: Colors.border,
-    backgroundColor: Colors.surface,
     marginRight: 8,
   },
   pillText: { fontSize: FontSize.xs, color: Colors.textSecondary, fontWeight: FontWeight.semiBold },
@@ -1399,7 +1393,6 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: Radius.lg,
     borderWidth: 1,
-    borderColor: Colors.border,
     backgroundColor: 'transparent',
     marginRight: 6,
     alignItems: 'center',
@@ -1409,10 +1402,8 @@ const styles = StyleSheet.create({
 
   /* English card */
   engCard: {
-    backgroundColor: Colors.surface,
     borderRadius: Radius.md,
     borderWidth: 1,
-    borderColor: Colors.border,
     borderLeftWidth: 3,
     marginBottom: Spacing.sm,
     padding: Spacing.md,
@@ -1429,10 +1420,8 @@ const styles = StyleSheet.create({
 
   /* Skills assessment card */
   authCard: {
-    backgroundColor: Colors.surface,
     borderRadius: Radius.md,
     borderWidth: 1,
-    borderColor: Colors.border,
     marginBottom: Spacing.sm,
     overflow: 'hidden',
   },
@@ -1443,7 +1432,6 @@ const styles = StyleSheet.create({
     padding: Spacing.md,
     backgroundColor: `${Colors.accent}0D`,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
   },
   authIcon: {
     width: 32,
@@ -1463,7 +1451,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.divider,
   },
   authRowKey: { flex: 1, fontSize: FontSize.xs, color: Colors.textMuted },
   authRowVal: { fontSize: FontSize.xs, fontWeight: FontWeight.semiBold, color: Colors.textPrimary },
@@ -1488,21 +1475,17 @@ const styles = StyleSheet.create({
   /* List */
   list: { paddingHorizontal: Spacing.lg, paddingBottom: 100 },
   card: {
-    backgroundColor: Colors.surface,
     borderRadius: Radius.lg,
     padding: Spacing.md,
     marginBottom: Spacing.sm,
     borderWidth: 1,
-    borderColor: Colors.border,
   },
   cardSaved: {
-    borderColor: Colors.success,
     backgroundColor: `${Colors.success}0D`,
   },
   cardHead: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   codePill: {
     paddingHorizontal: 8, paddingVertical: 4,
-    backgroundColor: Colors.glassStrong,
     borderRadius: Radius.sm,
   },
   codePillText: { fontSize: FontSize.xs, color: Colors.accent, fontWeight: FontWeight.bold, letterSpacing: 0.3 },
@@ -1538,7 +1521,6 @@ const styles = StyleSheet.create({
   salaryChipText: {
     fontSize: 10,
     fontWeight: FontWeight.bold,
-    color: Colors.success,
     letterSpacing: 0.2,
   },
   salaryCard: {
@@ -1558,7 +1540,6 @@ const styles = StyleSheet.create({
   salaryCardTitle: {
     fontSize: FontSize.sm,
     fontWeight: FontWeight.bold,
-    color: Colors.textPrimary,
     letterSpacing: 0.3,
   },
   salaryCardRow: {
@@ -1570,16 +1551,13 @@ const styles = StyleSheet.create({
   salaryCardValue: {
     fontSize: 22,
     fontWeight: FontWeight.bold,
-    color: Colors.success,
   },
   salaryCardUnit: {
     fontSize: FontSize.xs,
-    color: Colors.textMuted,
     letterSpacing: 0.3,
   },
   salaryCardSub: {
     fontSize: FontSize.xs,
-    color: Colors.textSecondary,
   },
   salaryCardLink: {
     marginTop: 4,
@@ -1589,7 +1567,6 @@ const styles = StyleSheet.create({
   },
   salaryCardLinkText: {
     fontSize: FontSize.xs,
-    color: Colors.accent,
     textDecorationLine: 'underline',
   },
 
@@ -1603,7 +1580,6 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalSheet: {
-    backgroundColor: Colors.surface,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingHorizontal: Spacing.lg,
@@ -1612,14 +1588,12 @@ const styles = StyleSheet.create({
   },
   modalHandle: {
     width: 40, height: 4, borderRadius: 2,
-    backgroundColor: Colors.border,
     alignSelf: 'center',
     marginBottom: Spacing.md,
   },
   modalHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   codePillLg: {
     paddingHorizontal: 10, paddingVertical: 5,
-    backgroundColor: Colors.glassStrong,
     borderRadius: Radius.md,
   },
   codePillLgText: { color: Colors.accent, fontWeight: FontWeight.bold, fontSize: FontSize.xs, letterSpacing: 0.5 },
@@ -1636,7 +1610,6 @@ const styles = StyleSheet.create({
   visaChip: {
     paddingHorizontal: 10, paddingVertical: 5,
     borderRadius: Radius.sm,
-    backgroundColor: Colors.glass,
     borderWidth: 1, borderColor: Colors.border,
   },
   visaChipText: { color: Colors.textPrimary, fontSize: FontSize.xs, fontWeight: FontWeight.semiBold },
@@ -1653,8 +1626,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     borderRadius: Radius.md,
     borderWidth: 1,
-    borderColor: Colors.border,
-    backgroundColor: Colors.glass,
     alignItems: 'center',
   },
   stateCellCode: { fontSize: FontSize.xs, fontWeight: FontWeight.bold, letterSpacing: 0.4 },
@@ -1665,7 +1636,6 @@ const styles = StyleSheet.create({
     marginTop: Spacing.sm,
     borderRadius: Radius.md,
     borderWidth: 1,
-    backgroundColor: Colors.surface,
     overflow: 'hidden',
   },
   stateReqHeader: {
@@ -1674,7 +1644,6 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
     padding: Spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.divider,
   },
   stateReqDot: { width: 8, height: 8, borderRadius: 4 },
   stateReqTitle: { flex: 1, fontSize: FontSize.xs, fontWeight: FontWeight.bold },
@@ -1692,7 +1661,6 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
     paddingVertical: 6,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.divider,
   },
   stateReqKey: { flex: 1, fontSize: FontSize.xs, color: Colors.textMuted },
   stateReqVal: { fontSize: FontSize.xs, fontWeight: FontWeight.semiBold },
@@ -1719,8 +1687,6 @@ const styles = StyleSheet.create({
   visaTabs: {
     flexDirection: 'row',
     borderBottomWidth: 1,
-    borderBottomColor: Colors.divider,
-    backgroundColor: Colors.glass,
   },
   visaTab: {
     flex: 1,
@@ -1782,11 +1748,9 @@ const styles = StyleSheet.create({
   notSponsoredTitle: {
     fontSize: FontSize.sm,
     fontWeight: '700',
-    color: Colors.warning,
   },
   notSponsoredReason: {
     fontSize: FontSize.xs,
-    color: Colors.textSecondary,
     marginBottom: 6,
   },
   notSponsoredNotes: {
@@ -1794,12 +1758,10 @@ const styles = StyleSheet.create({
   },
   notSponsoredNoteText: {
     fontSize: 11,
-    color: Colors.textMuted,
     lineHeight: 16,
   },
   notSponsoredSource: {
     fontSize: 10,
-    color: Colors.textMuted,
     marginTop: 6,
     fontStyle: 'italic',
   },
@@ -1826,7 +1788,6 @@ const styles = StyleSheet.create({
   },
   gradPathwayDesc: {
     fontSize: FontSize.xs,
-    color: Colors.textSecondary,
     lineHeight: 16,
     marginBottom: Spacing.sm,
   },
@@ -1847,12 +1808,10 @@ const styles = StyleSheet.create({
   },
   gradPathwayUniText: {
     fontSize: FontSize.xs,
-    color: Colors.textPrimary,
     flex: 1,
   },
   gradPathwayUniMore: {
     fontSize: 10,
-    color: Colors.textMuted,
     fontStyle: 'italic',
     marginTop: 2,
   },
@@ -1868,7 +1827,6 @@ const styles = StyleSheet.create({
   },
   gradPathwayBenefitText: {
     fontSize: FontSize.xs,
-    color: Colors.textSecondary,
     flex: 1,
     lineHeight: 16,
   },
@@ -1881,16 +1839,12 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingVertical: 12,
     borderRadius: Radius.md,
-    backgroundColor: Colors.secondary,
   },
   modalCtaSaved: {
-    backgroundColor: Colors.success,
   },
   modalCtaSecondary: {
     marginTop: Spacing.sm,
-    backgroundColor: Colors.glass,
     borderWidth: 1,
-    borderColor: Colors.border,
   },
   modalCtaText: { color: Colors.primaryDark, fontWeight: FontWeight.bold, fontSize: FontSize.sm },
 });

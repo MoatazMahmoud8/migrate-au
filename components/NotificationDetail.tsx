@@ -162,7 +162,6 @@ function formatTimeAgo(timestamp: string | number): string {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -177,7 +176,6 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: FontSize.lg,
     fontWeight: FontWeight.semiBold,
-    color: Colors.textPrimary,
   },
   scrollContent: {
     paddingHorizontal: Spacing.lg,
@@ -203,13 +201,11 @@ const styles = StyleSheet.create({
   },
   timeAgo: {
     fontSize: FontSize.sm,
-    color: Colors.textMuted,
     fontWeight: FontWeight.regular,
   },
   headline: {
     fontSize: FontSize.xl,
     fontWeight: FontWeight.bold,
-    color: Colors.textPrimary,
     marginBottom: Spacing.md,
     lineHeight: 28,
   },
@@ -227,7 +223,6 @@ const styles = StyleSheet.create({
   },
   sourceText: {
     fontSize: FontSize.sm,
-    color: Colors.textSecondary,
     fontWeight: FontWeight.regular,
   },
   bodySection: {
@@ -235,7 +230,6 @@ const styles = StyleSheet.create({
   },
   bodyText: {
     fontSize: FontSize.md,
-    color: Colors.textPrimary,
     lineHeight: 22,
     fontWeight: FontWeight.regular,
   },
@@ -243,7 +237,6 @@ const styles = StyleSheet.create({
     marginTop: Spacing.lg,
     paddingTop: Spacing.md,
     borderTopWidth: 1,
-    borderTopColor: Colors.border,
     gap: 8,
   },
   metaRow: {
@@ -253,14 +246,12 @@ const styles = StyleSheet.create({
   },
   metaText: {
     fontSize: FontSize.sm,
-    color: Colors.textMuted,
   },
   footer: {
     paddingHorizontal: Spacing.lg,
     paddingBottom: Spacing.lg,
     paddingTop: Spacing.md,
     borderTopWidth: 1,
-    borderTopColor: Colors.border,
   },
   button: {
     paddingHorizontal: Spacing.lg,

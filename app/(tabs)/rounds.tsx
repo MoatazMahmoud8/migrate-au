@@ -570,7 +570,6 @@ const styles = StyleSheet.create({
   pageSub: { fontSize: FontSize.xs, color: Colors.textMuted, marginTop: 2 },
   refreshBtn: {
     width: 36, height: 36, borderRadius: 18,
-    backgroundColor: Colors.surface,
     borderWidth: 1, borderColor: Colors.border,
     alignItems: 'center', justifyContent: 'center',
   },
@@ -604,7 +603,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
     marginHorizontal: Spacing.lg, marginBottom: Spacing.xs,
     paddingVertical: Spacing.md, paddingHorizontal: Spacing.md,
-    backgroundColor: Colors.surface,
     borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.border,
   },
   sectionToggleText: { fontSize: FontSize.sm, fontWeight: FontWeight.semiBold, color: Colors.textPrimary, flexShrink: 1 },
@@ -612,7 +610,6 @@ const styles = StyleSheet.create({
 
   stateTable: {
     marginHorizontal: Spacing.lg, marginBottom: Spacing.md,
-    backgroundColor: Colors.surface,
     borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.border, overflow: 'hidden',
   },
   stateRow: {

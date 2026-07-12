@@ -386,7 +386,6 @@ export default function NotificationsScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: Colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -398,10 +397,8 @@ const styles = StyleSheet.create({
   heading: {
     fontSize: FontSize.xxl,
     fontWeight: FontWeight.bold as any,
-    color: Colors.textPrimary,
   },
   badge: {
-    backgroundColor: Colors.error,
     borderRadius: 12,
     minWidth: 24,
     height: 24,
@@ -410,7 +407,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
   },
   badgeText: {
-    color: Colors.white,
     fontSize: 12,
     fontWeight: '700',
   },
@@ -422,17 +418,14 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.surface,
     borderRadius: Radius.lg,
     borderWidth: 1,
-    borderColor: Colors.border,
     overflow: 'hidden',
     gap: 12,
     paddingRight: 12,
     paddingVertical: 12,
   },
   cardUnread: {
-    backgroundColor: Colors.surfaceRaised,
     borderColor: 'rgba(0,194,255,0.25)',
   },
   accentBar: {
@@ -478,7 +471,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: FontSize.sm,
     fontWeight: FontWeight.bold as any,
-    color: Colors.textPrimary,
     lineHeight: 18,
   },
   body: {
@@ -496,7 +488,6 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: Colors.accent,
   },
   empty: {
     alignItems: 'center',
@@ -518,11 +509,9 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: FontSize.lg,
     fontWeight: FontWeight.semiBold as any,
-    color: Colors.textSecondary,
   },
   emptySubtext: {
     fontSize: FontSize.sm,
-    color: Colors.textMuted,
     textAlign: 'center',
     lineHeight: 20,
   },
@@ -534,7 +523,6 @@ const styles = StyleSheet.create({
     paddingTop: 2,
     gap: 8,
     flexWrap: 'wrap',
-    backgroundColor: Colors.background,
     zIndex: 10,
   },
   filterGradientOverlay: {
@@ -550,31 +538,24 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: Radius.full,
     borderWidth: 1,
-    borderColor: Colors.border,
-    backgroundColor: Colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
   pillActive: {
-    borderColor: Colors.secondary,
     backgroundColor: 'rgba(255,205,0,0.15)',
   },
   pillText: {
     fontSize: FontSize.xs,
     fontWeight: '600',
-    color: Colors.textMuted,
   },
   pillTextActive: {
-    color: Colors.secondary,
   },
   skeletonCard: {
     flexDirection: 'row',
-    backgroundColor: Colors.surface,
     borderRadius: Radius.lg,
     overflow: 'hidden',
     minHeight: 84,
     borderWidth: 1,
-    borderColor: Colors.border,
   },
   skeletonBar: {
     width: 4,
@@ -593,13 +574,11 @@ const styles = StyleSheet.create({
     padding: Spacing.md,
     marginHorizontal: Spacing.md,
     marginVertical: Spacing.sm,
-    backgroundColor: Colors.errorLight,
     borderRadius: Radius.md,
     borderLeftWidth: 3,
     borderLeftColor: Colors.error,
   },
   errorText: {
-    color: Colors.error,
     fontSize: FontSize.sm,
     fontWeight: FontWeight.medium,
   },
