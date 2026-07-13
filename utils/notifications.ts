@@ -72,7 +72,13 @@ export async function initNotifications(subscribedStates: string[] = [], userId?
   }
   try {
     console.log('[notifications] 🚀 Starting initialization...');
-    
+
+    // 0. Register tap/open handlers FIRST — before any awaits that could throw
+    //    or early-return. This guarantees notification taps always navigate,
+    //    even if permission or topic subscription later fails.
+    registerBackgroundOpenHandler();
+    console.log('[notifications] ✅ Tap/open handlers registered (early)');
+
     // 1. Request permission
     const granted = await requestPermission();
     if (!granted) {
@@ -93,11 +99,7 @@ export async function initNotifications(subscribedStates: string[] = [], userId?
     registerForegroundHandler();
     console.log('[notifications] ✅ Foreground handler registered');
 
-    // 5. Handle notifications that opened the app (background tap)
-    registerBackgroundOpenHandler();
-    console.log('[notifications] ✅ Background handler registered');
-
-    // 6. Register this device's FCM token against the user's watchlist doc
+    // 5. Register this device's FCM token against the user's watchlist doc
     //    so the backend can push targeted occupation alerts.
     if (userId) {
       try {
@@ -258,39 +260,74 @@ function registerForegroundHandler() {
 
 // ─── Background / quit tap handler ───────────────────────────────────────────
 
+/** Guard so the tap listeners are only attached once, even if init runs twice. */
+let tapHandlersRegistered = false;
+
 function registerBackgroundOpenHandler() {
+  if (tapHandlersRegistered) return;
+  tapHandlersRegistered = true;
+
   // App was in background and user tapped the notification
   messaging().onNotificationOpenedApp((remoteMessage) => {
-    handleNotificationNavigation(remoteMessage.data as Record<string, string> | undefined);
+    console.log('[notifications] onNotificationOpenedApp:', remoteMessage?.data);
+    handleNotificationNavigation(remoteMessage?.data as Record<string, string> | undefined);
   });
 
-  // App was quit and launched by tapping notification
-  messaging().getInitialNotification().then((remoteMessage) => {
-    if (remoteMessage) {
-      handleNotificationNavigation(remoteMessage.data as Record<string, string> | undefined);
-    }
-  });
+  // App was quit and launched by tapping notification.
+  // Defer navigation so expo-router's root layout has time to mount —
+  // otherwise router.push is dropped on a cold start.
+  messaging()
+    .getInitialNotification()
+    .then((remoteMessage) => {
+      if (remoteMessage) {
+        console.log('[notifications] getInitialNotification (cold start):', remoteMessage.data);
+        handleNotificationNavigation(
+          remoteMessage.data as Record<string, string> | undefined,
+          { coldStart: true },
+        );
+      }
+    });
 
   // Handle taps on local notifications (shown in foreground via expo-notifications)
   Notifications.addNotificationResponseReceivedListener((response) => {
     const data = response.notification.request.content.data as Record<string, string> | undefined;
+    console.log('[notifications] local notification tapped:', data);
     handleNotificationNavigation(data);
+  });
+
+  // Handle a local notification that launched the app from quit state
+  Notifications.getLastNotificationResponseAsync().then((response) => {
+    if (response) {
+      const data = response.notification.request.content.data as Record<string, string> | undefined;
+      handleNotificationNavigation(data, { coldStart: true });
+    }
   });
 }
 
-function handleNotificationNavigation(data?: Record<string, string>) {
-  try {
-    const { router } = require('expo-router');
-    // If explicit route provided, navigate there
-    if (data?.route) {
-      router.push(data.route);
-      return;
+function handleNotificationNavigation(
+  data?: Record<string, string>,
+  opts: { coldStart?: boolean; attempt?: number } = {},
+) {
+  const attempt = opts.attempt ?? 0;
+  // Cold start: wait for the navigation tree to mount before first attempt.
+  const initialDelay = opts.coldStart && attempt === 0 ? 800 : 0;
+
+  setTimeout(() => {
+    try {
+      const { router } = require('expo-router');
+      const target = data?.route || '/(tabs)/notifications';
+      router.push(target as any);
+      console.log('[notifications] navigated to:', target);
+    } catch (e) {
+      // Router not ready yet — retry a few times with backoff.
+      if (attempt < 5) {
+        console.warn(`[notifications] navigation not ready (attempt ${attempt}) — retrying`, e);
+        handleNotificationNavigation(data, { attempt: attempt + 1 });
+      } else {
+        console.warn('[notifications] navigation failed after retries:', e);
+      }
     }
-    // Default: open the notifications/updates tab
-    router.navigate('/(tabs)/notifications');
-  } catch (e) {
-    console.warn('[notifications] navigation failed:', e);
-  }
+  }, initialDelay || (attempt > 0 ? 400 : 0));
 }
 
 // ─── Firestore in-app feed ────────────────────────────────────────────────────
