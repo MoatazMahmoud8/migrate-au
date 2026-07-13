@@ -20,6 +20,30 @@ const CACHE_TS_KEY = 'rounds_v2_ts';
 const REMOTE_URL = 'https://swift-shore-238707.web.app/invitation-rounds.json';
 const CACHE_HOURS = 6;
 
+/** SC 189 points floor — the lowest score at which invitations are ever issued. */
+const SC189_POINTS_FLOOR = 65;
+
+/**
+ * Derive the round's minimum SC 189 points.
+ *
+ * NOTE: `sc189Total` / `sc189.total` is the *number of invitations issued*, not
+ * a points value, so it must never be shown as "points". The real minimum is the
+ * lowest per-occupation SC 189 cut-off in `occupationScores`; if that isn't
+ * available we fall back to the SC 189 floor (65).
+ */
+function deriveMinPoints(data: any): number {
+  const scores = data?.occupationScores;
+  if (Array.isArray(scores) && scores.length > 0) {
+    const values = scores
+      .map((s: any) => (typeof s?.sc189 === 'number' ? s.sc189 : null))
+      .filter((v: number | null): v is number => v != null && v > 0);
+    if (values.length > 0) {
+      return Math.min(...values);
+    }
+  }
+  return SC189_POINTS_FLOOR;
+}
+
 /**
  * Get the latest invitation round data from remote source, cache, or fallback
  * Always tries to refresh if cache is stale
@@ -48,7 +72,7 @@ export async function getLatestRound(): Promise<LatestRound> {
             return {
               date: round.date,
               label: formatRoundDate(round.date),
-              minPoints: round.sc189?.total || round.sc189Total || 65,
+              minPoints: deriveMinPoints(data),
               tieBreak: round.sc189?.tieBreak || round.sc189TieBreak,
             };
           }
@@ -70,7 +94,7 @@ export async function getLatestRound(): Promise<LatestRound> {
           return {
             date: round.date,
             label: formatRoundDate(round.date),
-            minPoints: round.sc189?.total || round.sc189Total || 65,
+            minPoints: deriveMinPoints(data),
             tieBreak: round.sc189?.tieBreak || round.sc189TieBreak,
           };
         }
