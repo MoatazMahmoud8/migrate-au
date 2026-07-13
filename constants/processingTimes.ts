@@ -77,7 +77,7 @@ export const PROCESSING_TIMES: ProcessingTime[] = [
     p90: '16 months',
     icon: 'home-outline',
     color: '#00C2FF',
-    url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/permanent-residence-skilled-regional-191',
+    url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skilled-regional-191',
   },
 
   // ─── Employer-sponsored ───────────────────────────────────────────
@@ -169,7 +169,7 @@ export const PROCESSING_TIMES: ProcessingTime[] = [
     p90: '32 months',
     icon: 'heart-outline',
     color: '#FF6B8A',
-    url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/partner-820-801',
+    url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/partner-onshore',
   },
   {
     subclass: '309/100',
@@ -179,7 +179,7 @@ export const PROCESSING_TIMES: ProcessingTime[] = [
     p90: '26 months',
     icon: 'heart-outline',
     color: '#FF6B8A',
-    url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/partner-offshore-309-100',
+    url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/partner-offshore',
   },
   {
     subclass: '300',
@@ -256,7 +256,7 @@ export const PROCESSING_TIMES: ProcessingTime[] = [
     p90: '53 days',
     icon: 'sunny-outline',
     color: '#FB923C',
-    url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/working-holiday',
+    url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/work-holiday-417',
   },
 ];
 
