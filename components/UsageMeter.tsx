@@ -26,20 +26,21 @@ export function UsageMeter({ feature, remaining, onUpgradePress, isPremium }: Us
   const total = { calculator: 3, aiMessages: 3, anzscoSearches: 10 }[feature];
   const isLow = remaining === 0;
   const isWarning = remaining === 1;
+  const statusColor = isLow ? Colors.error : isWarning ? Colors.warning : Colors.secondary;
 
   return (
-    <View style={[styles.meter, isLow && styles.meterCritical, isWarning && styles.meterWarning]}>
+    <View style={[styles.meter, { backgroundColor: Colors.surface, borderLeftColor: statusColor }]}>
       <View style={styles.content}>
         <View style={styles.iconContainer}>
           <Ionicons 
             name={icon as any} 
             size={16} 
-            color={isLow ? Colors.error : isWarning ? Colors.warning : Colors.secondary}
+            color={statusColor}
           />
         </View>
         <View style={styles.textContainer}>
           <Text style={[styles.label, {color: Colors.textPrimary}]}>{name}</Text>
-          <Text style={[styles.remaining, {color: Colors.textPrimary}]}>
+          <Text style={[styles.remaining, { color: Colors.textSecondary }]}>
             {remaining > 0 ? `${remaining} of ${total} remaining this month` : 'Free tier exhausted'}
           </Text>
         </View>
@@ -47,7 +48,7 @@ export function UsageMeter({ feature, remaining, onUpgradePress, isPremium }: Us
 
       {remaining === 0 && (
         <TouchableOpacity onPress={onUpgradePress}>
-          <Text style={[styles.upgradeBtn, {color: Colors.textPrimary}]}>Upgrade →</Text>
+          <Text style={[styles.upgradeBtn, { color: Colors.accent }]}>Upgrade →</Text>
         </TouchableOpacity>
       )}
     </View>
@@ -65,13 +66,6 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.sm,
     borderRadius: Radius.md,
     borderLeftWidth: 3,
-    borderLeftColor: Colors.secondary,
-  },
-  meterWarning: {
-    borderLeftColor: Colors.warning,
-  },
-  meterCritical: {
-    borderLeftColor: Colors.error,
   },
   content: {
     flex: 1,

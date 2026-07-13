@@ -122,7 +122,11 @@ export function PaywallModal({ visible, onClose, userId, title, message, feature
             <View style={styles.planRow}>
               {/* Monthly */}
               <TouchableOpacity
-                style={[styles.planCard, { backgroundColor: Colors.surface, borderColor: Colors.border }, selectedCycle === 'monthly' && styles.planCardActive]}
+                style={[
+                  styles.planCard,
+                  { backgroundColor: Colors.surface, borderColor: Colors.border },
+                  selectedCycle === 'monthly' && { backgroundColor: `${Colors.secondary}12`, borderColor: Colors.secondary },
+                ]}
                 onPress={() => setSelectedCycle('monthly')}
                 activeOpacity={0.8}
               >
@@ -140,13 +144,19 @@ export function PaywallModal({ visible, onClose, userId, title, message, feature
 
               {/* Yearly — most popular */}
               <TouchableOpacity
-                style={[styles.planCard, styles.planCardYearly, { backgroundColor: Colors.surface, borderColor: Colors.border }, selectedCycle === 'yearly' && styles.planCardActive]}
+                style={[
+                  styles.planCard,
+                  styles.planCardYearly,
+                  { backgroundColor: Colors.surface, borderColor: Colors.border },
+                  selectedCycle === 'yearly' && { backgroundColor: `${Colors.secondary}12`, borderColor: Colors.secondary },
+                ]}
                 onPress={() => setSelectedCycle('yearly')}
                 activeOpacity={0.8}
               >
                 <View style={styles.badgeWrap} pointerEvents="none">
-                  <View style={styles.saveBadge}>
-                    <Text style={[styles.saveBadgeText, {color: Colors.textPrimary}]} numberOfLines={1}>POPULAR</Text>
+                  <View style={[styles.saveBadge, { backgroundColor: Colors.secondary }]}
+                  >
+                    <Text style={[styles.saveBadgeText, { color: Colors.primaryDark }]} numberOfLines={1}>POPULAR</Text>
                   </View>
                 </View>
                 {selectedCycle === 'yearly' && (
@@ -163,13 +173,18 @@ export function PaywallModal({ visible, onClose, userId, title, message, feature
 
               {/* Lifetime — ultimate choice */}
               <TouchableOpacity
-                style={[styles.planCard, { backgroundColor: Colors.surface, borderColor: Colors.border }, selectedCycle === 'lifetime' && styles.planCardActive]}
+                style={[
+                  styles.planCard,
+                  { backgroundColor: Colors.surface, borderColor: Colors.border },
+                  selectedCycle === 'lifetime' && { backgroundColor: `${Colors.secondary}12`, borderColor: Colors.secondary },
+                ]}
                 onPress={() => setSelectedCycle('lifetime')}
                 activeOpacity={0.8}
               >
                 <View style={styles.badgeWrap} pointerEvents="none">
-                  <View style={[styles.saveBadge, styles.lifetimeBadge]}>
-                    <Text style={[styles.saveBadgeText, {color: Colors.textPrimary}]} numberOfLines={1}>BEST DEAL</Text>
+                  <View style={[styles.saveBadge, styles.lifetimeBadge, { backgroundColor: Colors.secondary }]}
+                  >
+                    <Text style={[styles.saveBadgeText, { color: Colors.primaryDark }]} numberOfLines={1}>BEST DEAL</Text>
                   </View>
                 </View>
                 {selectedCycle === 'lifetime' && (
@@ -204,7 +219,7 @@ export function PaywallModal({ visible, onClose, userId, title, message, feature
                   ) : (
                     <>
                       <Ionicons name="flash" size={18} color={Colors.primaryDark} />
-                      <Text style={[styles.primaryBtnText, {color: Colors.textPrimary}]}>
+                      <Text style={[styles.primaryBtnText, { color: Colors.primaryDark }]}>
                         {selectedCycle === 'lifetime'
                           ? `Buy Lifetime — ${lifetimePrice.amount}`
                           : `Subscribe — ${selectedCycle === 'monthly' ? `${monthlyPrice.amount}/mo` : `${yearlyPrice.amount}/yr`}`}
@@ -256,7 +271,7 @@ export function PaywallModal({ visible, onClose, userId, title, message, feature
             <View style={styles.benefits}>
               {BENEFITS.map(({ icon, text }) => (
                 <View key={text} style={styles.benefitRow}>
-                  <View style={styles.benefitIcon}>
+                  <View style={[styles.benefitIcon, { backgroundColor: `${Colors.secondary}15` }]}>
                     <Ionicons name={icon as any} size={14} color={Colors.secondary} />
                   </View>
                   <Text style={[styles.benefitText, { color: Colors.textSecondary }]}>{text}</Text>
@@ -270,18 +285,8 @@ export function PaywallModal({ visible, onClose, userId, title, message, feature
   );
 }
 
-function BenefitRow({ icon, text }: { icon: string; text: string }) {
-  return (
-    <View style={styles.benefitRow}>
-      <Ionicons name={icon as any} size={18} color={Colors.success} />
-      <Text style={[styles.benefitText, {color: Colors.textPrimary}]}>{text}</Text>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   backdrop: {
-    flex: 1,
     backgroundColor: 'rgba(0,0,0,0.75)',
     justifyContent: 'flex-end',
   },
@@ -351,9 +356,7 @@ const styles = StyleSheet.create({
   },
   planCardYearly: {
   },
-  planCardActive: {
-    backgroundColor: `${Colors.secondary}12`,
-  },
+  planCardActive: {},
   planCheck: {
     position: 'absolute',
     top: Spacing.sm,
@@ -376,7 +379,7 @@ const styles = StyleSheet.create({
   lifetimeBadge: {
   },
   saveBadgeText: {
-    fontSize: FontSize.xxs ?? 10,
+    fontSize: 10,
     fontWeight: FontWeight.bold,
     letterSpacing: 0.4,
   },
@@ -431,7 +434,6 @@ const styles = StyleSheet.create({
   benefitIcon: {
     width: 24, height: 24,
     borderRadius: 6,
-    backgroundColor: `${Colors.secondary}15`,
     alignItems: 'center',
     justifyContent: 'center',
   },

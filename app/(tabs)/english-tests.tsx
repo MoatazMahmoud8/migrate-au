@@ -74,8 +74,8 @@ const TESTS: TestData[] = [
     proficiency: [
       { label: 'Vocational', score: '5.0 avg · no band below 4.5', description: 'SC 482 Short-term stream', color: '#FF7043' },
       { label: 'Functional', score: '4.5 avg · no band below 4.0', description: 'SC 820/801 Partner visa', color: '#FFB800' },
-      { label: 'Competent',  score: '6.0 in each band',            description: 'Minimum for most skilled & employer visas', pointsBonus: '0 pts', color: Colors.accent },
-      { label: 'Proficient', score: '7.0 in each band',            description: 'EOI bonus points', pointsBonus: '+10 pts', color: Colors.secondary },
+      { label: 'Competent',  score: '6.0 in each band',            description: 'Minimum for most skilled & employer visas', pointsBonus: '0 pts', color: '#0096CC' },
+      { label: 'Proficient', score: '7.0 in each band',            description: 'EOI bonus points', pointsBonus: '+10 pts', color: '#D4A600' },
       { label: 'Superior',   score: '8.0 in each band',            description: 'EOI bonus points', pointsBonus: '+20 pts', color: '#FF6B8A' },
     ],
     visaRequirements: [
@@ -107,8 +107,8 @@ const TESTS: TestData[] = [
     overview: 'Fully computer-based and AI-scored. Fast results (usually 48 hrs). Accepted by all Australian skilled visa types. Each of the four communicative skills must individually meet the minimum.',
     proficiency: [
       { label: 'Vocational', score: '36 in each communicative skill', description: 'SC 482 Short-term stream', color: '#FF7043' },
-      { label: 'Competent',  score: '50 in each communicative skill', description: 'Minimum for skilled & employer visas', pointsBonus: '0 pts', color: Colors.accent },
-      { label: 'Proficient', score: '65 in each communicative skill', description: 'EOI bonus points', pointsBonus: '+10 pts', color: Colors.secondary },
+      { label: 'Competent',  score: '50 in each communicative skill', description: 'Minimum for skilled & employer visas', pointsBonus: '0 pts', color: '#0096CC' },
+      { label: 'Proficient', score: '65 in each communicative skill', description: 'EOI bonus points', pointsBonus: '+10 pts', color: '#D4A600' },
       { label: 'Superior',   score: '79 in each communicative skill', description: 'EOI bonus points', pointsBonus: '+20 pts', color: '#FF6B8A' },
     ],
     visaRequirements: [
@@ -137,8 +137,8 @@ const TESTS: TestData[] = [
     overview: 'Internet-based test accepted for most skilled visas. Note: TOEFL iBT does not qualify for Superior English (+20 pts) bonus in EOI. Available at test centres and via home delivery option.',
     proficiency: [
       { label: 'Vocational', score: 'R 3 · L 3 · W 14 · S 12',  description: 'SC 482 Short-term stream', color: '#FF7043' },
-      { label: 'Competent',  score: 'R 24 · L 21 · W 27 · S 23', description: 'Minimum for skilled & employer visas', pointsBonus: '0 pts', color: Colors.accent },
-      { label: 'Proficient', score: 'R 24 · L 24 · W 27 · S 23', description: 'EOI bonus points', pointsBonus: '+10 pts', color: Colors.secondary },
+      { label: 'Competent',  score: 'R 24 · L 21 · W 27 · S 23', description: 'Minimum for skilled & employer visas', pointsBonus: '0 pts', color: '#0096CC' },
+      { label: 'Proficient', score: 'R 24 · L 24 · W 27 · S 23', description: 'EOI bonus points', pointsBonus: '+10 pts', color: '#D4A600' },
       { label: 'Superior',   score: 'Not applicable',              description: 'TOEFL iBT does not qualify for Superior English', color: '#6B7280' },
     ],
     visaRequirements: [
@@ -166,8 +166,8 @@ const TESTS: TestData[] = [
     overview: 'Globally recognised academic English certificate. Cambridge Scale scores map to CEFR levels. Each component must individually meet the minimum — no overall average accepted by DHA.',
     proficiency: [
       { label: 'Vocational', score: '154 in each component', description: 'SC 482 Short-term stream', color: '#FF7043' },
-      { label: 'Competent',  score: '169 in each component', description: 'Minimum for skilled & employer visas', pointsBonus: '0 pts', color: Colors.accent },
-      { label: 'Proficient', score: '185 in each component', description: 'EOI bonus points', pointsBonus: '+10 pts', color: Colors.secondary },
+      { label: 'Competent',  score: '169 in each component', description: 'Minimum for skilled & employer visas', pointsBonus: '0 pts', color: '#0096CC' },
+      { label: 'Proficient', score: '185 in each component', description: 'EOI bonus points', pointsBonus: '+10 pts', color: '#D4A600' },
       { label: 'Superior',   score: '200 in each component', description: 'EOI bonus points', pointsBonus: '+20 pts', color: '#FF6B8A' },
     ],
     visaRequirements: [
@@ -195,8 +195,8 @@ const TESTS: TestData[] = [
     overview: 'Computer-based English test accepted by DHA for Australian skilled visas. CELPIP scores each of the four communicative skills separately — all must individually meet the minimum. Note: CELPIP does not qualify for Superior English (+20 pts) bonus.',
     proficiency: [
       { label: 'Vocational', score: '4 in each skill', description: 'SC 482 Short-term stream', color: '#FF7043' },
-      { label: 'Competent',  score: '7 in each skill', description: 'Minimum for skilled & employer visas', pointsBonus: '0 pts', color: Colors.accent },
-      { label: 'Proficient', score: '8 in each skill', description: 'EOI bonus points', pointsBonus: '+10 pts', color: Colors.secondary },
+      { label: 'Competent',  score: '7 in each skill', description: 'Minimum for skilled & employer visas', pointsBonus: '0 pts', color: '#0096CC' },
+      { label: 'Proficient', score: '8 in each skill', description: 'EOI bonus points', pointsBonus: '+10 pts', color: '#D4A600' },
       { label: 'Superior',   score: 'Not applicable',  description: 'CELPIP does not qualify for Superior English level', color: '#6B7280' },
     ],
     visaRequirements: [
@@ -223,8 +223,8 @@ const TESTS: TestData[] = [
     website: 'https://oet.com',
     overview: 'Designed exclusively for healthcare professionals. Accepted by DHA for health-related occupations applying for skilled and employer-sponsored visas. OET does not qualify for Superior English (+20 pts) in EOI.',
     proficiency: [
-      { label: 'Competent',  score: 'B in each sub-test', description: 'Minimum for skilled & employer visas (healthcare occupations)', pointsBonus: '0 pts', color: Colors.accent },
-      { label: 'Proficient', score: 'B in each sub-test', description: 'Same score required — does not earn additional EOI points via OET', pointsBonus: '+10 pts*', color: Colors.secondary },
+      { label: 'Competent',  score: 'B in each sub-test', description: 'Minimum for skilled & employer visas (healthcare occupations)', pointsBonus: '0 pts', color: '#0096CC' },
+      { label: 'Proficient', score: 'B in each sub-test', description: 'Same score required — does not earn additional EOI points via OET', pointsBonus: '+10 pts*', color: '#D4A600' },
       { label: 'Superior',   score: 'Not applicable',     description: 'OET does not qualify for Superior English level', color: '#6B7280' },
     ],
     visaRequirements: [
@@ -243,11 +243,12 @@ const TESTS: TestData[] = [
 // ─── Helper ────────────────────────────────────────────────────────────────
 
 function OverviewRow({ icon, label, value }: { icon: string; label: string; value: string }) {
+  const Colors = useColors();
   return (
-    <View style={ov.row}>
+    <View style={[ov.row, { borderBottomColor: Colors.divider }]}>
       <Ionicons name={icon as any} size={13} color={Colors.textMuted} style={{ width: 18 }} />
-      <Text style={[ov.label, {color: Colors.textPrimary}]}>{label}</Text>
-      <Text style={[ov.value, {color: Colors.textPrimary}]}>{value}</Text>
+      <Text style={[ov.label, { color: Colors.textSecondary }]}>{label}</Text>
+      <Text style={[ov.value, { color: Colors.textPrimary }]}>{value}</Text>
     </View>
   );
 }
@@ -276,7 +277,7 @@ export default function EnglishTestsScreen() {
 
   return (
     <ScrollView
-      style={[styles.container, { }]}
+      style={[styles.container, { backgroundColor: Colors.background }]}
       showsVerticalScrollIndicator={false}
       contentContainerStyle={{ paddingBottom: 100 }}
       keyboardShouldPersistTaps="handled"
@@ -287,32 +288,36 @@ export default function EnglishTestsScreen() {
         style={[styles.header, { paddingTop: insets.top + 60 }]}
       >
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Ionicons name="chevron-back" size={20} color={Colors.textPrimary} />
+          <Ionicons name="chevron-back" size={20} color={Colors.white} />
         </TouchableOpacity>
-        <View style={styles.headerBadge}>
+        <View style={[styles.headerBadge, { backgroundColor: Colors.glassStrong }]}
+        >
           <Ionicons name="language" size={14} color={Colors.accent} />
-          <Text style={[styles.headerBadgeText, {}]}>DHA Approved Tests</Text>
+          <Text style={[styles.headerBadgeText, { color: Colors.white }]}>DHA Approved Tests</Text>
         </View>
-        <Text style={[styles.headerTitle, {}]}>English Requirements</Text>
-        <Text style={[styles.headerSub, {}]}>
+        <Text style={[styles.headerTitle, { color: Colors.white }]}>English Requirements</Text>
+        <Text style={[styles.headerSub, { color: Colors.textSecondary }]}
+        >
           Select a test to see proficiency levels, visa score requirements and booking centres.
         </Text>
       </LinearGradient>
 
       {/* ── Test selector ── */}
       <View style={styles.selectorSection}>
-        <Text style={[styles.selectorLabel, {}]}>Select an approved test</Text>
+        <Text style={[styles.selectorLabel, { color: Colors.textMuted }]}>Select an approved test</Text>
 
         <TouchableOpacity
           style={[
             styles.selectorBtn,
+            { backgroundColor: Colors.surface, borderColor: Colors.border },
             dropdownOpen && styles.selectorBtnOpen,
             selectedTest ? { borderColor: selectedTest.color + '60' } : null,
           ]}
           onPress={() => setDropdownOpen(!dropdownOpen)}
           activeOpacity={0.85}
         >
-          <View style={[styles.selectorIcon, { backgroundColor: selectedTest ? selectedTest.color + '18' : 'rgba(255,255,255,0.06)' }]}>
+          <View style={[styles.selectorIcon, { backgroundColor: selectedTest ? selectedTest.color + '18' : Colors.surfaceRaised }]}
+          >
             <Ionicons
               name={(selectedTest ? selectedTest.icon : 'list-outline') as any}
               size={16}
@@ -323,10 +328,10 @@ export default function EnglishTestsScreen() {
             {selectedTest ? (
               <>
                 <Text style={[styles.selectorName, { color: selectedTest.color }]}>{selectedTest.name}</Text>
-                <Text style={[styles.selectorFull, {}]} numberOfLines={1}>{selectedTest.full}</Text>
+                <Text style={[styles.selectorFull, { color: Colors.textSecondary }]} numberOfLines={1}>{selectedTest.full}</Text>
               </>
             ) : (
-              <Text style={[styles.selectorPlaceholder, {}]}>Choose a test…</Text>
+              <Text style={[styles.selectorPlaceholder, { color: Colors.textMuted }]}>Choose a test…</Text>
             )}
           </View>
           <Ionicons
@@ -337,13 +342,14 @@ export default function EnglishTestsScreen() {
         </TouchableOpacity>
 
         {dropdownOpen && (
-          <View style={[styles.dropdown, { }]}>
+          <View style={[styles.dropdown, { backgroundColor: Colors.surface, borderColor: Colors.border }]}
+          >
             {TESTS.map((t, i) => (
               <TouchableOpacity
                 key={t.name}
                 style={[
                   styles.dropdownItem,
-                  i < TESTS.length - 1 && styles.dropdownDivider,
+                  i < TESTS.length - 1 && [styles.dropdownDivider, { borderBottomColor: Colors.divider }],
                   selectedTest?.name === t.name ? { backgroundColor: t.color + '10' } : null,
                 ]}
                 onPress={() => selectTest(t)}
@@ -354,7 +360,7 @@ export default function EnglishTestsScreen() {
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.dropdownName, { color: t.color }]}>{t.name}</Text>
-                  <Text style={[styles.dropdownFull, {}]} numberOfLines={1}>{t.full}</Text>
+                  <Text style={[styles.dropdownFull, { color: Colors.textSecondary }]} numberOfLines={1}>{t.full}</Text>
                 </View>
                 {selectedTest?.name === t.name && (
                   <Ionicons name="checkmark-circle" size={16} color={t.color} />
@@ -368,11 +374,13 @@ export default function EnglishTestsScreen() {
       {/* ── Empty state ── */}
       {!selectedTest && !dropdownOpen && (
         <View style={styles.emptyState}>
-          <View style={styles.emptyIconWrap}>
+          <View style={[styles.emptyIconWrap, { backgroundColor: Colors.surfaceRaised }]}
+          >
             <Ionicons name="language-outline" size={32} color={Colors.textMuted} />
           </View>
-          <Text style={[styles.emptyTitle, {}]}>6 DHA-approved tests</Text>
-          <Text style={[styles.emptySub, {}]}>
+          <Text style={[styles.emptyTitle, { color: Colors.textPrimary }]}>6 DHA-approved tests</Text>
+          <Text style={[styles.emptySub, { color: Colors.textSecondary }]}
+          >
             Select a test above to see proficiency scores, visa requirements and how to book.
           </Text>
           <View style={styles.emptyPills}>
@@ -395,7 +403,7 @@ export default function EnglishTestsScreen() {
       {selectedTest && (
         <View style={styles.detailWrap}>
           {/* ① Overview */}
-          <View style={[styles.card, { borderColor: selectedTest.color + '35' }]}>
+          <View style={[styles.card, { backgroundColor: Colors.surface, borderColor: selectedTest.color + '35' }]}>
             <View style={[styles.cardTopStrip, { backgroundColor: selectedTest.color }]} />
             <View style={styles.cardInner}>
               <View style={styles.cardTitleRow}>
@@ -404,7 +412,7 @@ export default function EnglishTestsScreen() {
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.cardMainTitle, { color: selectedTest.color }]}>{selectedTest.name}</Text>
-                  <Text style={[styles.cardFullName, {}]}>{selectedTest.full}</Text>
+                  <Text style={[styles.cardFullName, { color: Colors.textSecondary }]}>{selectedTest.full}</Text>
                 </View>
                 <TouchableOpacity
                   style={[styles.webBtn, { borderColor: selectedTest.color + '40' }]}
@@ -415,7 +423,7 @@ export default function EnglishTestsScreen() {
                 </TouchableOpacity>
               </View>
 
-              <Text style={[styles.overviewText, {}]}>{selectedTest.overview}</Text>
+              <Text style={[styles.overviewText, { color: Colors.textSecondary }]}>{selectedTest.overview}</Text>
 
               <OverviewRow icon="construct-outline"  label="Format"      value={selectedTest.format} />
               <OverviewRow icon="location-outline"   label="Delivery"    value={selectedTest.delivery} />
@@ -425,12 +433,12 @@ export default function EnglishTestsScreen() {
           </View>
 
           {/* ② Proficiency levels */}
-          <View style={[styles.card, { }]}>
+          <View style={[styles.card, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
             <View style={styles.cardInner}>
-              <Text style={[styles.sectionHead, {}]}>Proficiency Levels</Text>
-              <Text style={[styles.sectionSub, {}]}>DHA-defined thresholds for {selectedTest.name}</Text>
+              <Text style={[styles.sectionHead, { color: Colors.textPrimary }]}>Proficiency Levels</Text>
+              <Text style={[styles.sectionSub, { color: Colors.textSecondary }]}>DHA-defined thresholds for {selectedTest.name}</Text>
               {selectedTest.proficiency.map((lv) => (
-                <View key={lv.label} style={[styles.levelRow, { borderLeftColor: lv.color }]}>
+                <View key={lv.label} style={[styles.levelRow, { backgroundColor: Colors.surfaceRaised, borderLeftColor: lv.color }]}>
                   <View style={styles.levelTop}>
                     <Text style={[styles.levelName, { color: lv.color }]}>{lv.label}</Text>
                     {lv.pointsBonus && (
@@ -439,24 +447,24 @@ export default function EnglishTestsScreen() {
                       </View>
                     )}
                   </View>
-                  <Text style={[styles.levelScore, {}]}>{lv.score}</Text>
-                  <Text style={[styles.levelDesc, {}]}>{lv.description}</Text>
+                  <Text style={[styles.levelScore, { color: Colors.textPrimary }]}>{lv.score}</Text>
+                  <Text style={[styles.levelDesc, { color: Colors.textSecondary }]}>{lv.description}</Text>
                 </View>
               ))}
             </View>
           </View>
 
           {/* ③ Visa requirements */}
-          <View style={[styles.card, { }]}>
+          <View style={[styles.card, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
             <View style={styles.cardInner}>
-              <Text style={[styles.sectionHead, {}]}>Visa Subclass Requirements</Text>
-              <Text style={[styles.sectionSub, {}]}>Minimum {selectedTest.name} scores per visa — tap to expand</Text>
+              <Text style={[styles.sectionHead, { color: Colors.textPrimary }]}>Visa Subclass Requirements</Text>
+              <Text style={[styles.sectionSub, { color: Colors.textSecondary }]}>Minimum {selectedTest.name} scores per visa — tap to expand</Text>
               {selectedTest.visaRequirements.map((v) => {
                 const open = expandedVisa === v.code;
                 return (
                   <TouchableOpacity
                     key={v.code}
-                    style={[styles.visaRow, open && styles.visaRowOpen]}
+                    style={[styles.visaRow, { backgroundColor: Colors.surfaceRaised, borderColor: Colors.border }, open && styles.visaRowOpen]}
                     onPress={() => setExpandedVisa(open ? null : v.code)}
                     activeOpacity={0.85}
                   >
@@ -467,7 +475,7 @@ export default function EnglishTestsScreen() {
                           <Text style={[styles.visaCode, { color: v.color }]}>{v.code}</Text>
                         </View>
                         <View style={{ flex: 1 }}>
-                          <Text style={[styles.visaName, {}]}>{v.name}</Text>
+                          <Text style={[styles.visaName, { color: Colors.textPrimary }]}>{v.name}</Text>
                           <View style={styles.visaScoreRow}>
                             <Ionicons name="checkmark-circle-outline" size={11} color={v.color} />
                             <Text style={[styles.visaScore, { color: v.color }]}>{v.score}</Text>
@@ -480,7 +488,7 @@ export default function EnglishTestsScreen() {
                           {v.notes.map((n, i) => (
                             <View key={i} style={styles.noteRow}>
                               <View style={[styles.noteDot, { backgroundColor: v.color }]} />
-                              <Text style={[styles.noteText, {}]}>{n}</Text>
+                              <Text style={[styles.noteText, { color: Colors.textSecondary }]}>{n}</Text>
                             </View>
                           ))}
                           <TouchableOpacity
@@ -500,14 +508,14 @@ export default function EnglishTestsScreen() {
           </View>
 
           {/* ④ Test centres */}
-          <View style={[styles.card, { }]}>
+          <View style={[styles.card, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
             <View style={styles.cardInner}>
-              <Text style={[styles.sectionHead, {}]}>Book a Test</Text>
-              <Text style={[styles.sectionSub, {}]}>Official booking portals for {selectedTest.name}</Text>
+              <Text style={[styles.sectionHead, { color: Colors.textPrimary }]}>Book a Test</Text>
+              <Text style={[styles.sectionSub, { color: Colors.textSecondary }]}>Official booking portals for {selectedTest.name}</Text>
               {selectedTest.centers.map((c) => (
                 <TouchableOpacity
                   key={c.url}
-                  style={[styles.centerRow, { borderColor: selectedTest.color + '30' }]}
+                  style={[styles.centerRow, { backgroundColor: Colors.surfaceRaised, borderColor: selectedTest.color + '30' }]}
                   onPress={() => Linking.openURL(c.url)}
                   activeOpacity={0.8}
                 >
@@ -515,8 +523,8 @@ export default function EnglishTestsScreen() {
                     <Ionicons name="location-outline" size={16} color={selectedTest.color} />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={[styles.centerLabel, {}]}>{c.label}</Text>
-                    <Text style={[styles.centerSub, {}]}>{c.sublabel}</Text>
+                    <Text style={[styles.centerLabel, { color: Colors.textPrimary }]}>{c.label}</Text>
+                    <Text style={[styles.centerSub, { color: Colors.textSecondary }]}>{c.sublabel}</Text>
                   </View>
                   <View style={styles.centerRight}>
                     {c.badge && (
@@ -545,25 +553,25 @@ export default function EnglishTestsScreen() {
               <Ionicons name="megaphone-outline" size={18} color={Colors.secondary} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={[styles.partnerTitle, {}]}>Are you a test prep centre?</Text>
-              <Text style={[styles.partnerSub, {}]}>Reach thousands of skilled migration applicants — tap to get in touch</Text>
+              <Text style={[styles.partnerTitle, { color: Colors.white }]}>Are you a test prep centre?</Text>
+              <Text style={[styles.partnerSub, { color: Colors.textSecondary }]}>Reach thousands of skilled migration applicants — tap to get in touch</Text>
             </View>
           </View>
           <View style={styles.partnerCta}>
             <Ionicons name="mail-outline" size={14} color={Colors.secondary} />
-            <Text style={[styles.partnerCtaText, {}]}>Partner with us</Text>
+            <Text style={[styles.partnerCtaText, { color: Colors.secondary }]}>Partner with us</Text>
           </View>
         </LinearGradient>
       </TouchableOpacity>
 
       {/* Disclaimer */}
-      <View style={[styles.disclaimer, { }]}>
+      <View style={[styles.disclaimer, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
         <Ionicons name="alert-circle-outline" size={14} color={Colors.textMuted} />
-        <Text style={[styles.disclaimerText, {}]}>
+        <Text style={[styles.disclaimerText, { color: Colors.textSecondary }]}>
           Requirements may change. Always verify on{' '}
-          <Text style={[styles.disclaimerLink, {}]} onPress={() => Linking.openURL('https://immi.homeaffairs.gov.au')}>immi.homeaffairs.gov.au</Text>
+          <Text style={[styles.disclaimerLink, { color: Colors.accent }]} onPress={() => Linking.openURL('https://immi.homeaffairs.gov.au')}>immi.homeaffairs.gov.au</Text>
           {' '}or consult a{' '}
-          <Text style={[styles.disclaimerLink, {}]} onPress={() => Linking.openURL('https://portal.mara.gov.au')}>MARA-registered agent</Text>.
+          <Text style={[styles.disclaimerLink, { color: Colors.accent }]} onPress={() => Linking.openURL('https://portal.mara.gov.au')}>MARA-registered agent</Text>.
         </Text>
       </View>
     </ScrollView>

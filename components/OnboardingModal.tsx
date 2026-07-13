@@ -22,21 +22,21 @@ const SLIDES = [
     icon: 'compass-outline',
     title: 'Welcome to MigrateAU',
     desc: 'Find your visa pathway in 3 minutes. Calculate points, explore states, and get instant AI guidance.',
-    color: Colors.secondary,
+    colorKey: 'secondary',
   },
   {
     icon: 'map-outline',
     title: 'Track Your Journey',
     desc: 'Follow the 5-stage Golden Path: Assess → EOI → Invite → Apply → Granted. Pin states for instant alerts.',
-    color: Colors.accent,
+    colorKey: 'accent',
   },
   {
     icon: 'sparkles-outline',
     title: 'Aria AI — 24/7 Guide',
     desc: 'Ask anything: visa options, points strategy, document deadlines. Like a MARA agent in your pocket.',
-    color: '#A78BFA',
+    colorKey: 'accentPurple',
   },
-];
+] as const;
 
 interface Props {
   visible: boolean;
@@ -77,24 +77,27 @@ export default function OnboardingModal({ visible, onClose }: Props) {
           scrollEventThrottle={16}
           style={{ flex: 1 }}
         >
-          {SLIDES.map((s) => (
+          {SLIDES.map((s) => {
+            const slideColor = Colors[s.colorKey];
+            return (
             <View key={s.title} style={styles.slide}>
               <LinearGradient
-                colors={[`${s.color}30`, `${s.color}05`]}
+                colors={[`${slideColor}30`, `${slideColor}05`]}
                 style={styles.iconWrap}
               >
-                <Ionicons name={s.icon as any} size={64} color={s.color} />
+                <Ionicons name={s.icon as any} size={64} color={slideColor} />
               </LinearGradient>
               <Text style={[styles.title, {color: Colors.textPrimary}]}>{s.title}</Text>
-              <Text style={[styles.desc, {color: Colors.textPrimary}]}>{s.desc}</Text>
+              <Text style={[styles.desc, { color: Colors.textSecondary }]}>{s.desc}</Text>
             </View>
-          ))}
+            );
+          })}
         </ScrollView>
 
         <View style={styles.footer}>
           <View style={styles.dots}>
             {SLIDES.map((_, i) => (
-              <View key={i} style={[styles.dot, i === index && styles.dotActive]} />
+              <View key={i} style={[styles.dot, { backgroundColor: Colors.divider }, i === index && styles.dotActive, i === index && { backgroundColor: Colors.secondary }]} />
             ))}
           </View>
           <TouchableOpacity onPress={next} activeOpacity={0.8}>
@@ -103,7 +106,7 @@ export default function OnboardingModal({ visible, onClose }: Props) {
               start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
               style={styles.nextBtn}
             >
-              <Text style={[styles.nextText, {color: Colors.textPrimary}]}>
+              <Text style={[styles.nextText, { color: Colors.primaryDark }]}>
                 {index === SLIDES.length - 1 ? "Let's Go" : 'Next'}
               </Text>
               <Ionicons name="arrow-forward" size={16} color={Colors.primaryDark} />

@@ -49,6 +49,22 @@ export default function AiScreen() {
   const flatListRef = useRef<FlatList>(null);
   const insets = useSafeAreaInsets();
   const tabBarHeight = useBottomTabBarHeight();
+  const themedMarkdownStyles = {
+    ...markdownStyles,
+    body: { ...markdownStyles.body, color: Colors.textPrimary },
+    paragraph: { ...markdownStyles.paragraph, color: Colors.textPrimary },
+    heading1: { ...markdownStyles.heading1, color: Colors.textPrimary },
+    heading2: { ...markdownStyles.heading2, color: Colors.textPrimary },
+    heading3: { ...markdownStyles.heading3, color: Colors.textPrimary },
+    link: { ...markdownStyles.link, color: Colors.accent },
+    code_inline: { ...markdownStyles.code_inline, backgroundColor: Colors.surfaceRaised, color: Colors.textPrimary },
+    fence: { ...markdownStyles.fence, backgroundColor: Colors.surfaceRaised, color: Colors.textPrimary },
+    blockquote: { ...markdownStyles.blockquote, borderLeftColor: Colors.accent, backgroundColor: Colors.surfaceRaised },
+    table: { ...markdownStyles.table, borderColor: Colors.border },
+    th: { ...markdownStyles.th, color: Colors.textPrimary },
+    td: { ...markdownStyles.td, color: Colors.textPrimary },
+    hr: { ...markdownStyles.hr, backgroundColor: Colors.divider },
+  };
 
   // Load profile on mount
   useEffect(() => {
@@ -138,13 +154,13 @@ export default function AiScreen() {
             </LinearGradient>
           </View>
         )}
-        <View style={[styles.bubbleInner, isUser ? styles.userInner : styles.aiInner]}>
+        <View style={[styles.bubbleInner, isUser ? styles.userInner : [styles.aiInner, { backgroundColor: Colors.surface, borderColor: Colors.border }]]}>
           {isUser ? (
             <LinearGradient colors={[Colors.primary, Colors.primaryDark]} style={styles.userBubbleGrad}>
-              <Text style={[styles.userText, {color: Colors.textPrimary}]}>{item.text}</Text>
+              <Text style={[styles.userText, { color: Colors.white }]}>{item.text}</Text>
             </LinearGradient>
           ) : (
-            <Markdown style={markdownStyles}>{item.text}</Markdown>
+            <Markdown style={themedMarkdownStyles}>{item.text}</Markdown>
           )}
         </View>
       </View>
@@ -180,7 +196,7 @@ export default function AiScreen() {
           </LinearGradient>
 
           <Text style={[styles.emptyTitle, {color: Colors.textPrimary}]}>Hi, I'm Aria ✨</Text>
-          <Text style={[styles.emptySub, {color: Colors.textPrimary}]}>Your AI-powered Australian migration consultant</Text>
+          <Text style={[styles.emptySub, { color: Colors.textSecondary }]}>Your AI-powered Australian migration consultant</Text>
 
           <View style={styles.suggestions}>
             {SUGGESTIONS.map((s) => (
@@ -193,7 +209,7 @@ export default function AiScreen() {
 
           <View style={[styles.disclaimer, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
             <Ionicons name="shield-checkmark-outline" size={13} color={Colors.textMuted} />
-            <Text style={[styles.disclaimerText, {color: Colors.textPrimary}]}>
+            <Text style={[styles.disclaimerText, { color: Colors.textSecondary }]}>
               Aria provides info based on official docs. Double-check on{' '}
               <Text
                 style={styles.disclaimerLink}
@@ -221,13 +237,13 @@ export default function AiScreen() {
           <View style={[styles.typingDots, { backgroundColor: Colors.surface }]}>
             <ActivityIndicator size="small" color={Colors.accent} />
           </View>
-          <Text style={[styles.typingText, {color: Colors.textPrimary}]}>Aria is thinking…</Text>
+          <Text style={[styles.typingText, { color: Colors.textSecondary }]}>Aria is thinking…</Text>
         </View>
       )}
 
-      <View style={styles.sourceNote}>
+      <View style={[styles.sourceNote, { borderTopColor: Colors.border }]}>
         <Ionicons name="globe-outline" size={11} color={Colors.accent} style={{ opacity: 0.6 }} />
-        <Text style={[styles.sourceNoteText, {color: Colors.textPrimary}]}>
+        <Text style={[styles.sourceNoteText, { color: Colors.textMuted }]}>
           Verify on{' '}
           <Text
             style={styles.sourceNoteLink}
@@ -238,7 +254,7 @@ export default function AiScreen() {
         </Text>
       </View>
 
-      <View style={[styles.inputRow, { marginBottom: tabBarHeight }]}>
+      <View style={[styles.inputRow, { marginBottom: tabBarHeight, borderTopColor: Colors.border }]}>
         <TextInput
           style={[styles.input, { backgroundColor: Colors.surface, borderColor: Colors.border, color: Colors.textPrimary }]}
           value={input}

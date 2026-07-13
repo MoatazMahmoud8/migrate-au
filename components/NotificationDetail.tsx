@@ -21,14 +21,6 @@ import { Colors, Spacing, Radius, FontSize, FontWeight } from '../constants/them
 import { useColors } from '../constants/ThemeContext';
 import { AppNotification } from '../utils/notifications';
 
-const CATEGORY_COLORS: Record<string, { main: string; bg: string }> = {
-  'Policy Update': { main: Colors.accent, bg: 'rgba(0, 194, 255, 0.2)' },
-  'Visa Change': { main: Colors.error, bg: 'rgba(255, 71, 87, 0.2)' },
-  'SkillSelect Round': { main: Colors.secondary, bg: 'rgba(255, 205, 0, 0.2)' },
-  'News': { main: Colors.info, bg: 'rgba(0, 194, 255, 0.2)' },
-  'Government Update': { main: Colors.primary, bg: 'rgba(0, 45, 98, 0.3)' },
-};
-
 interface NotificationDetailProps {
   notification: AppNotification;
   onClose: () => void;
@@ -37,7 +29,7 @@ interface NotificationDetailProps {
 
 export default function NotificationDetail({ notification, onClose, onReadSource }: NotificationDetailProps) {
   const Colors = useColors();
-  const categoryColorObj = CATEGORY_COLORS[notification.category] || { main: Colors.accent, bg: 'rgba(0, 194, 255, 0.2)' };
+  const categoryColorObj = getCategoryColors(Colors, notification.category);
   const categoryColor = categoryColorObj.main;
   const categoryBg = categoryColorObj.bg;
   const timeAgo = formatTimeAgo(notification.timestamp);
@@ -118,17 +110,18 @@ export default function NotificationDetail({ notification, onClose, onReadSource
 
       {/* Bottom action button - only show if we have a valid source URL */}
       {notification.sourceUrl && notification.sourceUrl.trim() && (
-        <View style={styles.footer}>
+        <View style={[styles.footer, { backgroundColor: Colors.background, borderTopColor: Colors.border }]}
+        >
           <TouchableOpacity
             style={[styles.button, { backgroundColor: Colors.primary }]}
             onPress={handleReadSource}
             activeOpacity={0.85}
           >
-            <Text style={[styles.buttonText, {color: Colors.textPrimary}]}>Read Official Source</Text>
+            <Text style={[styles.buttonText, { color: Colors.white }]}>Read Official Source</Text>
             <Ionicons
               name="arrow-forward"
               size={16}
-              color="white"
+              color={Colors.white}
               style={{ marginLeft: Spacing.sm }}
             />
           </TouchableOpacity>
@@ -136,6 +129,23 @@ export default function NotificationDetail({ notification, onClose, onReadSource
       )}
     </SafeAreaView>
   );
+}
+
+function getCategoryColors(colors: typeof Colors, category: string): { main: string; bg: string } {
+  switch (category) {
+    case 'Policy Update':
+      return { main: colors.accent, bg: colors.infoLight };
+    case 'Visa Change':
+      return { main: colors.error, bg: colors.errorLight };
+    case 'SkillSelect Round':
+      return { main: colors.secondary, bg: colors.warningLight };
+    case 'News':
+      return { main: colors.info, bg: colors.infoLight };
+    case 'Government Update':
+      return { main: colors.primary, bg: colors.primaryLight };
+    default:
+      return { main: colors.accent, bg: colors.infoLight };
+  }
 }
 
 /**

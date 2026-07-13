@@ -98,7 +98,7 @@ export default function SearchModal({ visible, onClose }: Props) {
     <Modal visible={visible} animationType="slide" transparent={false}>
       <View style={[styles.container, { backgroundColor: Colors.background }]}>
         <View style={styles.header}>
-          <View style={[styles.searchBar, { backgroundColor: Colors.surface }]}>
+          <View style={[styles.searchBar, { backgroundColor: Colors.surface, borderColor: Colors.border }]}> 
             <Ionicons name="search" size={18} color={Colors.textMuted} />
             <TextInput
               autoFocus
@@ -139,14 +139,15 @@ export default function SearchModal({ visible, onClose }: Props) {
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.rowTitle, {color: Colors.textPrimary}]}>{item.title}</Text>
-                  <Text style={[styles.rowSub, {color: Colors.textPrimary}]}>{item.subtitle}</Text>
+                  <Text style={[styles.rowSub, { color: Colors.textSecondary }]}>{item.subtitle}</Text>
                 </View>
-                <View style={styles.rowTag}>
-                  <Text style={[styles.rowTagText, {color: Colors.textPrimary}]}>{CATEGORY_LABEL[item.category]}</Text>
+                <View style={[styles.rowTag, { backgroundColor: Colors.surfaceRaised, borderColor: Colors.border }]}
+                >
+                  <Text style={[styles.rowTagText, { color: Colors.textSecondary }]}>{CATEGORY_LABEL[item.category]}</Text>
                 </View>
               </TouchableOpacity>
             )}
-            ItemSeparatorComponent={() => <View style={styles.sep} />}
+            ItemSeparatorComponent={() => <View style={[styles.sep, { backgroundColor: Colors.divider }]} />}
           />
         )}
       </View>
@@ -197,6 +198,7 @@ const styles = StyleSheet.create({
   rowSub: { fontSize: FontSize.xs, marginTop: 2 },
   rowTag: {
     borderRadius: Radius.full,
+    borderWidth: 1,
     paddingHorizontal: Spacing.sm,
     paddingVertical: 3,
   },
