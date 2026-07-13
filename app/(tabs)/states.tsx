@@ -257,15 +257,15 @@ export default function StatesScreen() {
     >
       {/* Header */}
       <LinearGradient
-        colors={[Colors.primaryDark, Colors.background]}
+        colors={['#001A3D', '#001224']}
         style={[styles.header, { paddingTop: insets.top + 60 }]}
       >
         <View style={styles.headerBadge}>
           <Ionicons name="map" size={14} color={Colors.accent} />
-          <Text style={[styles.headerBadgeText, {color: Colors.textPrimary}]}>8 States & Territories</Text>
+          <Text style={[styles.headerBadgeText, { color: Colors.white }]}>8 States & Territories</Text>
         </View>
-        <Text style={[styles.headerTitle, {color: Colors.textPrimary}]}>State Nomination</Text>
-        <Text style={[styles.headerSub, {color: Colors.textPrimary}]}>
+        <Text style={[styles.headerTitle, { color: Colors.white }]}>State Nomination</Text>
+        <Text style={[styles.headerSub, { color: 'rgba(255,255,255,0.75)' }]}>
           Explore migration programs across Australia and visit official portals.
         </Text>
       </LinearGradient>

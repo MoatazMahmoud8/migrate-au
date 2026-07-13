@@ -92,7 +92,7 @@ export default function VisasScreen() {
       <ScrollView style={[styles.container, { backgroundColor: Colors.background }]} contentContainerStyle={{ paddingBottom: 100 }}>
         {/* Header */}
         <LinearGradient
-          colors={[Colors.primaryDark, Colors.background]}
+          colors={['#001A3D', '#001224']}
           style={[styles.header, { paddingTop: insets.top + 16 }]}
         >
           <View style={styles.headerTopRow}>
@@ -101,16 +101,16 @@ export default function VisasScreen() {
               style={styles.backBtn}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
-              <Ionicons name="chevron-back" size={22} color={Colors.textPrimary} />
+              <Ionicons name="chevron-back" size={22} color={Colors.white} />
             </TouchableOpacity>
             <View style={styles.headerBadge}>
               <Ionicons name="layers-outline" size={12} color={Colors.accent} />
-              <Text style={[styles.headerBadgeText, {color: Colors.textPrimary}]}>{totalCount} visas</Text>
+              <Text style={[styles.headerBadgeText, { color: Colors.white }]}>{totalCount} visas</Text>
             </View>
             <View style={{ width: 32 }} />
           </View>
-          <Text style={[styles.title, {color: Colors.textPrimary}]}>Visa Pathways</Text>
-          <Text style={[styles.subtitle, {color: Colors.textPrimary}]}>
+          <Text style={[styles.title, { color: Colors.white }]}>Visa Pathways</Text>
+          <Text style={[styles.subtitle, { color: 'rgba(255,255,255,0.75)' }]}>
             All Australian visa subclasses organised by category — streams, conditions and official links in one place.
           </Text>
         </LinearGradient>

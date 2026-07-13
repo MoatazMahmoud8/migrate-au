@@ -552,7 +552,7 @@ export default function OccupationsScreen() {
       <View style={[styles.container, { backgroundColor: Colors.background }]}>
         {/* Header */}
         <LinearGradient
-          colors={[Colors.primaryDark, Colors.background]}
+          colors={['#001A3D', '#001224']}
           style={[styles.header, { paddingTop: insets.top + 12 }]}
         >
           <View style={styles.headerTopRow}>
@@ -561,17 +561,17 @@ export default function OccupationsScreen() {
               style={styles.backBtn}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
-              <Ionicons name="chevron-back" size={22} color={Colors.textPrimary} />
+              <Ionicons name="chevron-back" size={22} color={Colors.white} />
             </TouchableOpacity>
             <View style={styles.headerBadge}>
               <Ionicons name="briefcase-outline" size={12} color={Colors.accent} />
-              <Text style={[styles.headerBadgeText, {color: Colors.textPrimary}]}>Federal lists</Text>
+              <Text style={[styles.headerBadgeText, { color: Colors.white }]}>Federal lists</Text>
             </View>
             <View style={{ width: 32 }} />
           </View>
 
-          <Text style={[styles.title, {color: Colors.textPrimary}]}>Skilled Occupations</Text>
-          <Text style={[styles.subtitle, {color: Colors.textPrimary}]}>
+          <Text style={[styles.title, { color: Colors.white }]}>Skilled Occupations</Text>
+          <Text style={[styles.subtitle, { color: 'rgba(255,255,255,0.75)' }]}>
             Search every federal and state-nominated list in one place.
           </Text>
 

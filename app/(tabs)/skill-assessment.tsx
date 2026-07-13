@@ -412,15 +412,15 @@ export default function SkillAssessmentScreen() {
     >
       {/* Header */}
       <LinearGradient
-        colors={[Colors.primaryDark, Colors.background]}
+        colors={['#001A3D', '#001224']}
         style={[styles.header, { paddingTop: insets.top + 60 }]}
       >
         <View style={styles.headerBadge}>
           <Ionicons name="ribbon-outline" size={14} color={Colors.secondary} />
-          <Text style={[styles.headerBadgeText, {color: Colors.textPrimary}]}>{AUTHORITIES.length} assessment bodies</Text>
+          <Text style={[styles.headerBadgeText, { color: Colors.white }]}>{AUTHORITIES.length} assessment bodies</Text>
         </View>
-        <Text style={[styles.headerTitle, {color: Colors.textPrimary}]}>Skills Assessment</Text>
-        <Text style={[styles.headerSub, {color: Colors.textPrimary}]}>
+        <Text style={[styles.headerTitle, { color: Colors.white }]}>Skills Assessment</Text>
+        <Text style={[styles.headerSub, { color: 'rgba(255,255,255,0.75)' }]}>
           Find the right assessing authority for your occupation and understand what your assessment involves.
         </Text>
       </LinearGradient>

@@ -368,10 +368,10 @@ function ScoreCard({ input, onCalcPress }: { input: PointsInput | null; onCalcPr
           <View style={sc.orb} />
           <View style={sc.badge}>
             <View style={sc.badgeDot} />
-            <Text style={[sc.badgeText, {color: Colors.textPrimary}]}>🇦🇺 Skilled Migration</Text>
+            <Text style={[sc.badgeText, { color: Colors.white }]}>🇦🇺 Skilled Migration</Text>
           </View>
-          <Text style={[sc.ctaTitle, {color: Colors.textPrimary}]}>Your Path to{'\n'}Australia Starts Here</Text>
-          <Text style={[sc.ctaSub, {color: Colors.textPrimary}]}>
+          <Text style={[sc.ctaTitle, { color: Colors.white }]}>Your Path to{'\n'}Australia Starts Here</Text>
+          <Text style={[sc.ctaSub, { color: 'rgba(255,255,255,0.75)' }]}>
             Calculate your points to see if you qualify for a skilled migration visa.
           </Text>
           <TouchableOpacity style={sc.ctaBtn} onPress={onCalcPress} activeOpacity={0.85}>
@@ -381,7 +381,7 @@ function ScoreCard({ input, onCalcPress }: { input: PointsInput | null; onCalcPr
               end={{ x: 1, y: 0 }}
               style={sc.ctaBtnGrad}
             >
-              <Text style={[sc.ctaBtnText, {color: Colors.textPrimary}]}>Calculate My Points</Text>
+              <Text style={[sc.ctaBtnText, { color: Colors.primaryDark }]}>Calculate My Points</Text>
               <Ionicons name="arrow-forward" size={16} color={Colors.primaryDark} />
             </LinearGradient>
           </TouchableOpacity>
@@ -408,7 +408,7 @@ function ScoreCard({ input, onCalcPress }: { input: PointsInput | null; onCalcPr
 
         {/* Header row */}
         <View style={sc.cardTopRow}>
-          <Text style={[sc.cardLabel, {color: Colors.textPrimary}]}>Your SkillSelect Score</Text>
+          <Text style={[sc.cardLabel, { color: Colors.white }]}>Your SkillSelect Score</Text>
           <View style={[sc.subclassBadge, { borderColor: color + '50', backgroundColor: color + '18' }]}>
             <Text style={[sc.subclassText, { color }]}>SC {input.visaSubclass}</Text>
           </View>
@@ -418,7 +418,7 @@ function ScoreCard({ input, onCalcPress }: { input: PointsInput | null; onCalcPr
         <View style={sc.scoreRow}>
           <Text style={[sc.scoreNum, { color }]}>{total}</Text>
           <View style={sc.scoreRight}>
-            <Text style={[sc.scorePts, {color: Colors.textPrimary}]}>points</Text>
+            <Text style={[sc.scorePts, { color: 'rgba(255,255,255,0.75)' }]}>points</Text>
             <View style={[sc.statusBadge, { backgroundColor: color + '20', borderColor: color + '40' }]}>
               <Ionicons
                 name={likelyEligible ? 'checkmark-circle' : 'time-outline'}
@@ -439,12 +439,12 @@ function ScoreCard({ input, onCalcPress }: { input: PointsInput | null; onCalcPr
           <View style={sc.cutoffMark} />
         </View>
         <View style={sc.barLabels}>
-          <Text style={[sc.barLbl, {color: Colors.textPrimary}]}>0</Text>
+          <Text style={[sc.barLbl, { color: 'rgba(255,255,255,0.75)' }]}>0</Text>
           <Text style={[sc.barLbl, { color, fontWeight: FontWeight.semiBold }]}>65 min</Text>
-          <Text style={[sc.barLbl, {color: Colors.textPrimary}]}>100</Text>
+          <Text style={[sc.barLbl, { color: 'rgba(255,255,255,0.75)' }]}>100</Text>
         </View>
 
-        <Text style={[sc.editHint, {color: Colors.textPrimary}]}>Tap to update your inputs →</Text>
+        <Text style={[sc.editHint, { color: 'rgba(255,255,255,0.6)' }]}>Tap to update your inputs →</Text>
       </LinearGradient>
     </TouchableOpacity>
   );

@@ -429,7 +429,7 @@ export default function ProfileScreen() {
 
         <TouchableOpacity style={styles.avatarWrap} onPress={handleAvatarTap} activeOpacity={0.8}>
           <LinearGradient colors={[Colors.secondary, '#FFB800']} style={styles.avatar}>
-            <Text style={[styles.avatarText, {color: Colors.textPrimary}]}>{initials}</Text>
+            <Text style={[styles.avatarText, { color: Colors.primaryDark }]}>{initials}</Text>
           </LinearGradient>
           {profile.isPremium && (
             <View style={styles.premiumBadgeSmall}>
@@ -441,7 +441,7 @@ export default function ProfileScreen() {
         {editingName ? (
           <View style={styles.nameEditRow}>
             <TextInput
-              style={[styles.nameInput, {color: Colors.textPrimary}]}
+              style={[styles.nameInput, { color: Colors.white }]}
               value={nameInput}
               onChangeText={setNameInput}
               placeholder="Your name"
@@ -457,14 +457,14 @@ export default function ProfileScreen() {
             onPress={() => { setNameInput(profile.name); setEditingName(true); }}
             style={styles.nameRow}
           >
-            <Text style={[styles.profileName, {color: Colors.textPrimary}]}>{profile.name || 'Tap to set your name'}</Text>
+            <Text style={[styles.profileName, { color: Colors.white }]}>{profile.name || 'Tap to set your name'}</Text>
             <Ionicons name="pencil" size={14} color={Colors.textMuted} />
           </TouchableOpacity>
         )}
 
         <View style={styles.planBadge}>
           {profile.isPremium
-            ? <><Ionicons name="star" size={12} color={Colors.secondary} /><Text style={[styles.planText, {color: Colors.textPrimary}]}>Premium Member</Text></>
+            ? <><Ionicons name="star" size={12} color={Colors.secondary} /><Text style={[styles.planText, { color: Colors.white }]}>Premium Member</Text></>
             : <>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.xs }}>
                   <Ionicons name="person-outline" size={12} color={Colors.textMuted} />

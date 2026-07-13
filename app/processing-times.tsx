@@ -93,22 +93,22 @@ export default function ProcessingTimesScreen() {
       >
         {/* Header */}
         <LinearGradient
-          colors={[Colors.primaryDark, Colors.background]}
+          colors={['#001A3D', '#001224']}
           style={[styles.header, { paddingTop: insets.top + 16 }]}
         >
           <View style={styles.headerTopRow}>
             <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-              <Ionicons name="chevron-back" size={22} color={Colors.textPrimary} />
+              <Ionicons name="chevron-back" size={22} color={Colors.white} />
             </TouchableOpacity>
             <View style={styles.headerBadge}>
               <Ionicons name="time-outline" size={12} color={Colors.accent} />
-              <Text style={[styles.headerBadgeText, {color: Colors.textPrimary}]}>Live data</Text>
+              <Text style={[styles.headerBadgeText, { color: Colors.white }]}>Live data</Text>
             </View>
             <View style={{ width: 32 }} />
           </View>
 
-          <Text style={[styles.title, {color: Colors.textPrimary}]}>Visa Processing Times</Text>
-          <Text style={[styles.subtitle, {color: Colors.textPrimary}]}>
+          <Text style={[styles.title, { color: Colors.white }]}>Visa Processing Times</Text>
+          <Text style={[styles.subtitle, { color: 'rgba(255,255,255,0.75)' }]}>
             Median and 90th percentile timeframes for recently decided applications.
           </Text>
 

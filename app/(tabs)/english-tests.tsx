@@ -284,7 +284,7 @@ export default function EnglishTestsScreen() {
     >
       {/* Header */}
       <LinearGradient
-        colors={[Colors.primaryDark, Colors.background]}
+        colors={['#001A3D', '#001224']}
         style={[styles.header, { paddingTop: insets.top + 60 }]}
       >
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
