@@ -296,21 +296,44 @@ function numK(n: number | undefined): string {
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-const ScoreBadge = React.memo(({ pts }: { pts: number | null }) => (
-  <View style={[styles.scoreBadge, { backgroundColor: ptsBg(pts) }]}>
-    <Text style={[styles.scoreVal, { color: ptsFg(pts) }]}>
-      {pts === null ? 'N/A' : String(pts)}
-    </Text>
-  </View>
-));
+const ScoreBadge = React.memo(({ pts }: { pts: number | null }) => {
+  const C = useColors();
 
-const OccupationRow = React.memo(({ item, index }: { item: OccupationScore; index: number }) => (
-  <View style={[styles.occRow, index % 2 === 0 && styles.occRowAlt]}>
-    <Text style={[styles.occName, {color: Colors.textPrimary}]} numberOfLines={2}>{item.name}</Text>
-    <ScoreBadge pts={item.sc189} />
-    <ScoreBadge pts={item.sc491Family} />
-  </View>
-));
+  const bg = (() => {
+    if (pts === null) return C.surface;
+    if (pts <= 65) return C.success + '22';
+    if (pts <= 75) return C.secondary + '22';
+    if (pts <= 85) return C.warning + '22';
+    return '#FF6B6B22';
+  })();
+
+  const fg = (() => {
+    if (pts === null) return C.textMuted;
+    if (pts <= 65) return C.success;
+    if (pts <= 75) return C.secondary;
+    if (pts <= 85) return C.warning;
+    return '#FF6B6B';
+  })();
+
+  return (
+    <View style={[styles.scoreBadge, { backgroundColor: bg }]}>
+      <Text style={[styles.scoreVal, { color: fg }]}>
+        {pts === null ? 'N/A' : String(pts)}
+      </Text>
+    </View>
+  );
+});
+
+const OccupationRow = React.memo(({ item, index }: { item: OccupationScore; index: number }) => {
+  const C = useColors();
+  return (
+    <View style={[styles.occRow, index % 2 === 0 && styles.occRowAlt]}>
+      <Text style={[styles.occName, {color: C.textPrimary}]} numberOfLines={2}>{item.name}</Text>
+      <ScoreBadge pts={item.sc189} />
+      <ScoreBadge pts={item.sc491Family} />
+    </View>
+  );
+});
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 
@@ -369,7 +392,7 @@ export default function RoundsScreen() {
 
       {/* Current round summary cards */}
       <View style={styles.summaryRow}>
-        <View style={[styles.summaryCard, { borderColor: Colors.accent + '55' }]}>
+        <View style={[styles.summaryCard, { backgroundColor: Colors.surface, borderColor: Colors.accent + '55' }]}>
           <View style={[styles.summaryBadge, { backgroundColor: Colors.accent + '22' }]}>
             <Text style={[styles.summaryBadgeText, { color: Colors.accent }]}>SC 189</Text>
           </View>
@@ -379,7 +402,7 @@ export default function RoundsScreen() {
           <Text style={[styles.summaryTb, {color: Colors.textPrimary}]}>Tie break: {fmtTieBreak(cr.sc189TieBreak)}</Text>
           <Text style={[styles.summaryDate, {color: Colors.textPrimary}]}>{cr.label}</Text>
         </View>
-        <View style={[styles.summaryCard, { borderColor: Colors.secondary + '55' }]}>
+        <View style={[styles.summaryCard, { backgroundColor: Colors.surface, borderColor: Colors.secondary + '55' }]}>
           <View style={[styles.summaryBadge, { backgroundColor: Colors.secondary + '22' }]}>
             <Text style={[styles.summaryBadgeText, { color: Colors.secondary }]}>SC 491</Text>
           </View>
@@ -407,13 +430,13 @@ export default function RoundsScreen() {
 
       {stateExpanded && (
         <View style={[styles.stateTable, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
-          <View style={[styles.stateRow, styles.tableHeader]}>
-            <Text style={[styles.stateNameCell, styles.headerText]}>State</Text>
-            <Text style={[styles.tableCell, styles.headerText]}>SC 190</Text>
-            <Text style={[styles.tableCell, styles.headerText]}>SC 491</Text>
+          <View style={[styles.stateRow, styles.tableHeader, { backgroundColor: Colors.primaryDark }]}>
+            <Text style={[styles.stateNameCell, styles.headerText, { color: Colors.white }]}>State</Text>
+            <Text style={[styles.tableCell, styles.headerText, { color: Colors.white }]}>SC 190</Text>
+            <Text style={[styles.tableCell, styles.headerText, { color: Colors.white }]}>SC 491</Text>
           </View>
           {STATE_ORDER.map((s) => (
-            <View key={s} style={styles.stateRow}>
+            <View key={s} style={[styles.stateRow, { borderBottomColor: Colors.divider }]}>
               <Text style={[styles.stateNameCell, {color: Colors.textPrimary}]}>{s}</Text>
               <Text style={[styles.tableCell, { color: Colors.success }]}>{(sn.sc190[s] ?? 0).toLocaleString()}</Text>
               <Text style={[styles.tableCell, { color: Colors.secondary }]}>{(sn.sc491[s] ?? 0).toLocaleString()}</Text>
@@ -433,13 +456,13 @@ export default function RoundsScreen() {
 
       {historyExpanded && (
         <View style={[styles.stateTable, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
-          <View style={[styles.stateRow, styles.tableHeader]}>
-            <Text style={[styles.histDateCell, styles.headerText]}>Date</Text>
-            <Text style={[styles.tableCell, styles.headerText]}>SC 189</Text>
-            <Text style={[styles.tableCell, styles.headerText]}>SC 491 Fam.</Text>
+          <View style={[styles.stateRow, styles.tableHeader, { backgroundColor: Colors.primaryDark }]}>
+            <Text style={[styles.histDateCell, styles.headerText, { color: Colors.white }]}>Date</Text>
+            <Text style={[styles.tableCell, styles.headerText, { color: Colors.white }]}>SC 189</Text>
+            <Text style={[styles.tableCell, styles.headerText, { color: Colors.white }]}>SC 491 Fam.</Text>
           </View>
           {data.rounds.map((r) => (
-            <View key={r.date} style={styles.stateRow}>
+            <View key={r.date} style={[styles.stateRow, { borderBottomColor: Colors.divider }]}>
               <Text style={[styles.histDateCell, {color: Colors.textPrimary}]}>{r.label}</Text>
               <Text style={[styles.tableCell, { color: Colors.accent }]}>{numK(r.sc189Total)}</Text>
               <Text style={[styles.tableCell, { color: Colors.secondary }]}>{r.sc491FamilyTotal ? numK(r.sc491FamilyTotal) : '—'}</Text>
@@ -462,11 +485,11 @@ export default function RoundsScreen() {
         {([['all', 'All'], ['189', 'SC 189'], ['491', 'SC 491 Fam.']] as const).map(([key, label]) => (
           <TouchableOpacity
             key={key}
-            style={[styles.filterChip, filter === key && styles.filterChipActive]}
+            style={[styles.filterChip, { backgroundColor: Colors.surface, borderColor: Colors.border }, filter === key && [styles.filterChipActive, { backgroundColor: Colors.accent + '22', borderColor: Colors.accent }]]}
             onPress={() => setFilter(key)}
             activeOpacity={0.7}
           >
-            <Text style={[styles.filterChipText, filter === key && styles.filterChipTextActive]}>{label}</Text>
+            <Text style={[styles.filterChipText, { color: Colors.textMuted }, filter === key && [styles.filterChipTextActive, { color: Colors.accent }]]}>{label}</Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -493,19 +516,24 @@ export default function RoundsScreen() {
 
       {/* Legend */}
       <View style={styles.legend}>
-        {([{ pts: 65, label: '≤65 pts' }, { pts: 70, label: '70–75 pts' }, { pts: 80, label: '80–85 pts' }, { pts: 90, label: '≥90 pts' }]).map(({ pts, label }) => (
+        {([
+          { pts: 65, label: '≤65 pts', fg: Colors.success },
+          { pts: 70, label: '70–75 pts', fg: Colors.secondary },
+          { pts: 80, label: '80–85 pts', fg: Colors.warning },
+          { pts: 90, label: '≥90 pts', fg: '#FF6B6B' },
+        ]).map(({ label, fg }) => (
           <View key={label} style={styles.legendItem}>
-            <View style={[styles.legendDot, { backgroundColor: ptsFg(pts) }]} />
+            <View style={[styles.legendDot, { backgroundColor: fg }]} />
             <Text style={[styles.legendText, {color: Colors.textPrimary}]}>{label}</Text>
           </View>
         ))}
       </View>
 
       {/* Column headers */}
-      <View style={styles.occHeaderRow}>
-        <Text style={[styles.occHeaderCell, { flex: 1, textAlign: 'left' }]}>Occupation</Text>
-        <Text style={[styles.occHeaderCell, {color: Colors.textPrimary}]}>SC 189</Text>
-        <Text style={[styles.occHeaderCell, {color: Colors.textPrimary}]}>SC 491</Text>
+      <View style={[styles.occHeaderRow, { backgroundColor: Colors.primaryDark }]}>
+        <Text style={[styles.occHeaderCell, { flex: 1, textAlign: 'left', color: Colors.white }]}>Occupation</Text>
+        <Text style={[styles.occHeaderCell, { color: Colors.white }]}>SC 189</Text>
+        <Text style={[styles.occHeaderCell, { color: Colors.white }]}>SC 491</Text>
       </View>
 
       {filtered.length === 0 && (
@@ -555,9 +583,9 @@ export default function RoundsScreen() {
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: Colors.background },
-  loadingText: { color: Colors.textMuted, marginTop: Spacing.md, fontSize: FontSize.sm },
+  container: { flex: 1 },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  loadingText: { marginTop: Spacing.md, fontSize: FontSize.sm },
 
   pageHeader: {
     flexDirection: 'row',
@@ -566,17 +594,17 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.lg,
     paddingBottom: Spacing.md,
   },
-  pageTitle: { fontSize: FontSize.xxl, fontWeight: FontWeight.extraBold, color: Colors.textPrimary },
-  pageSub: { fontSize: FontSize.xs, color: Colors.textMuted, marginTop: 2 },
+  pageTitle: { fontSize: FontSize.xxl, fontWeight: FontWeight.extraBold },
+  pageSub: { fontSize: FontSize.xs, marginTop: 2 },
   refreshBtn: {
     width: 36, height: 36, borderRadius: 18,
-    borderWidth: 1, borderColor: Colors.border,
+    borderWidth: 1,
     alignItems: 'center', justifyContent: 'center',
   },
 
   summaryRow: { flexDirection: 'row', paddingHorizontal: Spacing.lg, gap: Spacing.md, marginBottom: Spacing.md },
   summaryCard: {
-    flex: 1, backgroundColor: Colors.surface,
+    flex: 1,
     borderRadius: Radius.xl, borderWidth: 1, padding: Spacing.lg,
   },
   summaryBadge: {
@@ -585,68 +613,67 @@ const styles = StyleSheet.create({
     borderRadius: Radius.full, marginBottom: Spacing.sm,
   },
   summaryBadgeText: { fontSize: FontSize.xs, fontWeight: FontWeight.bold },
-  summaryLabel: { fontSize: FontSize.xs, color: Colors.textMuted, marginBottom: Spacing.sm },
-  summaryInv: { fontSize: FontSize.xxxl, fontWeight: FontWeight.extraBold, color: Colors.textPrimary, lineHeight: 36 },
-  summaryInvLabel: { fontSize: FontSize.xs, color: Colors.textMuted, marginBottom: Spacing.sm },
-  summaryTb: { fontSize: FontSize.xs, color: Colors.textSecondary },
-  summaryDate: { fontSize: FontSize.xs, color: Colors.textMuted, marginTop: 2 },
+  summaryLabel: { fontSize: FontSize.xs, marginBottom: Spacing.sm },
+  summaryInv: { fontSize: FontSize.xxxl, fontWeight: FontWeight.extraBold, lineHeight: 36 },
+  summaryInvLabel: { fontSize: FontSize.xs, marginBottom: Spacing.sm },
+  summaryTb: { fontSize: FontSize.xs },
+  summaryDate: { fontSize: FontSize.xs, marginTop: 2 },
 
   noteBox: {
     flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.sm,
     marginHorizontal: Spacing.lg, marginBottom: Spacing.md,
-    padding: Spacing.md, backgroundColor: Colors.surface,
-    borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.border,
+    padding: Spacing.md,
+    borderRadius: Radius.md, borderWidth: 1,
   },
-  noteText: { flex: 1, fontSize: FontSize.xs, color: Colors.textMuted, lineHeight: 16 },
+  noteText: { flex: 1, fontSize: FontSize.xs, lineHeight: 16 },
 
   sectionToggle: {
     flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
     marginHorizontal: Spacing.lg, marginBottom: Spacing.xs,
     paddingVertical: Spacing.md, paddingHorizontal: Spacing.md,
-    borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.border,
+    borderRadius: Radius.md, borderWidth: 1,
   },
-  sectionToggleText: { fontSize: FontSize.sm, fontWeight: FontWeight.semiBold, color: Colors.textPrimary, flexShrink: 1 },
-  sectionToggleSub: { fontSize: FontSize.xs, color: Colors.textMuted, flexShrink: 1 },
+  sectionToggleText: { fontSize: FontSize.sm, fontWeight: FontWeight.semiBold, flexShrink: 1 },
+  sectionToggleSub: { fontSize: FontSize.xs, flexShrink: 1 },
 
   stateTable: {
     marginHorizontal: Spacing.lg, marginBottom: Spacing.md,
-    borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.border, overflow: 'hidden',
+    borderRadius: Radius.md, borderWidth: 1, overflow: 'hidden',
   },
   stateRow: {
     flexDirection: 'row', paddingVertical: Spacing.sm, paddingHorizontal: Spacing.md,
-    borderBottomWidth: 1, borderBottomColor: Colors.divider, alignItems: 'center',
+    borderBottomWidth: 1, alignItems: 'center',
   },
-  tableHeader: { backgroundColor: Colors.primaryDark },
-  headerText: { fontWeight: FontWeight.bold, color: Colors.textPrimary },
-  tableCell: { flex: 1, fontSize: FontSize.sm, color: Colors.textSecondary, textAlign: 'center' },
-  stateNameCell: { flex: 1.2, fontSize: FontSize.sm, color: Colors.textSecondary, fontWeight: FontWeight.semiBold },
-  histDateCell: { flex: 2.5, fontSize: FontSize.sm, color: Colors.textSecondary },
-  tableFootNote: { fontSize: FontSize.xs, color: Colors.textMuted, padding: Spacing.md, textAlign: 'center' },
+  tableHeader: { },
+  headerText: { fontWeight: FontWeight.bold },
+  tableCell: { flex: 1, fontSize: FontSize.sm, textAlign: 'center' },
+  stateNameCell: { flex: 1.2, fontSize: FontSize.sm, fontWeight: FontWeight.semiBold },
+  histDateCell: { flex: 2.5, fontSize: FontSize.sm },
+  tableFootNote: { fontSize: FontSize.xs, padding: Spacing.md, textAlign: 'center' },
   sourceLink: { padding: Spacing.md, alignItems: 'center' },
-  sourceLinkText: { fontSize: FontSize.xs, color: Colors.accent },
+  sourceLinkText: { fontSize: FontSize.xs },
 
   occSection: { paddingHorizontal: Spacing.lg, paddingTop: Spacing.xl, paddingBottom: Spacing.sm },
-  occSectionTitle: { fontSize: FontSize.lg, fontWeight: FontWeight.bold, color: Colors.textPrimary },
-  occSectionSub: { fontSize: FontSize.xs, color: Colors.textMuted, marginTop: 2 },
+  occSectionTitle: { fontSize: FontSize.lg, fontWeight: FontWeight.bold },
+  occSectionSub: { fontSize: FontSize.xs, marginTop: 2 },
 
   filterRow: { flexDirection: 'row', paddingHorizontal: Spacing.lg, gap: Spacing.sm, marginBottom: Spacing.md },
   filterChip: {
     paddingHorizontal: Spacing.md, paddingVertical: 6,
-    borderRadius: Radius.full, backgroundColor: Colors.surface,
-    borderWidth: 1, borderColor: Colors.border,
+    borderRadius: Radius.full,
+    borderWidth: 1,
   },
-  filterChipActive: { backgroundColor: Colors.accent + '22', borderColor: Colors.accent },
-  filterChipText: { fontSize: FontSize.xs, color: Colors.textMuted, fontWeight: FontWeight.semiBold },
-  filterChipTextActive: { color: Colors.accent },
+  filterChipActive: { },
+  filterChipText: { fontSize: FontSize.xs, fontWeight: FontWeight.semiBold },
+  filterChipTextActive: { },
 
   searchBar: {
     flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
     marginHorizontal: Spacing.lg, marginBottom: Spacing.sm,
-    paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm,
-    backgroundColor: Colors.surface, borderRadius: Radius.md,
-    borderWidth: 1, borderColor: Colors.border,
+    paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, borderRadius: Radius.md,
+    borderWidth: 1,
   },
-  searchInput: { flex: 1, fontSize: FontSize.sm, color: Colors.textPrimary, paddingVertical: 0 },
+  searchInput: { flex: 1, fontSize: FontSize.sm, paddingVertical: 0 },
 
   legend: {
     flexDirection: 'row', gap: Spacing.md, paddingHorizontal: Spacing.lg,
@@ -654,28 +681,27 @@ const styles = StyleSheet.create({
   },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   legendDot: { width: 8, height: 8, borderRadius: 4 },
-  legendText: { fontSize: FontSize.xs, color: Colors.textMuted },
+  legendText: { fontSize: FontSize.xs },
 
   occHeaderRow: {
-    flexDirection: 'row', paddingHorizontal: Spacing.lg, paddingVertical: Spacing.sm,
-    backgroundColor: Colors.primaryDark, borderTopWidth: 1, borderTopColor: Colors.border,
+    flexDirection: 'row', paddingHorizontal: Spacing.lg, paddingVertical: Spacing.sm, borderTopWidth: 1,
   },
-  occHeaderCell: { width: 56, fontSize: FontSize.xs, fontWeight: FontWeight.bold, color: Colors.textPrimary, textAlign: 'center' },
+  occHeaderCell: { width: 56, fontSize: FontSize.xs, fontWeight: FontWeight.bold, textAlign: 'center' },
 
   occRow: {
     flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: Spacing.lg, paddingVertical: Spacing.sm,
-    borderBottomWidth: 1, borderBottomColor: Colors.divider,
+    borderBottomWidth: 1,
   },
   occRowAlt: { backgroundColor: 'rgba(255,255,255,0.02)' },
-  occName: { flex: 1, fontSize: FontSize.sm, color: Colors.textSecondary, paddingRight: Spacing.sm },
+  occName: { flex: 1, fontSize: FontSize.sm, paddingRight: Spacing.sm },
   scoreBadge: { width: 52, paddingVertical: 4, borderRadius: Radius.sm, alignItems: 'center', marginLeft: Spacing.xs },
   scoreVal: { fontSize: FontSize.sm, fontWeight: FontWeight.bold },
 
   emptyState: { alignItems: 'center', padding: Spacing.xxxl, gap: Spacing.md },
-  emptyText: { color: Colors.textMuted, fontSize: FontSize.sm },
+  emptyText: { fontSize: FontSize.sm },
 
   footer: { paddingHorizontal: Spacing.lg, paddingTop: Spacing.xl, gap: Spacing.sm, alignItems: 'center' },
-  footerSource: { fontSize: FontSize.xs, color: Colors.accent },
-  footerNote: { fontSize: FontSize.xs, color: Colors.textMuted, textAlign: 'center', lineHeight: 16 },
+  footerSource: { fontSize: FontSize.xs },
+  footerNote: { fontSize: FontSize.xs, textAlign: 'center', lineHeight: 16 },
 });

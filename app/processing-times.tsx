@@ -210,7 +210,7 @@ export default function ProcessingTimesScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+  container: { flex: 1 },
 
   header: {
     paddingHorizontal: Spacing.lg,
@@ -267,7 +267,7 @@ const styles = StyleSheet.create({
     borderRadius: Radius.full,
     borderWidth: 1,
   },
-  metaText: { fontSize: 10, color: Colors.textMuted, fontWeight: '600' },
+  metaText: { fontSize: 10, fontWeight: '600' },
 
   filterRow: {
     paddingHorizontal: Spacing.lg,
@@ -283,8 +283,8 @@ const styles = StyleSheet.create({
   pillActive: {
     backgroundColor: 'rgba(255,205,0,0.12)',
   },
-  pillText: { fontSize: FontSize.xs, fontWeight: '600', color: Colors.textMuted },
-  pillTextActive: { color: Colors.secondary },
+  pillText: { fontSize: FontSize.xs, fontWeight: '600' },
+  pillTextActive: { },
 
   list: { paddingHorizontal: Spacing.lg, gap: 10 },
   card: {
@@ -311,9 +311,9 @@ const styles = StyleSheet.create({
     borderRadius: Radius.full,
     backgroundColor: 'rgba(255,255,255,0.08)',
   },
-  cardCat: { fontSize: 10, color: Colors.textMuted, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
-  cardName: { fontSize: FontSize.sm, fontWeight: FontWeight.semiBold as any, color: Colors.textPrimary },
-  cardStream: { fontSize: 11, color: Colors.textMuted, marginTop: 2 },
+  cardCat: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
+  cardName: { fontSize: FontSize.sm, fontWeight: FontWeight.semiBold as any },
+  cardStream: { fontSize: 11, marginTop: 2 },
   statsRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -322,9 +322,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
   },
   statBox: { flex: 1, alignItems: 'center' },
-  statLabel: { fontSize: 10, color: Colors.textMuted, fontWeight: '600', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.4 },
-  statValue: { fontSize: FontSize.md, fontWeight: FontWeight.bold as any, color: Colors.textPrimary },
-  statDivider: { width: 1, height: 24, backgroundColor: Colors.divider, marginHorizontal: Spacing.sm },
+  statLabel: { fontSize: 10, fontWeight: '600', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 0.4 },
+  statValue: { fontSize: FontSize.md, fontWeight: FontWeight.bold as any },
+  statDivider: { width: 1, height: 24, marginHorizontal: Spacing.sm },
 
   footer: {
     flexDirection: 'row',
@@ -334,6 +334,6 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.xl,
     paddingBottom: Spacing.md,
   },
-  footerText: { flex: 1, fontSize: 11, color: Colors.textMuted, lineHeight: 16 },
-  footerLink: { color: Colors.accent, textDecorationLine: 'underline' },
+  footerText: { flex: 1, fontSize: 11, lineHeight: 16 },
+  footerLink: { textDecorationLine: 'underline' },
 });

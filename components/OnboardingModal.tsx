@@ -116,7 +116,7 @@ export default function OnboardingModal({ visible, onClose }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+  container: { flex: 1 },
   skipBtn: {
     position: 'absolute',
     top: 60, right: 24,
@@ -124,7 +124,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.xs,
   },
-  skipText: { color: Colors.textMuted, fontSize: FontSize.sm, fontWeight: '600' },
+  skipText: { fontSize: FontSize.sm, fontWeight: '600' },
   slide: {
     width,
     flex: 1,

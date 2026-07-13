@@ -133,7 +133,7 @@ export default function ExploreScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+  container: { flex: 1 },
   content: { paddingHorizontal: Spacing.lg },
 
   header: { marginBottom: Spacing.xl },

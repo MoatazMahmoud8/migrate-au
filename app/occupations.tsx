@@ -1316,7 +1316,7 @@ export default function OccupationsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+  container: { flex: 1 },
 
   /* Header */
   header: {
@@ -1336,12 +1336,12 @@ const styles = StyleSheet.create({
   headerBadge: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
     paddingHorizontal: Spacing.sm, paddingVertical: 4,
-    borderRadius: Radius.full, backgroundColor: Colors.glass,
+    borderRadius: Radius.full,
   },
-  headerBadgeText: { color: Colors.accent, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.5 },
+  headerBadgeText: { fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.5 },
 
-  title: { color: Colors.textPrimary, fontSize: FontSize.xxl, fontWeight: FontWeight.bold, marginBottom: 4 },
-  subtitle: { color: Colors.textSecondary, fontSize: FontSize.sm, marginBottom: Spacing.md },
+  title: { fontSize: FontSize.xxl, fontWeight: FontWeight.bold, marginBottom: 4 },
+  subtitle: { fontSize: FontSize.sm, marginBottom: Spacing.md },
 
   /* Search */
   searchWrap: {
@@ -1364,10 +1364,9 @@ const styles = StyleSheet.create({
   metaRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   metaPill: {
     flexDirection: 'row', alignItems: 'center', gap: 5,
-    paddingHorizontal: Spacing.sm, paddingVertical: 4,
-    backgroundColor: Colors.glass, borderRadius: Radius.full,
+    paddingHorizontal: Spacing.sm, paddingVertical: 4, borderRadius: Radius.full,
   },
-  metaText: { fontSize: 10, color: Colors.textSecondary, fontWeight: FontWeight.semiBold },
+  metaText: { fontSize: 10, fontWeight: FontWeight.semiBold },
 
   /* Filter pills */
   filterScroll: { flexShrink: 0 },
@@ -1387,7 +1386,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginRight: 8,
   },
-  pillText: { fontSize: FontSize.xs, color: Colors.textSecondary, fontWeight: FontWeight.semiBold },
+  pillText: { fontSize: FontSize.xs, fontWeight: FontWeight.semiBold },
   pillSm: {
     paddingHorizontal: 12,
     paddingVertical: 6,
@@ -1397,8 +1396,8 @@ const styles = StyleSheet.create({
     marginRight: 6,
     alignItems: 'center',
   },
-  pillTextSm: { fontSize: 11, color: Colors.textSecondary, fontWeight: FontWeight.bold, letterSpacing: 0.5 },
-  pillDescSm: { fontSize: 9, color: Colors.textMuted, marginTop: 1, letterSpacing: 0.2 },
+  pillTextSm: { fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.5 },
+  pillDescSm: { fontSize: 9, marginTop: 1, letterSpacing: 0.2 },
 
   /* English card */
   engCard: {
@@ -1411,12 +1410,12 @@ const styles = StyleSheet.create({
   engCardTop: { flexDirection: 'row', alignItems: 'center', marginBottom: Spacing.xs },
   engLevelBadge: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 8, paddingVertical: 3, borderRadius: Radius.sm },
   engLevelText: { fontSize: FontSize.xs, fontWeight: FontWeight.bold, letterSpacing: 0.4 },
-  engDesc: { fontSize: FontSize.xs, color: Colors.textMuted, marginBottom: Spacing.sm, lineHeight: 16 },
+  engDesc: { fontSize: FontSize.xs, marginBottom: Spacing.sm, lineHeight: 16 },
   engScores: { flexDirection: 'row', alignItems: 'flex-start', gap: 0 },
   engScore: { flex: 1, alignItems: 'center', paddingVertical: 6 },
-  engScoreLabel: { fontSize: 9, color: Colors.textMuted, fontWeight: FontWeight.semiBold, marginBottom: 2, letterSpacing: 0.4 },
-  engScoreVal: { fontSize: 9.5, color: Colors.textPrimary, fontWeight: FontWeight.bold, textAlign: 'center', lineHeight: 13 },
-  engDivider: { width: 1, backgroundColor: Colors.divider, alignSelf: 'stretch', marginVertical: 4 },
+  engScoreLabel: { fontSize: 9, fontWeight: FontWeight.semiBold, marginBottom: 2, letterSpacing: 0.4 },
+  engScoreVal: { fontSize: 9.5, fontWeight: FontWeight.bold, textAlign: 'center', lineHeight: 13 },
+  engDivider: { width: 1, alignSelf: 'stretch', marginVertical: 4 },
 
   /* Skills assessment card */
   authCard: {
@@ -1442,8 +1441,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginTop: 1,
   },
-  authName: { fontSize: FontSize.sm, fontWeight: FontWeight.bold, color: Colors.textPrimary, marginBottom: 2 },
-  authAssesses: { fontSize: FontSize.xs, color: Colors.textMuted, lineHeight: 16 },
+  authName: { fontSize: FontSize.sm, fontWeight: FontWeight.bold, marginBottom: 2 },
+  authAssesses: { fontSize: FontSize.xs, lineHeight: 16 },
   authRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1452,12 +1451,12 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderBottomWidth: 1,
   },
-  authRowKey: { flex: 1, fontSize: FontSize.xs, color: Colors.textMuted },
-  authRowVal: { fontSize: FontSize.xs, fontWeight: FontWeight.semiBold, color: Colors.textPrimary },
+  authRowKey: { flex: 1, fontSize: FontSize.xs },
+  authRowVal: { fontSize: FontSize.xs, fontWeight: FontWeight.semiBold },
   authNotes: { paddingHorizontal: Spacing.md, paddingTop: Spacing.sm },
   authNoteRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 6, marginBottom: 6 },
-  authNoteDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: Colors.accent, marginTop: 4 },
-  authNoteText: { flex: 1, fontSize: FontSize.xs, color: Colors.textSecondary, lineHeight: 16 },
+  authNoteDot: { width: 5, height: 5, borderRadius: 3, marginTop: 4 },
+  authNoteText: { flex: 1, fontSize: FontSize.xs, lineHeight: 16 },
   authLink: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1470,7 +1469,7 @@ const styles = StyleSheet.create({
     borderColor: `${Colors.accent}40`,
     backgroundColor: `${Colors.accent}0D`,
   },
-  authLinkText: { fontSize: FontSize.xs, fontWeight: FontWeight.semiBold, color: Colors.accent, flex: 1 },
+  authLinkText: { fontSize: FontSize.xs, fontWeight: FontWeight.semiBold, flex: 1 },
 
   /* List */
   list: { paddingHorizontal: Spacing.lg, paddingBottom: 100 },
@@ -1488,9 +1487,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8, paddingVertical: 4,
     borderRadius: Radius.sm,
   },
-  codePillText: { fontSize: FontSize.xs, color: Colors.accent, fontWeight: FontWeight.bold, letterSpacing: 0.3 },
-  cardName: { fontSize: FontSize.md, color: Colors.textPrimary, fontWeight: FontWeight.semiBold },
-  cardGroup: { fontSize: 11, color: Colors.textMuted, marginTop: 2 },
+  codePillText: { fontSize: FontSize.xs, fontWeight: FontWeight.bold, letterSpacing: 0.3 },
+  cardName: { fontSize: FontSize.md, fontWeight: FontWeight.semiBold },
+  cardGroup: { fontSize: 11, marginTop: 2 },
   cardFoot: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1505,7 +1504,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   listChipText: { fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.4 },
-  visasText: { fontSize: 11, color: Colors.textSecondary, flexShrink: 1, textAlign: 'right' },
+  visasText: { fontSize: 11, flexShrink: 1, textAlign: 'right' },
 
   salaryChip: {
     flexDirection: 'row',
@@ -1571,7 +1570,7 @@ const styles = StyleSheet.create({
   },
 
   empty: { alignItems: 'center', paddingTop: 60, gap: 10 },
-  emptyText: { color: Colors.textMuted, fontSize: FontSize.sm },
+  emptyText: { fontSize: FontSize.sm },
 
   /* Modal */
   modalBackdrop: {
@@ -1596,23 +1595,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10, paddingVertical: 5,
     borderRadius: Radius.md,
   },
-  codePillLgText: { color: Colors.accent, fontWeight: FontWeight.bold, fontSize: FontSize.xs, letterSpacing: 0.5 },
-  modalTitle: { color: Colors.textPrimary, fontSize: FontSize.xl, fontWeight: FontWeight.bold, marginTop: Spacing.md },
-  modalGroup: { color: Colors.textSecondary, fontSize: FontSize.sm, marginTop: 4 },
+  codePillLgText: { fontWeight: FontWeight.bold, fontSize: FontSize.xs, letterSpacing: 0.5 },
+  modalTitle: { fontSize: FontSize.xl, fontWeight: FontWeight.bold, marginTop: Spacing.md },
+  modalGroup: { fontSize: FontSize.sm, marginTop: 4 },
 
   sectionLabel: {
-    fontSize: 10, fontWeight: FontWeight.bold,
-    color: Colors.textMuted, textTransform: 'uppercase', letterSpacing: 0.6,
+    fontSize: 10, fontWeight: FontWeight.bold, textTransform: 'uppercase', letterSpacing: 0.6,
     marginTop: Spacing.lg, marginBottom: Spacing.sm,
   },
-  bodyText: { color: Colors.textPrimary, fontSize: FontSize.sm },
-  bodyMuted: { color: Colors.textMuted, fontSize: FontSize.sm, fontStyle: 'italic' },
+  bodyText: { fontSize: FontSize.sm },
+  bodyMuted: { fontSize: FontSize.sm, fontStyle: 'italic' },
   visaChip: {
     paddingHorizontal: 10, paddingVertical: 5,
     borderRadius: Radius.sm,
-    borderWidth: 1, borderColor: Colors.border,
+    borderWidth: 1,
   },
-  visaChipText: { color: Colors.textPrimary, fontSize: FontSize.xs, fontWeight: FontWeight.semiBold },
+  visaChipText: { fontSize: FontSize.xs, fontWeight: FontWeight.semiBold },
 
   /* State grid (modal) */
   stateGrid: {
@@ -1629,7 +1627,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   stateCellCode: { fontSize: FontSize.xs, fontWeight: FontWeight.bold, letterSpacing: 0.4 },
-  stateCellVisas: { fontSize: 9, color: Colors.textSecondary, marginTop: 2 },
+  stateCellVisas: { fontSize: 9, marginTop: 2 },
 
   // State requirements panel
   stateReqPanel: {
@@ -1662,7 +1660,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderBottomWidth: 1,
   },
-  stateReqKey: { flex: 1, fontSize: FontSize.xs, color: Colors.textMuted },
+  stateReqKey: { flex: 1, fontSize: FontSize.xs },
   stateReqVal: { fontSize: FontSize.xs, fontWeight: FontWeight.semiBold },
   stateReqNotes: {
     paddingHorizontal: Spacing.md,
@@ -1672,7 +1670,7 @@ const styles = StyleSheet.create({
   },
   stateReqNoteRow: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.sm },
   stateReqNoteDot: { width: 5, height: 5, borderRadius: 3, marginTop: 5 },
-  stateReqNoteText: { flex: 1, fontSize: FontSize.xs, color: Colors.textSecondary, lineHeight: 16 },
+  stateReqNoteText: { flex: 1, fontSize: FontSize.xs, lineHeight: 16 },
   stateReqLink: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1681,7 +1679,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
   },
   stateReqLinkText: { fontSize: FontSize.xs, fontWeight: FontWeight.semiBold, flex: 1 },
-  stateReqUpdated: { fontSize: 10, color: Colors.textMuted },
+  stateReqUpdated: { fontSize: 10 },
 
   // Visa tabs
   visaTabs: {
@@ -1846,5 +1844,5 @@ const styles = StyleSheet.create({
     marginTop: Spacing.sm,
     borderWidth: 1,
   },
-  modalCtaText: { color: Colors.primaryDark, fontWeight: FontWeight.bold, fontSize: FontSize.sm },
+  modalCtaText: { fontWeight: FontWeight.bold, fontSize: FontSize.sm },
 });

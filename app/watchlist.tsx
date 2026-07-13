@@ -434,7 +434,7 @@ export default function WatchlistScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+  container: { flex: 1 },
   loading: {
     flex: 1,
     alignItems: 'center',
@@ -461,7 +461,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md,
     borderRadius: Radius.md,
   },
-  bannerText: { color: Colors.textSecondary, fontSize: FontSize.sm },
+  bannerText: { fontSize: FontSize.sm },
   empty: {
     alignItems: 'center',
     paddingTop: Spacing.xxxl,
@@ -552,7 +552,7 @@ const styles = StyleSheet.create({
     fontWeight: FontWeight.semiBold,
     width: 60,
   },
-  resultName: { color: Colors.textPrimary, fontSize: FontSize.sm, flex: 1 },
+  resultName: { fontSize: FontSize.sm, flex: 1 },
   noResults: {
     fontSize: FontSize.sm,
     padding: Spacing.md,
@@ -565,12 +565,12 @@ const styles = StyleSheet.create({
     borderRadius: Radius.full,
     borderWidth: 1,
   },
-  chipActive: { backgroundColor: Colors.secondary, borderColor: Colors.secondary },
-  chipText: { color: Colors.textSecondary, fontSize: FontSize.sm, fontWeight: FontWeight.medium },
-  chipTextActive: { color: Colors.primaryDark, fontWeight: FontWeight.bold },
+  chipActive: { },
+  chipText: { fontSize: FontSize.sm, fontWeight: FontWeight.medium },
+  chipTextActive: { fontWeight: FontWeight.bold },
   pointsRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
-  pointsSuffix: { color: Colors.textSecondary, fontSize: FontSize.md },
-  hint: { color: Colors.textMuted, fontSize: FontSize.xs, marginTop: Spacing.sm, lineHeight: 16 },
+  pointsSuffix: { fontSize: FontSize.md },
+  hint: { fontSize: FontSize.xs, marginTop: Spacing.sm, lineHeight: 16 },
   actionBar: {
     flexDirection: 'row',
     gap: Spacing.md,
@@ -584,12 +584,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
   },
-  cancelBtnText: { color: Colors.textSecondary, fontWeight: FontWeight.semiBold, fontSize: FontSize.md },
+  cancelBtnText: { fontWeight: FontWeight.semiBold, fontSize: FontSize.md },
   saveBtn: {
     flex: 2,
     paddingVertical: Spacing.md,
     borderRadius: Radius.full,
     alignItems: 'center',
   },
-  saveBtnText: { color: Colors.primaryDark, fontWeight: FontWeight.bold, fontSize: FontSize.md },
+  saveBtnText: { fontWeight: FontWeight.bold, fontSize: FontSize.md },
 });

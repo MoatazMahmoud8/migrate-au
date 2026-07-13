@@ -1283,7 +1283,7 @@ const rowStyles = StyleSheet.create({
     paddingVertical: Spacing.md,
     gap: Spacing.md,
   },
-  rowBorder: { borderBottomWidth: 1, borderBottomColor: Colors.divider },
+  rowBorder: { borderBottomWidth: 1 },
   iconWrap: {
     width: 34,
     height: 34,
@@ -1291,16 +1291,16 @@ const rowStyles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  label: { flex: 1, fontSize: FontSize.md, color: Colors.textPrimary },
-  labelMuted: { color: Colors.textMuted },
+  label: { flex: 1, fontSize: FontSize.md },
+  labelMuted: { },
   right: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-  value: { fontSize: FontSize.sm, color: Colors.textMuted },
+  value: { fontSize: FontSize.sm },
   badge: {
     borderRadius: Radius.full,
     paddingHorizontal: Spacing.sm,
     paddingVertical: 2,
   },
-  badgeText: { fontSize: FontSize.xs, color: Colors.secondary, fontWeight: FontWeight.bold },
+  badgeText: { fontSize: FontSize.xs, fontWeight: FontWeight.bold },
 });
 
 const feedbackStyles = StyleSheet.create({
@@ -1336,7 +1336,7 @@ const feedbackStyles = StyleSheet.create({
     paddingVertical: Spacing.md,
     gap: Spacing.md,
   },
-  optionBorder: { borderBottomWidth: 1, borderBottomColor: Colors.divider },
+  optionBorder: { borderBottomWidth: 1 },
   optionIcon: {
     width: 38, height: 38,
     borderRadius: Radius.md,
@@ -1348,14 +1348,14 @@ const feedbackStyles = StyleSheet.create({
     fontSize: FontSize.md,
     fontWeight: FontWeight.semiBold,
   },
-  optionDesc: { fontSize: FontSize.xs, color: Colors.textMuted, marginTop: 2 },
+  optionDesc: { fontSize: FontSize.xs, marginTop: 2 },
   cancelBtn: {
     marginTop: Spacing.lg,
     paddingVertical: 14,
     borderRadius: Radius.md,
     alignItems: 'center',
   },
-  cancelText: { fontSize: FontSize.md, color: Colors.textSecondary, fontWeight: FontWeight.semiBold },
+  cancelText: { fontSize: FontSize.md, fontWeight: FontWeight.semiBold },
 });
 
 const jStyles = StyleSheet.create({
@@ -1366,30 +1366,26 @@ const jStyles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
   },
   addBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    backgroundColor: Colors.secondary, borderRadius: Radius.full,
+    flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: Radius.full,
     paddingHorizontal: Spacing.md, paddingVertical: 5,
   },
-  addBtnText: { fontSize: FontSize.xs, fontWeight: FontWeight.bold, color: Colors.primaryDark },
+  addBtnText: { fontSize: FontSize.xs, fontWeight: FontWeight.bold },
   exportBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    backgroundColor: Colors.surface, borderRadius: Radius.full,
+    flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: Radius.full,
     paddingHorizontal: Spacing.md, paddingVertical: 5,
-    borderWidth: 1, borderColor: Colors.secondary,
+    borderWidth: 1,
   },
-  exportBtnText: { fontSize: FontSize.xs, fontWeight: FontWeight.semiBold, color: Colors.secondary },
+  exportBtnText: { fontSize: FontSize.xs, fontWeight: FontWeight.semiBold },
 
-  emptyCard: {
-    backgroundColor: Colors.surface, borderRadius: Radius.xl,
-    padding: Spacing.xl, borderWidth: 1, borderColor: Colors.border,
+  emptyCard: { borderRadius: Radius.xl,
+    padding: Spacing.xl, borderWidth: 1,
     alignItems: 'center', gap: Spacing.sm,
   },
-  emptyTitle: { fontSize: FontSize.md, fontWeight: FontWeight.semiBold, color: Colors.textPrimary },
-  emptyDesc:  { fontSize: FontSize.sm, color: Colors.textMuted, textAlign: 'center', lineHeight: 18 },
+  emptyTitle: { fontSize: FontSize.md, fontWeight: FontWeight.semiBold },
+  emptyDesc:  { fontSize: FontSize.sm, textAlign: 'center', lineHeight: 18 },
 
-  entryCard: {
-    backgroundColor: Colors.surface, borderRadius: Radius.xl,
-    borderWidth: 1, borderColor: Colors.border, marginBottom: Spacing.sm, overflow: 'hidden',
+  entryCard: { borderRadius: Radius.xl,
+    borderWidth: 1, marginBottom: Spacing.sm, overflow: 'hidden',
   },
   entryHeader: {
     flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
@@ -1401,12 +1397,11 @@ const jStyles = StyleSheet.create({
   },
   visaBadgeText: { fontSize: FontSize.xs, fontWeight: FontWeight.bold },
   stateBadge: {
-    paddingHorizontal: 7, paddingVertical: 3,
-    backgroundColor: Colors.glassStrong, borderRadius: Radius.full,
-    borderWidth: 1, borderColor: Colors.border,
+    paddingHorizontal: 7, paddingVertical: 3, borderRadius: Radius.full,
+    borderWidth: 1,
   },
-  stateBadgeText: { fontSize: FontSize.xs, color: Colors.textSecondary, fontWeight: FontWeight.semiBold },
-  entryAnzsco: { fontSize: 10, color: Colors.textMuted },
+  stateBadgeText: { fontSize: FontSize.xs, fontWeight: FontWeight.semiBold },
+  entryAnzsco: { fontSize: 10 },
   entryStage: { fontSize: FontSize.sm, fontWeight: FontWeight.semiBold },
 
   stageList: { paddingHorizontal: Spacing.md, paddingBottom: Spacing.md },
@@ -1414,82 +1409,75 @@ const jStyles = StyleSheet.create({
   stageRow: { flexDirection: 'row', minHeight: 64 },
   stageConnector: { width: 32, alignItems: 'center' },
   stageDot: {
-    width: 24, height: 24, borderRadius: 12,
-    backgroundColor: Colors.background, borderWidth: 2, borderColor: Colors.border,
+    width: 24, height: 24, borderRadius: 12, borderWidth: 2,
     alignItems: 'center', justifyContent: 'center', zIndex: 1,
   },
-  stageDotNum: { fontSize: 9, fontWeight: '700' as const, color: Colors.textMuted },
-  stageLine: { width: 2, flex: 1, backgroundColor: Colors.border, marginTop: 1, marginBottom: 1 },
+  stageDotNum: { fontSize: 9, fontWeight: '700' as const },
+  stageLine: { width: 2, flex: 1, marginTop: 1, marginBottom: 1 },
 
   stageInfo: { flex: 1, paddingLeft: Spacing.sm, paddingBottom: Spacing.md },
   stageNameRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, flexWrap: 'wrap' },
-  stageName: { fontSize: FontSize.sm, color: Colors.textSecondary },
+  stageName: { fontSize: FontSize.sm },
   currentBadge: {
     borderRadius: Radius.full, borderWidth: 1,
     paddingHorizontal: 6, paddingVertical: 1,
   },
   currentBadgeText: { fontSize: 9, fontWeight: FontWeight.bold },
   datePill: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 3, flexWrap: 'wrap' },
-  datePillText: { fontSize: FontSize.xs, color: Colors.accent },
+  datePillText: { fontSize: FontSize.xs },
   gapPill: {
     backgroundColor: `${Colors.warning}22`, borderRadius: Radius.full,
     paddingHorizontal: 6, paddingVertical: 1, borderWidth: 1, borderColor: `${Colors.warning}55`,
   },
-  gapText: { fontSize: 9, color: Colors.warning, fontWeight: FontWeight.bold },
-  addDateText: { fontSize: FontSize.xs, color: Colors.textMuted, marginTop: 3 },
+  gapText: { fontSize: 9, fontWeight: FontWeight.bold },
+  addDateText: { fontSize: FontSize.xs, marginTop: 3 },
 
   /* Modals */
   modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.65)', justifyContent: 'flex-end' },
-  modalSheet: {
-    backgroundColor: Colors.surface, borderTopLeftRadius: Radius.xl, borderTopRightRadius: Radius.xl,
+  modalSheet: { borderTopLeftRadius: Radius.xl, borderTopRightRadius: Radius.xl,
     paddingHorizontal: Spacing.lg, paddingTop: Spacing.md,
   },
   modalHandle: {
-    width: 36, height: 4, borderRadius: 2, backgroundColor: Colors.border,
+    width: 36, height: 4, borderRadius: 2,
     alignSelf: 'center', marginBottom: Spacing.lg,
   },
-  modalTitle: { fontSize: FontSize.lg, fontWeight: FontWeight.bold, color: Colors.textPrimary },
-  modalSub: { fontSize: FontSize.sm, color: Colors.textMuted, marginTop: 4, marginBottom: Spacing.lg },
-  fieldLabel: { fontSize: FontSize.xs, fontWeight: FontWeight.semiBold, color: Colors.textMuted, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: Spacing.sm },
-  fieldOptional: { fontSize: FontSize.xs, fontWeight: FontWeight.regular ?? '400', color: Colors.textMuted, textTransform: 'none' },
+  modalTitle: { fontSize: FontSize.lg, fontWeight: FontWeight.bold },
+  modalSub: { fontSize: FontSize.sm, marginTop: 4, marginBottom: Spacing.lg },
+  fieldLabel: { fontSize: FontSize.xs, fontWeight: FontWeight.semiBold, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: Spacing.sm },
+  fieldOptional: { fontSize: FontSize.xs, fontWeight: FontWeight.regular ?? '400', textTransform: 'none' },
   pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: Spacing.lg },
   pill: {
-    paddingHorizontal: 10, paddingVertical: 5, borderRadius: Radius.full,
-    backgroundColor: Colors.glass, borderWidth: 1, borderColor: Colors.border,
+    paddingHorizontal: 10, paddingVertical: 5, borderRadius: Radius.full, borderWidth: 1,
   },
-  pillText: { fontSize: FontSize.xs, color: Colors.textSecondary, fontWeight: FontWeight.semiBold },
-  textInput: {
-    backgroundColor: Colors.background, borderRadius: Radius.md, padding: Spacing.md,
-    fontSize: FontSize.md, color: Colors.textPrimary, borderWidth: 1, borderColor: Colors.border,
+  pillText: { fontSize: FontSize.xs, fontWeight: FontWeight.semiBold },
+  textInput: { borderRadius: Radius.md, padding: Spacing.md,
+    fontSize: FontSize.md, borderWidth: 1,
     marginBottom: Spacing.lg,
   },
-  saveBtn: {
-    backgroundColor: Colors.secondary, borderRadius: Radius.md,
+  saveBtn: { borderRadius: Radius.md,
     paddingVertical: 13, alignItems: 'center', justifyContent: 'center',
     marginBottom: Spacing.sm,
   },
-  saveBtnText: { color: Colors.primaryDark, fontWeight: FontWeight.bold, fontSize: FontSize.md },
-  cancelBtn: {
-    backgroundColor: Colors.glass, borderRadius: Radius.md,
+  saveBtnText: { fontWeight: FontWeight.bold, fontSize: FontSize.md },
+  cancelBtn: { borderRadius: Radius.md,
     paddingVertical: 12, alignItems: 'center', justifyContent: 'center',
-    borderWidth: 1, borderColor: Colors.border, marginTop: Spacing.xs,
+    borderWidth: 1, marginTop: Spacing.xs,
   },
-  cancelBtnText: { color: Colors.textSecondary, fontWeight: FontWeight.semiBold, fontSize: FontSize.md },
+  cancelBtnText: { fontWeight: FontWeight.semiBold, fontSize: FontSize.md },
 
   dateBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.65)', justifyContent: 'center', paddingHorizontal: Spacing.xl },
-  dateSheet: {
-    backgroundColor: Colors.surface, borderRadius: Radius.xl, padding: Spacing.xl,
-    borderWidth: 1, borderColor: Colors.border,
+  dateSheet: { borderRadius: Radius.xl, padding: Spacing.xl,
+    borderWidth: 1,
   },
   dateActions: { flexDirection: 'row', gap: Spacing.sm },
 
   // Age Bracket Alerts
   bracketRow: {
     flexDirection: 'row', justifyContent: 'space-around', paddingVertical: Spacing.lg,
-    borderBottomWidth: 1, borderBottomColor: Colors.divider, marginBottom: Spacing.lg,
+    borderBottomWidth: 1, marginBottom: Spacing.lg,
   },
-  bracketLabel: { fontSize: FontSize.xs, color: Colors.textMuted, fontWeight: FontWeight.semiBold, marginBottom: 4 },
-  bracketValue: { fontSize: FontSize.lg, fontWeight: FontWeight.bold, color: Colors.secondary },
+  bracketLabel: { fontSize: FontSize.xs, fontWeight: FontWeight.semiBold, marginBottom: 4 },
+  bracketValue: { fontSize: FontSize.lg, fontWeight: FontWeight.bold },
   bracketAlert: {
     backgroundColor: `${Colors.secondary}18`,
     borderLeftWidth: 3,
@@ -1498,21 +1486,21 @@ const jStyles = StyleSheet.create({
     borderRadius: Radius.md,
     marginBottom: Spacing.lg,
   },
-  bracketAlertText: { fontSize: FontSize.sm, color: Colors.textPrimary, fontWeight: FontWeight.semiBold },
+  bracketAlertText: { fontSize: FontSize.sm, fontWeight: FontWeight.semiBold },
   editBirthDateBtn: {
     paddingVertical: Spacing.sm,
     alignItems: 'center',
   },
-  editBirthDateText: { fontSize: FontSize.xs, color: Colors.accent, fontWeight: FontWeight.semiBold },
+  editBirthDateText: { fontSize: FontSize.xs, fontWeight: FontWeight.semiBold },
   addBirthDateBtn: {
     flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
     paddingVertical: Spacing.lg, justifyContent: 'center',
   },
-  addBirthDateText: { fontSize: FontSize.sm, color: Colors.secondary, fontWeight: FontWeight.semiBold },
+  addBirthDateText: { fontSize: FontSize.sm, fontWeight: FontWeight.semiBold },
 });
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+  container: { flex: 1 },
 
   header: {
     alignItems: 'center',
@@ -1537,7 +1525,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  avatarText: { fontSize: FontSize.xxl, fontWeight: FontWeight.extraBold, color: Colors.primaryDark },
+  avatarText: { fontSize: FontSize.xxl, fontWeight: FontWeight.extraBold },
   manageBillingBtn: {
     backgroundColor: 'rgba(255,255,255,0.12)',
     borderRadius: Radius.full,
@@ -1563,7 +1551,7 @@ const styles = StyleSheet.create({
   },
 
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginBottom: Spacing.sm },
-  profileName: { color: Colors.textPrimary, fontSize: FontSize.xl, fontWeight: FontWeight.bold },
+  profileName: { fontSize: FontSize.xl, fontWeight: FontWeight.bold },
   nameEditRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginBottom: Spacing.sm },
   nameInput: {
     fontSize: FontSize.xl,
@@ -1577,7 +1565,7 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.xs,
     borderRadius: Radius.full,
   },
-  saveBtnText: { color: Colors.primaryDark, fontWeight: FontWeight.bold, fontSize: FontSize.sm },
+  saveBtnText: { fontWeight: FontWeight.bold, fontSize: FontSize.sm },
 
   planBadge: {
     flexDirection: 'row',
@@ -1590,17 +1578,17 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.1)',
   },
-  planText: { fontSize: FontSize.sm, fontWeight: FontWeight.semiBold, color: Colors.secondary },
+  planText: { fontSize: FontSize.sm, fontWeight: FontWeight.semiBold },
   subscribeNowBtn: {
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.xs,
     borderRadius: Radius.full,
     marginTop: Spacing.xs,
   },
-  subscribeNowText: { fontSize: FontSize.xs, fontWeight: FontWeight.bold, color: Colors.primaryDark },
+  subscribeNowText: { fontSize: FontSize.xs, fontWeight: FontWeight.bold },
 
   section: { paddingHorizontal: Spacing.lg, paddingTop: Spacing.xl },
-  sectionLabel: { fontSize: FontSize.xs, fontWeight: FontWeight.semiBold, color: Colors.textMuted, letterSpacing: 1, textTransform: 'uppercase', marginBottom: Spacing.sm },
+  sectionLabel: { fontSize: FontSize.xs, fontWeight: FontWeight.semiBold, letterSpacing: 1, textTransform: 'uppercase', marginBottom: Spacing.sm },
 
   card: {
     borderRadius: Radius.xl,
@@ -1661,8 +1649,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  premiumTitle: { color: Colors.textPrimary, fontSize: FontSize.md, fontWeight: FontWeight.bold },
-  premiumSub: { color: Colors.textSecondary, fontSize: FontSize.sm, marginTop: 2, maxWidth: 200 },
+  premiumTitle: { fontSize: FontSize.md, fontWeight: FontWeight.bold },
+  premiumSub: { fontSize: FontSize.sm, marginTop: 2, maxWidth: 200 },
   premiumArrow: {
     width: 32,
     height: 32,
@@ -1682,11 +1670,11 @@ const styles = StyleSheet.create({
     borderRadius: Radius.md,
     borderWidth: 1,
   },
-  disclaimerText: { flex: 1, fontSize: FontSize.xs, color: Colors.textMuted, lineHeight: 16 },
-  disclaimerLink: { color: Colors.accent, textDecorationLine: 'underline' },
+  disclaimerText: { flex: 1, fontSize: FontSize.xs, lineHeight: 16 },
+  disclaimerLink: { textDecorationLine: 'underline' },
 
   /* Journey NEW styles */
-  journeyCard: { backgroundColor: Colors.surface },
+  journeyCard: { },
   journeyHint: { display: 'none' },
   journeyTrack: { display: 'none' },
   journeyStep: { display: 'none' },

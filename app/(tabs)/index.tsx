@@ -665,21 +665,20 @@ export default function HomeScreen() {
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+  container: { flex: 1 },
 
   // Top bar
   topBar: {
     flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between',
     paddingHorizontal: Spacing.lg, paddingBottom: Spacing.md,
   },
-  greeting: {
-    color: Colors.textPrimary, fontSize: FontSize.lg,
+  greeting: { fontSize: FontSize.lg,
     fontWeight: FontWeight.bold,
   },
-  dateText: { color: Colors.textMuted, fontSize: FontSize.sm, marginTop: 2 },
+  dateText: { fontSize: FontSize.sm, marginTop: 2 },
   searchBtn: {
     width: 40, height: 40, borderRadius: 20,
-    borderWidth: 1, borderColor: Colors.border,
+    borderWidth: 1,
     alignItems: 'center', justifyContent: 'center',
   },
 
@@ -688,8 +687,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg, paddingTop: Spacing.lg, paddingBottom: Spacing.sm,
   },
   glanceSectionTitle: {
-    fontSize: FontSize.sm, fontWeight: FontWeight.semiBold,
-    color: Colors.textMuted, textTransform: 'uppercase', letterSpacing: 0.8,
+    fontSize: FontSize.sm, fontWeight: FontWeight.semiBold, textTransform: 'uppercase', letterSpacing: 0.8,
   },
 
   // Visa Finder
@@ -701,8 +699,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   finderHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginBottom: Spacing.xs },
-  finderTitle: { fontSize: FontSize.lg, fontWeight: FontWeight.bold, color: Colors.textPrimary },
-  finderSub: { fontSize: FontSize.sm, color: Colors.textMuted, marginBottom: Spacing.lg },
+  finderTitle: { fontSize: FontSize.lg, fontWeight: FontWeight.bold },
+  finderSub: { fontSize: FontSize.sm, marginBottom: Spacing.lg },
   purposeGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -724,11 +722,10 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   purposeLabel: {
-    fontSize: FontSize.xs, fontWeight: FontWeight.semiBold,
-    color: Colors.textPrimary, textAlign: 'center',
+    fontSize: FontSize.xs, fontWeight: FontWeight.semiBold, textAlign: 'center',
   },
   purposeHint: {
-    fontSize: 9, color: Colors.textMuted,
+    fontSize: 9,
     textAlign: 'center', lineHeight: 12,
   },
 
@@ -742,7 +739,7 @@ const styles = StyleSheet.create({
   recHeader: {
     flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
     paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md,
-    borderBottomWidth: 1, borderBottomColor: Colors.divider,
+    borderBottomWidth: 1,
   },
   recIconWrap: {
     width: 28, height: 28, borderRadius: 14,
@@ -752,31 +749,30 @@ const styles = StyleSheet.create({
   recRow: {
     flexDirection: 'row', alignItems: 'center', gap: Spacing.md,
     paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md,
-    borderBottomWidth: 1, borderBottomColor: Colors.divider,
+    borderBottomWidth: 1,
   },
   recCode: {
     paddingHorizontal: Spacing.sm, paddingVertical: 4,
     borderRadius: Radius.sm, minWidth: 52, alignItems: 'center',
   },
   recCodeText: { fontSize: FontSize.xs, fontWeight: FontWeight.bold },
-  recName: { fontSize: FontSize.sm, fontWeight: FontWeight.semiBold, color: Colors.textPrimary },
-  recWhy: { fontSize: FontSize.xs, color: Colors.textMuted, marginTop: 2, lineHeight: 15 },
+  recName: { fontSize: FontSize.sm, fontWeight: FontWeight.semiBold },
+  recWhy: { fontSize: FontSize.xs, marginTop: 2, lineHeight: 15 },
   recViewAll: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     gap: Spacing.xs, paddingVertical: Spacing.md,
   },
-  recViewAllText: { fontSize: FontSize.sm, color: Colors.accent, fontWeight: FontWeight.semiBold },
+  recViewAllText: { fontSize: FontSize.sm, fontWeight: FontWeight.semiBold },
 
   // Shared section
   section: { paddingHorizontal: Spacing.lg, paddingTop: Spacing.xl },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginBottom: Spacing.md },
-  sectionViewAll: { fontSize: FontSize.xs, color: Colors.accent, fontWeight: FontWeight.semiBold },
-  sectionTitle: { fontSize: FontSize.lg, fontWeight: FontWeight.bold, color: Colors.textPrimary },
+  sectionViewAll: { fontSize: FontSize.xs, fontWeight: FontWeight.semiBold },
+  sectionTitle: { fontSize: FontSize.lg, fontWeight: FontWeight.bold },
 
   // Aria card
   ariaCard: {
-    borderRadius: Radius.xl, padding: Spacing.xl, overflow: 'hidden',
-    backgroundColor: Colors.surface, borderWidth: 1,
+    borderRadius: Radius.xl, padding: Spacing.xl, overflow: 'hidden', borderWidth: 1,
     borderColor: 'rgba(167,139,250,0.18)', position: 'relative',
   },
   ariaCardShine: {
@@ -791,8 +787,8 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: 'rgba(255,205,0,0.3)',
     alignItems: 'center', justifyContent: 'center',
   },
-  ariaTitle: { color: Colors.textPrimary, fontSize: FontSize.lg, fontWeight: FontWeight.bold },
-  ariaSub: { color: Colors.textSecondary, fontSize: FontSize.sm, marginTop: 2 },
+  ariaTitle: { fontSize: FontSize.lg, fontWeight: FontWeight.bold },
+  ariaSub: { fontSize: FontSize.sm, marginTop: 2 },
   ariaChips: { flexDirection: 'row', gap: Spacing.sm, flexWrap: 'wrap' },
   ariaChip: {
     backgroundColor: 'rgba(255,255,255,0.08)',
@@ -800,23 +796,23 @@ const styles = StyleSheet.create({
     borderRadius: Radius.full,
     paddingHorizontal: Spacing.md, paddingVertical: Spacing.xs + 2,
   },
-  ariaChipText: { color: Colors.textSecondary, fontSize: FontSize.xs },
+  ariaChipText: { fontSize: FontSize.xs },
 
   // Footer
   disclaimer: {
     flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.sm,
     marginHorizontal: Spacing.lg, marginTop: Spacing.xl,
-    padding: Spacing.md, backgroundColor: Colors.surface,
-    borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.border,
+    padding: Spacing.md,
+    borderRadius: Radius.md, borderWidth: 1,
   },
-  disclaimerText: { flex: 1, fontSize: FontSize.xs, color: Colors.textMuted, lineHeight: 16 },
-  disclaimerLink: { color: Colors.accent, textDecorationLine: 'underline' },
+  disclaimerText: { flex: 1, fontSize: FontSize.xs, lineHeight: 16 },
+  disclaimerLink: { textDecorationLine: 'underline' },
   independentBanner: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     gap: Spacing.xs, marginHorizontal: Spacing.lg, marginTop: Spacing.md,
-    paddingVertical: Spacing.sm, borderTopWidth: 1, borderTopColor: Colors.divider,
+    paddingVertical: Spacing.sm, borderTopWidth: 1,
   },
-  independentText: { fontSize: FontSize.xs, color: Colors.accent, opacity: 0.7, textAlign: 'center' },
+  independentText: { fontSize: FontSize.xs, opacity: 0.7, textAlign: 'center' },
 });
 
 // ─── ScoreCard styles ─────────────────────────────────────────────────────────
@@ -845,15 +841,13 @@ const sc = StyleSheet.create({
     paddingHorizontal: Spacing.md, paddingVertical: Spacing.xs,
     borderRadius: Radius.full, marginBottom: Spacing.lg, gap: Spacing.xs,
   },
-  badgeDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: Colors.success },
-  badgeText: { color: Colors.secondary, fontSize: FontSize.sm, fontWeight: FontWeight.semiBold },
-  ctaTitle: {
-    color: Colors.textPrimary, fontSize: FontSize.display,
+  badgeDot: { width: 6, height: 6, borderRadius: 3 },
+  badgeText: { fontSize: FontSize.sm, fontWeight: FontWeight.semiBold },
+  ctaTitle: { fontSize: FontSize.display,
     fontWeight: FontWeight.extraBold, lineHeight: 44,
     marginBottom: Spacing.md, letterSpacing: -0.5,
   },
-  ctaSub: {
-    color: Colors.textSecondary, fontSize: FontSize.md,
+  ctaSub: { fontSize: FontSize.md,
     lineHeight: 22, marginBottom: Spacing.xl,
   },
   ctaBtn: { alignSelf: 'flex-start', borderRadius: Radius.full, overflow: 'hidden' },
@@ -861,14 +855,14 @@ const sc = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
     paddingHorizontal: Spacing.xl, paddingVertical: 14,
   },
-  ctaBtnText: { color: Colors.primaryDark, fontSize: FontSize.md, fontWeight: FontWeight.bold },
+  ctaBtnText: { fontSize: FontSize.md, fontWeight: FontWeight.bold },
 
   // Score state (has score)
   cardTopRow: {
     flexDirection: 'row', alignItems: 'center',
     justifyContent: 'space-between', marginBottom: Spacing.md,
   },
-  cardLabel: { color: Colors.textSecondary, fontSize: FontSize.sm, fontWeight: FontWeight.medium },
+  cardLabel: { fontSize: FontSize.sm, fontWeight: FontWeight.medium },
   subclassBadge: {
     paddingHorizontal: Spacing.sm, paddingVertical: 3,
     borderRadius: Radius.full, borderWidth: 1,
@@ -881,7 +875,7 @@ const sc = StyleSheet.create({
     lineHeight: 76, letterSpacing: -2,
   },
   scoreRight: { paddingBottom: 6, gap: Spacing.sm },
-  scorePts: { color: Colors.textSecondary, fontSize: FontSize.md, fontWeight: FontWeight.medium },
+  scorePts: { fontSize: FontSize.md, fontWeight: FontWeight.medium },
   statusBadge: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
     paddingHorizontal: Spacing.sm, paddingVertical: 4,
@@ -903,9 +897,9 @@ const sc = StyleSheet.create({
     flexDirection: 'row', justifyContent: 'space-between',
     marginBottom: Spacing.md,
   },
-  barLbl: { fontSize: FontSize.xs, color: Colors.textMuted },
+  barLbl: { fontSize: FontSize.xs },
   editHint: {
-    fontSize: FontSize.xs, color: Colors.textMuted,
+    fontSize: FontSize.xs,
     marginTop: Spacing.xs, textAlign: 'right',
   },
 });
@@ -920,7 +914,7 @@ const gl = StyleSheet.create({
   card: {
     width: 140,
     borderRadius: Radius.lg,
-    borderWidth: 1, borderColor: Colors.border,
+    borderWidth: 1,
     padding: Spacing.md,
     gap: 2,
   },
@@ -929,9 +923,9 @@ const gl = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
     marginBottom: Spacing.xs,
   },
-  label: { fontSize: FontSize.xs, color: Colors.textMuted, fontWeight: FontWeight.medium },
+  label: { fontSize: FontSize.xs, fontWeight: FontWeight.medium },
   value: { fontSize: FontSize.xl, fontWeight: FontWeight.extraBold, lineHeight: 26 },
-  sub: { fontSize: FontSize.xs, color: Colors.textMuted, lineHeight: 15 },
+  sub: { fontSize: FontSize.xs, lineHeight: 15 },
 });
 
 // ─── VisaPathwaysGrid styles ──────────────────────────────────────────────────
@@ -945,8 +939,8 @@ const pw = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center',
     gap: Spacing.sm, marginBottom: Spacing.md,
   },
-  title: { fontSize: FontSize.lg, fontWeight: FontWeight.bold, color: Colors.textPrimary },
-  viewAll: { fontSize: FontSize.xs, color: Colors.accent, fontWeight: FontWeight.semiBold },
+  title: { fontSize: FontSize.lg, fontWeight: FontWeight.bold },
+  viewAll: { fontSize: FontSize.xs, fontWeight: FontWeight.semiBold },
 
   grid: {
     flexDirection: 'row',
@@ -981,11 +975,10 @@ const pw = StyleSheet.create({
   },
   countText: { fontSize: FontSize.xs, fontWeight: FontWeight.bold },
   cardName: {
-    fontSize: FontSize.md, fontWeight: FontWeight.bold,
-    color: Colors.textPrimary, marginTop: 2,
+    fontSize: FontSize.md, fontWeight: FontWeight.bold, marginTop: 2,
   },
   cardTagline: {
-    fontSize: FontSize.xs, color: Colors.textMuted,
+    fontSize: FontSize.xs,
     lineHeight: 16, marginTop: 2,
   },
   cardArrow: {
@@ -997,9 +990,9 @@ const pw = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 4,
     marginTop: Spacing.md,
     paddingVertical: Spacing.sm,
-    borderTopWidth: 1, borderTopColor: Colors.divider,
+    borderTopWidth: 1,
   },
   moreText: {
-    flex: 1, fontSize: FontSize.xs, color: Colors.textMuted,
+    flex: 1, fontSize: FontSize.xs,
   },
 });

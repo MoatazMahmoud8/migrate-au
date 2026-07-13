@@ -253,9 +253,9 @@ function OverviewRow({ icon, label, value }: { icon: string; label: string; valu
 }
 
 const ov = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, paddingVertical: 7, borderBottomWidth: 1, borderBottomColor: Colors.divider },
-  label: { fontSize: FontSize.xs, color: Colors.textMuted, width: 86 },
-  value: { flex: 1, fontSize: FontSize.xs, color: Colors.textPrimary, fontWeight: FontWeight.semiBold as any, textAlign: 'right' },
+  row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, paddingVertical: 7, borderBottomWidth: 1 },
+  label: { fontSize: FontSize.xs, width: 86 },
+  value: { flex: 1, fontSize: FontSize.xs, fontWeight: FontWeight.semiBold as any, textAlign: 'right' },
 });
 
 // ─── Screen ────────────────────────────────────────────────────────────────
@@ -276,7 +276,7 @@ export default function EnglishTestsScreen() {
 
   return (
     <ScrollView
-      style={[styles.container, { backgroundColor: Colors.background }]}
+      style={[styles.container, { }]}
       showsVerticalScrollIndicator={false}
       contentContainerStyle={{ paddingBottom: 100 }}
       keyboardShouldPersistTaps="handled"
@@ -291,17 +291,17 @@ export default function EnglishTestsScreen() {
         </TouchableOpacity>
         <View style={styles.headerBadge}>
           <Ionicons name="language" size={14} color={Colors.accent} />
-          <Text style={[styles.headerBadgeText, {color: Colors.textPrimary}]}>DHA Approved Tests</Text>
+          <Text style={[styles.headerBadgeText, {}]}>DHA Approved Tests</Text>
         </View>
-        <Text style={[styles.headerTitle, {color: Colors.textPrimary}]}>English Requirements</Text>
-        <Text style={[styles.headerSub, {color: Colors.textPrimary}]}>
+        <Text style={[styles.headerTitle, {}]}>English Requirements</Text>
+        <Text style={[styles.headerSub, {}]}>
           Select a test to see proficiency levels, visa score requirements and booking centres.
         </Text>
       </LinearGradient>
 
       {/* ── Test selector ── */}
       <View style={styles.selectorSection}>
-        <Text style={[styles.selectorLabel, {color: Colors.textPrimary}]}>Select an approved test</Text>
+        <Text style={[styles.selectorLabel, {}]}>Select an approved test</Text>
 
         <TouchableOpacity
           style={[
@@ -323,10 +323,10 @@ export default function EnglishTestsScreen() {
             {selectedTest ? (
               <>
                 <Text style={[styles.selectorName, { color: selectedTest.color }]}>{selectedTest.name}</Text>
-                <Text style={[styles.selectorFull, {color: Colors.textPrimary}]} numberOfLines={1}>{selectedTest.full}</Text>
+                <Text style={[styles.selectorFull, {}]} numberOfLines={1}>{selectedTest.full}</Text>
               </>
             ) : (
-              <Text style={[styles.selectorPlaceholder, {color: Colors.textPrimary}]}>Choose a test…</Text>
+              <Text style={[styles.selectorPlaceholder, {}]}>Choose a test…</Text>
             )}
           </View>
           <Ionicons
@@ -337,7 +337,7 @@ export default function EnglishTestsScreen() {
         </TouchableOpacity>
 
         {dropdownOpen && (
-          <View style={[styles.dropdown, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
+          <View style={[styles.dropdown, { }]}>
             {TESTS.map((t, i) => (
               <TouchableOpacity
                 key={t.name}
@@ -354,7 +354,7 @@ export default function EnglishTestsScreen() {
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.dropdownName, { color: t.color }]}>{t.name}</Text>
-                  <Text style={[styles.dropdownFull, {color: Colors.textPrimary}]} numberOfLines={1}>{t.full}</Text>
+                  <Text style={[styles.dropdownFull, {}]} numberOfLines={1}>{t.full}</Text>
                 </View>
                 {selectedTest?.name === t.name && (
                   <Ionicons name="checkmark-circle" size={16} color={t.color} />
@@ -371,8 +371,8 @@ export default function EnglishTestsScreen() {
           <View style={styles.emptyIconWrap}>
             <Ionicons name="language-outline" size={32} color={Colors.textMuted} />
           </View>
-          <Text style={[styles.emptyTitle, {color: Colors.textPrimary}]}>6 DHA-approved tests</Text>
-          <Text style={[styles.emptySub, {color: Colors.textPrimary}]}>
+          <Text style={[styles.emptyTitle, {}]}>6 DHA-approved tests</Text>
+          <Text style={[styles.emptySub, {}]}>
             Select a test above to see proficiency scores, visa requirements and how to book.
           </Text>
           <View style={styles.emptyPills}>
@@ -395,7 +395,7 @@ export default function EnglishTestsScreen() {
       {selectedTest && (
         <View style={styles.detailWrap}>
           {/* ① Overview */}
-          <View style={[styles.card, { backgroundColor: Colors.surface, borderColor: selectedTest.color + '35' }]}>
+          <View style={[styles.card, { borderColor: selectedTest.color + '35' }]}>
             <View style={[styles.cardTopStrip, { backgroundColor: selectedTest.color }]} />
             <View style={styles.cardInner}>
               <View style={styles.cardTitleRow}>
@@ -404,7 +404,7 @@ export default function EnglishTestsScreen() {
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.cardMainTitle, { color: selectedTest.color }]}>{selectedTest.name}</Text>
-                  <Text style={[styles.cardFullName, {color: Colors.textPrimary}]}>{selectedTest.full}</Text>
+                  <Text style={[styles.cardFullName, {}]}>{selectedTest.full}</Text>
                 </View>
                 <TouchableOpacity
                   style={[styles.webBtn, { borderColor: selectedTest.color + '40' }]}
@@ -415,7 +415,7 @@ export default function EnglishTestsScreen() {
                 </TouchableOpacity>
               </View>
 
-              <Text style={[styles.overviewText, {color: Colors.textPrimary}]}>{selectedTest.overview}</Text>
+              <Text style={[styles.overviewText, {}]}>{selectedTest.overview}</Text>
 
               <OverviewRow icon="construct-outline"  label="Format"      value={selectedTest.format} />
               <OverviewRow icon="location-outline"   label="Delivery"    value={selectedTest.delivery} />
@@ -425,10 +425,10 @@ export default function EnglishTestsScreen() {
           </View>
 
           {/* ② Proficiency levels */}
-          <View style={[styles.card, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
+          <View style={[styles.card, { }]}>
             <View style={styles.cardInner}>
-              <Text style={[styles.sectionHead, {color: Colors.textPrimary}]}>Proficiency Levels</Text>
-              <Text style={[styles.sectionSub, {color: Colors.textPrimary}]}>DHA-defined thresholds for {selectedTest.name}</Text>
+              <Text style={[styles.sectionHead, {}]}>Proficiency Levels</Text>
+              <Text style={[styles.sectionSub, {}]}>DHA-defined thresholds for {selectedTest.name}</Text>
               {selectedTest.proficiency.map((lv) => (
                 <View key={lv.label} style={[styles.levelRow, { borderLeftColor: lv.color }]}>
                   <View style={styles.levelTop}>
@@ -439,18 +439,18 @@ export default function EnglishTestsScreen() {
                       </View>
                     )}
                   </View>
-                  <Text style={[styles.levelScore, {color: Colors.textPrimary}]}>{lv.score}</Text>
-                  <Text style={[styles.levelDesc, {color: Colors.textPrimary}]}>{lv.description}</Text>
+                  <Text style={[styles.levelScore, {}]}>{lv.score}</Text>
+                  <Text style={[styles.levelDesc, {}]}>{lv.description}</Text>
                 </View>
               ))}
             </View>
           </View>
 
           {/* ③ Visa requirements */}
-          <View style={[styles.card, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
+          <View style={[styles.card, { }]}>
             <View style={styles.cardInner}>
-              <Text style={[styles.sectionHead, {color: Colors.textPrimary}]}>Visa Subclass Requirements</Text>
-              <Text style={[styles.sectionSub, {color: Colors.textPrimary}]}>Minimum {selectedTest.name} scores per visa — tap to expand</Text>
+              <Text style={[styles.sectionHead, {}]}>Visa Subclass Requirements</Text>
+              <Text style={[styles.sectionSub, {}]}>Minimum {selectedTest.name} scores per visa — tap to expand</Text>
               {selectedTest.visaRequirements.map((v) => {
                 const open = expandedVisa === v.code;
                 return (
@@ -467,7 +467,7 @@ export default function EnglishTestsScreen() {
                           <Text style={[styles.visaCode, { color: v.color }]}>{v.code}</Text>
                         </View>
                         <View style={{ flex: 1 }}>
-                          <Text style={[styles.visaName, {color: Colors.textPrimary}]}>{v.name}</Text>
+                          <Text style={[styles.visaName, {}]}>{v.name}</Text>
                           <View style={styles.visaScoreRow}>
                             <Ionicons name="checkmark-circle-outline" size={11} color={v.color} />
                             <Text style={[styles.visaScore, { color: v.color }]}>{v.score}</Text>
@@ -480,7 +480,7 @@ export default function EnglishTestsScreen() {
                           {v.notes.map((n, i) => (
                             <View key={i} style={styles.noteRow}>
                               <View style={[styles.noteDot, { backgroundColor: v.color }]} />
-                              <Text style={[styles.noteText, {color: Colors.textPrimary}]}>{n}</Text>
+                              <Text style={[styles.noteText, {}]}>{n}</Text>
                             </View>
                           ))}
                           <TouchableOpacity
@@ -500,10 +500,10 @@ export default function EnglishTestsScreen() {
           </View>
 
           {/* ④ Test centres */}
-          <View style={[styles.card, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
+          <View style={[styles.card, { }]}>
             <View style={styles.cardInner}>
-              <Text style={[styles.sectionHead, {color: Colors.textPrimary}]}>Book a Test</Text>
-              <Text style={[styles.sectionSub, {color: Colors.textPrimary}]}>Official booking portals for {selectedTest.name}</Text>
+              <Text style={[styles.sectionHead, {}]}>Book a Test</Text>
+              <Text style={[styles.sectionSub, {}]}>Official booking portals for {selectedTest.name}</Text>
               {selectedTest.centers.map((c) => (
                 <TouchableOpacity
                   key={c.url}
@@ -515,8 +515,8 @@ export default function EnglishTestsScreen() {
                     <Ionicons name="location-outline" size={16} color={selectedTest.color} />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={[styles.centerLabel, {color: Colors.textPrimary}]}>{c.label}</Text>
-                    <Text style={[styles.centerSub, {color: Colors.textPrimary}]}>{c.sublabel}</Text>
+                    <Text style={[styles.centerLabel, {}]}>{c.label}</Text>
+                    <Text style={[styles.centerSub, {}]}>{c.sublabel}</Text>
                   </View>
                   <View style={styles.centerRight}>
                     {c.badge && (
@@ -545,25 +545,25 @@ export default function EnglishTestsScreen() {
               <Ionicons name="megaphone-outline" size={18} color={Colors.secondary} />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={[styles.partnerTitle, {color: Colors.textPrimary}]}>Are you a test prep centre?</Text>
-              <Text style={[styles.partnerSub, {color: Colors.textPrimary}]}>Reach thousands of skilled migration applicants — tap to get in touch</Text>
+              <Text style={[styles.partnerTitle, {}]}>Are you a test prep centre?</Text>
+              <Text style={[styles.partnerSub, {}]}>Reach thousands of skilled migration applicants — tap to get in touch</Text>
             </View>
           </View>
           <View style={styles.partnerCta}>
             <Ionicons name="mail-outline" size={14} color={Colors.secondary} />
-            <Text style={[styles.partnerCtaText, {color: Colors.textPrimary}]}>Partner with us</Text>
+            <Text style={[styles.partnerCtaText, {}]}>Partner with us</Text>
           </View>
         </LinearGradient>
       </TouchableOpacity>
 
       {/* Disclaimer */}
-      <View style={[styles.disclaimer, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
+      <View style={[styles.disclaimer, { }]}>
         <Ionicons name="alert-circle-outline" size={14} color={Colors.textMuted} />
-        <Text style={[styles.disclaimerText, {color: Colors.textPrimary}]}>
+        <Text style={[styles.disclaimerText, {}]}>
           Requirements may change. Always verify on{' '}
-          <Text style={[styles.disclaimerLink, {color: Colors.textPrimary}]} onPress={() => Linking.openURL('https://immi.homeaffairs.gov.au')}>immi.homeaffairs.gov.au</Text>
+          <Text style={[styles.disclaimerLink, {}]} onPress={() => Linking.openURL('https://immi.homeaffairs.gov.au')}>immi.homeaffairs.gov.au</Text>
           {' '}or consult a{' '}
-          <Text style={[styles.disclaimerLink, {color: Colors.textPrimary}]} onPress={() => Linking.openURL('https://portal.mara.gov.au')}>MARA-registered agent</Text>.
+          <Text style={[styles.disclaimerLink, {}]} onPress={() => Linking.openURL('https://portal.mara.gov.au')}>MARA-registered agent</Text>.
         </Text>
       </View>
     </ScrollView>
@@ -573,51 +573,48 @@ export default function EnglishTestsScreen() {
 // ─── Styles ────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+  container: { flex: 1 },
 
   header: { paddingHorizontal: Spacing.xl, paddingBottom: Spacing.xxxl },
   backBtn: {
     position: 'absolute', top: 0, left: Spacing.lg,
-    width: 36, height: 36, borderRadius: 18,
-    backgroundColor: Colors.glass, alignItems: 'center', justifyContent: 'center',
+    width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center',
   },
   headerBadge: {
-    flexDirection: 'row', alignItems: 'center', gap: Spacing.xs,
-    backgroundColor: Colors.glassStrong, borderRadius: Radius.full,
+    flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, borderRadius: Radius.full,
     paddingHorizontal: Spacing.md, paddingVertical: 5,
     alignSelf: 'flex-start', marginBottom: Spacing.md,
   },
-  headerBadgeText: { fontSize: FontSize.xs, color: Colors.accent, fontWeight: FontWeight.semiBold as any },
-  headerTitle: { fontSize: FontSize.xxl, fontWeight: FontWeight.extraBold as any, color: Colors.textPrimary, marginBottom: Spacing.sm },
-  headerSub: { fontSize: FontSize.sm, color: Colors.textSecondary, lineHeight: 20 },
+  headerBadgeText: { fontSize: FontSize.xs, fontWeight: FontWeight.semiBold as any },
+  headerTitle: { fontSize: FontSize.xxl, fontWeight: FontWeight.extraBold as any, marginBottom: Spacing.sm },
+  headerSub: { fontSize: FontSize.sm, lineHeight: 20 },
 
   selectorSection: { paddingHorizontal: Spacing.xl, marginTop: Spacing.xl },
   selectorLabel: {
-    fontSize: FontSize.xs, color: Colors.textMuted, fontWeight: FontWeight.semiBold as any,
+    fontSize: FontSize.xs, fontWeight: FontWeight.semiBold as any,
     textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: Spacing.sm,
   },
   selectorBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: Spacing.md,
-    backgroundColor: Colors.surface, borderRadius: Radius.lg,
-    borderWidth: 1, borderColor: Colors.border,
+    flexDirection: 'row', alignItems: 'center', gap: Spacing.md, borderRadius: Radius.lg,
+    borderWidth: 1,
     paddingHorizontal: Spacing.md, paddingVertical: Spacing.md,
   },
   selectorBtnOpen: { borderBottomLeftRadius: 0, borderBottomRightRadius: 0 },
   selectorIcon: { width: 36, height: 36, borderRadius: Radius.md, alignItems: 'center', justifyContent: 'center' },
   selectorName: { fontSize: FontSize.sm, fontWeight: FontWeight.bold as any },
-  selectorFull: { fontSize: FontSize.xs, color: Colors.textMuted, marginTop: 1 },
-  selectorPlaceholder: { fontSize: FontSize.sm, color: Colors.textMuted },
+  selectorFull: { fontSize: FontSize.xs, marginTop: 1 },
+  selectorPlaceholder: { fontSize: FontSize.sm },
 
   dropdown: {
-    borderWidth: 1, borderTopWidth: 0, borderColor: Colors.border,
+    borderWidth: 1, borderTopWidth: 0,
     borderBottomLeftRadius: Radius.lg, borderBottomRightRadius: Radius.lg,
     overflow: 'hidden',
   },
   dropdownItem: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md, paddingHorizontal: Spacing.md, paddingVertical: Spacing.md + 2 },
-  dropdownDivider: { borderBottomWidth: 1, borderBottomColor: Colors.divider },
+  dropdownDivider: { borderBottomWidth: 1 },
   dropdownIcon: { width: 34, height: 34, borderRadius: Radius.sm, alignItems: 'center', justifyContent: 'center' },
   dropdownName: { fontSize: FontSize.sm, fontWeight: FontWeight.bold as any },
-  dropdownFull: { fontSize: FontSize.xs, color: Colors.textMuted, marginTop: 1 },
+  dropdownFull: { fontSize: FontSize.xs, marginTop: 1 },
 
   emptyState: { alignItems: 'center', paddingHorizontal: Spacing.xl, paddingTop: Spacing.xxxl, paddingBottom: Spacing.xl },
   emptyIconWrap: {
@@ -625,34 +622,33 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.05)',
     alignItems: 'center', justifyContent: 'center', marginBottom: Spacing.lg,
   },
-  emptyTitle: { fontSize: FontSize.md, fontWeight: FontWeight.bold as any, color: Colors.textPrimary, marginBottom: Spacing.xs },
-  emptySub: { fontSize: FontSize.sm, color: Colors.textMuted, textAlign: 'center', lineHeight: 20, marginBottom: Spacing.xl },
+  emptyTitle: { fontSize: FontSize.md, fontWeight: FontWeight.bold as any, marginBottom: Spacing.xs },
+  emptySub: { fontSize: FontSize.sm, textAlign: 'center', lineHeight: 20, marginBottom: Spacing.xl },
   emptyPills: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm, justifyContent: 'center' },
   emptyPill: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, borderRadius: Radius.full, borderWidth: 1 },
   emptyPillText: { fontSize: FontSize.xs, fontWeight: FontWeight.semiBold as any },
 
   detailWrap: { paddingHorizontal: Spacing.xl, marginTop: Spacing.xl, gap: Spacing.lg },
 
-  card: {
-    backgroundColor: Colors.surface, borderRadius: Radius.lg,
-    borderWidth: 1, borderColor: Colors.border, overflow: 'hidden',
+  card: { borderRadius: Radius.lg,
+    borderWidth: 1, overflow: 'hidden',
   },
   cardTopStrip: { height: 3 },
   cardInner: { padding: Spacing.lg },
   cardTitleRow: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.md, marginBottom: Spacing.md },
   cardTitleIcon: { width: 44, height: 44, borderRadius: Radius.md, alignItems: 'center', justifyContent: 'center' },
   cardMainTitle: { fontSize: FontSize.lg, fontWeight: FontWeight.bold as any },
-  cardFullName: { fontSize: FontSize.xs, color: Colors.textMuted, marginTop: 2, lineHeight: 16 },
+  cardFullName: { fontSize: FontSize.xs, marginTop: 2, lineHeight: 16 },
   webBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
     borderWidth: 1, borderRadius: Radius.full,
     paddingHorizontal: Spacing.sm, paddingVertical: 4,
   },
   webBtnText: { fontSize: 10, fontWeight: FontWeight.semiBold as any },
-  overviewText: { fontSize: FontSize.xs, color: Colors.textSecondary, lineHeight: 18, marginBottom: Spacing.md },
+  overviewText: { fontSize: FontSize.xs, lineHeight: 18, marginBottom: Spacing.md },
 
-  sectionHead: { fontSize: FontSize.md, fontWeight: FontWeight.bold as any, color: Colors.textPrimary, marginBottom: 2 },
-  sectionSub: { fontSize: FontSize.xs, color: Colors.textMuted, marginBottom: Spacing.md },
+  sectionHead: { fontSize: FontSize.md, fontWeight: FontWeight.bold as any, marginBottom: 2 },
+  sectionSub: { fontSize: FontSize.xs, marginBottom: Spacing.md },
 
   levelRow: {
     borderLeftWidth: 3, paddingLeft: Spacing.md,
@@ -662,27 +658,27 @@ const styles = StyleSheet.create({
   levelName: { fontSize: FontSize.sm, fontWeight: FontWeight.bold as any },
   bonusBadge: { borderWidth: 1, borderRadius: Radius.full, paddingHorizontal: 7, paddingVertical: 2 },
   bonusText: { fontSize: 10, fontWeight: FontWeight.bold as any },
-  levelScore: { fontSize: FontSize.sm, color: Colors.textPrimary, fontWeight: FontWeight.semiBold as any },
-  levelDesc: { fontSize: FontSize.xs, color: Colors.textMuted, marginTop: 2 },
+  levelScore: { fontSize: FontSize.sm, fontWeight: FontWeight.semiBold as any },
+  levelDesc: { fontSize: FontSize.xs, marginTop: 2 },
 
   visaRow: {
-    flexDirection: 'row', backgroundColor: Colors.background,
-    borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.border,
+    flexDirection: 'row',
+    borderRadius: Radius.md, borderWidth: 1,
     overflow: 'hidden', marginBottom: Spacing.sm,
   },
-  visaRowOpen: { borderColor: Colors.divider },
+  visaRowOpen: { },
   visaStrip: { width: 3 },
   visaBody: { flex: 1, padding: Spacing.md },
   visaTop: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
   visaCodePill: { borderWidth: 1, borderRadius: Radius.sm, paddingHorizontal: 8, paddingVertical: 3, minWidth: 50, alignItems: 'center' },
   visaCode: { fontSize: 10, fontWeight: FontWeight.bold as any },
-  visaName: { fontSize: FontSize.xs, fontWeight: FontWeight.semiBold as any, color: Colors.textPrimary },
+  visaName: { fontSize: FontSize.xs, fontWeight: FontWeight.semiBold as any },
   visaScoreRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
   visaScore: { fontSize: 11, fontWeight: FontWeight.bold as any },
-  visaNotes: { marginTop: Spacing.md, borderTopWidth: 1, borderTopColor: Colors.divider, paddingTop: Spacing.md, gap: Spacing.sm },
+  visaNotes: { marginTop: Spacing.md, borderTopWidth: 1, paddingTop: Spacing.md, gap: Spacing.sm },
   noteRow: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.sm },
   noteDot: { width: 5, height: 5, borderRadius: 3, marginTop: 6 },
-  noteText: { flex: 1, fontSize: FontSize.xs, color: Colors.textSecondary, lineHeight: 18 },
+  noteText: { flex: 1, fontSize: FontSize.xs, lineHeight: 18 },
   dhaBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 5,
     borderWidth: 1, borderRadius: Radius.sm,
@@ -697,8 +693,8 @@ const styles = StyleSheet.create({
     padding: Spacing.md, marginBottom: Spacing.sm,
   },
   centerIcon: { width: 38, height: 38, borderRadius: Radius.sm, alignItems: 'center', justifyContent: 'center' },
-  centerLabel: { fontSize: FontSize.sm, fontWeight: FontWeight.semiBold as any, color: Colors.textPrimary },
-  centerSub: { fontSize: FontSize.xs, color: Colors.textMuted, marginTop: 2 },
+  centerLabel: { fontSize: FontSize.sm, fontWeight: FontWeight.semiBold as any },
+  centerSub: { fontSize: FontSize.xs, marginTop: 2 },
   centerRight: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
   officialBadge: { borderWidth: 1, borderRadius: Radius.full, paddingHorizontal: 8, paddingVertical: 2 },
   officialBadgeText: { fontSize: 10, fontWeight: FontWeight.bold as any },
@@ -716,8 +712,8 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: 'rgba(255,205,0,0.3)',
     alignItems: 'center', justifyContent: 'center',
   },
-  partnerTitle: { fontSize: FontSize.md, fontWeight: FontWeight.bold as any, color: Colors.textPrimary },
-  partnerSub: { fontSize: FontSize.xs, color: Colors.textSecondary, lineHeight: 16, marginTop: 2 },
+  partnerTitle: { fontSize: FontSize.md, fontWeight: FontWeight.bold as any },
+  partnerSub: { fontSize: FontSize.xs, lineHeight: 16, marginTop: 2 },
   partnerCta: {
     flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
     backgroundColor: 'rgba(255,205,0,0.12)',
@@ -725,13 +721,13 @@ const styles = StyleSheet.create({
     borderRadius: Radius.md, paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm,
     alignSelf: 'flex-start',
   },
-  partnerCtaText: { fontSize: FontSize.sm, fontWeight: FontWeight.semiBold as any, color: Colors.secondary },
+  partnerCtaText: { fontSize: FontSize.sm, fontWeight: FontWeight.semiBold as any },
 
   disclaimer: {
     flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.sm,
     marginHorizontal: Spacing.xl, marginTop: Spacing.xl,
-    padding: Spacing.md, backgroundColor: Colors.glass, borderRadius: Radius.md,
+    padding: Spacing.md, borderRadius: Radius.md,
   },
-  disclaimerText: { flex: 1, fontSize: FontSize.xs, color: Colors.textMuted, lineHeight: 16 },
-  disclaimerLink: { color: Colors.accent, textDecorationLine: 'underline' },
+  disclaimerText: { flex: 1, fontSize: FontSize.xs, lineHeight: 16 },
+  disclaimerLink: { textDecorationLine: 'underline' },
 });

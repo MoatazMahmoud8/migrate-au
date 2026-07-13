@@ -275,7 +275,7 @@ export default function AiScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+  container: { flex: 1 },
 
   // Empty state
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: Spacing.xl },
@@ -296,8 +296,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  emptyTitle: { fontSize: FontSize.xxl, fontWeight: FontWeight.bold, color: Colors.textPrimary, marginBottom: Spacing.xs },
-  emptySub: { fontSize: FontSize.md, color: Colors.textSecondary, textAlign: 'center', marginBottom: Spacing.xl, lineHeight: 22 },
+  emptyTitle: { fontSize: FontSize.xxl, fontWeight: FontWeight.bold, marginBottom: Spacing.xs },
+  emptySub: { fontSize: FontSize.md, textAlign: 'center', marginBottom: Spacing.xl, lineHeight: 22 },
 
   suggestions: { width: '100%', gap: Spacing.sm, marginBottom: Spacing.xl },
   chip: {
@@ -309,7 +309,7 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.sm + 2,
     borderWidth: 1,
   },
-  chipText: { fontSize: FontSize.sm, color: Colors.textSecondary, fontWeight: FontWeight.medium },
+  chipText: { fontSize: FontSize.sm, fontWeight: FontWeight.medium },
   disclaimer: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -318,8 +318,8 @@ const styles = StyleSheet.create({
     borderRadius: Radius.md,
     borderWidth: 1,
   },
-  disclaimerText: { flex: 1, fontSize: FontSize.xs, color: Colors.textMuted, lineHeight: 16 },
-  disclaimerLink: { color: Colors.accent, textDecorationLine: 'underline' },
+  disclaimerText: { flex: 1, fontSize: FontSize.xs, lineHeight: 16 },
+  disclaimerLink: { textDecorationLine: 'underline' },
 
   sourceNote: {
     flexDirection: 'row',
@@ -329,8 +329,8 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderTopWidth: 1,
   },
-  sourceNoteText: { fontSize: 10, color: Colors.textMuted },
-  sourceNoteLink: { fontSize: 10, color: Colors.accent, textDecorationLine: 'underline' },
+  sourceNoteText: { fontSize: 10 },
+  sourceNoteLink: { fontSize: 10, textDecorationLine: 'underline' },
 
   // Messages
   list: { padding: Spacing.lg, paddingBottom: Spacing.xl, gap: Spacing.md },
@@ -347,8 +347,8 @@ const styles = StyleSheet.create({
     padding: Spacing.md,
   },
   userBubbleGrad: { padding: Spacing.md, borderRadius: Radius.xl, borderBottomRightRadius: 4 },
-  bubbleText: { fontSize: FontSize.md, color: Colors.textPrimary, lineHeight: 22 },
-  userText: { fontSize: FontSize.md, color: Colors.white, lineHeight: 22 },
+  bubbleText: { fontSize: FontSize.md, lineHeight: 22 },
+  userText: { fontSize: FontSize.md, lineHeight: 22 },
 
   // Typing
   typing: {
@@ -365,7 +365,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  typingText: { fontSize: FontSize.sm, color: Colors.textMuted },
+  typingText: { fontSize: FontSize.sm },
 
   // Input bar
   inputRow: {
@@ -391,17 +391,17 @@ const styles = StyleSheet.create({
 });
 
 const markdownStyles = StyleSheet.create({
-  body: { color: Colors.textPrimary, fontSize: FontSize.md, lineHeight: 22 },
-  paragraph: { marginTop: 0, marginBottom: 8, color: Colors.textPrimary },
-  heading1: { fontSize: FontSize.lg, fontWeight: '700', color: Colors.textPrimary, marginTop: 8, marginBottom: 6 },
-  heading2: { fontSize: FontSize.md, fontWeight: '700', color: Colors.textPrimary, marginTop: 8, marginBottom: 4 },
-  heading3: { fontSize: FontSize.md, fontWeight: '600', color: Colors.textPrimary, marginTop: 6, marginBottom: 4 },
-  strong: { fontWeight: '700', color: Colors.textPrimary },
+  body: { fontSize: FontSize.md, lineHeight: 22 },
+  paragraph: { marginTop: 0, marginBottom: 8 },
+  heading1: { fontSize: FontSize.lg, fontWeight: '700', marginTop: 8, marginBottom: 6 },
+  heading2: { fontSize: FontSize.md, fontWeight: '700', marginTop: 8, marginBottom: 4 },
+  heading3: { fontSize: FontSize.md, fontWeight: '600', marginTop: 6, marginBottom: 4 },
+  strong: { fontWeight: '700' },
   em: { fontStyle: 'italic' },
   bullet_list: { marginVertical: 4 },
   ordered_list: { marginVertical: 4 },
   list_item: { marginBottom: 4 },
-  link: { color: Colors.accent, textDecorationLine: 'underline' },
+  link: { textDecorationLine: 'underline' },
   code_inline: {
     borderRadius: 4,
     paddingHorizontal: 4,
@@ -422,9 +422,9 @@ const markdownStyles = StyleSheet.create({
     paddingVertical: 4,
     marginVertical: 6,
   },
-  table: { borderWidth: 1, borderColor: Colors.border, borderRadius: 6, marginVertical: 6 },
-  thead: { backgroundColor: Colors.background },
-  th: { padding: 6, fontWeight: '700', color: Colors.textPrimary },
-  td: { padding: 6, color: Colors.textPrimary },
-  hr: { backgroundColor: Colors.border, height: 1, marginVertical: 8 },
+  table: { borderWidth: 1, borderRadius: 6, marginVertical: 6 },
+  thead: { },
+  th: { padding: 6, fontWeight: '700' },
+  td: { padding: 6 },
+  hr: { height: 1, marginVertical: 8 },
 });

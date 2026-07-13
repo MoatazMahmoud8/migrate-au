@@ -387,12 +387,12 @@ const styles = StyleSheet.create({
     letterSpacing: 0.6,
     marginBottom: Spacing.xs,
   },
-  planCycleActive: { color: Colors.secondary },
+  planCycleActive: { },
   planPrice: {
     fontSize: FontSize.xxl,
     fontWeight: FontWeight.extraBold,
   },
-  planPriceActive: { color: Colors.textPrimary },
+  planPriceActive: { },
   planSub: {
     fontSize: FontSize.xs,
     marginTop: 2,

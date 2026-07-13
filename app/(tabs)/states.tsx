@@ -411,7 +411,7 @@ export default function StatesScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+  container: { flex: 1 },
 
   header: {
     paddingHorizontal: Spacing.xl,
@@ -428,9 +428,9 @@ const styles = StyleSheet.create({
     borderRadius: Radius.full,
     marginBottom: Spacing.md,
   },
-  headerBadgeText: { color: Colors.accent, fontSize: FontSize.sm, fontWeight: FontWeight.semiBold },
-  headerTitle: { color: Colors.textPrimary, fontSize: FontSize.xxxl, fontWeight: FontWeight.extraBold, marginBottom: Spacing.sm, letterSpacing: -0.5 },
-  headerSub: { color: Colors.textSecondary, fontSize: FontSize.md, lineHeight: 22 },
+  headerBadgeText: { fontSize: FontSize.sm, fontWeight: FontWeight.semiBold },
+  headerTitle: { fontSize: FontSize.xxxl, fontWeight: FontWeight.extraBold, marginBottom: Spacing.sm, letterSpacing: -0.5 },
+  headerSub: { fontSize: FontSize.md, lineHeight: 22 },
 
   trustBadge: {
     flexDirection: 'row',
@@ -477,7 +477,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     borderWidth: 1,
   },
-  cardOpen: { borderColor: Colors.divider },
+  cardOpen: { },
   cardAccent: { width: 4 },
   cardMain: { flex: 1, padding: Spacing.lg },
   cardTop: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
@@ -491,8 +491,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   codeText: { fontSize: FontSize.sm, fontWeight: FontWeight.extraBold, letterSpacing: 0.5 },
-  stateName: { fontSize: FontSize.md, fontWeight: FontWeight.semiBold, color: Colors.textPrimary },
-  stateDesc: { fontSize: FontSize.sm, color: Colors.textSecondary, marginTop: 2 },
+  stateName: { fontSize: FontSize.md, fontWeight: FontWeight.semiBold },
+  stateDesc: { fontSize: FontSize.sm, marginTop: 2 },
 
   chevron: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   chevronOpen: { transform: [{ rotate: '180deg' }] },
@@ -505,7 +505,7 @@ const styles = StyleSheet.create({
   },
 
   cardBody: { marginTop: Spacing.md },
-  divider: { height: 1, backgroundColor: Colors.divider, marginBottom: Spacing.md },
+  divider: { height: 1, marginBottom: Spacing.md },
 
   visaChips: { flexDirection: 'row', gap: Spacing.sm, marginBottom: Spacing.md },
   visaChip: {
@@ -548,8 +548,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   visaSubText: { fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.4 },
-  visaRowName: { fontSize: FontSize.xs, fontWeight: FontWeight.semiBold, color: Colors.textPrimary },
-  visaRowDesc: { fontSize: 10, color: Colors.textMuted, marginTop: 1 },
+  visaRowName: { fontSize: FontSize.xs, fontWeight: FontWeight.semiBold },
+  visaRowDesc: { fontSize: 10, marginTop: 1 },
 
   linkBtn: {
     borderRadius: Radius.lg,
@@ -571,6 +571,6 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
     paddingTop: Spacing.xs,
   },
-  noticeDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: Colors.textMuted },
-  noticeText: { fontSize: FontSize.xs, color: Colors.textMuted, flex: 1, lineHeight: 16 },
+  noticeDot: { width: 6, height: 6, borderRadius: 3 },
+  noticeText: { fontSize: FontSize.xs, flex: 1, lineHeight: 16 },
 });

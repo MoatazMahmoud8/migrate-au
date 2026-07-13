@@ -348,7 +348,7 @@ export default function VisasScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+  container: { flex: 1 },
 
   /* Header */
   header: { paddingHorizontal: Spacing.lg, paddingBottom: Spacing.lg },
@@ -368,9 +368,9 @@ const styles = StyleSheet.create({
     borderRadius: Radius.full,
     borderWidth: 1, borderColor: 'rgba(0,194,255,0.25)',
   },
-  headerBadgeText: { fontSize: 10, fontWeight: '700', color: Colors.accent, textTransform: 'uppercase', letterSpacing: 0.5 },
-  title: { fontSize: FontSize.xxl, fontWeight: FontWeight.bold as any, color: Colors.textPrimary, marginBottom: 6 },
-  subtitle: { fontSize: FontSize.sm, color: Colors.textMuted, lineHeight: 20 },
+  headerBadgeText: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
+  title: { fontSize: FontSize.xxl, fontWeight: FontWeight.bold as any, marginBottom: 6 },
+  subtitle: { fontSize: FontSize.sm, lineHeight: 20 },
 
   /* Tab bar */
   tabBar: {
@@ -382,19 +382,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 5,
     paddingHorizontal: 12, paddingVertical: 8,
     borderRadius: Radius.full,
-    borderWidth: 1, borderColor: Colors.border,
+    borderWidth: 1,
     marginRight: 8,
   },
-  tabActive: { backgroundColor: 'rgba(255,255,255,0.05)', borderColor: Colors.secondary + '80' },
-  tabText: { fontSize: 12, fontWeight: '600', color: Colors.textMuted },
-  tabTextActive: { color: Colors.textPrimary, fontWeight: '700' },
+  tabActive: { backgroundColor: 'rgba(255,255,255,0.05)' },
+  tabText: { fontSize: 12, fontWeight: '600' },
+  tabTextActive: { fontWeight: '700' },
   tabCount: {
     paddingHorizontal: 6, paddingVertical: 1,
     borderRadius: Radius.full,
     backgroundColor: 'rgba(255,255,255,0.06)',
     minWidth: 18, alignItems: 'center',
   },
-  tabCountText: { fontSize: 10, fontWeight: '700', color: Colors.textMuted },
+  tabCountText: { fontSize: 10, fontWeight: '700' },
 
   /* Body */
   body: { paddingHorizontal: Spacing.lg, paddingTop: Spacing.sm, gap: Spacing.xl },
@@ -410,7 +410,7 @@ const styles = StyleSheet.create({
     width: 30, height: 30, borderRadius: Radius.sm,
     alignItems: 'center', justifyContent: 'center',
   },
-  sectionTitle: { flex: 1, fontSize: FontSize.md, fontWeight: FontWeight.bold as any, color: Colors.textPrimary },
+  sectionTitle: { flex: 1, fontSize: FontSize.md, fontWeight: FontWeight.bold as any },
   sectionCount: {
     paddingHorizontal: 8, paddingVertical: 3,
     borderRadius: Radius.full,
@@ -421,7 +421,7 @@ const styles = StyleSheet.create({
   cardList: { gap: 8 },
   card: {
     borderRadius: Radius.lg,
-    borderWidth: 1, borderColor: Colors.border,
+    borderWidth: 1,
     overflow: 'hidden',
   },
   cardHead: { flexDirection: 'row', alignItems: 'center', paddingVertical: Spacing.md, paddingRight: Spacing.md, gap: Spacing.sm },
@@ -429,7 +429,7 @@ const styles = StyleSheet.create({
   cardHeadContent: { flex: 1, paddingLeft: Spacing.sm },
   codeRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 3 },
   cardCode: {
-    fontSize: 10, fontWeight: '800', color: Colors.textPrimary,
+    fontSize: 10, fontWeight: '800',
     paddingHorizontal: 8, paddingVertical: 2,
     borderRadius: Radius.full, backgroundColor: 'rgba(255,255,255,0.08)',
   },
@@ -438,25 +438,24 @@ const styles = StyleSheet.create({
   typeTemp: { backgroundColor: 'rgba(0,194,255,0.15)' },
   typeRepealed: { backgroundColor: 'rgba(107,114,128,0.15)' },
   typeText: { fontSize: 9, fontWeight: '700', letterSpacing: 0.4 },
-  typeTextPerm: { color: Colors.success },
-  typeTextTemp: { color: Colors.accent },
+  typeTextPerm: { },
+  typeTextTemp: { },
   typeTextRepealed: { color: '#9CA3AF' },
-  cardName: { fontSize: FontSize.sm, fontWeight: FontWeight.semiBold as any, color: Colors.textPrimary },
+  cardName: { fontSize: FontSize.sm, fontWeight: FontWeight.semiBold as any },
 
   /* Processing time inline badge (collapsed) */
   timeBadgeRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 3 },
   timeBadgeText: { fontSize: 11, fontWeight: '700' },
-  timeBadgeStreams: { fontSize: 10, color: Colors.textMuted },
+  timeBadgeStreams: { fontSize: 10 },
 
   /* Expanded body */
   cardBody: {
     paddingHorizontal: Spacing.md, paddingBottom: Spacing.md, paddingTop: 0,
-    borderTopWidth: 1, borderTopColor: Colors.divider,
+    borderTopWidth: 1,
     marginLeft: 3, // align under strip
   },
   bodyLabel: {
-    fontSize: 10, fontWeight: '700',
-    color: Colors.textMuted, textTransform: 'uppercase', letterSpacing: 0.5,
+    fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5,
     marginTop: Spacing.md, marginBottom: Spacing.sm,
   },
 
@@ -467,12 +466,12 @@ const styles = StyleSheet.create({
     padding: Spacing.sm,
     gap: 6,
   },
-  timeStream: { fontSize: 11, fontWeight: '700', color: Colors.textSecondary },
+  timeStream: { fontSize: 11, fontWeight: '700' },
   timeStats: { flexDirection: 'row', alignItems: 'center' },
   timeStat: { flex: 1, alignItems: 'center' },
-  timeStatLabel: { fontSize: 9, color: Colors.textMuted, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 3 },
-  timeStatValue: { fontSize: FontSize.md, fontWeight: FontWeight.bold as any, color: Colors.textPrimary },
-  timeStatDivider: { width: 1, height: 22, backgroundColor: Colors.divider, marginHorizontal: Spacing.sm },
+  timeStatLabel: { fontSize: 9, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 3 },
+  timeStatValue: { fontSize: FontSize.md, fontWeight: FontWeight.bold as any },
+  timeStatDivider: { width: 1, height: 22, marginHorizontal: Spacing.sm },
   streamList: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   streamChip: {
     paddingHorizontal: 10, paddingVertical: 5,
@@ -483,7 +482,7 @@ const styles = StyleSheet.create({
   condList: { gap: 6 },
   condRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
   condDot: { width: 5, height: 5, borderRadius: 3, marginTop: 7 },
-  condText: { flex: 1, fontSize: FontSize.xs, color: Colors.textSecondary, lineHeight: 18 },
+  condText: { flex: 1, fontSize: FontSize.xs, lineHeight: 18 },
   dhaBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
     marginTop: Spacing.md,
@@ -513,8 +512,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,205,0,0.15)',
     alignItems: 'center', justifyContent: 'center',
   },
-  calcCardTitle: { fontSize: FontSize.sm, fontWeight: FontWeight.bold as any, color: Colors.secondary },
-  calcCardSub: { fontSize: FontSize.xs, color: Colors.textMuted, marginTop: 2 },
+  calcCardTitle: { fontSize: FontSize.sm, fontWeight: FontWeight.bold as any },
+  calcCardSub: { fontSize: FontSize.xs, marginTop: 2 },
 
   /* Search */
   searchContainer: {
@@ -527,7 +526,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 12, paddingVertical: 10,
     borderRadius: Radius.lg,
-    borderWidth: 1, borderColor: Colors.border,
+    borderWidth: 1,
     fontSize: FontSize.sm,
   },
 
@@ -537,6 +536,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.xl, paddingBottom: Spacing.md,
   },
-  footerText: { flex: 1, fontSize: 11, color: Colors.textMuted, lineHeight: 16 },
-  footerLink: { color: Colors.accent, textDecorationLine: 'underline' },
+  footerText: { flex: 1, fontSize: 11, lineHeight: 16 },
+  footerLink: { textDecorationLine: 'underline' },
 });

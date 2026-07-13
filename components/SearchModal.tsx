@@ -155,7 +155,7 @@ export default function SearchModal({ visible, onClose }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background, paddingTop: 50 },
+  container: { flex: 1, paddingTop: 50 },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -179,7 +179,7 @@ const styles = StyleSheet.create({
     padding: 0,
   },
   cancelBtn: { paddingHorizontal: Spacing.sm, paddingVertical: 6 },
-  cancelText: { color: Colors.accent, fontSize: FontSize.sm, fontWeight: FontWeight.semiBold },
+  cancelText: { fontSize: FontSize.sm, fontWeight: FontWeight.semiBold },
   list: { paddingHorizontal: Spacing.lg, paddingBottom: 60 },
   row: {
     flexDirection: 'row',
@@ -193,16 +193,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  rowTitle: { color: Colors.textPrimary, fontSize: FontSize.sm, fontWeight: FontWeight.semiBold },
-  rowSub: { color: Colors.textMuted, fontSize: FontSize.xs, marginTop: 2 },
+  rowTitle: { fontSize: FontSize.sm, fontWeight: FontWeight.semiBold },
+  rowSub: { fontSize: FontSize.xs, marginTop: 2 },
   rowTag: {
     borderRadius: Radius.full,
     paddingHorizontal: Spacing.sm,
     paddingVertical: 3,
   },
-  rowTagText: { color: Colors.textMuted, fontSize: 10, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4 },
-  sep: { height: 1, backgroundColor: Colors.divider },
+  rowTagText: { fontSize: 10, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4 },
+  sep: { height: 1 },
   empty: { alignItems: 'center', paddingTop: 80, paddingHorizontal: Spacing.xl, gap: Spacing.sm },
-  emptyText: { color: Colors.textSecondary, fontSize: FontSize.md, fontWeight: '600' },
-  emptySub: { color: Colors.textMuted, fontSize: FontSize.xs, textAlign: 'center', lineHeight: 18 },
+  emptyText: { fontSize: FontSize.md, fontWeight: '600' },
+  emptySub: { fontSize: FontSize.xs, textAlign: 'center', lineHeight: 18 },
 });

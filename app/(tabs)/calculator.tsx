@@ -499,9 +499,9 @@ const ring = StyleSheet.create({
     right: -40,
   },
   inner: { alignItems: 'center', paddingVertical: Spacing.md },
-  label: { color: Colors.textSecondary, fontSize: FontSize.sm, letterSpacing: 1, textTransform: 'uppercase' },
+  label: { fontSize: FontSize.sm, letterSpacing: 1, textTransform: 'uppercase' },
   score: { fontSize: 80, fontWeight: FontWeight.extraBold, lineHeight: 88, letterSpacing: -2 },
-  pts: { color: Colors.textMuted, fontSize: FontSize.md, marginTop: -4, marginBottom: Spacing.md },
+  pts: { fontSize: FontSize.md, marginTop: -4, marginBottom: Spacing.md },
   badge: {
     borderWidth: 1,
     borderRadius: Radius.full,
@@ -518,7 +518,7 @@ const ring = StyleSheet.create({
   },
   barFill: { height: 4, borderRadius: 2 },
   barLabels: { flexDirection: 'row', justifyContent: 'space-between', marginTop: Spacing.xs },
-  barLabel: { fontSize: FontSize.xs, color: Colors.textMuted },
+  barLabel: { fontSize: FontSize.xs },
 });
 
 const seg = StyleSheet.create({
@@ -535,13 +535,13 @@ const seg = StyleSheet.create({
     borderRadius: Radius.sm,
     alignItems: 'center',
   },
-  active: { backgroundColor: Colors.primary },
-  text: { fontSize: FontSize.xs, color: Colors.textSecondary, fontWeight: FontWeight.medium, textAlign: 'center', lineHeight: 16 },
-  activeText: { color: Colors.secondary, fontWeight: FontWeight.semiBold },
+  active: { },
+  text: { fontSize: FontSize.xs, fontWeight: FontWeight.medium, textAlign: 'center', lineHeight: 16 },
+  activeText: { fontWeight: FontWeight.semiBold },
 });
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+  container: { flex: 1 },
 
   card: {
     borderRadius: Radius.xl,
@@ -556,13 +556,13 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
     marginBottom: Spacing.md,
   },
-  cardTitle: { flex: 1, fontSize: FontSize.md, fontWeight: FontWeight.bold, color: Colors.textPrimary },
+  cardTitle: { flex: 1, fontSize: FontSize.md, fontWeight: FontWeight.bold },
   cardBadge: {
     borderRadius: Radius.full,
     paddingHorizontal: Spacing.sm,
     paddingVertical: 2,
   },
-  cardBadgeText: { fontSize: FontSize.xs, color: Colors.secondary, fontWeight: FontWeight.bold },
+  cardBadgeText: { fontSize: FontSize.xs, fontWeight: FontWeight.bold },
 
   row: {
     flexDirection: 'row',
@@ -571,8 +571,8 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.md,
     borderTopWidth: 1,
   },
-  rowLabel: { fontSize: FontSize.md, color: Colors.textPrimary },
-  rowHint: { fontSize: FontSize.xs, color: Colors.textMuted, marginTop: 2 },
+  rowLabel: { fontSize: FontSize.md },
+  rowHint: { fontSize: FontSize.xs, marginTop: 2 },
 
   stepper: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
   stepBtn: {
@@ -584,7 +584,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   stepBtnDisabled: { opacity: 0.4 },
-  stepValue: { fontSize: FontSize.lg, fontWeight: FontWeight.bold, color: Colors.textPrimary, minWidth: 28, textAlign: 'center' },
+  stepValue: { fontSize: FontSize.lg, fontWeight: FontWeight.bold, minWidth: 28, textAlign: 'center' },
 
   breakdownRow: {
     flexDirection: 'row',
@@ -594,8 +594,8 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
   },
   breakdownLeft: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-  breakdownLabel: { fontSize: FontSize.sm, color: Colors.textSecondary },
-  breakdownLabelActive: { color: Colors.textPrimary },
+  breakdownLabel: { fontSize: FontSize.sm },
+  breakdownLabelActive: { },
   breakdownPill: {
     borderRadius: Radius.full,
     paddingHorizontal: Spacing.sm,
@@ -603,9 +603,9 @@ const styles = StyleSheet.create({
     minWidth: 32,
     alignItems: 'center',
   },
-  breakdownPillActive: { backgroundColor: Colors.secondary + '20' },
-  breakdownPts: { fontSize: FontSize.sm, fontWeight: FontWeight.semiBold, color: Colors.textMuted },
-  breakdownPtsActive: { color: Colors.secondary },
+  breakdownPillActive: { },
+  breakdownPts: { fontSize: FontSize.sm, fontWeight: FontWeight.semiBold },
+  breakdownPtsActive: { },
   breakdownTotal: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -614,8 +614,8 @@ const styles = StyleSheet.create({
     marginTop: Spacing.sm,
     borderTopWidth: 2,
   },
-  breakdownTotalLabel: { fontSize: FontSize.md, fontWeight: FontWeight.bold, color: Colors.textPrimary },
-  breakdownTotalNum: { fontSize: FontSize.xl, fontWeight: FontWeight.extraBold, color: Colors.secondary },
+  breakdownTotalLabel: { fontSize: FontSize.md, fontWeight: FontWeight.bold },
+  breakdownTotalNum: { fontSize: FontSize.xl, fontWeight: FontWeight.extraBold },
   gapRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -624,13 +624,13 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   gapLeft: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 },
-  gapLabel: { fontSize: FontSize.sm, color: Colors.textPrimary, flex: 1 },
+  gapLabel: { fontSize: FontSize.sm, flex: 1 },
   gapPill: {
     borderRadius: Radius.full,
     paddingHorizontal: 10,
     paddingVertical: 3,
     borderWidth: 1,
   },
-  gapPts: { fontSize: FontSize.sm, fontWeight: FontWeight.bold, color: Colors.success },
+  gapPts: { fontSize: FontSize.sm, fontWeight: FontWeight.bold },
 });
 

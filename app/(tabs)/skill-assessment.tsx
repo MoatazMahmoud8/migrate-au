@@ -600,7 +600,7 @@ export default function SkillAssessmentScreen() {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+  container: { flex: 1 },
 
   header: { paddingHorizontal: Spacing.xl, paddingBottom: Spacing.xxl },
   headerBadge: {
@@ -611,38 +611,37 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.md, paddingVertical: Spacing.xs,
     borderRadius: Radius.full, marginBottom: Spacing.md,
   },
-  headerBadgeText: { color: Colors.secondary, fontSize: FontSize.sm, fontWeight: FontWeight.semiBold },
-  headerTitle: { color: Colors.textPrimary, fontSize: FontSize.xxxl, fontWeight: FontWeight.extraBold, marginBottom: Spacing.sm, letterSpacing: -0.5 },
-  headerSub: { color: Colors.textSecondary, fontSize: FontSize.md, lineHeight: 22 },
+  headerBadgeText: { fontSize: FontSize.sm, fontWeight: FontWeight.semiBold },
+  headerTitle: { fontSize: FontSize.xxxl, fontWeight: FontWeight.extraBold, marginBottom: Spacing.sm, letterSpacing: -0.5 },
+  headerSub: { fontSize: FontSize.md, lineHeight: 22 },
 
   searchWrap: { paddingHorizontal: Spacing.lg, paddingTop: Spacing.md, paddingBottom: Spacing.sm },
   searchBox: {
     flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
-    borderRadius: Radius.lg, borderWidth: 1, borderColor: Colors.border,
+    borderRadius: Radius.lg, borderWidth: 1,
     paddingHorizontal: Spacing.md, paddingVertical: 10,
   },
-  searchInput: { flex: 1, color: Colors.textPrimary, fontSize: FontSize.md },
+  searchInput: { flex: 1, fontSize: FontSize.md },
 
   catScroll: { paddingHorizontal: Spacing.lg, paddingVertical: Spacing.sm, gap: Spacing.sm },
   catChip: {
     flexDirection: 'row', alignItems: 'center', gap: 5,
     paddingHorizontal: 12, paddingVertical: 6,
     borderRadius: Radius.full, borderWidth: 1,
-    borderColor: Colors.border, backgroundColor: Colors.surface,
   },
-  catChipActive: { backgroundColor: Colors.secondary, borderColor: Colors.secondary },
-  catChipText: { fontSize: FontSize.xs, fontWeight: FontWeight.semiBold, color: Colors.textMuted },
-  catChipTextActive: { color: Colors.primaryDark },
+  catChipActive: { },
+  catChipText: { fontSize: FontSize.xs, fontWeight: FontWeight.semiBold },
+  catChipTextActive: { },
 
   resultRow: { paddingHorizontal: Spacing.lg, paddingBottom: Spacing.xs },
-  resultText: { fontSize: FontSize.xs, color: Colors.textMuted },
+  resultText: { fontSize: FontSize.xs },
 
   list: { paddingHorizontal: Spacing.lg },
 
   card: {
     flexDirection: 'row',
     borderRadius: Radius.lg,
-    borderWidth: 1, borderColor: Colors.border,
+    borderWidth: 1,
     marginBottom: Spacing.sm,
     overflow: 'hidden',
   },
@@ -656,30 +655,30 @@ const styles = StyleSheet.create({
     maxWidth: 110, alignItems: 'center',
   },
   abbrText: { fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.3 },
-  authName: { fontSize: FontSize.sm, fontWeight: FontWeight.bold, color: Colors.textPrimary, flex: 1, lineHeight: 18 },
+  authName: { fontSize: FontSize.sm, fontWeight: FontWeight.bold, flex: 1, lineHeight: 18 },
   catRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 3 },
-  catLabel: { fontSize: 10, color: Colors.textMuted },
+  catLabel: { fontSize: 10 },
 
-  assessesSummary: { fontSize: FontSize.xs, color: Colors.textSecondary, lineHeight: 17, marginBottom: 2 },
+  assessesSummary: { fontSize: FontSize.xs, lineHeight: 17, marginBottom: 2 },
 
   detail: { marginTop: Spacing.sm },
   metaRow: {
     flexDirection: 'row', alignItems: 'center',
-    borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.border,
+    borderRadius: Radius.md, borderWidth: 1,
     marginBottom: Spacing.sm, overflow: 'hidden',
   },
   metaItem: {
     flex: 1, flexDirection: 'row', alignItems: 'center', gap: 6,
     paddingHorizontal: Spacing.md, paddingVertical: 10,
   },
-  metaDivider: { width: 1, height: 32, backgroundColor: Colors.divider },
-  metaLabel: { fontSize: 9, color: Colors.textMuted, fontWeight: FontWeight.semiBold, letterSpacing: 0.3 },
+  metaDivider: { width: 1, height: 32 },
+  metaLabel: { fontSize: 9, fontWeight: FontWeight.semiBold, letterSpacing: 0.3 },
   metaVal: { fontSize: FontSize.xs, fontWeight: FontWeight.bold },
 
   notes: { marginBottom: Spacing.sm },
   noteRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 7, marginBottom: 6 },
   noteDot: { width: 5, height: 5, borderRadius: 3, marginTop: 5 },
-  noteText: { flex: 1, fontSize: FontSize.xs, color: Colors.textSecondary, lineHeight: 17 },
+  noteText: { flex: 1, fontSize: FontSize.xs, lineHeight: 17 },
 
   websiteBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
@@ -689,14 +688,13 @@ const styles = StyleSheet.create({
   websiteBtnText: { fontSize: FontSize.xs, fontWeight: FontWeight.semiBold, flex: 1 },
 
   empty: { alignItems: 'center', paddingVertical: Spacing.xxl, gap: Spacing.sm },
-  emptyText: { color: Colors.textMuted, fontSize: FontSize.md },
-  emptyReset: { color: Colors.accent, fontSize: FontSize.sm, fontWeight: FontWeight.semiBold, marginTop: 4 },
+  emptyText: { fontSize: FontSize.md },
+  emptyReset: { fontSize: FontSize.sm, fontWeight: FontWeight.semiBold, marginTop: 4 },
 
   footerNote: {
     flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.sm,
     marginHorizontal: Spacing.lg, marginTop: Spacing.md,
-    padding: Spacing.md,
-    backgroundColor: Colors.surface, borderRadius: Radius.md,
+    padding: Spacing.md, borderRadius: Radius.md,
   },
-  footerNoteText: { flex: 1, fontSize: FontSize.xs, color: Colors.textMuted, lineHeight: 16 },
+  footerNoteText: { flex: 1, fontSize: FontSize.xs, lineHeight: 16 },
 });
