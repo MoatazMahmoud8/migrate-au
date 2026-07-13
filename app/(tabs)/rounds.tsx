@@ -233,6 +233,41 @@ const FALLBACK: RoundsData = {
   ],
 };
 
+// ─── Data normalisation ───────────────────────────────────────────────────────
+
+/** Normalise a round summary from either nested or flat format */
+function normaliseRound(r: any): RoundSummary {
+  return {
+    date: r.date ?? '',
+    label: r.label || fmtDateLabel(r.date),
+    sc189Total: r.sc189Total ?? r.sc189?.total ?? undefined,
+    sc189TieBreak: r.sc189TieBreak ?? r.sc189?.tieBreak ?? undefined,
+    sc491FamilyTotal: r.sc491FamilyTotal ?? r.sc491Family?.total ?? undefined,
+    sc491FamilyTieBreak: r.sc491FamilyTieBreak ?? r.sc491Family?.tieBreak ?? undefined,
+  };
+}
+
+/** Generate a human label from an ISO date string */
+function fmtDateLabel(iso: string | undefined): string {
+  if (!iso) return '';
+  try {
+    return new Date(iso).toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' });
+  } catch { return iso; }
+}
+
+/** Normalise entire RoundsData — handles both nested and flat JSON formats */
+function normaliseData(raw: any): RoundsData {
+  return {
+    lastUpdated: raw.lastUpdated ?? '',
+    sourceUrl: raw.sourceUrl ?? 'https://immi.homeaffairs.gov.au/visas/working-in-australia/skillselect/invitation-rounds',
+    note: raw.note ?? FALLBACK.note,
+    currentRound: normaliseRound(raw.currentRound ?? {}),
+    stateNominations: raw.stateNominations ?? FALLBACK.stateNominations,
+    occupationScores: raw.occupationScores ?? FALLBACK.occupationScores,
+    rounds: (raw.rounds ?? []).map(normaliseRound),
+  };
+}
+
 // ─── Data loading ─────────────────────────────────────────────────────────────
 
 async function loadData(): Promise<RoundsData> {
@@ -245,14 +280,15 @@ async function loadData(): Promise<RoundsData> {
       const res = await fetch(REMOTE_URL, { signal: ctrl.signal });
       clearTimeout(timer);
       if (res.ok) {
-        const data: RoundsData = await res.json();
+        const raw = await res.json();
+        const data = normaliseData(raw);
         await AsyncStorage.setItem(CACHE_KEY, JSON.stringify(data));
         await AsyncStorage.setItem(CACHE_TS_KEY, String(Date.now()));
         return data;
       }
     }
     const cached = await AsyncStorage.getItem(CACHE_KEY);
-    if (cached) return JSON.parse(cached) as RoundsData;
+    if (cached) return normaliseData(JSON.parse(cached));
   } catch (_) {}
   return FALLBACK;
 }
