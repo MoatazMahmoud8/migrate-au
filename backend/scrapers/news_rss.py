@@ -199,6 +199,82 @@ def _is_recent(pub_date_str: str) -> bool:
         return False
 
 
+# ─── Guide/evergreen content detection ────────────────────────────────────────
+
+# These patterns in the TITLE indicate a how-to/guide/advice article,
+# NOT a news update. Reject them — users want actual news, not blog content.
+GUIDE_TITLE_PATTERNS = [
+    # "How to" / instructional
+    r"^how to ", r"how to .* in australia", r"step.by.step",
+    r"complete guide", r"ultimate guide", r"beginner.?s guide",
+    r"your guide to", r"a guide to", r"tips for",
+    # "What to do if" / contingency advice
+    r"what to do", r"what happens if", r"what you need to know",
+    r"next (?:pr )?steps", r"your options", r"explore your",
+    # "Missed X? Do Y" pattern — clickbait advice
+    r"missed (?:an?|your|the) .* \?", r"didn.t get .* \?",
+    r"not invited\?", r"missed .* invite",
+    # Generic evergreen / listicle
+    r"top \d+ ", r"\d+ ways to", r"\d+ things you",
+    r"everything you need to know",
+    r"checklist", r"cheat sheet",
+    # Study / career guidance (not news)
+    r"best (?:courses?|universities|tafe)",
+    r"study options", r"pr pathway.? (?:in|for|to)",
+    r"how .* can (?:get|apply|migrate)",
+    # Success stories (not news)
+    r"success story", r"case study", r"client story",
+    r"visa granted", r"visa success",
+]
+
+# NEWS indicators — at least one must appear to confirm it's actual news.
+# Articles from migration-specific blogs (VisaEnvoy, PathwayToAus) MUST
+# contain a news indicator to pass; otherwise they're just guides.
+NEWS_INDICATORS = [
+    # Official actions / changes
+    "announced", "announcement", "effective from", "effective date",
+    "from 1 july", "from 1 january", "introduced", "abolished",
+    "new policy", "policy change", "policy update",
+    "updated", "update:", "changes to", "changed",
+    "increase", "decreased", "reduced", "raised",
+    "new requirement", "removed requirement",
+    # Dates / rounds / concrete events
+    "invitation round", "round result", "round issued",
+    "processing time", "processing update",
+    "quota", "allocation", "cap reached",
+    "fee increase", "new fee", "fee change",
+    "threshold", "income requirement",
+    # Government / departmental
+    "minister", "department", "legislation",
+    "regulation", "gazette", "budget",
+    "migration program", "planning level",
+    # System events
+    "system outage", "maintenance", "downtime",
+    "immiaccount", "online system",
+]
+
+# Feeds known to publish mostly blog/guide content (need NEWS_INDICATORS)
+BLOG_FEEDS = [
+    "pathwaytoaus.com",
+    "visaenvoy.com",
+]
+
+
+def _is_guide_content(title: str) -> bool:
+    """Return True if the title matches a guide/advice pattern (not news)."""
+    t = title.lower()
+    for pattern in GUIDE_TITLE_PATTERNS:
+        if re.search(pattern, t):
+            return True
+    return False
+
+
+def _has_news_indicator(title: str, desc: str) -> bool:
+    """Return True if the article contains markers of actual news/updates."""
+    text = (title + " " + desc).lower()
+    return any(ind in text for ind in NEWS_INDICATORS)
+
+
 def _is_migration_relevant(title: str, desc: str) -> bool:
     """Return True only if article is specifically about migration/visa topics."""
     text = (title + " " + desc).lower()
@@ -262,6 +338,15 @@ def scrape(db) -> list[dict]:
 
                 score = _relevance_score(title, desc)
                 if title and link and score >= 2 and _is_migration_relevant(title, desc) and _is_australian(title, desc):
+                    # Reject guide/evergreen blog content
+                    if _is_guide_content(title):
+                        print(f"  [news_rss] ❌ GUIDE rejected: {title[:80]}")
+                        continue
+                    # Blog feeds must contain a news indicator
+                    is_blog_feed = any(bf in url for bf in BLOG_FEEDS)
+                    if is_blog_feed and not _has_news_indicator(title, desc):
+                        print(f"  [news_rss] ❌ NO NEWS indicator (blog feed): {title[:80]}")
+                        continue
                     candidates.append({
                         "title": title,
                         "desc": desc,
@@ -296,6 +381,11 @@ def scrape(db) -> list[dict]:
     for article in new_articles[:MAX_NOTIFICATIONS_PER_RUN]:
         category = _categorize(article["title"], article["desc"])
         body = article["desc"][:150] if article["desc"] else article["title"]
+        # Avoid cutting mid-word
+        if article["desc"] and len(article["desc"]) > 150:
+            last_space = body.rfind(" ")
+            if last_space > 100:
+                body = body[:last_space] + "…"
 
         notifications.append({
             "source_id": "news_rss",
