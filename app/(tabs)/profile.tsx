@@ -1260,12 +1260,17 @@ function SettingRow({
       <View style={[rowStyles.iconWrap, { backgroundColor: Colors.background }]}>
         <Ionicons name={icon as any} size={18} color={locked ? Colors.textMuted : Colors.textSecondary} />
       </View>
-      <Text style={[rowStyles.label, { color: Colors.textPrimary }, locked && { color: Colors.textMuted }]}>{label}</Text>
+      <Text
+        style={[rowStyles.label, { color: Colors.textPrimary }, locked && { color: Colors.textMuted }]}
+        numberOfLines={1}
+      >
+        {label}
+      </Text>
       <View style={rowStyles.right}>
         {loading
           ? <ActivityIndicator size="small" color={Colors.textMuted} />
           : <>
-              {value && <Text style={[rowStyles.value, { color: Colors.textMuted }]}>{value}</Text>}
+              {value && <Text style={[rowStyles.value, { color: Colors.textMuted }]} numberOfLines={1}>{value}</Text>}
               {badge && <View style={rowStyles.badge}><Text style={[rowStyles.badgeText, {color: Colors.textPrimary}]}>{badge}</Text></View>}
               {locked && <Ionicons name="lock-closed" size={14} color={Colors.textMuted} />}
               {showArrow && <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} />}
@@ -1291,10 +1296,10 @@ const rowStyles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  label: { flex: 1, fontSize: FontSize.md },
+  label: { flexGrow: 1, flexShrink: 0, flexBasis: 'auto', fontSize: FontSize.md },
   labelMuted: { },
-  right: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-  value: { fontSize: FontSize.sm },
+  right: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, flexShrink: 1, justifyContent: 'flex-end' },
+  value: { fontSize: FontSize.sm, flexShrink: 1, textAlign: 'right' },
   badge: {
     borderRadius: Radius.full,
     paddingHorizontal: Spacing.sm,
