@@ -8,7 +8,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Colors } from '../constants/theme';
 import { ThemeProvider, useColors, useTheme } from '../constants/ThemeContext';
 import { useEffect, useState } from 'react';
-import { initNotifications, subscribeToFeed } from '../utils/notifications';
+import { initNotifications, subscribeToFeed, onReadChange, getReadIds } from '../utils/notifications';
 import { refreshLatestRound } from '../utils/latestRound';
 import { initRevenueCat, syncSubscriptionStatus, getRevenueCatUserId } from '../utils/iap';
 import { selection } from '../utils/haptics';
@@ -17,6 +17,7 @@ import OnboardingModal from '../components/OnboardingModal';
 import { refreshProcessingTimes } from '../utils/processingTimes';
 import { refreshSkilledOccupations } from '../utils/skilledOccupations';
 import { initSentry, Sentry } from '../utils/sentry';
+import { initializeFirebaseWeb, subscribeToNotificationsWeb } from '../utils/firebaseWeb';
 
 // Initialize Firebase for native platforms
 // @react-native-firebase auto-initializes on app startup, but we explicitly
@@ -107,11 +108,34 @@ function RootLayout() {
 
         // Track unread count for tab badge — must wait for userId so personalised
         // watchlist alerts are included.
-        unsubFeed = subscribeToFeed(
-          items => setUnread(items.filter(n => !n.read).length),
-          30,
-          userId ?? undefined,
-        );
+        let latestFeedItems: any[] = [];
+        const recount = () => {
+          getReadIds().then(readIds => {
+            const newCount = latestFeedItems.filter(n => !readIds.has(n.id)).length;
+            console.log('[_layout] Badge recount:', latestFeedItems.length, 'total,', newCount, 'unread');
+            setUnread(newCount);
+          });
+        };
+        const unsubReadChange = onReadChange(recount);
+
+        if (Platform.OS === 'web') {
+          // Web: use Firebase JS SDK directly
+          initializeFirebaseWeb();
+          const unsub = subscribeToNotificationsWeb(
+            items => { latestFeedItems = items; recount(); },
+            30,
+            userId ?? undefined,
+          );
+          if (unsub) unsubFeed = () => { unsub(); unsubReadChange(); };
+          else unsubFeed = unsubReadChange;
+        } else {
+          const unsubNative = subscribeToFeed(
+            items => { latestFeedItems = items; setUnread(items.filter(n => !n.read).length); },
+            30,
+            userId ?? undefined,
+          );
+          unsubFeed = () => { unsubNative(); unsubReadChange(); };
+        }
         
         console.log('[_layout] ✅ Notification feed subscribed');
       } catch (err) {
@@ -444,12 +468,12 @@ const tabStyles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 3,
-    backgroundColor: '#FFCD00',
+    backgroundColor: '#EF4444',
   },
   badgeText: {
     fontSize: 9,
     fontWeight: '800',
-    color: '#0B1120',
+    color: '#FFFFFF',
   },
   // kept for backward compat
   iconActive: {

@@ -573,12 +573,24 @@ export async function getReadIds(): Promise<Set<string>> {
   }
 }
 
+// ─── Read-state change listeners (for badge sync) ─────────────────────────
+type ReadChangeListener = () => void;
+const readChangeListeners = new Set<ReadChangeListener>();
+
+/** Register a callback fired whenever a notification is marked as read. */
+export function onReadChange(listener: ReadChangeListener): () => void {
+  readChangeListeners.add(listener);
+  return () => { readChangeListeners.delete(listener); };
+}
+
 /** Mark a notification as read (local storage) */
 export async function markAsRead(notificationId: string) {
   try {
     const readIds = await getReadIds();
     readIds.add(notificationId);
     await AsyncStorage.setItem(READ_IDS_KEY, JSON.stringify([...readIds]));
+    // Notify badge listeners
+    readChangeListeners.forEach(fn => fn());
   } catch {
     // ignore storage errors
   }

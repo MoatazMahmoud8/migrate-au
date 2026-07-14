@@ -244,15 +244,18 @@ export default function NotificationsScreen() {
   }, []);
 
   const filteredFeed = useMemo(() => {
-    if (stateFilter === 'all') return feed;
-    if (stateFilter === 'FED') return feed.filter(n => !n.state || n.state === 'FED' || n.state === 'Federal');
-    return feed.filter(n => (n.state ?? '').toUpperCase() === stateFilter);
+    let items = feed;
+    if (stateFilter === 'unread') return items.filter(n => !n.read);
+    if (stateFilter === 'FED') items = items.filter(n => !n.state || n.state === 'FED' || n.state === 'Federal');
+    else if (stateFilter !== 'all') items = items.filter(n => (n.state ?? '').toUpperCase() === stateFilter);
+    return items;
   }, [feed, stateFilter]);
 
   const unreadCount = feed.filter(n => !n.read).length;
 
   const FILTERS: { id: string; label: string }[] = [
     { id: 'all', label: 'All' },
+    { id: 'unread', label: `Unread${unreadCount > 0 ? ` (${unreadCount})` : ''}` },
     { id: 'FED', label: 'Federal' },
     { id: 'NSW', label: 'NSW' },
     { id: 'VIC', label: 'VIC' },
