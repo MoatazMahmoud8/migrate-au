@@ -23,6 +23,7 @@ module.exports = ({ config }) => {
       geminiApiKey:         process.env.GEMINI_API_KEY ?? config.extra?.geminiApiKey ?? '',
       revenueCatKeyIos:     iosKey,
       revenueCatKeyAndroid: androidKey,
+      EXPO_PUBLIC_SENTRY_DSN: process.env.EXPO_PUBLIC_SENTRY_DSN ?? '',
     },
   };
 };
