@@ -8,6 +8,7 @@ on:
     branches: [main]
     paths:
       - 'app.json'
+      - 'app.config.js'
       - 'utils/sentry.ts'
       - 'app/_layout.tsx'
       - 'package.json'
