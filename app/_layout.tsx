@@ -444,10 +444,12 @@ const tabStyles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 3,
+    backgroundColor: '#FFCD00',
   },
   badgeText: {
     fontSize: 9,
     fontWeight: '800',
+    color: '#0B1120',
   },
   // kept for backward compat
   iconActive: {
