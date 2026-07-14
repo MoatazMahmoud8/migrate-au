@@ -164,7 +164,16 @@ function VisaFinder() {
   // Persist selection
   useEffect(() => {
     AsyncStorage.getItem(STORAGE_PURPOSE).then((v) => {
-      if (v) setSelected(v as PurposeId);
+      if (v) {
+        setSelected(v as PurposeId);
+        // Animate the recommendation panel in (recAnim starts at 0)
+        Animated.spring(recAnim, {
+          toValue: 1,
+          useNativeDriver: true,
+          tension: 80,
+          friction: 10,
+        }).start();
+      }
     });
   }, []);
 
