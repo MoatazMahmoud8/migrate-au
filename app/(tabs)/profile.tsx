@@ -907,7 +907,7 @@ export default function ProfileScreen() {
         onRequestClose={() => setShowBirthDatePicker(false)}
       >
         <View style={jStyles.dateBackdrop}>
-          <View style={jStyles.dateSheet}>
+          <View style={[jStyles.dateSheet, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
             <Text style={[jStyles.modalTitle, {color: Colors.textPrimary}]}>Birth Date</Text>
             <Text style={[jStyles.modalSub, {color: Colors.textPrimary}]}>For age bracket milestone alerts</Text>
 
@@ -952,15 +952,15 @@ export default function ProfileScreen() {
 
             <View style={jStyles.dateActions}>
               <TouchableOpacity
-                style={[jStyles.saveBtn, { flex: 1 }]}
+                style={[jStyles.saveBtn, { flex: 1, backgroundColor: Colors.accent }]}
                 onPress={() => saveBirthDate(birthDateInput)}
                 activeOpacity={0.85}
               >
-                <Text style={[jStyles.saveBtnText, {color: Colors.textPrimary}]}>Save</Text>
+                <Text style={[jStyles.saveBtnText, {color: Colors.primaryDark}]}>Save</Text>
               </TouchableOpacity>
               {profile.birthDate && (
                 <TouchableOpacity
-                  style={[jStyles.cancelBtn, { flex: 1, marginTop: 0, marginLeft: Spacing.sm }]}
+                  style={[jStyles.cancelBtn, { flex: 1, marginTop: 0, marginLeft: Spacing.sm, borderColor: Colors.border }]}
                   onPress={() => saveBirthDate('')}
                 >
                   <Text style={[jStyles.cancelBtnText, { color: Colors.error }]}>Clear</Text>
@@ -995,11 +995,11 @@ export default function ProfileScreen() {
                 return (
                   <TouchableOpacity
                     key={v}
-                    style={[jStyles.pill, active && { backgroundColor: `${c}22`, borderColor: c }]}
+                    style={[jStyles.pill, { borderColor: Colors.border }, active && { backgroundColor: `${c}22`, borderColor: c }]}
                     onPress={() => setNewVisa(v)}
                     activeOpacity={0.8}
                   >
-                    <Text style={[jStyles.pillText, active && { color: c }]}>SC {v}</Text>
+                    <Text style={[jStyles.pillText, { color: Colors.textSecondary }, active && { color: c }]}>SC {v}</Text>
                   </TouchableOpacity>
                 );
               })}
@@ -1012,11 +1012,11 @@ export default function ProfileScreen() {
                 return (
                   <TouchableOpacity
                     key={s}
-                    style={[jStyles.pill, active && { backgroundColor: `${Colors.accent}22`, borderColor: Colors.accent }]}
+                    style={[jStyles.pill, { borderColor: Colors.border }, active && { backgroundColor: `${Colors.accent}22`, borderColor: Colors.accent }]}
                     onPress={() => setNewState(s)}
                     activeOpacity={0.8}
                   >
-                    <Text style={[jStyles.pillText, active && { color: Colors.accent }]}>{s}</Text>
+                    <Text style={[jStyles.pillText, { color: Colors.textSecondary }, active && { color: Colors.accent }]}>{s}</Text>
                   </TouchableOpacity>
                 );
               })}
@@ -1024,7 +1024,7 @@ export default function ProfileScreen() {
 
             <Text style={[jStyles.fieldLabel, {color: Colors.textPrimary}]}>ANZSCO code or occupation name <Text style={[jStyles.fieldOptional, {color: Colors.textPrimary}]}>(optional)</Text></Text>
             <TextInput
-              style={[jStyles.textInput, {color: Colors.textPrimary}]}
+              style={[jStyles.textInput, {color: Colors.textPrimary, borderColor: Colors.border}]}
               value={newAnzsco}
               onChangeText={setNewAnzsco}
               placeholder="e.g. 261313 or Software Engineer"
@@ -1033,10 +1033,10 @@ export default function ProfileScreen() {
               autoCapitalize="words"
             />
 
-            <TouchableOpacity style={jStyles.saveBtn} onPress={addJourneyEntry} activeOpacity={0.85}>
-              <Text style={[jStyles.saveBtnText, {color: Colors.textPrimary}]}>Add Journey</Text>
+            <TouchableOpacity style={[jStyles.saveBtn, { backgroundColor: Colors.accent }]} onPress={addJourneyEntry} activeOpacity={0.85}>
+              <Text style={[jStyles.saveBtnText, {color: Colors.primaryDark}]}>Add Journey</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={jStyles.cancelBtn} onPress={() => setShowAddJourney(false)}>
+            <TouchableOpacity style={[jStyles.cancelBtn, { borderColor: Colors.border }]} onPress={() => setShowAddJourney(false)}>
               <Text style={[jStyles.cancelBtnText, {color: Colors.textPrimary}]}>Cancel</Text>
             </TouchableOpacity>
           </View>
@@ -1051,7 +1051,7 @@ export default function ProfileScreen() {
         onRequestClose={() => setShowDateModal(false)}
       >
         <View style={jStyles.dateBackdrop}>
-          <View style={jStyles.dateSheet}>
+          <View style={[jStyles.dateSheet, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
             <Text style={[jStyles.modalTitle, {color: Colors.textPrimary}]}>
               {dateTarget ? JOURNEY_STAGES.find(s => s.key === dateTarget.stageKey)?.label : 'Date'}
             </Text>
@@ -1097,15 +1097,15 @@ export default function ProfileScreen() {
             )}
             <View style={jStyles.dateActions}>
               <TouchableOpacity
-                style={[jStyles.saveBtn, { flex: 1 }]}
+                style={[jStyles.saveBtn, { flex: 1, backgroundColor: Colors.accent }]}
                 onPress={saveStageDateInput}
                 activeOpacity={0.85}
               >
-                <Text style={[jStyles.saveBtnText, {color: Colors.textPrimary}]}>Save</Text>
+                <Text style={[jStyles.saveBtnText, {color: Colors.primaryDark}]}>Save</Text>
               </TouchableOpacity>
               {dateInput.trim() !== '' && (
                 <TouchableOpacity
-                  style={[jStyles.cancelBtn, { flex: 1, marginTop: 0, marginLeft: Spacing.sm }]}
+                  style={[jStyles.cancelBtn, { flex: 1, marginTop: 0, marginLeft: Spacing.sm, borderColor: Colors.border }]}
                   onPress={async () => {
                     if (!dateTarget) return;
                     const updated = journeyEntries.map((e) =>
