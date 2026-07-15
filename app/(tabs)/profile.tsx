@@ -32,6 +32,7 @@ import { askToRate } from '../../utils/rateApp';
 import { Sentry } from '../../utils/sentry';
 import { generateJourneyPDF, sharePDF } from '../../utils/pdfExport';
 import { isUserAdmin } from '../../utils/admin';
+import Constants from 'expo-constants';
 
 const JOURNEY_STAGES: Array<{ key: JourneyStageKey; label: string; desc: string }> = [
   { key: 'assess', label: 'Skills Assessment', desc: 'Skills assessment & English test preparation' },
@@ -834,7 +835,7 @@ export default function ProfileScreen() {
       <View style={styles.section}>
         <Text style={[styles.sectionLabel, { color: Colors.textMuted }]}>About</Text>
         <View style={[styles.card, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
-          <SettingRow icon="information-circle-outline" label="MigrateAU" value="v1.0.0" />
+          <SettingRow icon="information-circle-outline" label="MigrateAU" value={`v${Constants.expoConfig?.version ?? '1.0.0'}`} />
           <SettingRow
             icon="shield-outline"
             label="Privacy Policy"
