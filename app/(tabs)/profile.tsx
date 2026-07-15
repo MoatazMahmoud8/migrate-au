@@ -394,6 +394,25 @@ export default function ProfileScreen() {
     setShowBirthDatePicker(false);
   };
 
+  const openBirthDatePicker = (existingIso?: string) => {
+    const initial = existingIso ? new Date(existingIso) : new Date(1990, 0, 1);
+    if (Platform.OS === 'android') {
+      DateTimePickerAndroid.open({
+        value: initial,
+        mode: 'date',
+        maximumDate: new Date(),
+        onChange: (event, selected) => {
+          if (event.type === 'set' && selected) {
+            saveBirthDate(dateToInput(selected.toISOString()));
+          }
+        },
+      });
+    } else {
+      setBirthDateInput(existingIso ? dateToInput(existingIso) : '');
+      setShowBirthDatePicker(true);
+    }
+  };
+
   const handleRestore = async () => {
     setRestoring(true);
     try {
@@ -650,10 +669,7 @@ export default function ProfileScreen() {
                     </View>
                   )}
                   <TouchableOpacity
-                    onPress={() => {
-                      setBirthDateInput(dateToInput(profile.birthDate!));
-                      setShowBirthDatePicker(true);
-                    }}
+                    onPress={() => openBirthDatePicker(profile.birthDate)}
                     style={jStyles.editBirthDateBtn}
                   >
                     <Text style={[jStyles.editBirthDateText, {color: Colors.textPrimary}]}>Edit Birth Date</Text>
@@ -662,7 +678,7 @@ export default function ProfileScreen() {
               );
             })() : (
               <TouchableOpacity
-                onPress={() => setShowBirthDatePicker(true)}
+                onPress={() => openBirthDatePicker()}
                 style={jStyles.addBirthDateBtn}
               >
                 <Ionicons name="calendar-outline" size={16} color={Colors.secondary} />
