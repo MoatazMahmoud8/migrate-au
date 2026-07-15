@@ -528,6 +528,7 @@ const seg = StyleSheet.create({
     padding: 3,
     marginTop: Spacing.sm,
     gap: 2,
+    backgroundColor: 'rgba(255,255,255,0.04)',
   },
   btn: {
     flex: 1,
@@ -535,9 +536,9 @@ const seg = StyleSheet.create({
     borderRadius: Radius.sm,
     alignItems: 'center',
   },
-  active: { },
-  text: { fontSize: FontSize.xs, fontWeight: FontWeight.medium, textAlign: 'center', lineHeight: 16 },
-  activeText: { fontWeight: FontWeight.semiBold },
+  active: { backgroundColor: 'rgba(255,255,255,0.1)' },
+  text: { fontSize: FontSize.xs, fontWeight: FontWeight.medium, textAlign: 'center', lineHeight: 16, color: Colors.textMuted },
+  activeText: { fontWeight: FontWeight.semiBold, color: Colors.secondary },
 });
 
 const styles = StyleSheet.create({
@@ -582,6 +583,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
+    borderColor: Colors.border,
   },
   stepBtnDisabled: { opacity: 0.4 },
   stepValue: { fontSize: FontSize.lg, fontWeight: FontWeight.bold, minWidth: 28, textAlign: 'center' },
