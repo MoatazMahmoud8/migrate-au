@@ -36,7 +36,7 @@ initSentry();
 
 SplashScreen.hideAsync();
 
-const StrictAppTheme = {
+const StrictLightAppTheme = {
   ...DefaultTheme,
   dark: false,
   colors: {
@@ -46,6 +46,20 @@ const StrictAppTheme = {
     card: '#FFFFFF',
     text: '#111111',
     border: '#E5E5E5',
+    notification: '#EF4444',
+  },
+};
+
+const StrictDarkAppTheme = {
+  ...DefaultTheme,
+  dark: true,
+  colors: {
+    ...DefaultTheme.colors,
+    primary: '#FFD700',
+    background: '#06101F',
+    card: '#0D1F38',
+    text: '#EDF2FF',
+    border: '#1E3358',
     notification: '#EF4444',
   },
 };
@@ -324,9 +338,7 @@ function RootLayout() {
 
   return (
     <AppThemeProvider>
-      <NavigationThemeProvider value={StrictAppTheme}>
-        <RootLayoutContent unread={unread} onboardingVisible={onboardingVisible} closeOnboarding={closeOnboarding} />
-      </NavigationThemeProvider>
+      <RootLayoutContent unread={unread} onboardingVisible={onboardingVisible} closeOnboarding={closeOnboarding} />
     </AppThemeProvider>
   );
 }
@@ -340,7 +352,7 @@ function RootLayoutContent({ unread, onboardingVisible, closeOnboarding }: {
   const { isDark } = useTheme();
 
   return (
-    <>
+    <NavigationThemeProvider value={isDark ? StrictDarkAppTheme : StrictLightAppTheme}>
       <StatusBar style={isDark ? 'light' : 'dark'} />
       <Tabs
         screenOptions={{
@@ -458,7 +470,7 @@ function RootLayoutContent({ unread, onboardingVisible, closeOnboarding }: {
         <Tabs.Screen name="admin"                  options={{ href: null, headerShown: false }} />
       </Tabs>
       <OnboardingModal visible={onboardingVisible} onClose={closeOnboarding} />
-    </>
+    </NavigationThemeProvider>
   );
 }
 

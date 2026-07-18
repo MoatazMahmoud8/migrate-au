@@ -1,4 +1,5 @@
 import React, { createContext, useContext } from 'react';
+import { Platform } from 'react-native';
 import { Colors, LightColors } from './theme';
 
 type ThemeColors = typeof Colors;
@@ -17,8 +18,12 @@ const ThemeContext = createContext<ThemeContextValue>({
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const setLightMode = () => {};
-  const isDark = false;
-  const colors = LightColors;
+  const localDarkMode = __DEV__ && (
+    process.env.EXPO_PUBLIC_FORCE_DARK_MODE === '1' ||
+    (Platform.OS === 'web' && typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('theme') === 'dark')
+  );
+  const isDark = localDarkMode;
+  const colors = isDark ? Colors : LightColors;
 
   return (
     <ThemeContext.Provider value={{ colors, isDark, setLightMode }}>
