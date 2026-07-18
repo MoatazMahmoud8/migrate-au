@@ -380,19 +380,19 @@ export default function CalculatorScreen() {
           <Text style={[styles.cardTitle, {color: Colors.textPrimary}]}>Full Breakdown</Text>
         </View>
         {BREAKDOWN_ITEMS.map(({ label, pts, icon }) => (
-          <View key={label} style={styles.breakdownRow}>
+          <View key={label} style={[styles.breakdownRow, { borderTopColor: Colors.divider }]}>
             <View style={styles.breakdownLeft}>
               <Ionicons name={icon as any} size={16} color={pts > 0 ? Colors.secondary : Colors.textMuted} />
-              <Text style={[styles.breakdownLabel, pts > 0 && styles.breakdownLabelActive]}>{label}</Text>
+              <Text style={[styles.breakdownLabel, { color: pts > 0 ? Colors.textPrimary : Colors.textSecondary }]}>{label}</Text>
             </View>
-            <View style={[styles.breakdownPill, pts > 0 && styles.breakdownPillActive]}>
-              <Text style={[styles.breakdownPts, pts > 0 && styles.breakdownPtsActive]}>{pts}</Text>
+            <View style={[styles.breakdownPill, { backgroundColor: Colors.surfaceRaised }, pts > 0 && { backgroundColor: `${Colors.secondary}18` }]}>
+              <Text style={[styles.breakdownPts, { color: pts > 0 ? Colors.secondary : Colors.textSecondary }]}>{pts}</Text>
             </View>
           </View>
         ))}
-        <View style={styles.breakdownTotal}>
+        <View style={[styles.breakdownTotal, { borderTopColor: Colors.border }]}>
           <Text style={[styles.breakdownTotalLabel, {color: Colors.textPrimary}]}>Total Score</Text>
-          <Text style={[styles.breakdownTotalNum, breakdown.likelyEligible && { color: Colors.success }]}>
+          <Text style={[styles.breakdownTotalNum, { color: breakdown.likelyEligible ? Colors.success : Colors.textPrimary }]}>
             {breakdown.total} pts
           </Text>
         </View>
@@ -451,17 +451,17 @@ export default function CalculatorScreen() {
               <Ionicons name="trending-up" size={18} color={Colors.warning} />
               <Text style={[styles.cardTitle, {color: Colors.textPrimary}]}>🏆 Gap Filler — Reach {nextBracket}+ Points</Text>
             </View>
-            <Text style={[styles.rowHint, { marginBottom: 12 }]}>
+            <Text style={[styles.rowHint, { marginBottom: 12, color: Colors.textSecondary }]}>
               You need {gap} more point{gap === 1 ? '' : 's'} for the next bracket. Here's how:
             </Text>
             {tips.slice(0, 5).map((tip) => (
-              <View key={tip.label} style={styles.gapRow}>
+              <View key={tip.label} style={[styles.gapRow, { borderBottomColor: Colors.divider }]}>
                 <View style={styles.gapLeft}>
                   <Ionicons name="add-circle-outline" size={16} color={Colors.success} />
                   <Text style={[styles.gapLabel, {color: Colors.textPrimary}]}>{tip.label}</Text>
                 </View>
-                <View style={styles.gapPill}>
-                  <Text style={[styles.gapPts, {color: Colors.textPrimary}]}>+{tip.pts} pts</Text>
+                <View style={[styles.gapPill, { borderColor: Colors.success + '45', backgroundColor: Colors.successLight }]}>
+                  <Text style={[styles.gapPts, {color: Colors.success}]}>+{tip.pts} pts</Text>
                 </View>
               </View>
             ))}
