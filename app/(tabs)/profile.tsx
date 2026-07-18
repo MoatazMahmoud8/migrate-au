@@ -51,6 +51,11 @@ const VISA_COLORS: Record<string, string> = {
 };
 function visaColor(v: string) { return VISA_COLORS[v] ?? '#94A3B8'; }
 
+function getAppVersionLabel(): string {
+  const version = Constants.nativeApplicationVersion || Constants.expoConfig?.version;
+  return version ? `v${version}` : 'Version unavailable';
+}
+
 function formatJourneyDate(iso: string): string {
   try {
     return new Date(iso).toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' });
@@ -846,7 +851,7 @@ export default function ProfileScreen() {
       <View style={styles.section}>
         <Text style={[styles.sectionLabel, { color: Colors.textMuted }]}>About</Text>
         <View style={[styles.card, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
-          <SettingRow icon="information-circle-outline" label="MigrateAU" value={`v${Constants.expoConfig?.version ?? '1.0.0'}`} />
+          <SettingRow icon="information-circle-outline" label="MigrateAU" value={getAppVersionLabel()} />
           <SettingRow
             icon="shield-outline"
             label="Privacy Policy"
