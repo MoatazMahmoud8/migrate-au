@@ -19,7 +19,7 @@ import { PaywallModal } from '../../components/PaywallModal';
 import { UsageMeter } from '../../components/UsageMeter';
 import { PointsInput, VisaSubclass, EnglishLevel } from '../../constants/types';
 import { Colors, Spacing, Radius, FontSize, FontWeight } from '../../constants/theme';
-import { useColors } from '../../constants/ThemeContext';
+import { useColors, useTheme } from '../../constants/ThemeContext';
 
 const CALC_STORAGE_KEY = 'calc_input_v1';
 
@@ -43,15 +43,16 @@ const defaultInput: PointsInput = {
 function SegmentControl<T extends string>({
   options, value, onChange, labels,
 }: { options: T[]; value: T; onChange: (v: T) => void; labels?: string[] }) {
+  const Colors = useColors();
   return (
-    <View style={seg.container}>
+    <View style={[seg.container, { backgroundColor: Colors.surfaceRaised }]}>
       {options.map((opt, i) => (
         <TouchableOpacity
           key={opt}
-          style={[seg.btn, value === opt && seg.active]}
+          style={[seg.btn, value === opt && { backgroundColor: `${Colors.secondary}18` }]}
           onPress={() => onChange(opt)}
         >
-          <Text style={[seg.text, value === opt && seg.activeText]}>
+          <Text style={[seg.text, { color: Colors.textSecondary }, value === opt && { color: Colors.secondary, fontWeight: FontWeight.semiBold }]}>
             {labels ? labels[i] : opt}
           </Text>
         </TouchableOpacity>
@@ -63,23 +64,24 @@ function SegmentControl<T extends string>({
 function StepperRow({
   label, value, onChange, min = 0, max = 20, hint,
 }: { label: string; value: number; onChange: (v: number) => void; min?: number; max?: number; hint?: string }) {
+  const Colors = useColors();
   return (
-    <View style={styles.row}>
+    <View style={[styles.row, { borderTopColor: Colors.divider }]}>
       <View style={{ flex: 1 }}>
         <Text style={[styles.rowLabel, {color: Colors.textPrimary}]}>{label}</Text>
-        {hint ? <Text style={[styles.rowHint, {color: Colors.textPrimary}]}>{hint}</Text> : null}
+        {hint ? <Text style={[styles.rowHint, {color: Colors.textSecondary}]}>{hint}</Text> : null}
       </View>
       <View style={styles.stepper}>
         <TouchableOpacity
           onPress={() => onChange(Math.max(min, value - 1))}
-          style={[styles.stepBtn, value <= min && styles.stepBtnDisabled]}
+          style={[styles.stepBtn, { borderColor: Colors.border }, value <= min && styles.stepBtnDisabled]}
         >
           <Ionicons name="remove" size={16} color={value <= min ? Colors.textMuted : Colors.secondary} />
         </TouchableOpacity>
         <Text style={[styles.stepValue, {color: Colors.textPrimary}]}>{value}</Text>
         <TouchableOpacity
           onPress={() => onChange(Math.min(max, value + 1))}
-          style={[styles.stepBtn, value >= max && styles.stepBtnDisabled]}
+          style={[styles.stepBtn, { borderColor: Colors.border }, value >= max && styles.stepBtnDisabled]}
         >
           <Ionicons name="add" size={16} color={value >= max ? Colors.textMuted : Colors.secondary} />
         </TouchableOpacity>
@@ -89,11 +91,12 @@ function StepperRow({
 }
 
 function SwitchRow({ label, value, onChange, pts }: { label: string; value: boolean; onChange: (v: boolean) => void; pts?: number }) {
+  const Colors = useColors();
   return (
-    <View style={styles.row}>
+    <View style={[styles.row, { borderTopColor: Colors.divider }]}>
       <View style={{ flex: 1 }}>
         <Text style={[styles.rowLabel, {color: Colors.textPrimary}]}>{label}</Text>
-        {pts !== undefined && <Text style={[styles.rowHint, {color: Colors.textPrimary}]}>+{pts} points when enabled</Text>}
+        {pts !== undefined && <Text style={[styles.rowHint, {color: Colors.textSecondary}]}>+{pts} points when enabled</Text>}
       </View>
       <Switch
         value={value}
@@ -106,14 +109,16 @@ function SwitchRow({ label, value, onChange, pts }: { label: string; value: bool
 }
 
 function ScoreRing({ score, eligible }: { score: number; eligible: boolean }) {
+  const Colors = useColors();
+  const { isDark } = useTheme();
   const pct = Math.min(score / 100, 1);
-  const color = eligible ? Colors.success : score >= 50 ? Colors.warning : Colors.accent;
+  const color = eligible ? Colors.success : score >= 50 ? Colors.warning : Colors.error;
 
   return (
     <View style={ring.container}>
       <LinearGradient
-        colors={eligible ? ['#003D2A', '#001224'] : ['#001A3D', '#001224']}
-        style={ring.bg}
+        colors={isDark ? (eligible ? ['#003D2A', '#001224'] : ['#2A0B14', '#001224']) : [Colors.surface, Colors.surface]}
+        style={[ring.bg, { borderColor: Colors.border }]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
       >
@@ -132,7 +137,7 @@ function ScoreRing({ score, eligible }: { score: number; eligible: boolean }) {
         </View>
 
         {/* Progress bar */}
-        <View style={ring.barTrack}>
+        <View style={[ring.barTrack, { backgroundColor: Colors.divider }]}>
           <View style={[ring.barFill, { width: `${pct * 100}%` as any, backgroundColor: color }]} />
         </View>
         <View style={ring.barLabels}>
@@ -394,7 +399,7 @@ export default function CalculatorScreen() {
       </View>
 
       {/* Gap Filler — Points Improvement Tips */}
-      {((): JSX.Element | null => {
+      {((): React.ReactElement | null => {
         const score = breakdown.total;
         const TARGET_BRACKETS = [65, 70, 75, 80, 85, 90, 95];
         const nextBracket = TARGET_BRACKETS.find((b) => b > score) ?? 100;
@@ -413,8 +418,8 @@ export default function CalculatorScreen() {
           },
           {
             label: 'Superior English (IELTS 8+/PTE 79+)',
-            pts: input.english < 20 ? 20 - input.english : 0,
-            available: input.english < 20,
+            pts: breakdown.english < 20 ? 20 - breakdown.english : 0,
+            available: breakdown.english < 20,
           },
           {
             label: 'State Nomination 190 (+5)',
@@ -434,7 +439,7 @@ export default function CalculatorScreen() {
           {
             label: 'Partner Skills Assessment',
             pts: 5,
-            available: input.partner < 10,
+            available: breakdown.partner < 10,
           },
         ].filter((t) => t.available && t.pts > 0);
 
@@ -536,9 +541,7 @@ const seg = StyleSheet.create({
     borderRadius: Radius.sm,
     alignItems: 'center',
   },
-  active: { backgroundColor: 'rgba(255,255,255,0.1)' },
-  text: { fontSize: FontSize.xs, fontWeight: FontWeight.medium, textAlign: 'center', lineHeight: 16, color: Colors.textMuted },
-  activeText: { fontWeight: FontWeight.semiBold, color: Colors.secondary },
+  text: { fontSize: FontSize.xs, fontWeight: FontWeight.medium, textAlign: 'center', lineHeight: 16 },
 });
 
 const styles = StyleSheet.create({
@@ -583,7 +586,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: Colors.border,
   },
   stepBtnDisabled: { opacity: 0.4 },
   stepValue: { fontSize: FontSize.lg, fontWeight: FontWeight.bold, minWidth: 28, textAlign: 'center' },

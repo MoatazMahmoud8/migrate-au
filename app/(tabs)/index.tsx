@@ -14,7 +14,7 @@ import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Colors, Spacing, Radius, FontSize, FontWeight } from '../../constants/theme';
-import { useColors } from '../../constants/ThemeContext';
+import { useColors, useTheme } from '../../constants/ThemeContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import SearchModal from '../../components/SearchModal';
 import { ALL_VISAS, CATEGORY_META, VisaCategory } from '../../constants/visaData';
@@ -132,6 +132,7 @@ const VISA_PURPOSES = [
 ] as const;
 
 type PurposeId = typeof VISA_PURPOSES[number]['id'];
+type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 
 // ─── Shared sub-components ────────────────────────────────────────────────────
 
@@ -364,23 +365,26 @@ function VisaPathwaysGrid() {
 
 function ScoreCard({ input, onCalcPress }: { input: PointsInput | null; onCalcPress: () => void }) {
   const Colors = useColors();
+  const { isDark } = useTheme();
   if (!input) {
+    const titleColor = isDark ? Colors.white : Colors.textPrimary;
+    const subtitleColor = isDark ? 'rgba(255,255,255,0.75)' : Colors.textSecondary;
     // CTA state — no score yet
     return (
       <View style={sc.wrapper}>
         <LinearGradient
-          colors={['#001A3D', '#000D24']}
-          style={sc.card}
+            colors={isDark ? ['#001A3D', '#000D24'] : [Colors.surface, Colors.surface]}
+          style={[sc.card, { borderColor: Colors.border }]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
         >
-          <View style={sc.orb} />
+          <View style={[sc.orb, { backgroundColor: isDark ? '#003A8C' : `${Colors.accent}14` }]} />
           <View style={sc.badge}>
             <View style={sc.badgeDot} />
-            <Text style={[sc.badgeText, { color: Colors.white }]}>🇦🇺 Skilled Migration</Text>
+              <Text style={[sc.badgeText, { color: titleColor }]}>🇦🇺 Skilled Migration</Text>
           </View>
-          <Text style={[sc.ctaTitle, { color: Colors.white }]}>Your Path to{'\n'}Australia Starts Here</Text>
-          <Text style={[sc.ctaSub, { color: 'rgba(255,255,255,0.75)' }]}>
+            <Text style={[sc.ctaTitle, { color: titleColor }]}>Your Path to{'\n'}Australia Starts Here</Text>
+            <Text style={[sc.ctaSub, { color: subtitleColor }]}>
             Calculate your points to see if you qualify for a skilled migration visa.
           </Text>
           <TouchableOpacity style={sc.ctaBtn} onPress={onCalcPress} activeOpacity={0.85}>
@@ -404,20 +408,24 @@ function ScoreCard({ input, onCalcPress }: { input: PointsInput | null; onCalcPr
   const pct = Math.min(total / 100, 1);
   const above = total - 65;
   const color = likelyEligible ? Colors.success : total >= 55 ? Colors.warning : '#FF6B6B';
-  const gradColors: [string, string] = likelyEligible
-    ? ['#00261A', '#001224']
-    : total >= 55
-    ? ['#26200A', '#001224']
-    : ['#260A0A', '#001224'];
+  const gradColors: [string, string] = isDark
+    ? likelyEligible
+      ? ['#00261A', '#001224']
+      : total >= 55
+      ? ['#26200A', '#001224']
+      : ['#260A0A', '#001224']
+    : [Colors.surface, Colors.surface];
+  const mainText = isDark ? Colors.white : Colors.textPrimary;
+  const subtleText = isDark ? 'rgba(255,255,255,0.75)' : Colors.textSecondary;
 
   return (
     <TouchableOpacity style={sc.wrapper} onPress={onCalcPress} activeOpacity={0.92}>
-      <LinearGradient colors={gradColors} style={sc.card} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
+      <LinearGradient colors={gradColors} style={[sc.card, { borderColor: Colors.border }]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
         <View style={[sc.glow, { backgroundColor: color + '18' }]} />
 
         {/* Header row */}
         <View style={sc.cardTopRow}>
-          <Text style={[sc.cardLabel, { color: Colors.white }]}>Your SkillSelect Score</Text>
+          <Text style={[sc.cardLabel, { color: mainText }]}>Your SkillSelect Score</Text>
           <View style={[sc.subclassBadge, { borderColor: color + '50', backgroundColor: color + '18' }]}>
             <Text style={[sc.subclassText, { color }]}>SC {input.visaSubclass}</Text>
           </View>
@@ -427,7 +435,7 @@ function ScoreCard({ input, onCalcPress }: { input: PointsInput | null; onCalcPr
         <View style={sc.scoreRow}>
           <Text style={[sc.scoreNum, { color }]}>{total}</Text>
           <View style={sc.scoreRight}>
-            <Text style={[sc.scorePts, { color: 'rgba(255,255,255,0.75)' }]}>points</Text>
+            <Text style={[sc.scorePts, { color: subtleText }]}>points</Text>
             <View style={[sc.statusBadge, { backgroundColor: color + '20', borderColor: color + '40' }]}>
               <Ionicons
                 name={likelyEligible ? 'checkmark-circle' : 'time-outline'}
@@ -442,18 +450,18 @@ function ScoreCard({ input, onCalcPress }: { input: PointsInput | null; onCalcPr
         </View>
 
         {/* Progress bar */}
-        <View style={sc.barTrack}>
+        <View style={[sc.barTrack, { backgroundColor: Colors.divider }]}>
           <View style={[sc.barFill, { width: `${pct * 100}%` as any, backgroundColor: color }]} />
           {/* Cutoff marker at 65% */}
           <View style={sc.cutoffMark} />
         </View>
         <View style={sc.barLabels}>
-          <Text style={[sc.barLbl, { color: 'rgba(255,255,255,0.75)' }]}>0</Text>
+          <Text style={[sc.barLbl, { color: subtleText }]}>0</Text>
           <Text style={[sc.barLbl, { color, fontWeight: FontWeight.semiBold }]}>65 min</Text>
-          <Text style={[sc.barLbl, { color: 'rgba(255,255,255,0.75)' }]}>100</Text>
+          <Text style={[sc.barLbl, { color: subtleText }]}>100</Text>
         </View>
 
-        <Text style={[sc.editHint, { color: 'rgba(255,255,255,0.6)' }]}>Tap to update your inputs →</Text>
+        <Text style={[sc.editHint, { color: isDark ? 'rgba(255,255,255,0.6)' : Colors.textMuted }]}>Tap to update your inputs →</Text>
       </LinearGradient>
     </TouchableOpacity>
   );
@@ -484,7 +492,15 @@ function GlanceRow({ input }: { input: PointsInput | null }) {
     })();
   }, []);
 
-  const cards = [
+  const cards: Array<{
+    icon: IoniconName;
+    iconColor: string;
+    bg: string;
+    label: string;
+    value: string | number;
+    sub: string;
+    route: string;
+  }> = [
     {
       icon: 'trophy-outline' as const,
       iconColor: Colors.secondary,
@@ -496,7 +512,7 @@ function GlanceRow({ input }: { input: PointsInput | null }) {
     },
     breakdown
       ? {
-          icon: (breakdown.likelyEligible ? 'trending-up-outline' : 'trending-down-outline') as const,
+          icon: breakdown.likelyEligible ? 'trending-up-outline' : 'trending-down-outline',
           iconColor: color,
           bg: color + '18',
           label: 'vs Cutoff',

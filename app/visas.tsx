@@ -19,6 +19,7 @@ import {
   CATEGORY_META,
   ALL_CATEGORIES,
   VisaCategory,
+  VisaEntry,
 } from '../constants/visaData';
 import { ProcessingTime } from '../constants/processingTimes';
 import {
@@ -36,7 +37,7 @@ const FILTERS: Filter[] = ['All', ...CATEGORY_ORDER];
 
 /** Group visas by category in display order */
 function groupByCategory(visas: typeof ALL_VISAS): Array<{ category: Category; items: typeof ALL_VISAS }> {
-  const map = new Map<Category, VisaPathway[]>();
+  const map = new Map<Category, VisaEntry[]>();
   for (const v of visas) {
     if (!map.has(v.category)) map.set(v.category, []);
     map.get(v.category)!.push(v);
@@ -152,7 +153,12 @@ export default function VisasScreen() {
             return (
               <TouchableOpacity
                 key={f}
-                style={[styles.tab, active && styles.tabActive, meta && active ? { borderColor: meta.color + '80' } : null]}
+                style={[
+                  styles.tab,
+                  { backgroundColor: Colors.surface, borderColor: Colors.border },
+                  active && { backgroundColor: Colors.surfaceRaised },
+                  meta && active ? { borderColor: meta.color + '80' } : null,
+                ]}
                 onPress={() => { hapticTap(); setFilter(f); setExpanded(null); }}
                 activeOpacity={0.8}
               >
@@ -163,11 +169,11 @@ export default function VisasScreen() {
                     color={active ? meta.color : Colors.textMuted}
                   />
                 )}
-                <Text style={[styles.tabText, active && styles.tabTextActive, meta && active ? { color: meta.color } : null]}>
+                <Text style={[styles.tabText, { color: Colors.textSecondary }, active && styles.tabTextActive, meta && active ? { color: meta.color } : { color: active ? Colors.textPrimary : Colors.textSecondary }]}>
                   {f}
                 </Text>
-                <View style={[styles.tabCount, active && meta ? { backgroundColor: meta.color + '20' } : null]}>
-                  <Text style={[styles.tabCountText, active && meta ? { color: meta.color } : null]}>{count}</Text>
+                <View style={[styles.tabCount, { backgroundColor: Colors.surfaceRaised }, active && meta ? { backgroundColor: meta.color + '20' } : null]}>
+                  <Text style={[styles.tabCountText, { color: Colors.textSecondary }, active && meta ? { color: meta.color } : { color: active ? Colors.textPrimary : Colors.textSecondary }]}>{count}</Text>
                 </View>
               </TouchableOpacity>
             );
