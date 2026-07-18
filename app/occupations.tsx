@@ -954,7 +954,7 @@ export default function OccupationsScreen() {
                                 {req.notes && req.notes.length > 0 && (
                                   <View style={styles.notSponsoredNotes}>
                                     {req.notes.map((n: string, i: number) => (
-                                      <Text key={i} style={styles.notSponsoredNoteText}>• {n}</Text>
+                                      <Text key={i} style={[styles.notSponsoredNoteText, { color: Colors.textSecondary }]}>• {n}</Text>
                                     ))}
                                   </View>
                                 )}

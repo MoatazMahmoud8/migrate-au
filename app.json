@@ -16,6 +16,7 @@
 			"**/*"
 		],
 		"ios": {
+			"userInterfaceStyle": "light",
 			"supportsTablet": true,
 			"bundleIdentifier": "com.jsmglobal.migrationau",
 			"buildNumber": "1",

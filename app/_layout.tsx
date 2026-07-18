@@ -1,4 +1,5 @@
 import { Tabs } from 'expo-router';
+import { DefaultTheme, ThemeProvider as NavigationThemeProvider } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import { View, Text, StyleSheet, Platform } from 'react-native';
@@ -6,7 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors } from '../constants/theme';
-import { ThemeProvider, useColors, useTheme } from '../constants/ThemeContext';
+import { ThemeProvider as AppThemeProvider, useColors, useTheme } from '../constants/ThemeContext';
 import { useEffect, useState } from 'react';
 import { initNotifications, subscribeToFeed, onReadChange, getReadIds } from '../utils/notifications';
 import { refreshLatestRound } from '../utils/latestRound';
@@ -34,6 +35,20 @@ if (Platform.OS !== 'web') {
 initSentry();
 
 SplashScreen.hideAsync();
+
+const StrictAppTheme = {
+  ...DefaultTheme,
+  dark: false,
+  colors: {
+    ...DefaultTheme.colors,
+    primary: '#002D62',
+    background: '#FFFFFF',
+    card: '#FFFFFF',
+    text: '#111111',
+    border: '#E5E5E5',
+    notification: '#EF4444',
+  },
+};
 
 function TabIcon({
   name,
@@ -308,9 +323,11 @@ function RootLayout() {
   };
 
   return (
-    <ThemeProvider>
-      <RootLayoutContent unread={unread} onboardingVisible={onboardingVisible} closeOnboarding={closeOnboarding} />
-    </ThemeProvider>
+    <AppThemeProvider>
+      <NavigationThemeProvider value={StrictAppTheme}>
+        <RootLayoutContent unread={unread} onboardingVisible={onboardingVisible} closeOnboarding={closeOnboarding} />
+      </NavigationThemeProvider>
+    </AppThemeProvider>
   );
 }
 
@@ -362,7 +379,6 @@ function RootLayoutContent({ unread, onboardingVisible, closeOnboarding }: {
             fontSize: 18,
             color: C.textPrimary,
           },
-          headerBlurEffect: isDark ? 'dark' : 'light',
           headerBackground: () => (
             Platform.OS === 'ios'
               ? <BlurView intensity={60} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />

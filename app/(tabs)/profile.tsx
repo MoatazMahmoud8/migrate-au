@@ -747,29 +747,24 @@ export default function ProfileScreen() {
         </View>
       </View>
 
-      {/* Display Settings - Dark Mode for Premium */}
+      {/* Display Settings */}
       {profile.isPremium && (
         <View style={styles.section}>
           <Text style={[styles.sectionLabel, { color: Colors.secondary }]}>Display</Text>
           <View style={[styles.card, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
             <View style={styles.settingRow}>
               <View style={styles.settingContent}>
-                <Ionicons name={isDark ? 'sunny-outline' : 'moon-outline'} size={18} color={Colors.secondary} />
+                <Ionicons name="sunny-outline" size={18} color={Colors.secondary} />
                 <View style={styles.settingTextContainer}>
                   <Text style={[styles.settingLabel, { color: Colors.textPrimary }]}>Light Mode</Text>
-                  <Text style={[styles.settingValue, { color: Colors.textSecondary }]}>Premium Feature</Text>
+                  <Text style={[styles.settingValue, { color: Colors.textSecondary }]}>Locked for maximum contrast</Text>
                 </View>
               </View>
               <Switch
-                value={!isDark}
-                onValueChange={async (value) => {
-                  setLightMode(value);
-                  const updated = { ...profile, darkModeEnabled: !value };
-                  setProfile(updated);
-                  await saveProfile({ darkModeEnabled: !value });
-                }}
+                value
+                disabled
                 trackColor={{ false: Colors.border, true: Colors.secondary + '50' }}
-                thumbColor={!isDark ? Colors.secondary : Colors.textMuted}
+                thumbColor={Colors.secondary}
               />
             </View>
           </View>
