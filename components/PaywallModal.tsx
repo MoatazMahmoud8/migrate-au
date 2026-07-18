@@ -9,6 +9,7 @@ import {
   ScrollView,
   Linking,
   Alert,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -75,6 +76,11 @@ export function PaywallModal({ visible, onClose, userId, title, message, feature
   const yearlyPrice  = getFormattedPrice('yearly');
   const lifetimePrice = getFormattedPrice('lifetime');
   const yearlyDiscount = getYearlySavings();
+  const isIOS = Platform.OS === 'ios';
+  const isAndroid = Platform.OS === 'android';
+  const manageSubscriptionsUrl = isAndroid
+    ? 'https://play.google.com/store/account/subscriptions?package=com.jsmglobal.migration_au'
+    : 'https://apps.apple.com/account/subscriptions';
 
   // Context-specific messaging
   const getFeatureMessage = () => {
@@ -237,7 +243,7 @@ export function PaywallModal({ visible, onClose, userId, title, message, feature
                 : `Cancel anytime · Auto-renews · ${monthlyPrice.amount}/mo or ${yearlyPrice.amount}/yr`}
             </Text>
 
-            {/* Required Apple links for subscriptions */}
+            {/* Subscription legal links */}
             <View style={styles.legalLinks}>
               <TouchableOpacity onPress={async () => {
                 setLoading(true);
@@ -252,12 +258,16 @@ export function PaywallModal({ visible, onClose, userId, title, message, feature
               <TouchableOpacity onPress={() => Linking.openURL('https://jsmglobal.xyz/migration-privacy.html')}>
                 <Text style={[styles.legalLinkText, {color: Colors.textPrimary}]}>Privacy Policy</Text>
               </TouchableOpacity>
+              {isIOS && (
+                <>
+                  <Text style={[styles.legalSeparator, {color: Colors.textPrimary}]}>·</Text>
+                  <TouchableOpacity onPress={() => Linking.openURL('https://www.apple.com/legal/internet-services/itunes/dev/stdeula/')}>
+                    <Text style={[styles.legalLinkText, {color: Colors.textPrimary}]}>Terms of Use (EULA)</Text>
+                  </TouchableOpacity>
+                </>
+              )}
               <Text style={[styles.legalSeparator, {color: Colors.textPrimary}]}>·</Text>
-              <TouchableOpacity onPress={() => Linking.openURL('https://www.apple.com/legal/internet-services/itunes/dev/stdeula/')}>
-                <Text style={[styles.legalLinkText, {color: Colors.textPrimary}]}>Terms of Use (EULA)</Text>
-              </TouchableOpacity>
-              <Text style={[styles.legalSeparator, {color: Colors.textPrimary}]}>·</Text>
-              <TouchableOpacity onPress={() => Linking.openURL('https://apps.apple.com/account/subscriptions')}>
+              <TouchableOpacity onPress={() => Linking.openURL(manageSubscriptionsUrl)}>
                 <Text style={[styles.legalLinkText, {color: Colors.textPrimary}]}>Manage Subscriptions</Text>
               </TouchableOpacity>
             </View>
