@@ -363,8 +363,8 @@ const ScoreBadge = React.memo(({ pts }: { pts: number | null }) => {
 const OccupationRow = React.memo(({ item, index }: { item: OccupationScore; index: number }) => {
   const C = useColors();
   return (
-    <View style={[styles.occRow, index % 2 === 0 && styles.occRowAlt]}>
-      <Text style={[styles.occName, {color: C.textPrimary}]} numberOfLines={2}>{item.name}</Text>
+    <View style={[styles.occRow, { borderBottomColor: C.divider }, index % 2 === 0 && { backgroundColor: C.surface + '80' }]}>
+      <Text style={[styles.occName, { color: C.textPrimary }]} numberOfLines={2}>{item.name}</Text>
       <ScoreBadge pts={item.sc189} />
       <ScoreBadge pts={item.sc491Family} />
     </View>
@@ -417,7 +417,7 @@ export default function RoundsScreen() {
       <View style={styles.pageHeader}>
         <View style={{ flex: 1 }}>
           <Text style={[styles.pageTitle, {color: Colors.textPrimary}]}>SkillSelect Rounds</Text>
-          <Text style={[styles.pageSub, {color: Colors.textPrimary}]}>Updated {fmtDate(data.lastUpdated)} · Dept of Home Affairs</Text>
+          <Text style={[styles.pageSub, { color: Colors.textSecondary }]}>Updated {fmtDate(data.lastUpdated)} · Dept of Home Affairs</Text>
         </View>
         <TouchableOpacity style={[styles.refreshBtn, { backgroundColor: Colors.surface, borderColor: Colors.border }]} onPress={() => fetchData(true)} activeOpacity={0.7}>
           {refreshing
@@ -432,35 +432,35 @@ export default function RoundsScreen() {
           <View style={[styles.summaryBadge, { backgroundColor: Colors.accent + '22' }]}>
             <Text style={[styles.summaryBadgeText, { color: Colors.accent }]}>SC 189</Text>
           </View>
-          <Text style={[styles.summaryLabel, {color: Colors.textPrimary}]}>Skilled Independent</Text>
+          <Text style={[styles.summaryLabel, { color: Colors.textSecondary }]}>Skilled Independent</Text>
           <Text style={[styles.summaryInv, {color: Colors.textPrimary}]}>{numK(cr.sc189Total)}</Text>
-          <Text style={[styles.summaryInvLabel, {color: Colors.textPrimary}]}>invitations</Text>
-          <Text style={[styles.summaryTb, {color: Colors.textPrimary}]}>Tie break: {fmtTieBreak(cr.sc189TieBreak)}</Text>
-          <Text style={[styles.summaryDate, {color: Colors.textPrimary}]}>{cr.label}</Text>
+          <Text style={[styles.summaryInvLabel, { color: Colors.textSecondary }]}>invitations</Text>
+          <Text style={[styles.summaryTb, { color: Colors.textSecondary }]}>Tie break: {fmtTieBreak(cr.sc189TieBreak)}</Text>
+          <Text style={[styles.summaryDate, { color: Colors.textMuted }]}>{cr.label}</Text>
         </View>
         <View style={[styles.summaryCard, { backgroundColor: Colors.surface, borderColor: Colors.secondary + '55' }]}>
           <View style={[styles.summaryBadge, { backgroundColor: Colors.secondary + '22' }]}>
             <Text style={[styles.summaryBadgeText, { color: Colors.secondary }]}>SC 491</Text>
           </View>
-          <Text style={[styles.summaryLabel, {color: Colors.textPrimary}]}>Regional (Family Sponsored)</Text>
+          <Text style={[styles.summaryLabel, { color: Colors.textSecondary }]}>Regional (Family Sponsored)</Text>
           <Text style={[styles.summaryInv, {color: Colors.textPrimary}]}>{numK(cr.sc491FamilyTotal)}</Text>
-          <Text style={[styles.summaryInvLabel, {color: Colors.textPrimary}]}>invitations</Text>
-          <Text style={[styles.summaryTb, {color: Colors.textPrimary}]}>Tie break: {fmtTieBreak(cr.sc491FamilyTieBreak)}</Text>
-          <Text style={[styles.summaryDate, {color: Colors.textPrimary}]}>{cr.label}</Text>
+          <Text style={[styles.summaryInvLabel, { color: Colors.textSecondary }]}>invitations</Text>
+          <Text style={[styles.summaryTb, { color: Colors.textSecondary }]}>Tie break: {fmtTieBreak(cr.sc491FamilyTieBreak)}</Text>
+          <Text style={[styles.summaryDate, { color: Colors.textMuted }]}>{cr.label}</Text>
         </View>
       </View>
 
       {/* SC 190 note */}
       <View style={[styles.noteBox, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
         <Ionicons name="information-circle-outline" size={14} color={Colors.accent} />
-        <Text style={[styles.noteText, {color: Colors.textPrimary}]}>{data.note}</Text>
+        <Text style={[styles.noteText, { color: Colors.textSecondary }]}>{data.note}</Text>
       </View>
 
       {/* State nominations toggle */}
-      <TouchableOpacity style={[styles.sectionToggle, { backgroundColor: Colors.surface }]} onPress={() => setStateExpanded((v) => !v)} activeOpacity={0.7}>
+      <TouchableOpacity style={[styles.sectionToggle, { backgroundColor: Colors.surface, borderColor: Colors.border }]} onPress={() => setStateExpanded((v) => !v)} activeOpacity={0.7}>
         <Ionicons name="map-outline" size={16} color={Colors.success} />
         <Text style={[styles.sectionToggleText, {color: Colors.textPrimary}]}>SC 190 & 491 State Nominations</Text>
-        <Text style={[styles.sectionToggleSub, {color: Colors.textPrimary}]}>{sn.period}</Text>
+        <Text style={[styles.sectionToggleSub, { color: Colors.textSecondary }]}>{sn.period}</Text>
         <Ionicons name={stateExpanded ? 'chevron-up' : 'chevron-down'} size={14} color={Colors.textMuted} style={{ marginLeft: 'auto' }} />
       </TouchableOpacity>
 
@@ -478,15 +478,15 @@ export default function RoundsScreen() {
               <Text style={[styles.tableCell, { color: Colors.secondary }]}>{(sn.sc491[s] ?? 0).toLocaleString()}</Text>
             </View>
           ))}
-          <Text style={[styles.tableFootNote, {color: Colors.textPrimary}]}>Nominations 1 Jul 2025 – 30 Apr 2026. States nominate continuously throughout the month.</Text>
+          <Text style={[styles.tableFootNote, { color: Colors.textSecondary }]}>Nominations 1 Jul 2025 – 30 Apr 2026. States nominate continuously throughout the month.</Text>
         </View>
       )}
 
       {/* Round history toggle */}
-      <TouchableOpacity style={[styles.sectionToggle, { backgroundColor: Colors.surface }]} onPress={() => setHistoryExpanded((v) => !v)} activeOpacity={0.7}>
+      <TouchableOpacity style={[styles.sectionToggle, { backgroundColor: Colors.surface, borderColor: Colors.border }]} onPress={() => setHistoryExpanded((v) => !v)} activeOpacity={0.7}>
         <Ionicons name="time-outline" size={16} color={Colors.accentPurple} />
         <Text style={[styles.sectionToggleText, {color: Colors.textPrimary}]}>Round History</Text>
-        <Text style={[styles.sectionToggleSub, {color: Colors.textPrimary}]}>{data.rounds.length} rounds</Text>
+        <Text style={[styles.sectionToggleSub, { color: Colors.textSecondary }]}>{data.rounds.length} rounds</Text>
         <Ionicons name={historyExpanded ? 'chevron-up' : 'chevron-down'} size={14} color={Colors.textMuted} style={{ marginLeft: 'auto' }} />
       </TouchableOpacity>
 
@@ -505,7 +505,7 @@ export default function RoundsScreen() {
             </View>
           ))}
           <TouchableOpacity onPress={() => Linking.openURL('https://immi.homeaffairs.gov.au/visas/working-in-australia/skillselect/previous-rounds')} style={styles.sourceLink}>
-            <Text style={[styles.sourceLinkText, {color: Colors.textPrimary}]}>View all official previous rounds ↗</Text>
+            <Text style={[styles.sourceLinkText, { color: Colors.accent }]}>View all official previous rounds ↗</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -513,7 +513,7 @@ export default function RoundsScreen() {
       {/* Occupation scores section header */}
       <View style={styles.occSection}>
         <Text style={[styles.occSectionTitle, {color: Colors.textPrimary}]}>Min Points by Occupation</Text>
-        <Text style={[styles.occSectionSub, {color: Colors.textPrimary}]}>Current round · {cr.label} · {data.occupationScores.length} occupations</Text>
+        <Text style={[styles.occSectionSub, { color: Colors.textSecondary }]}>Current round · {cr.label} · {data.occupationScores.length} occupations</Text>
       </View>
 
       {/* Filter chips */}
@@ -531,7 +531,7 @@ export default function RoundsScreen() {
       </View>
 
       {/* Search bar */}
-      <View style={[styles.searchBar, { backgroundColor: Colors.surface }]}>
+      <View style={[styles.searchBar, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
         <Ionicons name="search-outline" size={16} color={Colors.textMuted} />
         <TextInput
           style={[styles.searchInput, {color: Colors.textPrimary}]}
@@ -600,10 +600,10 @@ export default function RoundsScreen() {
       ListFooterComponent={
         <View style={[styles.footer, { paddingBottom: insets.bottom + 80 }]}>
           <TouchableOpacity onPress={() => Linking.openURL(data.sourceUrl)}>
-            <Text style={[styles.footerSource, {color: Colors.textPrimary}]}>Source: Dept of Home Affairs ↗</Text>
+            <Text style={[styles.footerSource, { color: Colors.accent }]}>Source: Dept of Home Affairs ↗</Text>
           </TouchableOpacity>
-          <Text style={[styles.footerNote, {color: Colors.textPrimary}]}>N/A = no invitations or no eligible EOIs for that visa type in this round.</Text>
-          <Text style={[styles.footerNote, {color: Colors.textPrimary}]}>Data auto-refreshes every {CACHE_HOURS} hours. Pull down to force refresh.</Text>
+          <Text style={[styles.footerNote, { color: Colors.textSecondary }]}>N/A = no invitations or no eligible EOIs for that visa type in this round.</Text>
+          <Text style={[styles.footerNote, { color: Colors.textSecondary }]}>Data auto-refreshes every {CACHE_HOURS} hours. Pull down to force refresh.</Text>
         </View>
       }
       onRefresh={() => fetchData(true)}

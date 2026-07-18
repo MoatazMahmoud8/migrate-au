@@ -430,7 +430,7 @@ export default function SkillAssessmentScreen() {
         <View style={[styles.searchBox, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
           <Ionicons name="search-outline" size={16} color={Colors.textMuted} />
           <TextInput
-            style={styles.searchInput}
+            style={[styles.searchInput, { color: Colors.textPrimary }]}
             placeholder="Search by authority, occupation…"
             placeholderTextColor={Colors.textMuted}
             value={query}
@@ -460,14 +460,18 @@ export default function SkillAssessmentScreen() {
               key={cat}
               onPress={() => { hapticTap(); setCategory(cat); }}
               activeOpacity={0.8}
-              style={[styles.catChip, active && styles.catChipActive]}
+              style={[
+                styles.catChip,
+                { backgroundColor: Colors.surface, borderColor: Colors.border },
+                active && { backgroundColor: `${Colors.secondary}18`, borderColor: `${Colors.secondary}55` },
+              ]}
             >
               <Ionicons
                 name={CAT_ICONS[cat] as any}
                 size={12}
-                color={active ? Colors.primaryDark : Colors.textMuted}
+                color={active ? Colors.secondary : Colors.textMuted}
               />
-              <Text style={[styles.catChipText, active && styles.catChipTextActive]}>
+              <Text style={[styles.catChipText, { color: active ? Colors.secondary : Colors.textSecondary }]}>
                 {cat}
               </Text>
             </TouchableOpacity>
@@ -502,7 +506,7 @@ export default function SkillAssessmentScreen() {
                 onPress={() => toggle(auth.id)}
                 activeOpacity={0.85}
               >
-                <View style={[styles.card, { backgroundColor: Colors.surface }, isOpen && { borderColor: `${auth.color}50` }]}>
+                <View style={[styles.card, { backgroundColor: Colors.surface, borderColor: Colors.border }, isOpen && { borderColor: `${auth.color}70` }]}>
                   {/* Accent bar */}
                   <View style={[styles.cardAccent, { backgroundColor: auth.color }]} />
 
@@ -520,7 +524,7 @@ export default function SkillAssessmentScreen() {
                         </Text>
                         <View style={styles.catRow}>
                           <Ionicons name={CAT_ICONS[auth.category] as any} size={10} color={Colors.textMuted} />
-                          <Text style={[styles.catLabel, {color: Colors.textPrimary}]}>{auth.category}</Text>
+                          <Text style={[styles.catLabel, { color: Colors.textSecondary }]}>{auth.category}</Text>
                         </View>
                       </View>
                       <Ionicons
@@ -531,26 +535,26 @@ export default function SkillAssessmentScreen() {
                     </View>
 
                     {/* Assesses summary (always visible) */}
-                    <Text style={[styles.assessesSummary, {color: Colors.textPrimary}]} numberOfLines={isOpen ? undefined : 2}>
+                    <Text style={[styles.assessesSummary, { color: Colors.textSecondary }]} numberOfLines={isOpen ? undefined : 2}>
                       {auth.assesses}
                     </Text>
 
                     {/* Expanded detail */}
                     {isOpen && (
                       <View style={styles.detail}>
-                        <View style={styles.metaRow}>
+                        <View style={[styles.metaRow, { backgroundColor: Colors.surfaceRaised, borderColor: Colors.border }]}>
                           <View style={styles.metaItem}>
                             <Ionicons name="time-outline" size={13} color={Colors.textMuted} />
                             <View>
-                              <Text style={[styles.metaLabel, {color: Colors.textPrimary}]}>Typical time</Text>
+                              <Text style={[styles.metaLabel, { color: Colors.textSecondary }]}>Typical time</Text>
                               <Text style={[styles.metaVal, { color: auth.color }]}>{auth.typicalTime}</Text>
                             </View>
                           </View>
-                          <View style={styles.metaDivider} />
+                          <View style={[styles.metaDivider, { backgroundColor: Colors.divider }]} />
                           <View style={styles.metaItem}>
                             <Ionicons name="cash-outline" size={13} color={Colors.textMuted} />
                             <View>
-                              <Text style={[styles.metaLabel, {color: Colors.textPrimary}]}>Approx. fee</Text>
+                              <Text style={[styles.metaLabel, { color: Colors.textSecondary }]}>Approx. fee</Text>
                               <Text style={[styles.metaVal, { color: auth.color }]}>{auth.feeRange}</Text>
                             </View>
                           </View>
@@ -561,7 +565,7 @@ export default function SkillAssessmentScreen() {
                             {auth.notes.map((n, i) => (
                               <View key={i} style={styles.noteRow}>
                                 <View style={[styles.noteDot, { backgroundColor: auth.color }]} />
-                                <Text style={[styles.noteText, {color: Colors.textPrimary}]}>{n}</Text>
+                                <Text style={[styles.noteText, { color: Colors.textSecondary }]}>{n}</Text>
                               </View>
                             ))}
                           </View>
@@ -588,9 +592,9 @@ export default function SkillAssessmentScreen() {
       </View>
 
       {/* Footer note */}
-      <View style={styles.footerNote}>
+      <View style={[styles.footerNote, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
         <Ionicons name="information-circle-outline" size={13} color={Colors.textMuted} />
-        <Text style={[styles.footerNoteText, {color: Colors.textPrimary}]}>
+        <Text style={[styles.footerNoteText, { color: Colors.textSecondary }]}>
           Fees and processing times are indicative. Always confirm current requirements on the authority's official website.
         </Text>
       </View>

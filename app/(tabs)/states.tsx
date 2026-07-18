@@ -227,13 +227,13 @@ export default function StatesScreen() {
 
   const togglePin = async (code: string) => {
     hapticTap();
-    
+
     // Premium feature: State intelligence/pinning
     if (!isPremium && !pinned.includes(code)) {
       setShowPaywall(true);
       return;
     }
-    
+
     const next = pinned.includes(code)
       ? pinned.filter((c) => c !== code)
       : [...pinned, code];
@@ -271,9 +271,9 @@ export default function StatesScreen() {
       </LinearGradient>
 
       {/* Trust badge */}
-      <View style={styles.trustBadge}>
+      <View style={[styles.trustBadge, { backgroundColor: `${Colors.success}10`, borderColor: `${Colors.success}35` }]}>
         <Ionicons name="shield-checkmark-outline" size={14} color={Colors.success} />
-        <Text style={[styles.trustText, {color: Colors.textPrimary}]}>All links go directly to official state government portals</Text>
+        <Text style={[styles.trustText, { color: Colors.textSecondary }]}>All links go directly to official state government portals</Text>
       </View>
 
       <View style={styles.list}>
@@ -286,7 +286,7 @@ export default function StatesScreen() {
               onPress={() => setExpanded(isOpen ? null : state.code)}
               activeOpacity={0.85}
             >
-              <View style={[styles.card, { backgroundColor: Colors.surface }, isOpen && styles.cardOpen]}>
+              <View style={[styles.card, { backgroundColor: Colors.surface, borderColor: isOpen ? `${state.color}70` : Colors.border }]}>
                 {/* Left color accent */}
                 <View style={[styles.cardAccent, { backgroundColor: state.color }]} />
 
@@ -299,7 +299,7 @@ export default function StatesScreen() {
 
                     <View style={{ flex: 1 }}>
                       <Text style={[styles.stateName, {color: Colors.textPrimary}]}>{state.name}</Text>
-                      <Text style={[styles.stateDesc, {color: Colors.textPrimary}]} numberOfLines={isOpen ? undefined : 1}>
+                      <Text style={[styles.stateDesc, { color: Colors.textSecondary }]} numberOfLines={isOpen ? undefined : 1}>
                         {state.desc}
                       </Text>
                     </View>
@@ -324,7 +324,7 @@ export default function StatesScreen() {
 
                   {isOpen && (
                     <View style={styles.cardBody}>
-                      <View style={styles.divider} />
+                      <View style={[styles.divider, { backgroundColor: Colors.divider }]} />
 
                       {/* Visa groups */}
                       {state.visaGroups.map((group, gi) => (
@@ -334,13 +334,13 @@ export default function StatesScreen() {
                             <Text style={[styles.visaGroupLabel, { color: state.color }]}>{group.category}</Text>
                           </View>
                           {group.visas.map((v) => (
-                            <View key={v.sub} style={[styles.visaRow, { borderColor: state.color + '25' }]}>
+                            <View key={v.sub} style={[styles.visaRow, { backgroundColor: Colors.surfaceRaised, borderColor: state.color + '35' }]}>
                               <View style={[styles.visaSubBadge, { backgroundColor: state.color + '20', borderColor: state.color + '40' }]}>
                                 <Text style={[styles.visaSubText, { color: state.color }]}>SC {v.sub}</Text>
                               </View>
                               <View style={{ flex: 1 }}>
                                 <Text style={[styles.visaRowName, {color: Colors.textPrimary}]}>{v.label}</Text>
-                                <Text style={[styles.visaRowDesc, {color: Colors.textPrimary}]}>{v.desc}</Text>
+                                <Text style={[styles.visaRowDesc, { color: Colors.textSecondary }]}>{v.desc}</Text>
                               </View>
                             </View>
                           ))}
@@ -392,19 +392,19 @@ export default function StatesScreen() {
       </View>
 
       {/* Footer source note */}
-      <View style={styles.sourceNote}>
+      <View style={[styles.sourceNote, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
         <Ionicons name="information-circle-outline" size={13} color={Colors.textMuted} />
-        <Text style={[styles.sourceNoteText, {color: Colors.textPrimary}]}>
+        <Text style={[styles.sourceNoteText, { color: Colors.textSecondary }]}>
           Data sourced from official state/territory migration portals. Eligibility criteria change — always confirm on the official site.
         </Text>
       </View>
-      <PaywallModal 
-        visible={showPaywall} 
-        onClose={() => setShowPaywall(false)} 
+      <PaywallModal
+        visible={showPaywall}
+        onClose={() => setShowPaywall(false)}
         userId={''}
         title="Unlock State Intelligence"
         message="Pin your favorite states and filter alerts by state. Premium feature."
-        feature="states" 
+        feature="states"
       />
     </ScrollView>
   );

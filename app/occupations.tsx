@@ -498,12 +498,12 @@ export default function OccupationsScreen() {
     const code = savedAnzsco === o.anzsco ? '' : o.anzsco;
     await saveProfile({ anzscoCode: code });
     setSavedAnzsco(code);
-    
+
     // Increment usage after successful save
     const updated = incrementUsage('anzscoSearches', profile);
     setProfile(updated);
     await saveProfile(updated);
-    
+
     hapticSuccess();
     if (code) { recordEngagement('saved_anzsco'); }
   };
@@ -594,17 +594,17 @@ export default function OccupationsScreen() {
           </View>
 
           <View style={styles.metaRow}>
-            <View style={[styles.metaPill, { backgroundColor: Colors.surface }]}>
+            <View style={[styles.metaPill, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
               <Ionicons name="calendar-outline" size={11} color={Colors.textMuted} />
-              <Text style={[styles.metaText, {color: Colors.textPrimary}]}>Updated {formatSnapshot(snapshotDate)}</Text>
+              <Text style={[styles.metaText, { color: Colors.textSecondary }]}>Updated {formatSnapshot(snapshotDate)}</Text>
             </View>
-            <View style={[styles.metaPill, { backgroundColor: Colors.surface }]}>
+            <View style={[styles.metaPill, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
               <Ionicons name="refresh-outline" size={11} color={Colors.textMuted} />
-              <Text style={[styles.metaText, {color: Colors.textPrimary}]}>Checked {timeAgo(lastChecked)}</Text>
+              <Text style={[styles.metaText, { color: Colors.textSecondary }]}>Checked {timeAgo(lastChecked)}</Text>
             </View>
-            <View style={[styles.metaPill, { backgroundColor: Colors.surface }]}>
+            <View style={[styles.metaPill, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
               <Ionicons name="list-outline" size={11} color={Colors.textMuted} />
-              <Text style={[styles.metaText, {color: Colors.textPrimary}]}>{filtered.length} results</Text>
+              <Text style={[styles.metaText, { color: Colors.textSecondary }]}>{filtered.length} results</Text>
             </View>
           </View>
         </LinearGradient>
@@ -627,6 +627,7 @@ export default function OccupationsScreen() {
                 key={j}
                 style={[
                   styles.pill,
+                  { backgroundColor: Colors.surface, borderColor: Colors.border },
                   active && { backgroundColor: `${tint}22`, borderColor: tint },
                 ]}
                 onPress={() => {
@@ -637,7 +638,7 @@ export default function OccupationsScreen() {
                 }}
                 activeOpacity={0.8}
               >
-                <Text style={[styles.pillText, active && { color: tint, fontWeight: FontWeight.bold }]}>
+                <Text style={[styles.pillText, { color: active ? tint : Colors.textSecondary }, active && { fontWeight: FontWeight.bold }]}>
                   {j}
                 </Text>
               </TouchableOpacity>
@@ -661,13 +662,14 @@ export default function OccupationsScreen() {
                   key={f}
                   style={[
                     styles.pillSm,
+                    { backgroundColor: Colors.surface, borderColor: Colors.border },
                     active && { backgroundColor: `${tint}22`, borderColor: tint },
                   ]}
                   onPress={() => { hapticTap(); setFilter(f); }}
                   activeOpacity={0.8}
                 >
-                  <Text style={[styles.pillTextSm, active && { color: tint }]}>{f}</Text>
-                  <Text style={[styles.pillDescSm, active && { color: tint, opacity: 0.75 }]}>
+                  <Text style={[styles.pillTextSm, { color: active ? tint : Colors.textSecondary }]}>{f}</Text>
+                  <Text style={[styles.pillDescSm, { color: active ? tint : Colors.textMuted }]}>
                     {LIST_DESCRIPTIONS[f]}
                   </Text>
                 </TouchableOpacity>
@@ -693,17 +695,17 @@ export default function OccupationsScreen() {
             const salary = getSalaryFor(salaries, item.anzsco);
             return (
             <TouchableOpacity
-              style={[styles.card, { backgroundColor: Colors.surface }, savedAnzsco === item.anzsco && styles.cardSaved]}
+              style={[styles.card, { backgroundColor: Colors.surface, borderColor: Colors.border }, savedAnzsco === item.anzsco && { backgroundColor: `${Colors.success}0D`, borderColor: `${Colors.success}55` }]}
               activeOpacity={0.85}
               onPress={() => { hapticTap(); setSelected(item); setExpandedState(null); }}
             >
               <View style={styles.cardHead}>
-                <View style={styles.codePill}>
-                  <Text style={[styles.codePillText, {color: Colors.textPrimary}]}>{item.anzsco}</Text>
+                <View style={[styles.codePill, { backgroundColor: Colors.surfaceRaised, borderColor: Colors.border }]}>
+                  <Text style={[styles.codePillText, { color: Colors.textSecondary }]}>{item.anzsco}</Text>
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.cardName, {color: Colors.textPrimary}]} numberOfLines={2}>{item.name}</Text>
-                  <Text style={[styles.cardGroup, {color: Colors.textPrimary}]}>{item.group}</Text>
+                  <Text style={[styles.cardGroup, { color: Colors.textSecondary }]}>{item.group}</Text>
                 </View>
                 {savedAnzsco === item.anzsco
                   ? <Ionicons name="checkmark-circle" size={18} color={Colors.success} />
@@ -730,11 +732,11 @@ export default function OccupationsScreen() {
                   {salary && (
                     <View style={styles.salaryChip}>
                       <Ionicons name="cash-outline" size={11} color={Colors.success} />
-                      <Text style={[styles.salaryChipText, {color: Colors.textPrimary}]}>{formatAnnualShort(salary.annualSalary)}/yr</Text>
+                      <Text style={[styles.salaryChipText, { color: Colors.success }]}>{formatAnnualShort(salary.annualSalary)}/yr</Text>
                     </View>
                   )}
                 </View>
-                <Text style={[styles.visasText, {color: Colors.textPrimary}]} numberOfLines={1}>
+                <Text style={[styles.visasText, { color: Colors.textSecondary }]} numberOfLines={1}>
                   {item.visas.map((v) => `SC ${v}`).join(' · ')}
                 </Text>
               </View>
@@ -764,8 +766,8 @@ export default function OccupationsScreen() {
                 <View style={[styles.modalHandle, { backgroundColor: Colors.border }]} />
                 <ScrollView showsVerticalScrollIndicator={false}>
                   <View style={styles.modalHead}>
-                    <View style={styles.codePillLg}>
-                      <Text style={[styles.codePillLgText, {color: Colors.textPrimary}]}>ANZSCO {selected.anzsco}</Text>
+                    <View style={[styles.codePillLg, { backgroundColor: Colors.surfaceRaised, borderColor: Colors.border }]}>
+                      <Text style={[styles.codePillLgText, { color: Colors.textSecondary }]}>ANZSCO {selected.anzsco}</Text>
                     </View>
                     <TouchableOpacity onPress={() => setSelected(null)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
                       <Ionicons name="close" size={22} color={Colors.textPrimary} />
@@ -773,7 +775,7 @@ export default function OccupationsScreen() {
                   </View>
 
                   <Text style={[styles.modalTitle, {color: Colors.textPrimary}]}>{selected.name}</Text>
-                  <Text style={[styles.modalGroup, {color: Colors.textPrimary}]}>{selected.group}</Text>
+                  <Text style={[styles.modalGroup, { color: Colors.textSecondary }]}>{selected.group}</Text>
 
                   {(() => {
                     const salary = getSalaryFor(salaries, selected.anzsco);
@@ -788,9 +790,9 @@ export default function OccupationsScreen() {
                           <Text style={[styles.salaryCardValue, {color: Colors.textPrimary}]}>
                             {formatAnnualFull(salary.annualSalary)}
                           </Text>
-                          <Text style={[styles.salaryCardUnit, {color: Colors.textPrimary}]}>AUD / year</Text>
+                          <Text style={[styles.salaryCardUnit, { color: Colors.textSecondary }]}>AUD / year</Text>
                         </View>
-                        <Text style={[styles.salaryCardSub, {color: Colors.textPrimary}]}>
+                        <Text style={[styles.salaryCardSub, { color: Colors.textSecondary }]}>
                           ${salary.weeklyEarnings.toLocaleString('en-AU')} / week
                           {salary.sourceLevel === '4-digit' ? ' · unit-group figure' : ''}
                         </Text>
@@ -798,7 +800,7 @@ export default function OccupationsScreen() {
                           onPress={() => { hapticTap(); Linking.openURL(salary.sourceUrl); }}
                           style={styles.salaryCardLink}
                         >
-                          <Text style={[styles.salaryCardLinkText, {color: Colors.textPrimary}]}>
+                          <Text style={[styles.salaryCardLinkText, { color: Colors.accent }]}>
                             Source: Jobs and Skills Australia
                           </Text>
                           <Ionicons name="open-outline" size={12} color={Colors.accent} />
@@ -822,8 +824,8 @@ export default function OccupationsScreen() {
                   <Text style={[styles.sectionLabel, {color: Colors.textPrimary}]}>Eligible visas (federal)</Text>
                   <View style={styles.chipRow}>
                     {selected.visas.map((v) => (
-                      <View key={v} style={styles.visaChip}>
-                        <Text style={[styles.visaChipText, {color: Colors.textPrimary}]}>SC {v}</Text>
+                      <View key={v} style={[styles.visaChip, { backgroundColor: Colors.surfaceRaised, borderColor: Colors.border }]}>
+                        <Text style={[styles.visaChipText, { color: Colors.textSecondary }]}>SC {v}</Text>
                       </View>
                     ))}
                   </View>
@@ -869,7 +871,7 @@ export default function OccupationsScreen() {
                               <Text style={[styles.stateCellCode, { color: eligible ? STATE_COLORS[s] : tappable ? Colors.warning : Colors.textMuted }]}>
                                 {s}
                               </Text>
-                              <Text style={[styles.stateCellVisas, {color: Colors.textPrimary}]}>
+                              <Text style={[styles.stateCellVisas, { color: eligible ? Colors.textPrimary : Colors.textSecondary }]}>
                                 {visas.length > 0 ? visas.join(' · ') : tappable ? 'Not sponsored' : '—'}
                               </Text>
                               {tappable && (
@@ -890,22 +892,22 @@ export default function OccupationsScreen() {
                         const stateReqs = selected.stateRequirements[expandedState]!;
                         const req = (stateReqs as any)?.[selectedVisa];
                         const col = STATE_COLORS[expandedState];
-                        
+
                         const VISA_LABELS: Record<'190' | '491' | '482', string> = {
                           '190': 'SC 190\nPermanent',
                           '491': 'SC 491\nRegional',
                           '482': 'SC 482\nEmployer',
                         };
-                        
+
                         const VISA_DESCRIPTIONS: Record<'190' | '491' | '482', string> = {
                           '190': 'Skilled Independent — Permanent visa',
                           '491': 'Skilled Regional — 5-year provisional',
                           '482': 'Temporary Skill Shortage — Employer-sponsored',
                         };
-                        
+
                         return (
-                          <View style={[styles.stateReqPanel, { borderColor: `${col}40` }]}>
-                            <View style={styles.stateReqHeader}>
+                          <View style={[styles.stateReqPanel, { backgroundColor: Colors.surfaceRaised, borderColor: `${col}40` }]}>
+                            <View style={[styles.stateReqHeader, { borderBottomColor: Colors.divider }]}>
                               <View style={[styles.stateReqDot, { backgroundColor: col }]} />
                               <Text style={[styles.stateReqTitle, { color: col }]}>
                                 {expandedState} — Visa Requirements
@@ -913,14 +915,14 @@ export default function OccupationsScreen() {
                             </View>
 
                             {/* Visa type tabs */}
-                            <View style={styles.visaTabs}>
+                            <View style={[styles.visaTabs, { borderBottomColor: Colors.divider }]}>
                               {(['190', '491', '482'] as const).map((visa) => (
                                 <TouchableOpacity
                                   key={visa}
                                   onPress={() => setSelectedVisa(visa)}
                                   style={[
                                     styles.visaTab,
-                                    selectedVisa === visa && { 
+                                    selectedVisa === visa && {
                                       backgroundColor: `${col}20`,
                                       borderBottomColor: col,
                                       borderBottomWidth: 2,
@@ -976,7 +978,7 @@ export default function OccupationsScreen() {
                                   return (
                                     <View style={styles.visaMetaStrip}>
                                       {meta.cost && (
-                                        <View style={styles.visaMetaPill}>
+                                        <View style={[styles.visaMetaPill, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
                                           <Ionicons name="card-outline" size={11} color={col} />
                                           <Text style={[styles.visaMetaText, { color: col }]}>
                                             {meta.cost}
@@ -984,7 +986,7 @@ export default function OccupationsScreen() {
                                         </View>
                                       )}
                                       {meta.processingCutoffLabel && (
-                                        <View style={styles.visaMetaPill}>
+                                        <View style={[styles.visaMetaPill, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
                                           <Ionicons name="time-outline" size={11} color={col} />
                                           <Text style={[styles.visaMetaText, { color: col }]}>
                                             Processing: {meta.processingCutoffLabel}
@@ -992,7 +994,7 @@ export default function OccupationsScreen() {
                                         </View>
                                       )}
                                       {meta.stayDuration && (
-                                        <View style={styles.visaMetaPill}>
+                                        <View style={[styles.visaMetaPill, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
                                           <Ionicons name="hourglass-outline" size={11} color={col} />
                                           <Text style={[styles.visaMetaText, { color: col }]}>
                                             Stay: {meta.stayDuration}
@@ -1007,69 +1009,69 @@ export default function OccupationsScreen() {
 
                                 <View style={styles.stateReqRows}>
                                   {req.minSalary != null ? (
-                                    <View style={styles.stateReqRow}>
+                                      <View style={[styles.stateReqRow, { borderBottomColor: Colors.divider }]}>
                                       <Ionicons name="cash-outline" size={13} color={Colors.textMuted} />
-                                      <Text style={[styles.stateReqKey, {color: Colors.textPrimary}]}>Min. salary</Text>
+                                      <Text style={[styles.stateReqKey, { color: Colors.textSecondary }]}>Min. salary</Text>
                                       <Text style={[styles.stateReqVal, { color: col }]}>
                                         ${req.minSalary.toLocaleString('en-AU')} AUD/yr
                                       </Text>
                                     </View>
                                   ) : req.salaryDataAvailable === false ? (
-                                    <View style={styles.stateReqRow}>
+                                      <View style={[styles.stateReqRow, { borderBottomColor: Colors.divider }]}>
                                       <Ionicons name="cash-outline" size={13} color={Colors.textMuted} />
-                                      <Text style={[styles.stateReqKey, {color: Colors.textPrimary}]}>Min. salary</Text>
+                                      <Text style={[styles.stateReqKey, { color: Colors.textSecondary }]}>Min. salary</Text>
                                       <Text style={[styles.stateReqVal, { color: Colors.textMuted, fontStyle: 'italic' }]}>
                                         Data not available
                                       </Text>
                                     </View>
                                   ) : null}
                                   {req.minExperienceYears != null && (
-                                    <View style={styles.stateReqRow}>
+                                    <View style={[styles.stateReqRow, { borderBottomColor: Colors.divider }]}>
                                       <Ionicons name="briefcase-outline" size={13} color={Colors.textMuted} />
-                                      <Text style={[styles.stateReqKey, {color: Colors.textPrimary}]}>Min. experience</Text>
+                                      <Text style={[styles.stateReqKey, { color: Colors.textSecondary }]}>Min. experience</Text>
                                       <Text style={[styles.stateReqVal, { color: col }]}>
                                         {req.minExperienceYears} year{req.minExperienceYears !== 1 ? 's' : ''}
                                       </Text>
                                     </View>
                                   )}
                                   {req.minPoints != null ? (
-                                    <View style={styles.stateReqRow}>
+                                    <View style={[styles.stateReqRow, { borderBottomColor: Colors.divider }]}>
                                       <Ionicons name="stats-chart-outline" size={13} color={Colors.textMuted} />
-                                      <Text style={[styles.stateReqKey, {color: Colors.textPrimary}]}>Min. EOI points</Text>
+                                      <Text style={[styles.stateReqKey, { color: Colors.textSecondary }]}>Min. EOI points</Text>
                                       <Text style={[styles.stateReqVal, { color: col }]}>{req.minPoints} pts</Text>
                                     </View>
                                   ) : (
-                                    <View style={styles.stateReqRow}>
+                                    <View style={[styles.stateReqRow, { borderBottomColor: Colors.divider }]}>
                                       <Ionicons name="stats-chart-outline" size={13} color={Colors.textMuted} />
-                                      <Text style={[styles.stateReqKey, {color: Colors.textPrimary}]}>Points test</Text>
+                                      <Text style={[styles.stateReqKey, { color: Colors.textSecondary }]}>Points test</Text>
                                       <Text style={[styles.stateReqVal, { color: Colors.success }]}>Not required</Text>
                                     </View>
                                   )}
                                   {req.maxAge != null && (
-                                    <View style={styles.stateReqRow}>
+                                    <View style={[styles.stateReqRow, { borderBottomColor: Colors.divider }]}>
                                       <Ionicons name="person-outline" size={13} color={Colors.textMuted} />
-                                      <Text style={[styles.stateReqKey, {color: Colors.textPrimary}]}>Max. age</Text>
+                                      <Text style={[styles.stateReqKey, { color: Colors.textSecondary }]}>Max. age</Text>
                                       <Text style={[styles.stateReqVal, { color: col }]}>{req.maxAge}</Text>
                                     </View>
                                   )}
-                                  <View style={styles.stateReqRow}>
+                                  <View style={[styles.stateReqRow, { borderBottomColor: Colors.divider }]}>
                                     <Ionicons name="checkmark-circle-outline" size={13} color={Colors.textMuted} />
-                                    <Text style={[styles.stateReqKey, {color: Colors.textPrimary}]}>Skills assessment</Text>
+                                    <Text style={[styles.stateReqKey, { color: Colors.textSecondary }]}>Skills assessment</Text>
                                     <Text style={[styles.stateReqVal, { color: req.skillsAssessmentRequired ? Colors.warning : Colors.success }]}>
                                       {req.skillsAssessmentRequired ? 'Required' : 'Check with state'}
                                     </Text>
                                   </View>
-                                  <View style={styles.stateReqRow}>
+                                  <View style={[styles.stateReqRow, { borderBottomColor: Colors.divider }]}>
                                     <Ionicons name="document-text-outline" size={13} color={req.jobOfferRequired ? Colors.warning : Colors.success} />
-                                    <Text style={[styles.stateReqKey, {color: Colors.textPrimary}]}>Job offer</Text>
+                                    <Text style={[styles.stateReqKey, { color: Colors.textSecondary }]}>Job offer</Text>
                                     <Text style={[styles.stateReqVal, { color: req.jobOfferRequired ? Colors.warning : Colors.success }]}>
                                       {req.jobOfferRequired ? '🔴 REQUIRED' : 'Not required'}
                                     </Text>
                                   </View>
                                   {req.residencyRequired && (
-                                    <View style={styles.stateReqRow}>
+                                    <View style={[styles.stateReqRow, { borderBottomColor: Colors.divider }]}>
                                       <Ionicons name="home-outline" size={13} color={Colors.textMuted} />
-                                      <Text style={[styles.stateReqKey, {color: Colors.textPrimary}]}>State residency</Text>
+                                      <Text style={[styles.stateReqKey, { color: Colors.textSecondary }]}>State residency</Text>
                                       <Text style={[styles.stateReqVal, { color: Colors.warning }]}>Required</Text>
                                     </View>
                                   )}
@@ -1077,10 +1079,10 @@ export default function OccupationsScreen() {
 
                                 {req.notes && req.notes.length > 0 && (
                                   <View style={styles.stateReqNotes}>
-                                    {req.notes.map((n, i) => (
+                                    {req.notes.map((n: string, i: number) => (
                                       <View key={i} style={styles.stateReqNoteRow}>
                                         <View style={[styles.stateReqNoteDot, { backgroundColor: col }]} />
-                                        <Text style={[styles.stateReqNoteText, {color: Colors.textPrimary}]}>{n}</Text>
+                                        <Text style={[styles.stateReqNoteText, { color: Colors.textSecondary }]}>{n}</Text>
                                       </View>
                                     ))}
                                   </View>

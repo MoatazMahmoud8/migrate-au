@@ -484,7 +484,7 @@ export default function EnglishTestsScreen() {
                         <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={14} color={Colors.textMuted} />
                       </View>
                       {open && (
-                        <View style={styles.visaNotes}>
+                        <View style={[styles.visaNotes, { borderTopColor: Colors.divider }]}>
                           {v.notes.map((n, i) => (
                             <View key={i} style={styles.noteRow}>
                               <View style={[styles.noteDot, { backgroundColor: v.color }]} />

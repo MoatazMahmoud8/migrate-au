@@ -52,7 +52,7 @@ export default function InAppBrowser({ url, onClose, title }: InAppBrowserProps)
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: Colors.background }]}>
         {/* Header */}
-        <View style={styles.header}>
+        <View style={[styles.header, { borderBottomColor: Colors.border }]}>
           <TouchableOpacity onPress={onClose} activeOpacity={0.7}>
             <Ionicons name="chevron-back" size={28} color={Colors.textPrimary} />
           </TouchableOpacity>
@@ -65,7 +65,7 @@ export default function InAppBrowser({ url, onClose, title }: InAppBrowserProps)
         </View>
 
         {/* Iframe container */}
-        <View style={styles.webContainer}>
+        <View style={[styles.webContainer, { backgroundColor: Colors.surface }]}>
           <iframe
             src={url}
             style={{
@@ -87,7 +87,7 @@ export default function InAppBrowser({ url, onClose, title }: InAppBrowserProps)
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: Colors.background }]}>
         {/* Header */}
-        <View style={styles.header}>
+        <View style={[styles.header, { borderBottomColor: Colors.border }]}>
           <TouchableOpacity
             onPress={canGoBack ? handleGoBack : onClose}
             activeOpacity={0.7}
@@ -136,7 +136,7 @@ export default function InAppBrowser({ url, onClose, title }: InAppBrowserProps)
   // Fallback: show message that WebView is not available
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: Colors.background }]}>
-      <View style={styles.header}>
+      <View style={[styles.header, { borderBottomColor: Colors.border }]}>
         <TouchableOpacity onPress={onClose} activeOpacity={0.7}>
           <Ionicons name="chevron-back" size={28} color={Colors.textPrimary} />
         </TouchableOpacity>
@@ -147,7 +147,7 @@ export default function InAppBrowser({ url, onClose, title }: InAppBrowserProps)
       <View style={styles.fallbackContainer}>
         <Ionicons name="warning-outline" size={48} color={Colors.warning} />
         <Text style={[styles.fallbackTitle, {color: Colors.textPrimary}]}>Unable to Load</Text>
-        <Text style={[styles.fallbackText, {color: Colors.textPrimary}]}>
+        <Text style={[styles.fallbackText, { color: Colors.textSecondary }]}>
           The in-app browser is not available. Please update the app to use this feature.
         </Text>
         <TouchableOpacity
@@ -155,7 +155,7 @@ export default function InAppBrowser({ url, onClose, title }: InAppBrowserProps)
           onPress={onClose}
           activeOpacity={0.85}
         >
-          <Text style={[styles.fallbackButtonText, {color: Colors.textPrimary}]}>Go Back</Text>
+          <Text style={[styles.fallbackButtonText, { color: Colors.white }]}>Go Back</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -181,10 +181,7 @@ const styles = StyleSheet.create({
     marginHorizontal: Spacing.md,
     textAlign: 'center',
   },
-  webContainer: {
-    flex: 1,
-    backgroundColor: 'white',
-  },
+  webContainer: { flex: 1 },
   loadingContainer: {
     ...StyleSheet.absoluteFillObject,
     justifyContent: 'center',
