@@ -90,28 +90,28 @@ function calculateAgeBracketAlert(birthDateISO: string | undefined): {
   alert: string | null;
 } | null {
   if (!birthDateISO) return null;
-  
+
   try {
     const birthDate = new Date(birthDateISO);
     const today = new Date();
     const thisYearBirthday = new Date(today.getFullYear(), birthDate.getMonth(), birthDate.getDate());
-    
+
     let currentAge = today.getFullYear() - birthDate.getFullYear();
     if (today < thisYearBirthday) currentAge--;
-    
+
     // Critical milestones: 33, 40, 45
     const milestones = [33, 40, 45];
     let nextMilestone = milestones.find(m => m > currentAge) || 45;
-    
+
     // Calculate next milestone birthday
     const nextMilestoneBirthday = new Date(
       currentAge === nextMilestone - 1 ? today.getFullYear() : today.getFullYear() + (nextMilestone - currentAge),
       birthDate.getMonth(),
       birthDate.getDate()
     );
-    
+
     const daysUntil = Math.ceil((nextMilestoneBirthday.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-    
+
     let alert: string | null = null;
     if (currentAge >= 45) {
       alert = 'ℹ️ Age 45+ milestone reached';
@@ -120,7 +120,7 @@ function calculateAgeBracketAlert(birthDateISO: string | undefined): {
     } else if (daysUntil <= 90) {
       alert = `📌 Age ${nextMilestone} milestone in ${daysLabel(daysUntil)}`;
     }
-    
+
     return { currentAge, nextMilestone, daysUntilMilestone: daysUntil, alert };
   } catch {
     return null;
@@ -306,7 +306,7 @@ export default function ProfileScreen() {
 
   const handleExportPDF = () => {
     if (!profile) return;
-    
+
     if (!profile.isPremium) {
       setShowPaywall(true);
       return;
@@ -314,7 +314,7 @@ export default function ProfileScreen() {
 
     const pdfContent = generateJourneyPDF(profile);
     const shared = sharePDF(pdfContent, profile);
-    
+
     Alert.alert(
       '📄 Journey Exported',
       'Your visa journey has been exported as a text document. You can copy this to save or share with a migration agent.',
@@ -466,15 +466,15 @@ export default function ProfileScreen() {
         {editingName ? (
           <View style={styles.nameEditRow}>
             <TextInput
-              style={[styles.nameInput, { color: Colors.white }]}
+              style={[styles.nameInput, { color: Colors.white, borderBottomColor: 'rgba(255,255,255,0.65)' }]}
               value={nameInput}
               onChangeText={setNameInput}
               placeholder="Your name"
-              placeholderTextColor={Colors.textMuted}
+              placeholderTextColor="rgba(255,255,255,0.65)"
               autoFocus
             />
-            <TouchableOpacity onPress={saveName} style={styles.saveBtn}>
-              <Text style={[styles.saveBtnText, {color: Colors.textPrimary}]}>Save</Text>
+            <TouchableOpacity onPress={saveName} style={[styles.saveBtn, { backgroundColor: Colors.secondary }]}>
+              <Text style={[styles.saveBtnText, { color: Colors.primaryDark }]}>Save</Text>
             </TouchableOpacity>
           </View>
         ) : (
@@ -483,7 +483,7 @@ export default function ProfileScreen() {
             style={styles.nameRow}
           >
             <Text style={[styles.profileName, { color: Colors.white }]}>{profile.name || 'Tap to set your name'}</Text>
-            <Ionicons name="pencil" size={14} color={Colors.textMuted} />
+            <Ionicons name="pencil" size={14} color="rgba(255,255,255,0.72)" />
           </TouchableOpacity>
         )}
 
@@ -492,14 +492,14 @@ export default function ProfileScreen() {
             ? <><Ionicons name="star" size={12} color={Colors.secondary} /><Text style={[styles.planText, { color: Colors.white }]}>Premium Member</Text></>
             : <>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.xs }}>
-                  <Ionicons name="person-outline" size={12} color={Colors.textMuted} />
-                  <Text style={[styles.planText, { color: Colors.textMuted }]}>Free Plan</Text>
+                  <Ionicons name="person-outline" size={12} color="rgba(255,255,255,0.82)" />
+                  <Text style={[styles.planText, { color: Colors.white }]}>Free Plan</Text>
                 </View>
                 <TouchableOpacity
                   onPress={handleUpgrade}
-                  style={styles.subscribeNowBtn}
+                  style={[styles.subscribeNowBtn, { backgroundColor: Colors.secondary }]}
                 >
-                  <Text style={[styles.subscribeNowText, {color: Colors.textPrimary}]}>Upgrade Now</Text>
+                  <Text style={[styles.subscribeNowText, { color: Colors.primaryDark }]}>Upgrade Now</Text>
                 </TouchableOpacity>
               </>
           }
@@ -1072,7 +1072,7 @@ export default function ProfileScreen() {
               {dateTarget ? JOURNEY_STAGES.find(s => s.key === dateTarget.stageKey)?.label : 'Date'}
             </Text>
             <Text style={[jStyles.modalSub, {color: Colors.textPrimary}]}>Pick the date for this milestone</Text>
-            
+
             {Platform.OS === 'web' ? (
               <input
                 type="date"
