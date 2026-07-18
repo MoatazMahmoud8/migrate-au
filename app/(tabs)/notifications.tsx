@@ -20,6 +20,8 @@ import { useColors } from '../../constants/ThemeContext';
 import {
   subscribeToFeed,
   markAsRead,
+  getReadIds,
+  onReadChange,
   AppNotification,
 } from '../../utils/notifications';
 import { subscribeToFeedPoll } from '../../utils/notifications-poll';
@@ -63,6 +65,14 @@ function timeAgo(iso: string): string {
   const hrs = Math.floor(mins / 60);
   if (hrs < 24)  return `${hrs}h ago`;
   return `${Math.floor(hrs / 24)}d ago`;
+}
+
+async function mergeLocalReadState(items: AppNotification[]): Promise<AppNotification[]> {
+  const readIds = await getReadIds();
+  return items.map(item => ({
+    ...item,
+    read: Boolean(item.read) || readIds.has(item.id),
+  }));
 }
 
 function NotificationCard({
@@ -131,6 +141,13 @@ export default function NotificationsScreen() {
   useEffect(() => {
     let cancelled = false;
     let unsub: (() => void) | undefined;
+    const updateFeed = async (items: AppNotification[]) => {
+      const mergedItems = await mergeLocalReadState(items || []);
+      if (cancelled) return;
+      setFeed(mergedItems);
+      setLoading(false);
+      setRefreshing(false);
+    };
     (async () => {
       try {
         const uid = await getRevenueCatUserId().catch(() => '');
@@ -144,9 +161,7 @@ export default function NotificationsScreen() {
               try {
                 if (!cancelled) {
                   console.log('[notifications.tsx] Web update - items:', items?.length || 0);
-                  setFeed(items || []);
-                  setLoading(false);
-                  setRefreshing(false);
+                  void updateFeed(items || []);
                 }
               } catch (err) {
                 console.error('[notifications.tsx] Error updating feed from web:', err);
@@ -164,9 +179,7 @@ export default function NotificationsScreen() {
               try {
                 if (!cancelled) {
                   console.log('[notifications.tsx] Poll update - items:', items?.length || 0);
-                  setFeed(items || []);
-                  setLoading(false);
-                  setRefreshing(false);
+                  void updateFeed(items || []);
                 }
               } catch (err) {
                 console.error('[notifications.tsx] Error updating feed from poll:', err);
@@ -198,6 +211,15 @@ export default function NotificationsScreen() {
       }
     };
   }, []);
+
+  useEffect(() => onReadChange(() => {
+    getReadIds().then(readIds => {
+      setFeed(prev => prev.map(item => ({
+        ...item,
+        read: Boolean(item.read) || readIds.has(item.id),
+      })));
+    });
+  }), []);
 
   const handleRead = useCallback((id: string) => {
     markAsRead(id);
