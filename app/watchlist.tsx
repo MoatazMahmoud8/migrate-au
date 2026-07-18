@@ -48,6 +48,7 @@ import { getProfile } from '../utils/storage';
 import { getRevenueCatUserId } from '../utils/iap';
 import { PaywallModal } from '../components/PaywallModal';
 import { tap as hapticTap, success as hapticSuccess } from '../utils/haptics';
+import { recordEngagement } from '../utils/rateApp';
 
 const FREE_LIMIT = 1;
 const STATES = ['NSW', 'VIC', 'QLD', 'WA', 'SA', 'TAS', 'ACT', 'NT'];
@@ -145,6 +146,7 @@ export default function WatchlistScreen() {
         }
         return [...prev, saved];
       });
+      recordEngagement('watchlist_save');
       hapticSuccess();
       setAdding(false);
     } catch (e) {

@@ -20,6 +20,7 @@ import { UsageMeter } from '../../components/UsageMeter';
 import { PointsInput, VisaSubclass, EnglishLevel } from '../../constants/types';
 import { Colors, Spacing, Radius, FontSize, FontWeight } from '../../constants/theme';
 import { useColors, useTheme } from '../../constants/ThemeContext';
+import { recordEngagement } from '../../utils/rateApp';
 
 const CALC_STORAGE_KEY = 'calc_input_v1';
 
@@ -198,6 +199,7 @@ export default function CalculatorScreen() {
     await saveProfile(updated);
     const rem = getRemainingUses('calculator', updated);
     setRemaining(rem);
+    recordEngagement('calculator_result');
 
     // Scroll to breakdown (you could use a ref here if needed)
     Alert.alert('Score calculated', `Your visa points: ${breakdown.total}`);
