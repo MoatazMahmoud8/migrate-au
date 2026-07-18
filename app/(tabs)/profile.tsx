@@ -52,8 +52,11 @@ const VISA_COLORS: Record<string, string> = {
 function visaColor(v: string) { return VISA_COLORS[v] ?? '#94A3B8'; }
 
 function getAppVersionLabel(): string {
-  const version = Constants.nativeApplicationVersion || Constants.expoConfig?.version;
-  return version ? `v${version}` : 'Version unavailable';
+  const nativeVersion = Constants.nativeApplicationVersion;
+  const nativeBuild = Constants.nativeBuildVersion;
+  if (nativeVersion) return nativeBuild ? `v${nativeVersion} (${nativeBuild})` : `v${nativeVersion}`;
+  if (Platform.OS === 'web' || __DEV__) return 'Local preview';
+  return Constants.expoConfig?.version ? `v${Constants.expoConfig.version}` : 'Version unavailable';
 }
 
 function formatJourneyDate(iso: string): string {
