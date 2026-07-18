@@ -146,6 +146,10 @@ export default function VisasScreen() {
           {FILTERS.map((f) => {
             const active = filter === f;
             const meta = f !== 'All' ? CATEGORY_META[f] : null;
+            const activeColor = meta?.color ?? Colors.secondary;
+            const chipTextColor = active ? activeColor : Colors.textPrimary;
+            const chipBgColor = active ? `${activeColor}22` : Colors.surfaceRaised;
+            const chipBorderColor = active ? `${activeColor}90` : Colors.border;
             const count =
               f === 'All'
                 ? ALL_VISAS.length
@@ -155,9 +159,7 @@ export default function VisasScreen() {
                 key={f}
                 style={[
                   styles.tab,
-                  { backgroundColor: Colors.surface, borderColor: Colors.border },
-                  active && { backgroundColor: Colors.surfaceRaised },
-                  meta && active ? { borderColor: meta.color + '80' } : null,
+                  { backgroundColor: chipBgColor, borderColor: chipBorderColor },
                 ]}
                 onPress={() => { hapticTap(); setFilter(f); setExpanded(null); }}
                 activeOpacity={0.8}
@@ -166,14 +168,14 @@ export default function VisasScreen() {
                   <Ionicons
                     name={meta.icon as any}
                     size={13}
-                    color={active ? meta.color : Colors.textMuted}
+                    color={active ? activeColor : Colors.textSecondary}
                   />
                 )}
-                <Text style={[styles.tabText, { color: Colors.textSecondary }, active && styles.tabTextActive, meta && active ? { color: meta.color } : { color: active ? Colors.textPrimary : Colors.textSecondary }]}>
+                <Text style={[styles.tabText, { color: chipTextColor }, active && styles.tabTextActive]}>
                   {f}
                 </Text>
-                <View style={[styles.tabCount, { backgroundColor: Colors.surfaceRaised }, active && meta ? { backgroundColor: meta.color + '20' } : null]}>
-                  <Text style={[styles.tabCountText, { color: Colors.textSecondary }, active && meta ? { color: meta.color } : { color: active ? Colors.textPrimary : Colors.textSecondary }]}>{count}</Text>
+                <View style={[styles.tabCount, { backgroundColor: active ? `${activeColor}18` : Colors.surface }]}>
+                  <Text style={[styles.tabCountText, { color: chipTextColor }]}>{count}</Text>
                 </View>
               </TouchableOpacity>
             );
