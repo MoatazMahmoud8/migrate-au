@@ -209,8 +209,8 @@ function VisaFinder() {
               key={p.id}
               style={[
                 styles.purposeBtn,
-                { backgroundColor: active ? p.bg : 'rgba(255,255,255,0.04)' },
-                active && { borderColor: p.color + '60' },
+                { backgroundColor: active ? p.bg : Colors.surfaceRaised, borderColor: Colors.border },
+                active && { borderColor: p.color + '70' },
               ]}
               onPress={() => handleSelect(p.id)}
               activeOpacity={0.75}
@@ -230,14 +230,14 @@ function VisaFinder() {
         <Animated.View
           style={[
             styles.recPanel,
-            { borderColor: purpose.color + '40' },
+            { backgroundColor: Colors.surface, borderColor: purpose.color + '45' },
             {
               opacity: recAnim,
               transform: [{ translateY: recAnim.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }],
             },
           ]}
         >
-          <View style={styles.recHeader}>
+          <View style={[styles.recHeader, { borderBottomColor: Colors.divider }]}>
             <View style={[styles.recIconWrap, { backgroundColor: purpose.bg }]}>
               <Ionicons name={purpose.icon} size={16} color={purpose.color} />
             </View>
@@ -249,7 +249,7 @@ function VisaFinder() {
           {purpose.visas.map((v) => (
             <TouchableOpacity
               key={v.code}
-              style={styles.recRow}
+              style={[styles.recRow, { borderBottomColor: Colors.divider }]}
               onPress={() => router.push('/visas' as any)}
               activeOpacity={0.7}
             >
