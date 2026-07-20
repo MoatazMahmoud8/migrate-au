@@ -245,6 +245,58 @@ const VISA_ENGLISH: Record<string, EnglishReq> = {
   },
 };
 
+interface FederalVisaCondition {
+  title: string;
+  summary: string;
+  points: string[];
+  sourceUrl: string;
+}
+
+const FEDERAL_VISA_CONDITIONS: Record<string, FederalVisaCondition> = {
+  '189': {
+    title: 'Skilled Independent',
+    summary: 'Points-tested permanent visa with no state or employer sponsor.',
+    points: ['SkillSelect invitation required', 'Positive skills assessment', 'Competent English', 'Age and points-test rules apply'],
+    sourceUrl: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skilled-independent-189',
+  },
+  '190': {
+    title: 'Skilled Nominated',
+    summary: 'Permanent visa requiring nomination by a state or territory.',
+    points: ['State or territory nomination required', 'Positive skills assessment', 'Competent English', 'Points-test rules apply'],
+    sourceUrl: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skilled-nominated-190',
+  },
+  '491': {
+    title: 'Skilled Work Regional',
+    summary: 'Regional provisional visa requiring state nomination or eligible family sponsorship.',
+    points: ['Regional nomination or family sponsorship', 'Positive skills assessment', 'Competent English', 'Regional residence and work conditions'],
+    sourceUrl: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skilled-work-regional-provisional-491',
+  },
+  '482': {
+    title: 'Skills in Demand',
+    summary: 'Temporary employer-sponsored visa for nominated occupations.',
+    points: ['Approved employer sponsor required', 'Employer nomination required', 'Occupation and salary rules apply', 'Skills and English requirements vary by stream'],
+    sourceUrl: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skills-in-demand-482',
+  },
+  '186': {
+    title: 'Employer Nomination Scheme',
+    summary: 'Permanent employer-sponsored visa for nominated skilled workers.',
+    points: ['Approved Australian employer nomination', 'Relevant occupation and stream requirements', 'Skills assessment may be required', 'English, age and work-experience rules apply'],
+    sourceUrl: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/employer-nomination-scheme-186',
+  },
+  '485': {
+    title: 'Temporary Graduate',
+    summary: 'Temporary visa for eligible recent graduates with Australian study.',
+    points: ['Australian study requirement', 'Age and qualification rules apply', 'English requirement applies', 'Stream and duration depend on qualification'],
+    sourceUrl: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/temporary-graduate-485',
+  },
+  '494': {
+    title: 'Skilled Employer Sponsored Regional',
+    summary: 'Regional provisional employer-sponsored visa.',
+    points: ['Regional employer sponsorship required', 'Employer nomination required', 'Usually requires relevant skills assessment', 'English and work-experience rules apply'],
+    sourceUrl: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skilled-employer-sponsored-regional-494',
+  },
+};
+
 // ─── Assessing authority details ──────────────────────────────────────────
 interface AuthorityInfo {
   name: string;
@@ -829,6 +881,60 @@ export default function OccupationsScreen() {
                       </View>
                     ))}
                   </View>
+
+                  {(() => {
+                    const federalConditions = [...new Set(selected.visas)]
+                      .map((visa) => ({ visa, condition: FEDERAL_VISA_CONDITIONS[visa] }))
+                      .filter(({ condition }) => condition);
+                    if (federalConditions.length === 0) return null;
+                    return (
+                      <>
+                        <Text style={[styles.sectionLabel, { color: Colors.textPrimary }]}>Federal visa conditions</Text>
+                        <View style={styles.federalVisaList}>
+                          {federalConditions.map(({ visa, condition }) => (
+                            <View
+                              key={visa}
+                              style={[
+                                styles.federalVisaCard,
+                                { backgroundColor: Colors.surfaceRaised, borderColor: Colors.border },
+                              ]}
+                            >
+                              <View style={styles.federalVisaHeader}>
+                                <View
+                                  style={[
+                                    styles.federalVisaBadge,
+                                    { backgroundColor: `${Colors.accent}18`, borderColor: `${Colors.accent}55` },
+                                  ]}
+                                >
+                                  <Text style={[styles.federalVisaBadgeText, { color: Colors.accent }]}>SC {visa}</Text>
+                                </View>
+                                <View style={{ flex: 1 }}>
+                                  <Text style={[styles.federalVisaTitle, { color: Colors.textPrimary }]}>{condition.title}</Text>
+                                  <Text style={[styles.federalVisaSummary, { color: Colors.textSecondary }]}>{condition.summary}</Text>
+                                </View>
+                              </View>
+                              <View style={styles.federalVisaPoints}>
+                                {condition.points.map((point, index) => (
+                                  <View key={index} style={styles.federalVisaPointRow}>
+                                    <View style={[styles.federalVisaPointDot, { backgroundColor: Colors.accent }]} />
+                                    <Text style={[styles.federalVisaPointText, { color: Colors.textSecondary }]}>{point}</Text>
+                                  </View>
+                                ))}
+                              </View>
+                              <TouchableOpacity
+                                style={[styles.federalVisaLink, { borderColor: `${Colors.accent}40`, backgroundColor: `${Colors.accent}0D` }]}
+                                onPress={() => Linking.openURL(condition.sourceUrl)}
+                                activeOpacity={0.8}
+                              >
+                                <Text style={[styles.federalVisaLinkText, { color: Colors.accent }]}>View DHA visa page</Text>
+                                <Ionicons name="open-outline" size={12} color={Colors.accent} />
+                              </TouchableOpacity>
+                            </View>
+                          ))}
+                        </View>
+                      </>
+                    );
+                  })()}
 
                   <Text style={[styles.sectionLabel, {color: Colors.textPrimary}]}>State / territory eligibility</Text>
                   {(() => {
@@ -1613,6 +1719,74 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   visaChipText: { fontSize: FontSize.xs, fontWeight: FontWeight.semiBold },
+
+  federalVisaList: {
+    gap: Spacing.sm,
+  },
+  federalVisaCard: {
+    borderRadius: Radius.md,
+    borderWidth: 1,
+    padding: Spacing.md,
+    gap: Spacing.sm,
+  },
+  federalVisaHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacing.sm,
+  },
+  federalVisaBadge: {
+    borderRadius: Radius.sm,
+    borderWidth: 1,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  federalVisaBadgeText: {
+    fontSize: 10,
+    fontWeight: FontWeight.bold,
+    letterSpacing: 0.4,
+  },
+  federalVisaTitle: {
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.bold,
+  },
+  federalVisaSummary: {
+    fontSize: FontSize.xs,
+    lineHeight: 16,
+    marginTop: 2,
+  },
+  federalVisaPoints: {
+    gap: 5,
+  },
+  federalVisaPointRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 7,
+  },
+  federalVisaPointDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 3,
+    marginTop: 5,
+  },
+  federalVisaPointText: {
+    flex: 1,
+    fontSize: FontSize.xs,
+    lineHeight: 16,
+  },
+  federalVisaLink: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    borderRadius: Radius.sm,
+    borderWidth: 1,
+    paddingHorizontal: 9,
+    paddingVertical: 6,
+  },
+  federalVisaLinkText: {
+    fontSize: FontSize.xs,
+    fontWeight: FontWeight.semiBold,
+  },
 
   /* State grid (modal) */
   stateGrid: {
