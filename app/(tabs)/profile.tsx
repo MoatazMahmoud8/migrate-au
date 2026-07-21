@@ -483,7 +483,6 @@ export default function ProfileScreen() {
               autoFocus
               returnKeyType="done"
               onSubmitEditing={saveName}
-              blurOnSubmit={false}
             />
             <TouchableOpacity onPress={saveName} style={[styles.saveBtn, { backgroundColor: Colors.secondary }]}>
               <Text style={[styles.saveBtnText, { color: Colors.primaryDark }]}>Save</Text>
