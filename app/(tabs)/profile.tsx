@@ -12,6 +12,7 @@ import {
   Modal,
   Platform,
   Switch,
+  Keyboard,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -227,10 +228,15 @@ export default function ProfileScreen() {
   };
 
   const saveName = async () => {
-    const updated = { ...profile, name: nameInput };
-    await saveProfile({ name: nameInput });
-    setProfile(updated);
-    setEditingName(false);
+    Keyboard.dismiss();
+    const trimmed = nameInput.trim();
+    try {
+      await saveProfile({ name: trimmed });
+      setProfile({ ...profile, name: trimmed });
+      setEditingName(false);
+    } catch (e) {
+      Alert.alert('Could not save', 'Your name could not be saved. Please try again.');
+    }
   };
 
   const handleUpgrade = () => setShowPaywall(true);
@@ -475,6 +481,9 @@ export default function ProfileScreen() {
               placeholder="Your name"
               placeholderTextColor="rgba(255,255,255,0.65)"
               autoFocus
+              returnKeyType="done"
+              onSubmitEditing={saveName}
+              blurOnSubmit={false}
             />
             <TouchableOpacity onPress={saveName} style={[styles.saveBtn, { backgroundColor: Colors.secondary }]}>
               <Text style={[styles.saveBtnText, { color: Colors.primaryDark }]}>Save</Text>
