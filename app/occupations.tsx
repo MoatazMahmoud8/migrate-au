@@ -532,7 +532,7 @@ export default function OccupationsScreen() {
       // SkillSelect invitation round cutoffs (shared cache with Rounds tab)
       (async () => {
         try {
-          const ROUNDS_CACHE = 'rounds_v2';
+          const ROUNDS_CACHE = 'rounds_v3';
           const ROUNDS_URL = 'https://swift-shore-238707.web.app/invitation-rounds.json';
           const cached = await AsyncStorage.getItem(ROUNDS_CACHE);
           let data = cached ? JSON.parse(cached) : null;

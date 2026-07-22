@@ -50,8 +50,8 @@ interface RoundsData {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const CACHE_KEY = 'rounds_v2';
-const CACHE_TS_KEY = 'rounds_v2_ts';
+const CACHE_KEY = 'rounds_v3';
+const CACHE_TS_KEY = 'rounds_v3_ts';
 const CACHE_HOURS = 6;
 const REMOTE_URL = 'https://swift-shore-238707.web.app/invitation-rounds.json';
 const STATE_ORDER = ['NSW', 'VIC', 'QLD', 'WA', 'SA', 'TAS', 'ACT', 'NT'];

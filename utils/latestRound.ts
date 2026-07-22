@@ -15,8 +15,8 @@ export interface LatestRound {
   tieBreak?: string;
 }
 
-const CACHE_KEY = 'rounds_v2';
-const CACHE_TS_KEY = 'rounds_v2_ts';
+const CACHE_KEY = 'rounds_v3';
+const CACHE_TS_KEY = 'rounds_v3_ts';
 const REMOTE_URL = 'https://swift-shore-238707.web.app/invitation-rounds.json';
 const CACHE_HOURS = 6;
 
