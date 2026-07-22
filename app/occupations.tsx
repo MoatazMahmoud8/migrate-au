@@ -507,6 +507,7 @@ export default function OccupationsScreen() {
   const visaMeta = useMemo(() => buildVisaMetaMap(dailyUpdates), [dailyUpdates]);
   const [occupationCutoffs, setOccupationCutoffs] = useState<Map<string, { sc189: number | null; sc491Family: number | null }>>(new Map());
   const [lastRoundDate, setLastRoundDate] = useState<string | null>(null);
+  const [occupationHistory, setOccupationHistory] = useState<Map<string, { date: string; sc189: number | null; sc491Family: number | null }[]>>(new Map());
   const [salaries, setSalaries] = useState<SalariesSnapshot>({
     snapshotDate: '1970-01-01',
     salaries: {},
@@ -549,6 +550,20 @@ export default function OccupationsScreen() {
             }
             setOccupationCutoffs(map);
             setLastRoundDate(data.currentRound?.date ?? data.rounds?.[0]?.date ?? null);
+          }
+          // Build per-occupation history from all rounds that have scores
+          if (Array.isArray(data?.rounds)) {
+            const histMap = new Map<string, { date: string; sc189: number | null; sc491Family: number | null }[]>();
+            const sortedRounds = [...data.rounds].sort((a: any, b: any) => b.date.localeCompare(a.date));
+            for (const round of sortedRounds) {
+              if (!Array.isArray(round.occupationScores)) continue;
+              for (const s of round.occupationScores) {
+                const k = (s.name as string).toLowerCase().trim();
+                if (!histMap.has(k)) histMap.set(k, []);
+                histMap.get(k)!.push({ date: round.date, sc189: s.sc189 ?? null, sc491Family: s.sc491Family ?? null });
+              }
+            }
+            setOccupationHistory(histMap);
           }
         } catch { /* silently fail */ }
       })();
@@ -1011,32 +1026,58 @@ export default function OccupationsScreen() {
                       return s;
                     };
                     const key = selected.name.toLowerCase().trim();
-                    const cutoff = occupationCutoffs.get(key) ?? occupationCutoffs.get(normName(selected.name));
-                    if (!cutoff || (cutoff.sc189 == null && cutoff.sc491Family == null)) return null;
+                    const normKey = normName(selected.name);
+                    const cutoff = occupationCutoffs.get(key) ?? occupationCutoffs.get(normKey);
+                    const history = occupationHistory.get(key) ?? occupationHistory.get(normKey) ?? [];
+                    if ((!cutoff || (cutoff.sc189 == null && cutoff.sc491Family == null)) && history.length === 0) return null;
                     const fmtDate = lastRoundDate
                       ? new Date(lastRoundDate).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })
                       : null;
+                    const hasBoth189 = history.some(h => h.sc189 != null);
+                    const hasBoth491 = history.some(h => h.sc491Family != null);
                     return (
                       <>
                         <Text style={[styles.sectionLabel, { color: Colors.textPrimary }]}>SkillSelect cutoffs</Text>
                         <View style={[styles.cutoffCard, { backgroundColor: Colors.surfaceRaised, borderColor: Colors.border }]}>
                           {fmtDate && (
-                            <Text style={[styles.cutoffNote, { color: Colors.textSecondary }]}>Last round · {fmtDate}</Text>
+                            <Text style={[styles.cutoffNote, { color: Colors.textSecondary }]}>Latest round · {fmtDate}</Text>
                           )}
-                          <View style={styles.cutoffPills}>
-                            {cutoff.sc189 != null && (
-                              <View style={[styles.cutoffPill, { backgroundColor: `${Colors.accent}15`, borderColor: `${Colors.accent}50` }]}>
-                                <Text style={[styles.cutoffPillLabel, { color: Colors.accent }]}>SC 189</Text>
-                                <Text style={[styles.cutoffPillValue, { color: Colors.textPrimary }]}>{cutoff.sc189} pts</Text>
+                          {cutoff && (cutoff.sc189 != null || cutoff.sc491Family != null) && (
+                            <View style={styles.cutoffPills}>
+                              {cutoff.sc189 != null && (
+                                <View style={[styles.cutoffPill, { backgroundColor: `${Colors.accent}15`, borderColor: `${Colors.accent}50` }]}>
+                                  <Text style={[styles.cutoffPillLabel, { color: Colors.accent }]}>SC 189</Text>
+                                  <Text style={[styles.cutoffPillValue, { color: Colors.textPrimary }]}>{cutoff.sc189} pts</Text>
+                                </View>
+                              )}
+                              {cutoff.sc491Family != null && (
+                                <View style={[styles.cutoffPill, { backgroundColor: `${Colors.success}15`, borderColor: `${Colors.success}50` }]}>
+                                  <Text style={[styles.cutoffPillLabel, { color: Colors.success }]}>SC 491 Family</Text>
+                                  <Text style={[styles.cutoffPillValue, { color: Colors.textPrimary }]}>{cutoff.sc491Family} pts</Text>
+                                </View>
+                              )}
+                            </View>
+                          )}
+                          {history.length > 1 && (
+                            <View style={styles.cutoffHistory}>
+                              <Text style={[styles.cutoffHistoryTitle, { color: Colors.textSecondary }]}>Points history</Text>
+                              <View style={[styles.cutoffHistoryHeader, { borderBottomColor: Colors.border }]}>
+                                <Text style={[styles.cutoffHistoryCell, styles.cutoffHistoryDate, { color: Colors.textSecondary }]}>Round</Text>
+                                {hasBoth189 && <Text style={[styles.cutoffHistoryCell, styles.cutoffHistoryScore, { color: Colors.accent }]}>SC 189</Text>}
+                                {hasBoth491 && <Text style={[styles.cutoffHistoryCell, styles.cutoffHistoryScore, { color: Colors.success }]}>SC 491</Text>}
                               </View>
-                            )}
-                            {cutoff.sc491Family != null && (
-                              <View style={[styles.cutoffPill, { backgroundColor: `${Colors.success}15`, borderColor: `${Colors.success}50` }]}>
-                                <Text style={[styles.cutoffPillLabel, { color: Colors.success }]}>SC 491 Family</Text>
-                                <Text style={[styles.cutoffPillValue, { color: Colors.textPrimary }]}>{cutoff.sc491Family} pts</Text>
-                              </View>
-                            )}
-                          </View>
+                              {history.map((h, i) => {
+                                const d = new Date(h.date).toLocaleDateString('en-AU', { month: 'short', year: 'numeric' });
+                                return (
+                                  <View key={h.date} style={[styles.cutoffHistoryRow, i % 2 === 0 && { backgroundColor: `${Colors.border}30` }]}>
+                                    <Text style={[styles.cutoffHistoryCell, styles.cutoffHistoryDate, { color: Colors.textPrimary }]}>{d}</Text>
+                                    {hasBoth189 && <Text style={[styles.cutoffHistoryCell, styles.cutoffHistoryScore, { color: h.sc189 != null ? Colors.textPrimary : Colors.textSecondary }]}>{h.sc189 != null ? `${h.sc189}` : '—'}</Text>}
+                                    {hasBoth491 && <Text style={[styles.cutoffHistoryCell, styles.cutoffHistoryScore, { color: h.sc491Family != null ? Colors.textPrimary : Colors.textSecondary }]}>{h.sc491Family != null ? `${h.sc491Family}` : '—'}</Text>}
+                                  </View>
+                                );
+                              })}
+                            </View>
+                          )}
                           <TouchableOpacity
                             onPress={() => Linking.openURL('https://immi.homeaffairs.gov.au/visas/working-in-australia/skillselect/invitation-rounds')}
                             style={styles.cutoffLink}
@@ -1933,6 +1974,39 @@ const styles = StyleSheet.create({
   cutoffPillValue: {
     fontSize: FontSize.lg,
     fontWeight: FontWeight.bold,
+  },
+  cutoffHistory: {
+    marginTop: 4,
+  },
+  cutoffHistoryTitle: {
+    fontSize: FontSize.xs,
+    fontWeight: FontWeight.semiBold,
+    marginBottom: 6,
+    textTransform: 'uppercase' as const,
+    letterSpacing: 0.5,
+  },
+  cutoffHistoryHeader: {
+    flexDirection: 'row' as const,
+    borderBottomWidth: 1,
+    paddingBottom: 4,
+    marginBottom: 2,
+  },
+  cutoffHistoryRow: {
+    flexDirection: 'row' as const,
+    paddingVertical: 5,
+    paddingHorizontal: 4,
+    borderRadius: 4,
+  },
+  cutoffHistoryCell: {
+    fontSize: FontSize.sm,
+  },
+  cutoffHistoryDate: {
+    flex: 1,
+  },
+  cutoffHistoryScore: {
+    width: 64,
+    textAlign: 'right' as const,
+    fontWeight: FontWeight.semiBold,
   },
   cutoffLink: {
     flexDirection: 'row',
