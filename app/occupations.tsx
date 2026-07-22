@@ -12,6 +12,7 @@ import {
   ScrollView,
   Alert,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
@@ -910,8 +911,46 @@ export default function OccupationsScreen() {
 
                   {(() => {
                     const federalConditions = [...new Set(selected.visas)]
-                      .map((visa) => ({ visa, condition: FEDERAL_VISA_CONDITIONS[visa] }))
-                      .filter(({ condition }) => condition);
+                      .map((visa) => {
+                        const base = FEDERAL_VISA_CONDITIONS[visa];
+                        if (!base) return { visa, condition: null };
+                        // SC 186: streams vary by which list the occupation appears on
+                        if (visa === '186') {
+                          const hasMltssl = selected.lists.includes('MLTSSL');
+                          const hasStsol  = selected.lists.includes('STSOL');
+                          const csol      = selected.lists.includes('CSOL') && !hasMltssl && !hasStsol;
+                          let points: string[];
+                          if (hasMltssl || hasStsol) {
+                            points = [
+                              'Approved Australian employer nomination required',
+                              'TRT stream: hold SC 482 for 2+ years with the same employer',
+                              hasStsol
+                                ? 'Direct Entry stream: skills assessment + age ≤ 45 required'
+                                : 'Direct Entry stream: skills assessment required',
+                              'Labour Agreement stream: employer must hold a certified agreement',
+                              'Competent English required',
+                            ];
+                          } else if (csol) {
+                            points = [
+                              'Approved Australian employer nomination required',
+                              'TRT stream only — Direct Entry not available for this occupation',
+                              'TRT: must hold SC 482 for 2+ years with the same employer',
+                              'Skills assessment NOT required for TRT stream',
+                              'Competent English required',
+                            ];
+                          } else {
+                            points = [
+                              'Approved Australian employer nomination required',
+                              'Labour Agreement or TRT stream (check eligibility)',
+                              'Skills assessment requirements depend on stream',
+                              'Competent English required',
+                            ];
+                          }
+                          return { visa, condition: { ...base, points } };
+                        }
+                        return { visa, condition: base };
+                      })
+                      .filter((x): x is { visa: string; condition: FederalVisaCondition } => x.condition != null);
                     if (federalConditions.length === 0) return null;
                     return (
                       <>
@@ -963,7 +1002,16 @@ export default function OccupationsScreen() {
                   })()}
 
                   {(() => {
-                    const cutoff = occupationCutoffs.get(selected.name.toLowerCase().trim());
+                    // Normalize plural ANZSCO names → singular SkillSelect names
+                    // e.g. "Architects" → "Architect", "Registered Nurses (Aged Care)" → "Registered Nurse (Aged Care)"
+                    const normName = (n: string) => {
+                      let s = n.toLowerCase().trim().replace(/s \(/g, ' (');
+                      if (s.length > 5 && s.endsWith('ies')) return s.slice(0, -3) + 'y';
+                      if (s.length > 4 && s.endsWith('s') && !s.endsWith('ss')) return s.slice(0, -1);
+                      return s;
+                    };
+                    const key = selected.name.toLowerCase().trim();
+                    const cutoff = occupationCutoffs.get(key) ?? occupationCutoffs.get(normName(selected.name));
                     if (!cutoff || (cutoff.sc189 == null && cutoff.sc491Family == null)) return null;
                     const fmtDate = lastRoundDate
                       ? new Date(lastRoundDate).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })
