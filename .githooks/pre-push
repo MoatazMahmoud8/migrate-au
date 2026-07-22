@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+# pre-push hook — runs before every git push
+# Install: git config core.hooksPath .githooks
+set -euo pipefail
+
+RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; NC='\033[0m'
+ok()   { echo -e "${GREEN}✔${NC} $1"; }
+fail() { echo -e "${RED}✘${NC} $1"; exit 1; }
+warn() { echo -e "${YELLOW}⚠${NC} $1"; }
+
+echo ""
+echo "── Pre-push checks ──────────────────────────────────"
+
+# ─── 1. TypeScript — must compile cleanly ────────────────
+echo "Checking TypeScript..."
+if npx tsc --noEmit --project tsconfig.json 2>&1 | grep -q "error TS"; then
+  fail "TypeScript errors found. Fix them before pushing."
+fi
+ok "TypeScript — no errors"
+
+# ─── 2. Sentry DSN ───────────────────────────────────────
+echo "Checking Sentry DSN..."
+# Load .env if present (non-interactive, no side effects)
+if [ -f .env ]; then
+  set -a; source .env 2>/dev/null || true; set +a
+fi
+if [ -z "${EXPO_PUBLIC_SENTRY_DSN:-}" ]; then
+  fail "EXPO_PUBLIC_SENTRY_DSN is not set. Add it to .env or EAS secrets."
+fi
+if [[ "$EXPO_PUBLIC_SENTRY_DSN" != https://*.ingest.* ]]; then
+  fail "EXPO_PUBLIC_SENTRY_DSN looks invalid: $EXPO_PUBLIC_SENTRY_DSN"
+fi
+ok "Sentry DSN — configured"
+
+# ─── 3. Push notifications — Firebase google-services ────
+echo "Checking notifications config..."
+GOOGLE_SERVICES="android/app/google-services.json"
+GOOGLE_PLIST="ios/migrateAu/GoogleService-Info.plist"
+if [ ! -f "$GOOGLE_SERVICES" ] && [ ! -f "$GOOGLE_PLIST" ]; then
+  fail "Neither $GOOGLE_SERVICES nor $GOOGLE_PLIST found. FCM push notifications will not work."
+fi
+if [ -f "$GOOGLE_SERVICES" ]; then
+  if ! python3 -c "import json,sys; d=json.load(open('$GOOGLE_SERVICES')); assert d.get('project_info',{}).get('project_id'), 'missing project_id'" 2>/dev/null; then
+    fail "$GOOGLE_SERVICES is missing or has no project_id."
+  fi
+  ok "FCM Android (google-services.json) — valid"
+fi
+if [ -f "$GOOGLE_PLIST" ]; then
+  ok "FCM iOS (GoogleService-Info.plist) — present"
+fi
+
+# ─── 4. RevenueCat keys (billing / IAP) ──────────────────
+echo "Checking RevenueCat keys..."
+if [ -z "${REVENUECAT_API_KEY_IOS:-}" ] && [ -z "${REVENUECAT_API_KEY_ANDROID:-}" ]; then
+  warn "No RevenueCat keys found in env — IAP will not work in dev builds."
+fi
+if [[ "${REVENUECAT_API_KEY_IOS:-}" == appl_* ]]; then
+  ok "RevenueCat iOS key — present"
+fi
+if [[ "${REVENUECAT_API_KEY_ANDROID:-}" == goog_* ]]; then
+  ok "RevenueCat Android key — present"
+fi
+
+echo "─────────────────────────────────────────────────────"
+echo -e "${GREEN}All checks passed. Pushing...${NC}"
+echo ""
