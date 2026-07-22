@@ -504,6 +504,8 @@ export default function OccupationsScreen() {
   const [showPaywall, setShowPaywall] = useState(false);
   const [dailyUpdates, setDailyUpdates] = useState<DailyUpdates | null>(null);
   const visaMeta = useMemo(() => buildVisaMetaMap(dailyUpdates), [dailyUpdates]);
+  const [occupationCutoffs, setOccupationCutoffs] = useState<Map<string, { sc189: number | null; sc491Family: number | null }>>(new Map());
+  const [lastRoundDate, setLastRoundDate] = useState<string | null>(null);
   const [salaries, setSalaries] = useState<SalariesSnapshot>({
     snapshotDate: '1970-01-01',
     salaries: {},
@@ -525,6 +527,30 @@ export default function OccupationsScreen() {
       refreshSalaries().then((s) => setSalaries(s)).catch(() => {});
       // Daily-monitor data (cost, processing cutoff, next invitation round)
       getDailyUpdates().then((u) => setDailyUpdates(u)).catch(() => {});
+      // SkillSelect invitation round cutoffs (shared cache with Rounds tab)
+      (async () => {
+        try {
+          const ROUNDS_CACHE = 'rounds_v2';
+          const ROUNDS_URL = 'https://swift-shore-238707.web.app/invitation-rounds.json';
+          const cached = await AsyncStorage.getItem(ROUNDS_CACHE);
+          let data = cached ? JSON.parse(cached) : null;
+          if (!data) {
+            const resp = await fetch(ROUNDS_URL);
+            if (resp.ok) {
+              data = await resp.json();
+              await AsyncStorage.setItem(ROUNDS_CACHE, JSON.stringify(data));
+            }
+          }
+          if (data?.occupationScores) {
+            const map = new Map<string, { sc189: number | null; sc491Family: number | null }>();
+            for (const s of data.occupationScores) {
+              map.set((s.name as string).toLowerCase().trim(), { sc189: s.sc189 ?? null, sc491Family: s.sc491Family ?? null });
+            }
+            setOccupationCutoffs(map);
+            setLastRoundDate(data.currentRound?.date ?? data.rounds?.[0]?.date ?? null);
+          }
+        } catch { /* silently fail */ }
+      })();
       // Refresh comprehensive all-anzsco list in background
       refreshAllAnzscoOccupations()
         .then((res) => {
@@ -931,6 +957,45 @@ export default function OccupationsScreen() {
                               </TouchableOpacity>
                             </View>
                           ))}
+                        </View>
+                      </>
+                    );
+                  })()}
+
+                  {(() => {
+                    const cutoff = occupationCutoffs.get(selected.name.toLowerCase().trim());
+                    if (!cutoff || (cutoff.sc189 == null && cutoff.sc491Family == null)) return null;
+                    const fmtDate = lastRoundDate
+                      ? new Date(lastRoundDate).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })
+                      : null;
+                    return (
+                      <>
+                        <Text style={[styles.sectionLabel, { color: Colors.textPrimary }]}>SkillSelect cutoffs</Text>
+                        <View style={[styles.cutoffCard, { backgroundColor: Colors.surfaceRaised, borderColor: Colors.border }]}>
+                          {fmtDate && (
+                            <Text style={[styles.cutoffNote, { color: Colors.textSecondary }]}>Last round · {fmtDate}</Text>
+                          )}
+                          <View style={styles.cutoffPills}>
+                            {cutoff.sc189 != null && (
+                              <View style={[styles.cutoffPill, { backgroundColor: `${Colors.accent}15`, borderColor: `${Colors.accent}50` }]}>
+                                <Text style={[styles.cutoffPillLabel, { color: Colors.accent }]}>SC 189</Text>
+                                <Text style={[styles.cutoffPillValue, { color: Colors.textPrimary }]}>{cutoff.sc189} pts</Text>
+                              </View>
+                            )}
+                            {cutoff.sc491Family != null && (
+                              <View style={[styles.cutoffPill, { backgroundColor: `${Colors.success}15`, borderColor: `${Colors.success}50` }]}>
+                                <Text style={[styles.cutoffPillLabel, { color: Colors.success }]}>SC 491 Family</Text>
+                                <Text style={[styles.cutoffPillValue, { color: Colors.textPrimary }]}>{cutoff.sc491Family} pts</Text>
+                              </View>
+                            )}
+                          </View>
+                          <TouchableOpacity
+                            onPress={() => Linking.openURL('https://immi.homeaffairs.gov.au/visas/working-in-australia/skillselect/invitation-rounds')}
+                            style={styles.cutoffLink}
+                          >
+                            <Text style={[styles.cutoffLinkText, { color: Colors.accent }]}>View all invitation rounds</Text>
+                            <Ionicons name="open-outline" size={12} color={Colors.accent} />
+                          </TouchableOpacity>
                         </View>
                       </>
                     );
@@ -1786,6 +1851,48 @@ const styles = StyleSheet.create({
   federalVisaLinkText: {
     fontSize: FontSize.xs,
     fontWeight: FontWeight.semiBold,
+  },
+
+  /* SkillSelect cutoffs (modal) */
+  cutoffCard: {
+    borderRadius: Radius.md,
+    borderWidth: 1,
+    padding: Spacing.md,
+    marginBottom: Spacing.md,
+    gap: 10,
+  },
+  cutoffNote: {
+    fontSize: FontSize.xs,
+  },
+  cutoffPills: {
+    flexDirection: 'row',
+    gap: 10,
+    flexWrap: 'wrap',
+  },
+  cutoffPill: {
+    borderRadius: Radius.sm,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    alignItems: 'center' as const,
+    minWidth: 100,
+  },
+  cutoffPillLabel: {
+    fontSize: FontSize.xs,
+    fontWeight: FontWeight.semiBold,
+    marginBottom: 2,
+  },
+  cutoffPillValue: {
+    fontSize: FontSize.lg,
+    fontWeight: FontWeight.bold,
+  },
+  cutoffLink: {
+    flexDirection: 'row',
+    alignItems: 'center' as const,
+    gap: 4,
+  },
+  cutoffLinkText: {
+    fontSize: FontSize.xs,
   },
 
   /* State grid (modal) */
