@@ -628,13 +628,8 @@ export default function HomeScreen() {
         <VisaFinder />
       </FadeInView>
 
-      {/* Visa Pathways Grid */}
-      <FadeInView delay={220}>
-        <VisaPathwaysGrid />
-      </FadeInView>
-
       {/* Aria AI */}
-      <FadeInView delay={280} style={styles.section}>
+      <FadeInView delay={220} style={styles.section}>
         <TouchableOpacity
           style={[styles.ariaCard, { backgroundColor: Colors.surface, borderColor: Colors.border }]}
           onPress={() => router.push('/(tabs)/ai' as any)}
