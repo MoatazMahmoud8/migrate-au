@@ -23,7 +23,7 @@ import { useColors, useTheme } from '../../constants/ThemeContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { checkRenewalStatus } from '../../utils/billing';
-import { restorePurchases, getRevenueCatUserId, syncSubscriptionStatus } from '../../utils/iap';
+import { restorePurchases, getRevenueCatUserId, syncSubscriptionStatus, manageSubscription } from '../../utils/iap';
 import PaywallModal from '../../components/PaywallModal';
 import { tap as hapticTap, success as hapticSuccess } from '../../utils/haptics';
 import { SKILLED_OCCUPATIONS } from '../../constants/skilledOccupations';
@@ -739,7 +739,7 @@ export default function ProfileScreen() {
               style={styles.manageBillingBtn}
               onPress={() => {
                 hapticTap();
-                setShowPaywall(true);
+                manageSubscription();
               }}
             >
               <Text style={[styles.manageBillingText, {color: Colors.textPrimary}]}>Manage</Text>

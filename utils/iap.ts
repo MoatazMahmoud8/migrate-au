@@ -285,6 +285,20 @@ export async function restorePurchases(): Promise<{ restored: boolean; message: 
 }
 
 /**
+ * Open the platform's native subscription management screen.
+ * iOS → App Store subscriptions page
+ * Android → Google Play subscriptions page
+ */
+export async function manageSubscription(): Promise<void> {
+  if (Platform.OS === 'web') return;
+  try {
+    await Purchases.showManageSubscriptions();
+  } catch (err) {
+    console.warn('[IAP] showManageSubscriptions error:', err);
+  }
+}
+
+/**
  * Get formatted price display
  */
 export function getFormattedPrice(billingCycle: BillingCycle): {
