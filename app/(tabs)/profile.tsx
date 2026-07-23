@@ -773,7 +773,7 @@ export default function ProfileScreen() {
                 <Ionicons name="sunny-outline" size={18} color={Colors.secondary} />
                 <View style={styles.settingTextContainer}>
                   <Text style={[styles.settingLabel, { color: Colors.textPrimary }]}>Light Mode</Text>
-                  <Text style={[styles.settingValue, { color: Colors.textSecondary }]}>Locked for maximum contrast</Text>
+                  <Text style={[styles.settingValue, { color: Colors.textSecondary }]}>Dark mode coming soon</Text>
                 </View>
               </View>
               <Switch

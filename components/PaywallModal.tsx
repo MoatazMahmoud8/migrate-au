@@ -142,7 +142,7 @@ export function PaywallModal({ visible, onClose, userId, title, message, feature
                   </View>
                 )}
                 <Text style={[styles.planCycle, { color: Colors.textMuted }, selectedCycle === 'monthly' && styles.planCycleActive]}>Monthly</Text>
-                <Text style={[styles.planPrice, { color: Colors.textPrimary }, selectedCycle === 'monthly' && styles.planPriceActive]}>
+                <Text style={[styles.planPrice, { color: Colors.textPrimary }, selectedCycle === 'monthly' && styles.planPriceActive]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
                   {monthlyPrice.amount}
                 </Text>
                 <Text style={[styles.planSub, { color: Colors.textMuted }]}>{monthlyPrice.cycle}</Text>
@@ -171,7 +171,7 @@ export function PaywallModal({ visible, onClose, userId, title, message, feature
                   </View>
                 )}
                 <Text style={[styles.planCycle, { color: Colors.textMuted }, selectedCycle === 'yearly' && styles.planCycleActive]}>Yearly</Text>
-                <Text style={[styles.planPrice, { color: Colors.textPrimary }, selectedCycle === 'yearly' && styles.planPriceActive]}>
+                <Text style={[styles.planPrice, { color: Colors.textPrimary }, selectedCycle === 'yearly' && styles.planPriceActive]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
                   {yearlyPrice.amount}
                 </Text>
                 <Text style={[styles.planSub, { color: Colors.textMuted }]}>Save {yearlyDiscount.percent}%</Text>
@@ -199,7 +199,7 @@ export function PaywallModal({ visible, onClose, userId, title, message, feature
                   </View>
                 )}
                 <Text style={[styles.planCycle, { color: Colors.textMuted }, selectedCycle === 'lifetime' && styles.planCycleActive]}>Lifetime</Text>
-                <Text style={[styles.planPrice, { color: Colors.textPrimary }, selectedCycle === 'lifetime' && styles.planPriceActive]}>
+                <Text style={[styles.planPrice, { color: Colors.textPrimary }, selectedCycle === 'lifetime' && styles.planPriceActive]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
                   {lifetimePrice.amount}
                 </Text>
                 <Text style={[styles.planSub, { color: Colors.textMuted }]}>Pay once · own forever</Text>
@@ -404,6 +404,7 @@ const styles = StyleSheet.create({
   planPrice: {
     fontSize: FontSize.xxl,
     fontWeight: FontWeight.extraBold,
+    flexShrink: 1,
   },
   planPriceActive: { },
   planSub: {
