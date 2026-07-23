@@ -208,8 +208,26 @@ export async function saveDraft(notification: {
 
 /**
  * Approve a draft — moves it from drafts to published notifications
+ * and writes an fcm_triggers doc so the Cloud Function sends FCM push
  */
 export async function approveDraft(draftId: string): Promise<string> {
+  /** Build the FCM trigger payload shared by both paths */
+  function buildTrigger(publishedData: any, notifId: string) {
+    const topics = ['au_migration'];
+    if (publishedData.state && publishedData.state !== 'FED') {
+      topics.push(`state_${publishedData.state}`);
+    }
+    return {
+      title: publishedData.title,
+      body: publishedData.body,
+      topics,
+      articleUrl: publishedData.url || publishedData.sourceUrl || '',
+      route: '/(tabs)/notifications',
+      createdAt: new Date(),
+      sent: false,
+    };
+  }
+
   if (Platform.OS === 'web') {
     initializeFirebaseWeb();
     const webDb = getWebFirestore();
@@ -231,6 +249,12 @@ export async function approveDraft(draftId: string): Promise<string> {
 
     const pubRef = webDoc(webCollection(webDb, 'notifications'), notifId);
     await webSetDoc(pubRef, publishedData);
+
+    // Write FCM trigger so processFcmTrigger Cloud Function sends push notification
+    const triggerId = notifId.substring(0, 20);
+    const triggerRef = webDoc(webCollection(webDb, 'fcm_triggers'), triggerId);
+    await webSetDoc(triggerRef, buildTrigger(publishedData, notifId));
+
     await webDeleteDoc(draftRef);
     return notifId;
   } else {
@@ -250,6 +274,11 @@ export async function approveDraft(draftId: string): Promise<string> {
     };
 
     await db.collection('notifications').doc(notifId).set(publishedData);
+
+    // Write FCM trigger so processFcmTrigger Cloud Function sends push notification
+    const triggerId = notifId.substring(0, 20);
+    await db.collection('fcm_triggers').doc(triggerId).set(buildTrigger(publishedData, notifId));
+
     await db.collection('notifications_draft').doc(draftId).delete();
     return notifId;
   }

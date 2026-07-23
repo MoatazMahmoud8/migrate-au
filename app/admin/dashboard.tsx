@@ -362,7 +362,7 @@ export default function AdminDashboard() {
         onRequestClose={() => setShowCategoryPicker(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+          <View style={[styles.modalContent, { backgroundColor: Colors.surface }]}>
             <Text style={[styles.modalTitle, {color: Colors.textPrimary}]}>Select Category</Text>
             <ScrollView style={styles.categoryList}>
               {NOTIFICATION_CATEGORIES.map((cat) => (
@@ -403,7 +403,7 @@ export default function AdminDashboard() {
         animationType="slide"
         onRequestClose={() => setShowPreview(false)}
       >
-        <View style={[styles.previewContainer, { paddingTop: insets.top }]}>
+        <View style={[styles.previewContainer, { paddingTop: insets.top, backgroundColor: Colors.background }]}>
           <View style={styles.previewHeader}>
             <TouchableOpacity onPress={() => setShowPreview(false)}>
               <Ionicons name="close" size={28} color={Colors.textPrimary} />
