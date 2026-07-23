@@ -20,10 +20,12 @@ import { useColors } from '../../constants/ThemeContext';
 import {
   subscribeToFeed,
   markAsRead,
+  markAllAsRead,
   getReadIds,
   onReadChange,
   AppNotification,
 } from '../../utils/notifications';
+import { useFocusEffect } from '@react-navigation/native';
 import { subscribeToFeedPoll } from '../../utils/notifications-poll';
 import { subscribeToNotificationsWeb, initializeFirebaseWeb } from '../../utils/firebaseWeb';
 import { getRevenueCatUserId } from '../../utils/iap';
@@ -274,6 +276,15 @@ export default function NotificationsScreen() {
   }, [feed, stateFilter]);
 
   const unreadCount = feed.filter(n => !n.read).length;
+
+  // Mark all as read whenever this screen comes into focus
+  useFocusEffect(useCallback(() => {
+    const unreadIds = feed.filter(n => !n.read).map(n => n.id);
+    if (unreadIds.length > 0) {
+      markAllAsRead(unreadIds);
+      setFeed(prev => prev.map(n => ({ ...n, read: true })));
+    }
+  }, [feed]));
 
   const FILTERS: { id: string; label: string }[] = [
     { id: 'all', label: 'All' },

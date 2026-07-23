@@ -596,6 +596,19 @@ export async function markAsRead(notificationId: string) {
   }
 }
 
+/** Mark all given notification IDs as read at once */
+export async function markAllAsRead(ids: string[]) {
+  if (ids.length === 0) return;
+  try {
+    const readIds = await getReadIds();
+    ids.forEach(id => readIds.add(id));
+    await AsyncStorage.setItem(READ_IDS_KEY, JSON.stringify([...readIds]));
+    readChangeListeners.forEach(fn => fn());
+  } catch {
+    // ignore storage errors
+  }
+}
+
 /** Count unread notifications */
 export async function getUnreadCount(): Promise<number> {
   if (Platform.OS === 'web') return 0;
