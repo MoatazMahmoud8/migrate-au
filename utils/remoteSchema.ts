@@ -8,6 +8,7 @@
  */
 import type { ProcessingTime } from '../constants/processingTimes';
 import type { SkilledOccupation, SkillList } from '../constants/skilledOccupations';
+import type { VisaFeeEntry } from '../constants/visaFees';
 
 // --- Hard limits ----------------------------------------------------------
 const MAX_ITEMS = 5000;          // sane upper bound for either feed
@@ -155,4 +156,44 @@ export function validateProcessingTimesSnapshot(
 
   if (items.length === 0) throw new Error('snapshot: no valid items');
   return { snapshotDate: obj.snapshotDate, items };
+}
+
+// --- Visa Fees ------------------------------------------------------------
+export interface ValidatedVisaFeesSnapshot {
+  snapshotDate: string;
+  items: VisaFeeEntry[];
+}
+
+const MAX_FEES = 200;
+// Only allow numeric subclass codes, 2–4 digits
+const SUBCLASS_RE = /^\d{2,4}$/;
+
+export function validateVisaFeesSnapshot(
+  raw: unknown
+): ValidatedVisaFeesSnapshot {
+  if (!raw || typeof raw !== 'object') throw new Error('fees snapshot: not an object');
+  const obj = raw as Record<string, unknown>;
+  if (!isIsoDate(obj.snapshotDate)) throw new Error('fees snapshot: bad snapshotDate');
+  if (!Array.isArray(obj.items)) throw new Error('fees snapshot: items not array');
+  if (obj.items.length > MAX_FEES) throw new Error('fees snapshot: too many items');
+
+  const items: VisaFeeEntry[] = [];
+  for (const item of obj.items) {
+    if (!item || typeof item !== 'object') continue;
+    const f = item as Record<string, unknown>;
+
+    if (!isStr(f.subclass, 8)) continue;
+    if (!SUBCLASS_RE.test(f.subclass as string)) continue;
+    if (!isStr(f.fee, 80)) continue;
+    if (!isOptStr(f.note, 120)) continue;
+
+    items.push({
+      subclass: f.subclass as string,
+      fee: f.fee as string,
+      note: f.note as string | undefined,
+    });
+  }
+
+  if (items.length === 0) throw new Error('fees snapshot: no valid items');
+  return { snapshotDate: obj.snapshotDate as string, items };
 }

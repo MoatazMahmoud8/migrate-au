@@ -205,7 +205,7 @@ export const ALL_VISAS: VisaEntry[] = [
     code: '100', name: 'Partner (Offshore - Permanent)', icon: 'heart-outline', type: 'Permanent', category: 'Family',
     subclasses: ['100 – Permanent (after 2 years on 309)'],
     conditions: ['Transition from 309 (Temporary)', 'After 2 years relationship duration', 'Continue living with sponsor in Australia'],
-    fee: 'AUD $9,095 (2nd instalment on grant)',
+    fee: 'AUD $4,550 (2nd instalment on permanent grant)',
     url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/partner-offshore',
   },
   {
@@ -289,7 +289,7 @@ export const ALL_VISAS: VisaEntry[] = [
     code: '309', name: 'Partner (Offshore - Temporary)', icon: 'heart-circle-outline', type: 'Temporary', category: 'Family',
     subclasses: ['309 – Temporary (offshore initial grant - 2 years)'],
     conditions: ['Spouse or de facto of Australian citizen/PR/eligible NZ citizen', 'Apply from outside Australia', 'Genuine & committed relationship', 'Transition to 100 after 2 years'],
-    fee: 'AUD $9,095 (combined with 100)',
+    fee: 'AUD $9,095 (+ $4,550 on permanent 100 grant)',
     url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/partner-offshore',
   },
   {
@@ -310,7 +310,7 @@ export const ALL_VISAS: VisaEntry[] = [
     code: '801', name: 'Partner (Onshore - Permanent)', icon: 'heart-outline', type: 'Permanent', category: 'Family',
     subclasses: ['801 – Permanent (after 2 years on 820)'],
     conditions: ['Transition from 820 (Temporary)', 'After 2 years relationship duration', 'Continue living with sponsor in Australia'],
-    fee: 'AUD $9,095 (2nd instalment on grant)',
+    fee: 'AUD $4,550 (2nd instalment on permanent grant)',
     url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/partner-onshore',
   },
   {
@@ -331,7 +331,7 @@ export const ALL_VISAS: VisaEntry[] = [
     code: '820', name: 'Partner (Onshore - Temporary)', icon: 'heart-outline', type: 'Temporary', category: 'Family',
     subclasses: ['820 – Temporary (onshore initial grant - 2 years)'],
     conditions: ['Spouse or de facto partner of Australian citizen/PR/eligible NZ citizen', 'Apply from inside Australia', 'Genuine, committed relationship', 'Health & character requirements', 'Transition to 801 after 2 years'],
-    fee: 'AUD $9,095 (combined with 801)',
+    fee: 'AUD $9,095 (+ $4,550 on permanent 801 grant)',
     url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/partner-onshore',
   },
   {

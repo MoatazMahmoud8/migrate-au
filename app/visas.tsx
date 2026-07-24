@@ -26,6 +26,12 @@ import {
   getProcessingTimes,
   getTimesForCode,
 } from '../utils/processingTimes';
+import {
+  getVisaFees,
+  getFeeForCode,
+  refreshVisaFees,
+} from '../utils/visaFees';
+import type { VisaFeeEntry } from '../constants/visaFees';
 import { tap as hapticTap } from '../utils/haptics';
 
 type Category = VisaCategory;
@@ -59,9 +65,13 @@ export default function VisasScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const filterRef = useRef<ScrollView>(null);
   const [snapshot, setSnapshot] = useState<{ items: ProcessingTime[] }>({ items: [] });
+  const [feeSnapshot, setFeeSnapshot] = useState<{ snapshotDate: string; items: VisaFeeEntry[] }>({ snapshotDate: '', items: [] });
 
   useEffect(() => {
     getProcessingTimes().then(setSnapshot);
+    // Load cached fees immediately, then attempt background refresh (every 3 days)
+    getVisaFees().then(setFeeSnapshot);
+    refreshVisaFees().then(({ snapshot: s }) => setFeeSnapshot(s));
   }, []);
 
   const groups = useMemo(() => {
@@ -231,6 +241,7 @@ export default function VisasScreen() {
                     const times = getTimesForCode(snapshot, v.code);
                     // Pick the fastest stream's p50 for the collapsed badge
                     const fastestTime = times.length > 0 ? times[0] : null;
+                    const feeEntry = getFeeForCode(feeSnapshot, v.code);
                     return (
                       <View key={v.code} style={[styles.card, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
                         <TouchableOpacity
@@ -322,11 +333,16 @@ export default function VisasScreen() {
                               ))}
                             </View>
 
-                            {v.fee != null && (
+                            {(feeEntry ?? (v.fee ? { fee: v.fee } : null)) != null && (
                               <View style={[styles.feeRow, { backgroundColor: Colors.surfaceRaised, borderColor: meta.color + '30' }]}>
                                 <Ionicons name="cash-outline" size={14} color={meta.color} />
-                                <Text style={[styles.feeLabel, { color: Colors.textSecondary }]}>Application fee</Text>
-                                <Text style={[styles.feeValue, { color: meta.color }]}>{v.fee}</Text>
+                                <View style={{ flex: 1 }}>
+                                  <Text style={[styles.feeLabel, { color: Colors.textSecondary }]}>Application fee</Text>
+                                  {feeEntry?.note && (
+                                    <Text style={[styles.feeNote, { color: Colors.textMuted }]}>{feeEntry.note}</Text>
+                                  )}
+                                </View>
+                                <Text style={[styles.feeValue, { color: meta.color }]}>{(feeEntry ?? { fee: v.fee! }).fee}</Text>
                               </View>
                             )}
 
@@ -506,7 +522,8 @@ const styles = StyleSheet.create({
     borderRadius: Radius.md,
     borderWidth: 1,
   },
-  feeLabel: { flex: 1, fontSize: FontSize.xs },
+  feeLabel: { fontSize: FontSize.xs },
+  feeNote: { fontSize: 10, marginTop: 2 },
   feeValue: { fontSize: FontSize.xs, fontWeight: '700' },
   dhaBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
