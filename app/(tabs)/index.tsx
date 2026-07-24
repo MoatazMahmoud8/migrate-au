@@ -284,9 +284,12 @@ const PATHWAY_CARDS: Array<{ key: VisaCategory; tagline: string }> = [
   { key: 'Skilled',         tagline: 'Points-tested PR' },
   { key: 'Employer',        tagline: 'Your employer sponsors' },
   { key: 'Family',          tagline: 'Partner, parent & child' },
+  { key: 'Student',         tagline: 'Study in Australia' },
   { key: 'Graduate',        tagline: 'After studying in AU' },
   { key: 'Working Holiday', tagline: 'Travel & work' },
   { key: 'Business',        tagline: 'Invest & innovate' },
+  { key: 'Visitor',         tagline: 'Tourism & short stays' },
+  { key: 'Humanitarian',    tagline: 'Protection & refuge' },
 ];
 
 function VisaPathwaysGrid() {
@@ -351,7 +354,7 @@ function VisaPathwaysGrid() {
         activeOpacity={0.7}
       >
         <Text style={[pw.moreText, {color: Colors.textPrimary}]}>
-          + Student, Visitor, Humanitarian & {ALL_VISAS.length - PATHWAY_CARDS.reduce(
+          + Bridging, Historical & {ALL_VISAS.length - PATHWAY_CARDS.reduce(
             (acc, { key }) => acc + ALL_VISAS.filter(v => v.category === key).length, 0
           )} more subclasses
         </Text>

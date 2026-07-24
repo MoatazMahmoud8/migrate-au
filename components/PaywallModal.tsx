@@ -32,6 +32,8 @@ const BENEFITS = [
   { icon: 'briefcase-outline',         text: 'Unlimited ANZSCO occupation searches' },
   { icon: 'flash-outline',             text: 'Real-time SkillSelect & state alerts' },
   { icon: 'location-outline',          text: 'State subscriptions (unlimited)' },
+  { icon: 'stats-chart-outline',       text: 'SkillSelect cutoff history per occupation' },
+  { icon: 'school-outline',            text: 'Skills assessment fees & required documents' },
   { icon: 'document-outline',          text: 'PDF export of your visa journey' },
   { icon: 'shield-checkmark-outline',  text: 'Age-bracket point-drop alerts' },
   { icon: 'map-outline',               text: 'Track up to 10 visa journeys' },
