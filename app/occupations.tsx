@@ -1239,15 +1239,28 @@ export default function OccupationsScreen() {
                     };
                     const key = selected.name.toLowerCase().trim();
                     const normKey = normName(selected.name);
-                    const cutoff = occupationCutoffs.get(key) ?? occupationCutoffs.get(normKey);
-                    const history = occupationHistory.get(key) ?? occupationHistory.get(normKey) ?? [];
+                    // Track which key actually matched so we can display it to the user
+                    const matchedKey = occupationCutoffs.has(key) ? key
+                      : occupationCutoffs.has(normKey) ? normKey : null;
+                    const cutoff = matchedKey ? occupationCutoffs.get(matchedKey) : undefined;
+                    // Find the canonical SkillSelect name from the rounds data
+                    // (the map keys are already lowercased round names, capitalise for display)
+                    const histKey = occupationHistory.has(key) ? key
+                      : occupationHistory.has(normKey) ? normKey : null;
+                    const history = (histKey ? occupationHistory.get(histKey) : undefined) ?? [];
                     if ((!cutoff || (cutoff.sc189 == null && cutoff.sc491Family == null)) && history.length === 0) return null;
+                    // Determine whether the matched name differs from the ANZSCO name
+                    const anzscoNameLower = selected.name.toLowerCase().trim();
+                    const nameMatchedExactly = matchedKey === anzscoNameLower || histKey === anzscoNameLower;
                     const fmtDate = lastRoundDate
                       ? new Date(lastRoundDate).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })
                       : null;
                     const hasBoth189 = history.some(h => h.sc189 != null);
                     const hasBoth491 = history.some(h => h.sc491Family != null);
                     const isPremium = profile?.isPremium === true;
+                    // Display name: use the matched key (title-cased) for the tooltip
+                    const skillSelectDisplayName = (matchedKey ?? histKey ?? '')
+                      .replace(/\b\w/g, (c) => c.toUpperCase());
                     return (
                       <>
                         <Text style={[styles.sectionLabel, { color: Colors.textPrimary }]}>SkillSelect cutoffs</Text>
@@ -1271,6 +1284,17 @@ export default function OccupationsScreen() {
                               )}
                             </View>
                           )}
+                          {/* Show matched SkillSelect name when it differs from the ANZSCO name */}
+                          {!nameMatchedExactly && skillSelectDisplayName ? (
+                            <View style={[styles.cutoffNameNote, { backgroundColor: `${Colors.accent}0A`, borderColor: `${Colors.accent}25` }]}>
+                              <Ionicons name="information-circle-outline" size={12} color={Colors.accent} />
+                              <Text style={[styles.cutoffNameNoteText, { color: Colors.textSecondary }]}>
+                                Listed as{' '}
+                                <Text style={{ color: Colors.textPrimary, fontWeight: '600' }}>{skillSelectDisplayName}</Text>
+                                {' '}in SkillSelect rounds
+                              </Text>
+                            </View>
+                          ) : null}
                           {history.length > 1 && (
                             isPremium ? (
                             <View style={styles.cutoffHistory}>
@@ -2291,6 +2315,21 @@ const styles = StyleSheet.create({
   },
   cutoffNote: {
     fontSize: FontSize.xs,
+  },
+  cutoffNameNote: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 6,
+    borderRadius: Radius.sm,
+    borderWidth: 1,
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    marginTop: 6,
+  },
+  cutoffNameNoteText: {
+    flex: 1,
+    fontSize: 11,
+    lineHeight: 16,
   },
   cutoffPills: {
     flexDirection: 'row',
