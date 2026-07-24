@@ -304,6 +304,8 @@ interface AuthorityInfo {
   assesses: string;
   website: string;
   typicalTime: string;
+  fee: string;
+  documents: string[];
   notes: string[];
 }
 const AUTHORITY_INFO: Record<string, AuthorityInfo> = {
@@ -312,8 +314,16 @@ const AUTHORITY_INFO: Record<string, AuthorityInfo> = {
     assesses: 'General professionals (management, health, science, education, legal, and more)',
     website: 'https://www.vetassess.com.au',
     typicalTime: '8–12 weeks',
+    fee: 'AUD $650 – $1,050 (varies by occupation type)',
+    documents: [
+      'Certified copies of all academic qualifications',
+      'Official transcripts (translated to English if required)',
+      'Detailed employment reference letters on company letterhead',
+      'Comprehensive CV / résumé',
+      'Certified passport copy',
+      'Registration or licence certificates (if applicable)',
+    ],
     notes: [
-      'Requires evidence of qualifications and employment history',
       'Some occupations require a Technical Interview',
       'Assessment result valid for 3 years',
     ],
@@ -323,9 +333,17 @@ const AUTHORITY_INFO: Record<string, AuthorityInfo> = {
     assesses: 'ICT / Information Technology professionals',
     website: 'https://www.acs.org.au/msa',
     typicalTime: '4–8 weeks',
+    fee: 'AUD $530 (skills assessment)',
+    documents: [
+      'Academic degree certificates and transcripts',
+      'Employment reference letters (per role, on letterhead)',
+      'Statutory declaration if employer no longer exists',
+      'CV with full employment history',
+      'Certified passport copy',
+      'RPL evidence if no formal ICT degree',
+    ],
     notes: [
-      'Assesses ICT qualifications and relevant work experience',
-      'RPL (Recognition of Prior Learning) pathway available',
+      'RPL (Recognition of Prior Learning) pathway available for non-ICT degrees',
       'Result valid for 3 years',
     ],
   },
@@ -334,9 +352,16 @@ const AUTHORITY_INFO: Record<string, AuthorityInfo> = {
     assesses: 'Engineering professionals (civil, mechanical, electrical, software, etc.)',
     website: 'https://www.engineersaustralia.org.au/msa',
     typicalTime: '10–16 weeks',
+    fee: 'AUD $700 – $800 (CDR pathway); AUD $300 (Washington/Dublin/Seoul Accord)',
+    documents: [
+      'CDR — Competency Demonstration Report (3 career episodes + summary statement)',
+      'Academic transcripts and degree certificates',
+      'English translations if documents not in English',
+      'Passport copy',
+      'Employment references (optional but strengthens application)',
+    ],
     notes: [
-      'Must demonstrate competency against Stage 1 competency standards',
-      'CDR (Competency Demonstration Report) required for most pathways',
+      'Washington Accord graduates may use a faster pathway',
       'Fast-track option may be available for chartered engineers',
     ],
   },
@@ -345,9 +370,17 @@ const AUTHORITY_INFO: Record<string, AuthorityInfo> = {
     assesses: 'Registered nurses, enrolled nurses, and midwives',
     website: 'https://www.anmac.org.au',
     typicalTime: '3–6 months',
+    fee: 'AUD $750 – $900',
+    documents: [
+      'Nursing/midwifery degree certificate and transcripts',
+      'Current professional registration certificate',
+      'Evidence of clinical practice hours',
+      'English proficiency results (OET B or IELTS 7.0 in all 4 components)',
+      'Certified passport copy',
+      'Reference from employer or clinical supervisor',
+    ],
     notes: [
       'Must also register with AHPRA after migration',
-      'English requirement: OET B in all 4 components or IELTS 7.0',
       'Assessment valid for 2 years',
     ],
   },
@@ -356,6 +389,13 @@ const AUTHORITY_INFO: Record<string, AuthorityInfo> = {
     assesses: 'Social workers',
     website: 'https://www.aasw.asn.au',
     typicalTime: '8–12 weeks',
+    fee: 'AUD $440 – $620',
+    documents: [
+      'Social work degree certificate and official transcripts',
+      'Course outline / subject descriptions',
+      'Certified passport copy',
+      'Evidence of field placement hours',
+    ],
     notes: ['Must hold a qualifying social work degree'],
   },
   'TRA': {
@@ -363,9 +403,17 @@ const AUTHORITY_INFO: Record<string, AuthorityInfo> = {
     assesses: 'Trade occupations (electricians, plumbers, motor mechanics, etc.)',
     website: 'https://www.tra.gov.au',
     typicalTime: '3–6 months',
+    fee: 'AUD $330 (offshore assessment); additional costs for on-shore skills test',
+    documents: [
+      'Trade certificates or apprenticeship records',
+      'Employment references detailing trade duties',
+      'Licences or registrations held',
+      'Certified passport copy',
+      'Photos of trade work (if required by assessor)',
+    ],
     notes: [
-      'Practical skills assessment (on-the-job) may be required',
-      'Outcome is an AQF Certificate III or equivalent',
+      'Practical on-the-job assessment may be required',
+      'Outcome is an AQF Certificate III equivalent',
       'State licensing required separately after migration',
     ],
   },
@@ -374,6 +422,13 @@ const AUTHORITY_INFO: Record<string, AuthorityInfo> = {
     assesses: 'Accountants and finance professionals',
     website: 'https://www.cpaaustralia.com.au',
     typicalTime: '4–8 weeks',
+    fee: 'AUD $800 – $1,100',
+    documents: [
+      'Academic degree certificate and transcripts',
+      'Detailed subject outlines / course descriptions',
+      'Evidence of relevant work experience',
+      'Certified passport copy',
+    ],
     notes: ['Recognised for SC 189/190/491 skills assessment'],
   },
   'CAANZ': {
@@ -381,6 +436,13 @@ const AUTHORITY_INFO: Record<string, AuthorityInfo> = {
     assesses: 'Accountants (CA/ACA pathway)',
     website: 'https://www.charteredaccountantsanz.com',
     typicalTime: '4–8 weeks',
+    fee: 'AUD $700 – $1,000',
+    documents: [
+      'Academic degree certificate and transcripts',
+      'Subject descriptions for accounting-related units',
+      'Employer references confirming finance/accounting experience',
+      'Certified passport copy',
+    ],
     notes: [],
   },
   'IPA': {
@@ -388,6 +450,13 @@ const AUTHORITY_INFO: Record<string, AuthorityInfo> = {
     assesses: 'Accountants',
     website: 'https://www.publicaccountants.org.au',
     typicalTime: '4–8 weeks',
+    fee: 'AUD $600 – $900',
+    documents: [
+      'Degree certificate and transcripts',
+      'Subject outlines for accounting units',
+      'Work experience evidence',
+      'Certified passport copy',
+    ],
     notes: [],
   },
   'AITSL': {
@@ -395,8 +464,16 @@ const AUTHORITY_INFO: Record<string, AuthorityInfo> = {
     assesses: 'Teachers (primary and secondary)',
     website: 'https://www.aitsl.edu.au',
     typicalTime: '3–4 months',
+    fee: 'AUD $400 – $500',
+    documents: [
+      'Teaching degree certificate and transcripts',
+      'Evidence of teaching registration/licence in home country',
+      'Detailed curriculum/course description',
+      'Evidence of English proficiency',
+      'Certified passport copy',
+    ],
     notes: [
-      'Must demonstrate qualification is comparable to Australian teaching standards',
+      'Must demonstrate qualification is comparable to Australian standards',
       'State teacher registration required separately',
     ],
   },
@@ -405,6 +482,16 @@ const AUTHORITY_INFO: Record<string, AuthorityInfo> = {
     assesses: 'Medical doctors, dentists, physiotherapists, psychologists, pharmacists, and other regulated health professions',
     website: 'https://www.ahpra.gov.au',
     typicalTime: '3–6 months',
+    fee: 'AUD $380 – $800 (varies by profession)',
+    documents: [
+      'Primary medical/health qualification certificate',
+      'Official academic transcripts',
+      'Proof of current registration/licence in home country',
+      'English proficiency test results (OET or IELTS)',
+      'Certified identity documents (passport)',
+      'Criminal history check',
+      'References from supervisors (for some professions)',
+    ],
     notes: [
       'Covers 16 regulated health professions',
       'Registration required to practise in Australia',
@@ -416,6 +503,14 @@ const AUTHORITY_INFO: Record<string, AuthorityInfo> = {
     assesses: 'Architects',
     website: 'https://www.aaca.org.au',
     typicalTime: '8–16 weeks',
+    fee: 'AUD $1,200 – $1,500',
+    documents: [
+      'Architecture degree certificate and transcripts',
+      'Portfolio of architectural work (drawings, projects)',
+      'Evidence of professional registration in home country',
+      'Employer references',
+      'Certified passport copy',
+    ],
     notes: [
       'Overseas architects must pass the OAA (Overseas Architects Assessment)',
       'State Board registration required to practise',
@@ -426,13 +521,28 @@ const AUTHORITY_INFO: Record<string, AuthorityInfo> = {
     assesses: 'Translators and interpreters',
     website: 'https://www.naati.com.au',
     typicalTime: '4–8 weeks',
-    notes: ['Credential Recognition for translators/interpreters', 'NAATI points bonus available on points test'],
+    fee: 'AUD $580 – $750',
+    documents: [
+      'Proof of language qualifications or professional experience',
+      'Evidence of work as a translator/interpreter',
+      'Certified passport copy',
+      'Application form and supporting statement',
+    ],
+    notes: ['NAATI credential recognition for certified practitioners', 'NAATI points bonus (5 pts) available on the points test'],
   },
   'AIQS': {
     name: 'AIQS (Australian Institute of Quantity Surveyors)',
     assesses: 'Quantity surveyors and construction economists',
     website: 'https://www.aiqs.com.au',
     typicalTime: '6–10 weeks',
+    fee: 'AUD $600 – $800',
+    documents: [
+      'Quantity surveying / construction degree certificate and transcripts',
+      'Course descriptions for relevant subjects',
+      'Employment references from quantity surveying roles',
+      'CV',
+      'Certified passport copy',
+    ],
     notes: [],
   },
   'ACECQA': {
@@ -440,13 +550,27 @@ const AUTHORITY_INFO: Record<string, AuthorityInfo> = {
     assesses: 'Early childhood educators and childcare workers',
     website: 'https://www.acecqa.gov.au',
     typicalTime: '6–10 weeks',
+    fee: 'AUD $550 – $700',
+    documents: [
+      'Childcare or early childhood education qualifications',
+      'Certified transcripts',
+      'Certified passport copy',
+      'Proof of professional registration (if applicable)',
+    ],
     notes: [],
   },
   'SPA': {
-    name: 'SPA (Surveying and Spatial Sciences Institute)',
+    name: 'SSSI (Surveying and Spatial Sciences Institute)',
     assesses: 'Surveyors and spatial scientists',
     website: 'https://www.sssi.org.au',
     typicalTime: '6–10 weeks',
+    fee: 'AUD $550 – $750',
+    documents: [
+      'Surveying or geospatial science degree and transcripts',
+      'Employment references',
+      'CV',
+      'Certified passport copy',
+    ],
     notes: [],
   },
   'AIPM': {
@@ -454,6 +578,14 @@ const AUTHORITY_INFO: Record<string, AuthorityInfo> = {
     assesses: 'Project managers and program managers',
     website: 'https://www.aipm.com.au',
     typicalTime: '4–8 weeks',
+    fee: 'AUD $500 – $700',
+    documents: [
+      'Degree certificate and transcripts (any field)',
+      'Project management certifications (PMP, PRINCE2, etc.) if held',
+      'Detailed employment references describing PM responsibilities',
+      'CV',
+      'Certified passport copy',
+    ],
     notes: [],
   },
 };
@@ -1501,8 +1633,27 @@ export default function OccupationsScreen() {
                                 <Text style={[styles.authRowVal, {color: Colors.textPrimary}]}>{info.typicalTime}</Text>
                               </View>
 
+                              <View style={styles.authRow}>
+                                <Ionicons name="card-outline" size={13} color={Colors.textMuted} />
+                                <Text style={[styles.authRowKey, {color: Colors.textPrimary}]}>Assessment fee</Text>
+                                <Text style={[styles.authRowVal, {color: Colors.textPrimary}]}>{info.fee}</Text>
+                              </View>
+
+                              {info.documents.length > 0 && (
+                                <View style={styles.authNotes}>
+                                  <Text style={[styles.authSectionHeading, {color: Colors.textMuted}]}>Required documents</Text>
+                                  {info.documents.map((d, i) => (
+                                    <View key={i} style={styles.authNoteRow}>
+                                      <Ionicons name="document-text-outline" size={12} color={Colors.accent} style={{ marginTop: 2 }} />
+                                      <Text style={[styles.authNoteText, {color: Colors.textPrimary}]}>{d}</Text>
+                                    </View>
+                                  ))}
+                                </View>
+                              )}
+
                               {info.notes.length > 0 && (
                                 <View style={styles.authNotes}>
+                                  <Text style={[styles.authSectionHeading, {color: Colors.textMuted}]}>Notes</Text>
                                   {info.notes.map((n, i) => (
                                     <View key={i} style={styles.authNoteRow}>
                                       <View style={styles.authNoteDot} />
@@ -1716,6 +1867,7 @@ const styles = StyleSheet.create({
   authRowKey: { flex: 1, fontSize: FontSize.xs },
   authRowVal: { fontSize: FontSize.xs, fontWeight: FontWeight.semiBold },
   authNotes: { paddingHorizontal: Spacing.md, paddingTop: Spacing.sm },
+  authSectionHeading: { fontSize: FontSize.xs, fontWeight: FontWeight.semiBold, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 },
   authNoteRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 6, marginBottom: 6 },
   authNoteDot: { width: 5, height: 5, borderRadius: 3, marginTop: 4 },
   authNoteText: { flex: 1, fontSize: FontSize.xs, lineHeight: 16 },
