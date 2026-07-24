@@ -500,7 +500,15 @@ export default function ProfileScreen() {
 
         <View style={styles.planBadge}>
           {profile.isPremium
-            ? <><Ionicons name="star" size={12} color={Colors.secondary} /><Text style={[styles.planText, { color: Colors.white }]}>Premium Member</Text></>
+            ? <TouchableOpacity
+                style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.xs }}
+                onPress={() => { hapticTap(); manageSubscription(); }}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="star" size={12} color={Colors.secondary} />
+                <Text style={[styles.planText, { color: Colors.white }]}>Premium Member</Text>
+                <Ionicons name="chevron-forward" size={11} color={Colors.secondary} />
+              </TouchableOpacity>
             : <>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.xs }}>
                   <Ionicons name="person-outline" size={12} color="rgba(255,255,255,0.82)" />
@@ -770,15 +778,15 @@ export default function ProfileScreen() {
           <View style={[styles.card, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
             <View style={styles.settingRow}>
               <View style={styles.settingContent}>
-                <Ionicons name="sunny-outline" size={18} color={Colors.secondary} />
+                <Ionicons name={isDark ? 'moon-outline' : 'sunny-outline'} size={18} color={Colors.secondary} />
                 <View style={styles.settingTextContainer}>
-                  <Text style={[styles.settingLabel, { color: Colors.textPrimary }]}>Light Mode</Text>
-                  <Text style={[styles.settingValue, { color: Colors.textSecondary }]}>Dark mode coming soon</Text>
+                  <Text style={[styles.settingLabel, { color: Colors.textPrimary }]}>{isDark ? 'Dark Mode' : 'Light Mode'}</Text>
+                  <Text style={[styles.settingValue, { color: Colors.textSecondary }]}>Tap to switch theme</Text>
                 </View>
               </View>
               <Switch
-                value
-                disabled
+                value={!isDark}
+                onValueChange={(lightOn) => { hapticTap(); setLightMode(lightOn); }}
                 trackColor={{ false: Colors.border, true: Colors.secondary + '50' }}
                 thumbColor={Colors.secondary}
               />

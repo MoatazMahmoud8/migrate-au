@@ -1,6 +1,9 @@
-import React, { createContext, useContext } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Colors, LightColors } from './theme';
+
+const DARK_MODE_KEY = 'user_dark_mode';
 
 type ThemeColors = typeof Colors;
 
@@ -17,12 +20,26 @@ const ThemeContext = createContext<ThemeContextValue>({
 });
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const setLightMode = () => {};
-  const localDarkMode = __DEV__ && (
+  const devDarkMode = __DEV__ && (
     process.env.EXPO_PUBLIC_FORCE_DARK_MODE === '1' ||
     (Platform.OS === 'web' && typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('theme') === 'dark')
   );
-  const isDark = localDarkMode;
+
+  const [isDark, setIsDark] = useState(devDarkMode);
+
+  // Load saved preference on mount
+  useEffect(() => {
+    AsyncStorage.getItem(DARK_MODE_KEY).then(val => {
+      if (val !== null) setIsDark(val === 'true');
+    }).catch(() => {});
+  }, []);
+
+  const setLightMode = (lightEnabled: boolean) => {
+    const dark = !lightEnabled;
+    setIsDark(dark);
+    AsyncStorage.setItem(DARK_MODE_KEY, String(dark)).catch(() => {});
+  };
+
   const colors = isDark ? Colors : LightColors;
 
   return (
