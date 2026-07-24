@@ -322,6 +322,14 @@ export default function VisasScreen() {
                               ))}
                             </View>
 
+                            {v.fee != null && (
+                              <View style={[styles.feeRow, { backgroundColor: Colors.surfaceRaised, borderColor: meta.color + '30' }]}>
+                                <Ionicons name="cash-outline" size={14} color={meta.color} />
+                                <Text style={[styles.feeLabel, { color: Colors.textSecondary }]}>Application fee</Text>
+                                <Text style={[styles.feeValue, { color: meta.color }]}>{v.fee}</Text>
+                              </View>
+                            )}
+
                             <TouchableOpacity
                               style={[styles.dhaBtn, { borderColor: meta.color + '40', backgroundColor: meta.bg }]}
                               onPress={() => Linking.openURL(v.url)}
@@ -491,6 +499,15 @@ const styles = StyleSheet.create({
   condRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
   condDot: { width: 5, height: 5, borderRadius: 3, marginTop: 7 },
   condText: { flex: 1, fontSize: FontSize.xs, lineHeight: 18 },
+  feeRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    marginTop: Spacing.md,
+    paddingVertical: Spacing.sm, paddingHorizontal: Spacing.sm,
+    borderRadius: Radius.md,
+    borderWidth: 1,
+  },
+  feeLabel: { flex: 1, fontSize: FontSize.xs },
+  feeValue: { fontSize: FontSize.xs, fontWeight: '700' },
   dhaBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
     marginTop: Spacing.md,
