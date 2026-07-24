@@ -101,14 +101,15 @@ const AUTHORITIES: Authority[] = [
     ],
   },
   {
-    id: 'apc', abbr: 'APC', name: 'Australian Pharmacy Council',
+    id: 'apc', abbr: 'APC', name: 'Australian Physiotherapy Council',
     category: 'Health & Medical', color: '#FF6B8A',
-    assesses: 'Pharmacists',
-    website: 'https://www.pharmacycouncil.org.au',
-    typicalTime: '3–6 months', feeRange: '$500–$1,200',
+    assesses: 'Physiotherapists',
+    website: 'https://www.physiocouncil.com.au',
+    typicalTime: '8–16 weeks', feeRange: '$1,200–$2,000',
     notes: [
-      'Overseas-trained pharmacists must pass KAPS (Knowledge Assessment of Pharmaceutical Sciences) exams',
-      'AHPRA registration required after passing assessment',
+      'Multiple pathways: FLYR, Express FLYR, and APEP',
+      'Practical assessment may be required',
+      'AHPRA registration required to practise',
     ],
   },
   {
@@ -372,6 +373,167 @@ const AUTHORITIES: Authority[] = [
     website: 'https://www.alia.org.au',
     typicalTime: '6–10 weeks', feeRange: '$200–$400',
     notes: ['ALIA membership and AALIA (Associate) credential available after assessment'],
+  },
+
+  // ── Additional Health & Medical ──────────────────────────────────────────
+  {
+    id: 'adc', abbr: 'ADC', name: 'Australian Dental Council',
+    category: 'Health & Medical', color: '#FF6B8A',
+    assesses: 'Dentists, dental hygienists, dental therapists, dental prosthetists',
+    website: 'https://www.adc.org.au',
+    typicalTime: '12–18 months', feeRange: '$2,000–$3,500',
+    notes: [
+      'Assessment includes written and clinical examinations',
+      'Must also register with AHPRA (Dental Board) to practise',
+    ],
+  },
+  {
+    id: 'aims', abbr: 'AIMS', name: 'Australian Institute of Medical Scientists',
+    category: 'Health & Medical', color: '#FF6B8A',
+    assesses: 'Medical scientists and laboratory medicine professionals',
+    website: 'https://www.aims.org.au',
+    typicalTime: '6–10 weeks', feeRange: '$600–$900',
+    notes: ['Assesses for all medical scientist ANZSCO occupations'],
+  },
+  {
+    id: 'asmirt', abbr: 'ASMIRT', name: 'Australian Society of Medical Imaging and Radiation Therapy',
+    category: 'Health & Medical', color: '#FF6B8A',
+    assesses: 'Medical radiation practitioners, diagnostic radiographers, radiation therapists, sonographers',
+    website: 'https://www.asmirt.org',
+    typicalTime: '8–12 weeks', feeRange: '$700–$1,100',
+    notes: [],
+  },
+  {
+    id: 'apharmac', abbr: 'APharmC', name: 'Australian Pharmacy Council',
+    category: 'Health & Medical', color: '#FF6B8A',
+    assesses: 'Pharmacists',
+    website: 'https://www.pharmacycouncil.org.au',
+    typicalTime: '12–20 weeks', feeRange: '$1,500–$2,500',
+    notes: [
+      'Assessment includes OPRA® or CAOP® written examination',
+      'Must register with AHPRA (Pharmacy Board) to practise',
+    ],
+  },
+  {
+    id: 'aps', abbr: 'APS', name: 'Australian Psychological Society',
+    category: 'Health & Medical', color: '#FF6B8A',
+    assesses: 'Psychologists',
+    website: 'https://www.psychology.org.au',
+    typicalTime: '8–12 weeks', feeRange: '$1,000–$1,500',
+    notes: ['Must also register with AHPRA (Psychology Board) to practise'],
+  },
+  {
+    id: 'aoac', abbr: 'AOAC', name: 'Australasian Osteopathic Accreditation Council',
+    category: 'Health & Medical', color: '#FF6B8A',
+    assesses: 'Osteopaths',
+    website: 'https://www.osteopathiccouncil.org.au',
+    typicalTime: '10–14 weeks', feeRange: '$900–$1,400',
+    notes: [],
+  },
+  {
+    id: 'aopa', abbr: 'AOPA', name: 'Australian Orthotic Prosthetic Association',
+    category: 'Health & Medical', color: '#FF6B8A',
+    assesses: 'Orthotists and prosthetists',
+    website: 'https://www.aopa.org.au',
+    typicalTime: '8–12 weeks', feeRange: '$900–$1,300',
+    notes: [],
+  },
+  {
+    id: 'otc', abbr: 'OTC', name: 'Occupational Therapy Council of Australia',
+    category: 'Health & Medical', color: '#FF6B8A',
+    assesses: 'Occupational therapists',
+    website: 'https://www.otcouncil.com.au',
+    typicalTime: '8–10 weeks', feeRange: '$800–$1,200',
+    notes: ['Must also register with AHPRA (OT Board) to practise'],
+  },
+  {
+    id: 'podba', abbr: 'PodBA', name: 'Podiatry Board of Australia (via AHPRA)',
+    category: 'Health & Medical', color: '#FF6B8A',
+    assesses: 'Podiatrists',
+    website: 'https://www.podiatryboard.gov.au',
+    typicalTime: '8–12 weeks', feeRange: '$800–$1,200',
+    notes: ['Registration handled through AHPRA'],
+  },
+  {
+    id: 'ccea', abbr: 'CCEA', name: 'Council on Chiropractic Education Australasia',
+    category: 'Health & Medical', color: '#FF6B8A',
+    assesses: 'Chiropractors',
+    website: 'https://www.ccea.com.au',
+    typicalTime: '10–16 weeks', feeRange: '$1,200–$2,000',
+    notes: ['Assessment may include a competency-based practical component'],
+  },
+  {
+    id: 'cmba', abbr: 'CMBA', name: 'Chinese Medicine Board of Australia (via AHPRA)',
+    category: 'Health & Medical', color: '#FF6B8A',
+    assesses: 'Chinese medicine practitioners, acupuncturists, Chinese herbal medicine practitioners',
+    website: 'https://www.chinesemedicineboard.gov.au',
+    typicalTime: '10–16 weeks', feeRange: '$800–$1,500',
+    notes: ['Registration handled through AHPRA'],
+  },
+  {
+    id: 'anzsnm', abbr: 'ANZSNM', name: 'Australian & New Zealand Society of Nuclear Medicine',
+    category: 'Health & Medical', color: '#FF6B8A',
+    assesses: 'Nuclear medicine technologists',
+    website: 'https://www.anzsnm.org.au',
+    typicalTime: '8–12 weeks', feeRange: '$700–$1,100',
+    notes: [],
+  },
+
+  // ── Transport & Aviation ─────────────────────────────────────────────────
+  {
+    id: 'amsa', abbr: 'AMSA', name: 'Australian Maritime Safety Authority',
+    category: 'Trades', color: '#FFB800',
+    assesses: 'Ship masters, maritime officers, marine surveyors',
+    website: 'https://www.amsa.gov.au',
+    typicalTime: '10–16 weeks', feeRange: '$1,000–$2,000',
+    notes: [
+      'Governed by STCW Convention standards',
+      'Certificates must be recognised by the Australian flag state',
+    ],
+  },
+  {
+    id: 'casa', abbr: 'CASA', name: 'Civil Aviation Safety Authority',
+    category: 'Engineering & IT', color: '#00C2FF',
+    assesses: 'Aircraft maintenance engineers, avionics engineers, air traffic controllers',
+    website: 'https://www.casa.gov.au',
+    typicalTime: '10–18 weeks', feeRange: '$1,500–$3,000',
+    notes: [
+      'Australian licence or authorisation must be issued by CASA after assessment',
+      'Written examinations may be required',
+    ],
+  },
+
+  // ── Management ───────────────────────────────────────────────────────────
+  {
+    id: 'iml', abbr: 'IML', name: 'IML (Institute of Managers and Leaders)',
+    category: 'Business & Finance', color: '#FFCD00',
+    assesses: 'Managers and senior executives (general management occupations)',
+    website: 'https://managersandleaders.com.au',
+    typicalTime: '6–10 weeks', feeRange: '$700–$1,100',
+    notes: ['Both qualifications and work experience are assessed'],
+  },
+
+  // ── Community Work ───────────────────────────────────────────────────────
+  {
+    id: 'cwa', abbr: 'CWA', name: 'Community Work Australia',
+    category: 'Education & Social', color: '#00D68F',
+    assesses: 'Community workers and welfare support workers',
+    website: 'https://communitywork.org.au',
+    typicalTime: '6–8 weeks', feeRange: '$500–$800',
+    notes: [],
+  },
+
+  // ── Legal ────────────────────────────────────────────────────────────────
+  {
+    id: 'slaa', abbr: 'SLAA', name: 'State/Territory Legal Admissions Authority',
+    category: 'General', color: '#A78BFA',
+    assesses: 'Lawyers (solicitors and barristers)',
+    website: 'https://immi.homeaffairs.gov.au/visas/working-in-australia/skills-assessment/approved-assessing-authorities',
+    typicalTime: '12–24 weeks', feeRange: '$1,500–$3,500',
+    notes: [
+      'Each state/territory has its own admissions authority',
+      'Overseas lawyers may need bridging courses or further study',
+    ],
   },
 ];
 

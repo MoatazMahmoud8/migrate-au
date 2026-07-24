@@ -19,9 +19,158 @@ import { useColors } from '../../constants/ThemeContext';
 
 interface OccupationScore {
   name: string;
+  anzsco?: string;
   sc189: number | null;
   sc491Family: number | null;
 }
+
+// ANZSCO code map for occupation name → code lookup
+const ANZSCO_MAP: Record<string, string> = {
+  'Actuary': '224111',
+  'Agricultural Consultant': '234111',
+  'Agricultural Scientist': '234112',
+  'Airconditioning and Mechanical Services Plumber': '334112',
+  'Architect': '232111',
+  'Artistic Director': '212111',
+  'Arts Administrator or Manager': '139911',
+  'Audiologist': '252711',
+  'Automotive Electrician': '321211',
+  'Barrister': '271111',
+  'Biochemist': '234513',
+  'Biotechnologist': '234514',
+  'Boat Builder and Repairer': '399111',
+  'Botanist': '234515',
+  'Bricklayer': '331111',
+  'Cabinetmaker': '394111',
+  'Cardiologist': '253312',
+  'Carpenter': '331212',
+  'Carpenter and Joiner': '331211',
+  'Cartographer': '232213',
+  'Chemical Engineer': '233111',
+  'Chemist': '234211',
+  'Child Care Centre Manager': '134111',
+  'Chiropractor': '252111',
+  'Civil Engineering Draftsperson': '312211',
+  'Civil Engineering Technician': '312212',
+  'Clinical Psychologist': '272311',
+  'Construction Project Manager': '133111',
+  'Dermatologist': '253911',
+  'Diagnostic and Interventional Radiologist': '253917',
+  'Drainer': '334113',
+  'Early Childhood (Pre-primary School) Teacher': '241111',
+  'Economist': '224112',
+  'Electrical Engineering Draftsperson': '312311',
+  'Electrical Engineering Technician': '312312',
+  'Electrician (General)': '341111',
+  'Electrician (Special Class)': '341112',
+  'Electronic Equipment Trades Worker': '342313',
+  'Electronic Instrument Trades Worker (General)': '342314',
+  'Electronic Instrument Trades Worker (Special Class)': '342315',
+  'Emergency Medicine Specialist': '253912',
+  'Engineering Manager': '133211',
+  'Environmental Consultant': '234312',
+  'Environmental Manager': '139912',
+  'Environmental Research Scientist': '234313',
+  'Environmental Scientists nec': '234399',
+  'Fibrous Plasterer': '333211',
+  'Fitter (General)': '323211',
+  'Food Technologist': '234212',
+  'Forester': '234113',
+  'Gasfitter': '334114',
+  'General Practitioner': '253111',
+  'Geophysicist': '234412',
+  'Glazier': '332211',
+  'Hydrogeologist': '234413',
+  'Intensive Care Specialist': '253317',
+  'Joiner': '331213',
+  'Land Economist': '224511',
+  'Landscape Architect': '232112',
+  'Life Scientist (General)': '234511',
+  'Life Scientists nec': '234599',
+  'Management Consultant': '224711',
+  'Marine Biologist': '234516',
+  'Materials Engineer': '233112',
+  'Medical Diagnostic Radiographer': '251211',
+  'Medical Laboratory Scientist': '234611',
+  'Medical Oncologist': '253314',
+  'Medical Practitioners nec': '253999',
+  'Medical Radiation Therapist': '251212',
+  'Metal Fabricator': '322311',
+  'Metal Machinist (First Class)': '323214',
+  'Metallurgist': '234912',
+  'Microbiologist': '234517',
+  'Midwife': '254111',
+  'Mining Engineer (excluding Petroleum)': '233611',
+  'Motorcycle Mechanic': '321213',
+  'Multimedia Specialist': '261311',
+  'Musician (Instrumental)': '211213',
+  'Natural and Physical Science Professionals nec': '234999',
+  'Neurologist': '253318',
+  'Nurse Practitioner': '254411',
+  'Obstetrician and Gynaecologist': '253913',
+  'Occupational Therapist': '252411',
+  'Ophthalmologist': '253914',
+  'Optometrist': '251411',
+  'Organisational Psychologist': '272313',
+  'Orthopaedic Surgeon': '253514',
+  'Osteopath': '252112',
+  'Other Spatial Scientist': '232214',
+  'Paediatrician': '253321',
+  'Painting Trades Worker': '332111',
+  'Pathologist': '253915',
+  'Petroleum Engineer': '233612',
+  'Physicist': '234914',
+  'Physiotherapist': '252311',
+  'Plumber (General)': '334111',
+  'Podiatrist': '252511',
+  'Primary Health Organisation Manager': '134213',
+  'Psychiatrist': '253411',
+  'Psychologists nec': '272399',
+  'Radiation Oncologist': '253918',
+  'Registered Nurse (Aged Care)': '254412',
+  'Registered Nurse (Child and Family Health)': '254413',
+  'Registered Nurse (Community Health)': '254414',
+  'Registered Nurse (Critical Care and Emergency)': '254415',
+  'Registered Nurse (Developmental Disability)': '254416',
+  'Registered Nurse (Disability and Rehabilitation)': '254417',
+  'Registered Nurse (Medical Practice)': '254421',
+  'Registered Nurse (Medical)': '254418',
+  'Registered Nurse (Mental Health)': '254422',
+  'Registered Nurse (Paediatrics)': '254425',
+  'Registered Nurse (Perioperative)': '254423',
+  'Registered Nurse (Surgical)': '254424',
+  'Registered Nurses nec': '254499',
+  'Roof Plumber': '334115',
+  'Secondary School Teacher': '241411',
+  'Social Worker': '272511',
+  'Solicitor': '271311',
+  'Solid Plasterer': '333212',
+  'Sonographer': '251214',
+  'Special Education Teachers nec': '241599',
+  'Special Needs Teacher': '241511',
+  'Specialist Physician (General Medicine)': '253311',
+  'Specialist Physicians nec': '253399',
+  'Speech Pathologist': '252712',
+  'Statistician': '224113',
+  'Stonemason': '331112',
+  'Surgeon (General)': '253511',
+  'Surveyor': '232212',
+  'Telecommunications Engineer': '263311',
+  'Telecommunications Field Engineer': '313212',
+  'Telecommunications Network Engineer': '263312',
+  'Telecommunications Network Planner': '313213',
+  'Telecommunications Technical Officer or Technologist': '313214',
+  'Tennis Coach': '452316',
+  'Thoracic Medicine Specialist': '253324',
+  'Urologist': '253518',
+  'Valuer': '224512',
+  'Vascular Surgeon': '253521',
+  'Veterinarian': '234913',
+  'Wall and Floor Tiler': '333411',
+  'Welder (First Class)': '322313',
+  'Welfare Centre Manager': '134214',
+  'Zoologist': '234518',
+};
 
 interface RoundSummary {
   date: string;
@@ -362,9 +511,13 @@ const ScoreBadge = React.memo(({ pts }: { pts: number | null }) => {
 
 const OccupationRow = React.memo(({ item, index }: { item: OccupationScore; index: number }) => {
   const C = useColors();
+  const anzsco = ANZSCO_MAP[item.name] || item.anzsco || null;
   return (
     <View style={[styles.occRow, { borderBottomColor: C.divider }, index % 2 === 0 && { backgroundColor: C.surface + '80' }]}>
-      <Text style={[styles.occName, { color: C.textPrimary }]} numberOfLines={2}>{item.name}</Text>
+      <View style={styles.occNameCol}>
+        <Text style={[styles.occName, { color: C.textPrimary }]} numberOfLines={2}>{item.name}</Text>
+        {anzsco ? <Text style={[styles.occAnzsco, { color: C.textMuted }]}>{anzsco}</Text> : null}
+      </View>
       <ScoreBadge pts={item.sc189} />
       <ScoreBadge pts={item.sc491Family} />
     </View>
@@ -403,7 +556,10 @@ export default function RoundsScreen() {
     if (filter === '491') list = list.filter((o) => o.sc491Family !== null);
     if (query.trim()) {
       const q = query.toLowerCase();
-      list = list.filter((o) => o.name.toLowerCase().includes(q));
+      list = list.filter((o) => {
+        const anzsco = ANZSCO_MAP[o.name] || o.anzsco || '';
+        return o.name.toLowerCase().includes(q) || anzsco.includes(q);
+      });
     }
     return list;
   }, [data.occupationScores, query, filter]);
@@ -730,7 +886,9 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   occRowAlt: { backgroundColor: 'rgba(255,255,255,0.02)' },
-  occName: { flex: 1, fontSize: FontSize.sm, paddingRight: Spacing.sm },
+  occNameCol: { flex: 1, paddingRight: Spacing.sm },
+  occName: { fontSize: FontSize.sm },
+  occAnzsco: { fontSize: 10, marginTop: 1, fontFamily: 'monospace' },
   scoreBadge: { width: 52, paddingVertical: 4, borderRadius: Radius.sm, alignItems: 'center', marginLeft: Spacing.xs },
   scoreVal: { fontSize: FontSize.sm, fontWeight: FontWeight.bold },
 
