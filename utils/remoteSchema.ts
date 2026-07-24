@@ -130,27 +130,43 @@ export function validateProcessingTimesSnapshot(
 
     if (!isStr(p.subclass, 32)) continue;
     if (!isStr(p.name)) continue;
-    if (!isStr(p.p50, 32)) continue;
-    if (!isStr(p.p90, 32)) continue;
     if (!isStr(p.category, 64)) continue;
     if (!isStr(p.icon, 64)) continue;
     if (!isStr(p.color, 32)) continue;
     if (!isStr(p.url, 500)) continue;
-    if (!isOptStr(p.stream, 64)) continue;
 
-    // Reject non-https URLs (no javascript:, data:, file:)
+    // Reject non-https URLs
     if (!(p.url as string).startsWith('https://')) continue;
+
+    // Resolve streams: support new format (streams[]) and legacy format (p50/p90/stream)
+    let streams: ProcessingTime['streams'] = [];
+    if (Array.isArray(p.streams)) {
+      for (const s of p.streams) {
+        if (!s || typeof s !== 'object') continue;
+        const sv = s as Record<string, unknown>;
+        if (!isStr(sv.p50, 32) || !isStr(sv.p90, 32)) continue;
+        streams.push({ name: isStr(sv.name, 64) ? sv.name as string : undefined, p50: sv.p50 as string, p90: sv.p90 as string });
+      }
+    } else if (isStr(p.p50, 32) && isStr(p.p90, 32)) {
+      // Legacy single-stream format
+      streams = [{ name: isOptStr(p.stream, 64) ? p.stream as string : undefined, p50: p.p50 as string, p90: p.p90 as string }];
+    }
+    if (streams.length === 0) continue;
 
     items.push({
       subclass: p.subclass as string,
       name: p.name as string,
-      p50: p.p50 as string,
-      p90: p.p90 as string,
       category: p.category as ProcessingTime['category'],
       icon: p.icon as string,
       color: p.color as string,
       url: p.url as string,
-      stream: p.stream as string | undefined,
+      streams,
+      fee: isOptStr(p.fee, 64) ? p.fee as string : undefined,
+      familyFeeAdult: isOptStr(p.familyFeeAdult, 64) ? p.familyFeeAdult as string : undefined,
+      familyFeeChild: isOptStr(p.familyFeeChild, 64) ? p.familyFeeChild as string : undefined,
+      conditions: Array.isArray(p.conditions)
+        ? (p.conditions as unknown[]).filter((c): c is string => typeof c === 'string' && c.length < 300).slice(0, 10)
+        : undefined,
     });
   }
 

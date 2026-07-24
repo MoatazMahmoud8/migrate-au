@@ -8,24 +8,42 @@
  * times for recently decided applications. They are bundled as fallback values
  * and refreshed at runtime when a network update is available (see
  * utils/processingTimes.ts).
+ *
+ * Data model (v2 — 2026-07-24):
+ *   Each entry represents one visa subclass. Multiple streams are expressed
+ *   as an array within the entry rather than as separate array items.
  */
+
+export interface ProcessingTimeStream {
+  /** Stream name, e.g. "Points-tested stream". Omit if there is only one unnamed stream. */
+  name?: string;
+  /** 50th percentile (median) — in months/days as a human-readable string */
+  p50: string;
+  /** 90th percentile */
+  p90: string;
+}
 
 export interface ProcessingTime {
   subclass: string;
   name: string;
-  stream?: string;
   category: 'Skilled' | 'Employer' | 'Family' | 'Student' | 'Visitor' | 'Graduate';
-  /** 50th percentile (median) — in months unless otherwise noted */
-  p50: string;
-  /** 90th percentile — in months */
-  p90: string;
+  /** All processing-time streams for this visa. Usually one; multi-stream visas list each separately. */
+  streams: ProcessingTimeStream[];
+  /** Main applicant application fee (AUD) */
+  fee?: string;
+  /** Additional applicant 18+ fee */
+  familyFeeAdult?: string;
+  /** Additional applicant under 18 fee */
+  familyFeeChild?: string;
+  /** Key eligibility conditions shown on the card */
+  conditions?: string[];
   icon: string;
   color: string;
   url: string;
 }
 
 /** ISO date of last bundled snapshot. Replace via OTA when the scraper runs. */
-export const PROCESSING_SNAPSHOT_DATE = '2026-04-20';
+export const PROCESSING_SNAPSHOT_DATE = '2026-07-24';
 
 export const PROCESSING_TIMES: ProcessingTime[] = [
   // ─── Skilled ──────────────────────────────────────────────────────
@@ -33,8 +51,20 @@ export const PROCESSING_TIMES: ProcessingTime[] = [
     subclass: '189',
     name: 'Skilled Independent',
     category: 'Skilled',
-    p50: '9 months',
-    p90: '17 months',
+    streams: [
+      { name: 'Points-tested stream', p50: '9 months', p90: '17 months' },
+      { name: 'New Zealand stream',   p50: '4 months', p90: '8 months'  },
+    ],
+    fee: 'AUD $4,640',
+    familyFeeAdult: '+$2,320 per adult',
+    familyFeeChild: '+$1,160 per child',
+    conditions: [
+      'No employer sponsorship required',
+      'Occupation on MLTSSL',
+      'Points score ≥ 65 (SkillSelect invitation)',
+      'Age under 45 at time of invitation',
+      'Positive skills assessment required',
+    ],
     icon: 'globe-outline',
     color: '#00C2FF',
     url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skilled-independent-189',
@@ -43,8 +73,19 @@ export const PROCESSING_TIMES: ProcessingTime[] = [
     subclass: '190',
     name: 'Skilled Nominated',
     category: 'Skilled',
-    p50: '5 months',
-    p90: '11 months',
+    streams: [
+      { name: 'State/Territory Nominated', p50: '5 months', p90: '11 months' },
+    ],
+    fee: 'AUD $4,640',
+    familyFeeAdult: '+$2,320 per adult',
+    familyFeeChild: '+$1,160 per child',
+    conditions: [
+      'Nomination by an Australian state or territory',
+      'Occupation on MLTSSL or STSOL (state-specific)',
+      'Points score ≥ 65 (+ 5 nomination bonus)',
+      'Age under 45',
+      'Positive skills assessment required',
+    ],
     icon: 'location-outline',
     color: '#00C2FF',
     url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skilled-nominated-190',
@@ -53,18 +94,39 @@ export const PROCESSING_TIMES: ProcessingTime[] = [
     subclass: '491',
     name: 'Skilled Work Regional (Provisional)',
     category: 'Skilled',
-    p50: '7 months',
-    p90: '15 months',
+    streams: [
+      { name: 'State/Territory Nominated', p50: '7 months', p90: '15 months' },
+      { name: 'Family Sponsored',          p50: '9 months', p90: '18 months' },
+    ],
+    fee: 'AUD $4,640',
+    familyFeeAdult: '+$2,320 per adult',
+    familyFeeChild: '+$1,160 per child',
+    conditions: [
+      'Nomination by state/territory or sponsorship by eligible family member',
+      'Must live and work in a designated regional area',
+      'Points score ≥ 65 (+ 15 regional bonus)',
+      'Age under 45',
+      'Pathway to 191 permanent visa after 3 years',
+    ],
     icon: 'map-outline',
     color: '#00C2FF',
     url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skilled-work-regional-provisional-491',
   },
   {
     subclass: '887',
-    name: 'Skilled Regional (Residence)',
+    name: 'Skilled Regional',
     category: 'Skilled',
-    p50: '6 months',
-    p90: '12 months',
+    streams: [
+      { p50: '6 months', p90: '12 months' },
+    ],
+    fee: 'AUD $2,650',
+    familyFeeAdult: '+$1,330 per adult',
+    familyFeeChild: '+$665 per child',
+    conditions: [
+      'Must have lived and worked in regional Australia',
+      'Held eligible temporary visa (e.g. 487, 495, 496)',
+      'No points test or skills assessment required',
+    ],
     icon: 'home-outline',
     color: '#00C2FF',
     url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skilled-regional-887',
@@ -73,8 +135,17 @@ export const PROCESSING_TIMES: ProcessingTime[] = [
     subclass: '191',
     name: 'Permanent Residence (Skilled Regional)',
     category: 'Skilled',
-    p50: '8 months',
-    p90: '16 months',
+    streams: [
+      { p50: '8 months', p90: '16 months' },
+    ],
+    fee: 'AUD $2,650',
+    familyFeeAdult: '+$1,330 per adult',
+    familyFeeChild: '+$665 per child',
+    conditions: [
+      'Must hold 491 or 494 visa for at least 3 years',
+      'Must have lived and worked in a regional area',
+      'Income threshold must be met each year',
+    ],
     icon: 'home-outline',
     color: '#00C2FF',
     url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skilled-regional-191',
@@ -84,21 +155,21 @@ export const PROCESSING_TIMES: ProcessingTime[] = [
   {
     subclass: '482',
     name: 'Skills in Demand',
-    stream: 'Core Skills',
     category: 'Employer',
-    p50: '34 days',
-    p90: '4 months',
-    icon: 'briefcase-outline',
-    color: '#FFCD00',
-    url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skills-in-demand-visa-subclass-482',
-  },
-  {
-    subclass: '482',
-    name: 'Skills in Demand',
-    stream: 'Specialist Skills',
-    category: 'Employer',
-    p50: '8 days',
-    p90: '36 days',
+    streams: [
+      { name: 'Specialist Skills stream', p50: '8 days',   p90: '36 days'   },
+      { name: 'Core Skills stream',       p50: '34 days',  p90: '4 months'  },
+      { name: 'Labour Agreement stream',  p50: '3 months', p90: '6 months'  },
+    ],
+    fee: 'AUD $3,035',
+    familyFeeAdult: '+$1,515 per adult',
+    familyFeeChild: '+$760 per child',
+    conditions: [
+      'Approved sponsor (standard business sponsor)',
+      'Occupation must be on the relevant occupation list',
+      'Genuine position that exists with the nominating business',
+      'Market salary rate must be met',
+    ],
     icon: 'briefcase-outline',
     color: '#FFCD00',
     url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skills-in-demand-visa-subclass-482',
@@ -106,31 +177,40 @@ export const PROCESSING_TIMES: ProcessingTime[] = [
   {
     subclass: '186',
     name: 'Employer Nomination Scheme',
-    stream: 'Direct Entry',
     category: 'Employer',
-    p50: '8 months',
-    p90: '15 months',
-    icon: 'briefcase-outline',
-    color: '#FFCD00',
-    url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/employer-nomination-scheme-186',
-  },
-  {
-    subclass: '186',
-    name: 'Employer Nomination Scheme',
-    stream: 'Temp Residence Transition',
-    category: 'Employer',
-    p50: '5 months',
-    p90: '10 months',
+    streams: [
+      { name: 'Direct Entry stream',             p50: '8 months', p90: '15 months' },
+      { name: 'Temp Residence Transition stream', p50: '5 months', p90: '10 months' },
+      { name: 'Agreements stream',               p50: '7 months', p90: '14 months' },
+    ],
+    fee: 'AUD $4,640',
+    familyFeeAdult: '+$2,320 per adult',
+    familyFeeChild: '+$1,160 per child',
+    conditions: [
+      'Approved sponsor and approved nomination',
+      'Occupation on MLTSSL (Direct Entry & Agreements streams)',
+      'At least 2 years relevant work experience (Direct Entry)',
+      'At least 2 years in a 482 or equivalent role (TRT stream)',
+    ],
     icon: 'briefcase-outline',
     color: '#FFCD00',
     url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/employer-nomination-scheme-186',
   },
   {
     subclass: '494',
-    name: 'Skilled Employer Regional',
+    name: 'Skilled Employer Sponsored Regional',
     category: 'Employer',
-    p50: '6 months',
-    p90: '13 months',
+    streams: [
+      { name: 'Employer Sponsored stream', p50: '6 months', p90: '13 months' },
+    ],
+    fee: 'AUD $4,640',
+    familyFeeAdult: '+$2,320 per adult',
+    familyFeeChild: '+$1,160 per child',
+    conditions: [
+      'Business operating in a designated regional area',
+      'Occupation on the relevant regional list',
+      'Pathway to 191 permanent visa after 3 years',
+    ],
     icon: 'location-outline',
     color: '#FFCD00',
     url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skilled-employer-sponsored-regional-494',
@@ -140,21 +220,20 @@ export const PROCESSING_TIMES: ProcessingTime[] = [
   {
     subclass: '485',
     name: 'Temporary Graduate',
-    stream: 'Post-Vocational',
     category: 'Graduate',
-    p50: '3 months',
-    p90: '6 months',
-    icon: 'ribbon-outline',
-    color: '#A78BFA',
-    url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/temporary-graduate-485',
-  },
-  {
-    subclass: '485',
-    name: 'Temporary Graduate',
-    stream: 'Post-Higher Education',
-    category: 'Graduate',
-    p50: '4 months',
-    p90: '8 months',
+    streams: [
+      { name: 'Post-Higher Education Work stream', p50: '4 months', p90: '8 months' },
+      { name: 'Post-Vocational Education Work stream', p50: '3 months', p90: '6 months' },
+      { name: 'Graduate Research stream', p50: '4 months', p90: '8 months' },
+    ],
+    fee: 'AUD $1,895',
+    familyFeeAdult: '+$950 per adult',
+    familyFeeChild: '+$475 per child',
+    conditions: [
+      'Completed a degree from an Australian institution',
+      'Must apply within 6 months of completing studies',
+      'English: IELTS 6.0 (all bands) or equivalent',
+    ],
     icon: 'ribbon-outline',
     color: '#A78BFA',
     url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/temporary-graduate-485',
@@ -165,8 +244,17 @@ export const PROCESSING_TIMES: ProcessingTime[] = [
     subclass: '820/801',
     name: 'Partner (Onshore)',
     category: 'Family',
-    p50: '20 months',
-    p90: '32 months',
+    streams: [
+      { name: '820 (temporary) + 801 (permanent) — applied onshore', p50: '20 months', p90: '32 months' },
+    ],
+    fee: 'AUD $9,095',
+    familyFeeAdult: '+$4,550 per adult (on 801 grant)',
+    familyFeeChild: '+$2,280 per child',
+    conditions: [
+      'Must be in Australia when you apply',
+      'Genuine relationship with an Australian citizen, PR, or eligible NZ citizen',
+      '820 is temporary; 801 (permanent) granted after 2 years',
+    ],
     icon: 'heart-outline',
     color: '#FF6B8A',
     url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/partner-onshore',
@@ -175,8 +263,17 @@ export const PROCESSING_TIMES: ProcessingTime[] = [
     subclass: '309/100',
     name: 'Partner (Offshore)',
     category: 'Family',
-    p50: '14 months',
-    p90: '26 months',
+    streams: [
+      { name: '309 (temporary) + 100 (permanent) — applied offshore', p50: '14 months', p90: '26 months' },
+    ],
+    fee: 'AUD $9,095',
+    familyFeeAdult: '+$4,550 per adult (on 100 grant)',
+    familyFeeChild: '+$2,280 per child',
+    conditions: [
+      'Must be outside Australia when you apply',
+      'Genuine relationship with an Australian citizen, PR, or eligible NZ citizen',
+      '309 is temporary; 100 (permanent) granted after 2 years or immediately if married for 3+ years',
+    ],
     icon: 'heart-outline',
     color: '#FF6B8A',
     url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/partner-offshore',
@@ -185,65 +282,148 @@ export const PROCESSING_TIMES: ProcessingTime[] = [
     subclass: '300',
     name: 'Prospective Marriage',
     category: 'Family',
-    p50: '13 months',
-    p90: '24 months',
+    streams: [
+      { p50: '13 months', p90: '24 months' },
+    ],
+    fee: 'AUD $9,095',
+    conditions: [
+      'Must marry your sponsor within 9 months of arriving in Australia',
+      'Both parties must be free to marry',
+      'Genuine intention to marry and live together',
+    ],
     icon: 'heart-outline',
     color: '#FF6B8A',
     url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/prospective-marriage-300',
   },
   {
     subclass: '143',
-    name: 'Parent (Contributory)',
+    name: 'Contributory Parent',
     category: 'Family',
-    p50: '5 years',
-    p90: '6 years',
+    streams: [
+      { p50: '5 years', p90: '6 years' },
+    ],
+    fee: 'AUD $47,825',
+    familyFeeAdult: '+$23,900 per additional applicant',
+    conditions: [
+      'At least half of your children must live in Australia',
+      'Significant government charge (2nd instalment ~$44,000)',
+      'Must meet health and character requirements',
+    ],
     icon: 'people-outline',
     color: '#FF6B8A',
     url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/contributory-parent-143',
   },
   {
     subclass: '103',
-    name: 'Parent (Non-contributory)',
+    name: 'Parent',
     category: 'Family',
-    p50: '29 years',
-    p90: '31 years',
+    streams: [
+      { p50: '29 years', p90: '31 years' },
+    ],
+    fee: 'AUD $4,640',
+    familyFeeAdult: '+$2,320 per adult',
+    familyFeeChild: '+$1,160 per child',
+    conditions: [
+      'At least half of your children must live in Australia',
+      'Very long wait — currently 29+ years in the queue',
+      'No significant government charge (unlike Contributory Parent)',
+    ],
     icon: 'people-outline',
     color: '#FF6B8A',
     url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/parent-103',
+  },
+  {
+    subclass: '864',
+    name: 'Contributory Aged Parent',
+    category: 'Family',
+    streams: [
+      { p50: '4 years', p90: '5 years' },
+    ],
+    fee: 'AUD $47,825',
+    familyFeeAdult: '+$23,900 per additional applicant',
+    conditions: [
+      'Must be of retirement age',
+      'Must be in Australia when you apply',
+      'At least half of your children must live in Australia',
+    ],
+    icon: 'people-outline',
+    color: '#FF6B8A',
+    url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/contributory-aged-parent-864',
+  },
+  {
+    subclass: '804',
+    name: 'Aged Parent',
+    category: 'Family',
+    streams: [
+      { p50: '29 years', p90: '30 years' },
+    ],
+    fee: 'AUD $4,640',
+    conditions: [
+      'Must be of retirement age',
+      'Must be in Australia when you apply',
+      'Very long wait — similar to non-contributory Parent visa',
+    ],
+    icon: 'people-outline',
+    color: '#FF6B8A',
+    url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/aged-parent-804',
   },
 
   // ─── Student ──────────────────────────────────────────────────────
   {
     subclass: '500',
     name: 'Student',
-    stream: 'Higher Education',
     category: 'Student',
-    p50: '47 days',
-    p90: '4 months',
+    streams: [
+      { name: 'Higher Education',       p50: '47 days',  p90: '4 months' },
+      { name: 'Vocational Education',   p50: '2 months', p90: '6 months' },
+      { name: 'Schools',                p50: '6 weeks',  p90: '3 months' },
+    ],
+    fee: 'AUD $775',
+    familyFeeAdult: '+$775 per adult',
+    familyFeeChild: '+$195 per child',
+    conditions: [
+      'Enrolment in a registered course (CRICOS)',
+      'Genuine Temporary Entrant (GTE) requirement',
+      'Sufficient financial capacity',
+      'English proficiency for tertiary courses',
+    ],
     icon: 'school-outline',
     color: '#00D68F',
     url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/student-500',
   },
   {
-    subclass: '500',
-    name: 'Student',
-    stream: 'Vocational Education',
+    subclass: '590',
+    name: 'Student Guardian',
     category: 'Student',
-    p50: '2 months',
-    p90: '6 months',
-    icon: 'school-outline',
+    streams: [
+      { p50: '3 months', p90: '6 months' },
+    ],
+    fee: 'AUD $775',
+    conditions: [
+      'Child must be a student visa holder under 18',
+      'Must be a parent or relative of the student',
+      'Must not work more than 40 hours per fortnight',
+    ],
+    icon: 'person-outline',
     color: '#00D68F',
-    url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/student-500',
+    url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/student-guardian-590',
   },
 
   // ─── Visitor ──────────────────────────────────────────────────────
   {
     subclass: '600',
     name: 'Visitor',
-    stream: 'Tourist (Online)',
     category: 'Visitor',
-    p50: '22 days',
-    p90: '47 days',
+    streams: [
+      { name: 'Tourist stream (online)', p50: '22 days', p90: '47 days' },
+      { name: 'Business Visitor stream', p50: '15 days', p90: '35 days' },
+    ],
+    fee: 'AUD $190',
+    conditions: [
+      'Genuine temporary intention',
+      'Sufficient funds to support stay',
+      'Health and character requirements',
+    ],
     icon: 'airplane-outline',
     color: '#FB923C',
     url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/visitor-600',
@@ -252,11 +432,35 @@ export const PROCESSING_TIMES: ProcessingTime[] = [
     subclass: '417',
     name: 'Working Holiday',
     category: 'Visitor',
-    p50: '21 days',
-    p90: '53 days',
+    streams: [
+      { p50: '21 days', p90: '53 days' },
+    ],
+    fee: 'AUD $650',
+    conditions: [
+      'Age 18–30 (or 35 for some passport holders)',
+      'Eligible passport (31 countries)',
+      'No dependent children in Australia',
+    ],
     icon: 'sunny-outline',
     color: '#FB923C',
     url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/work-holiday-417',
+  },
+  {
+    subclass: '462',
+    name: 'Work and Holiday',
+    category: 'Visitor',
+    streams: [
+      { p50: '18 days', p90: '49 days' },
+    ],
+    fee: 'AUD $650',
+    conditions: [
+      'Age 18–30',
+      'Eligible passport (19 countries, incl. USA, China, Spain)',
+      'Letter of support from your home government (some nationalities)',
+    ],
+    icon: 'sunny-outline',
+    color: '#FB923C',
+    url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/work-holiday-462',
   },
 ];
 
