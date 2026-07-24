@@ -598,18 +598,22 @@ const AUTHORITY_INFO: Record<string, AuthorityInfo> = {
     notes: [],
   },
   'SPA': {
-    name: 'SSSI (Surveying and Spatial Sciences Institute)',
-    assesses: 'Surveyors and spatial scientists',
-    website: 'https://www.sssi.org.au',
-    typicalTime: '6–10 weeks',
-    fee: 'AUD $550 – $750',
+    name: 'Speech Pathology Australia',
+    assesses: 'Speech pathologists',
+    website: 'https://www.speechpathologyaustralia.org.au',
+    typicalTime: '8–12 weeks',
+    fee: 'AUD $900 – $1,200',
     documents: [
-      'Surveying or geospatial science degree and transcripts',
-      'Employment references',
-      'CV',
+      'Speech pathology degree certificate and official transcripts',
+      'Evidence of supervised clinical placement hours',
+      'Professional registration certificate (if applicable)',
+      'English proficiency evidence (IELTS / OET)',
       'Certified passport copy',
+      'Employment references',
     ],
-    notes: [],
+    notes: [
+      'Assessment result used for AHPRA registration and visa purposes',
+    ],
   },
   'AIPM': {
     name: 'AIPM (Australian Institute of Project Management)',
@@ -625,6 +629,440 @@ const AUTHORITY_INFO: Record<string, AuthorityInfo> = {
       'Certified passport copy',
     ],
     notes: [],
+  },
+
+  // ─── Dental ───────────────────────────────────────────────────────────────
+  'ADC': {
+    name: 'ADC (Australian Dental Council)',
+    assesses: 'Dentists, dental hygienists, dental therapists, dental prosthetists',
+    website: 'https://www.adc.org.au',
+    typicalTime: '12–18 months',
+    fee: 'AUD $2,000 – $3,500 (includes written & practical exams)',
+    documents: [
+      'Dental degree certificate and official transcripts',
+      'Registration/licence in home country',
+      'Clinical experience records',
+      'English proficiency results (OET or IELTS)',
+      'Certified passport copy',
+      'Criminal history check',
+    ],
+    notes: [
+      'Assessment includes written and clinical examinations',
+      'Must also register with AHPRA (Dental Board) to practise',
+    ],
+  },
+
+  // ─── Medical Sciences ─────────────────────────────────────────────────────
+  'AIMS': {
+    name: 'AIMS (Australian Institute of Medical Scientists)',
+    assesses: 'Medical scientists and laboratory medicine professionals',
+    website: 'https://www.aims.org.au',
+    typicalTime: '6–10 weeks',
+    fee: 'AUD $600 – $900',
+    documents: [
+      'Medical science / biomedical science degree and transcripts',
+      'Evidence of laboratory work experience',
+      'Employment references',
+      'Certified passport copy',
+    ],
+    notes: ['Assesses for all medical scientist ANZSCO occupations'],
+  },
+
+  // ─── Medical Imaging & Radiation ─────────────────────────────────────────
+  'ASMIRT': {
+    name: 'ASMIRT (Australian Society of Medical Imaging and Radiation Therapy)',
+    assesses: 'Medical radiation practitioners, diagnostic radiographers, radiation therapists, sonographers',
+    website: 'https://www.asmirt.org',
+    typicalTime: '8–12 weeks',
+    fee: 'AUD $700 – $1,100',
+    documents: [
+      'Medical imaging / radiation therapy degree and transcripts',
+      'Registration or licence in home country',
+      'Clinical placement records',
+      'English proficiency results',
+      'Certified passport copy',
+    ],
+    notes: [],
+  },
+
+  // ─── Medical Physics ──────────────────────────────────────────────────────
+  'ACPSEM': {
+    name: 'ACPSEM (Australasian College of Physical Scientists & Engineers in Medicine)',
+    assesses: 'Medical physicists and biomedical engineers (clinical)',
+    website: 'https://www.acpsem.org.au',
+    typicalTime: '10–14 weeks',
+    fee: 'AUD $800 – $1,200',
+    documents: [
+      'Physics or engineering degree and transcripts',
+      'Evidence of clinical medical physics experience',
+      'Publication list (if applicable)',
+      'Employment references',
+      'Certified passport copy',
+    ],
+    notes: [],
+  },
+
+  // ─── Physiotherapy ────────────────────────────────────────────────────────
+  'APC': {
+    name: 'APC (Australian Physiotherapy Council)',
+    assesses: 'Physiotherapists',
+    website: 'https://www.physiocouncil.com.au',
+    typicalTime: '8–16 weeks',
+    fee: 'AUD $1,200 – $2,000 (pathway dependent)',
+    documents: [
+      'Physiotherapy degree certificate and transcripts',
+      'Evidence of supervised clinical hours',
+      'Professional registration certificate',
+      'English proficiency results (OET B or IELTS 7.0)',
+      'Certified passport copy',
+      'Criminal history check',
+    ],
+    notes: [
+      'Multiple pathways: FLYR, Express FLYR, and APEP',
+      'Practical assessment may be required',
+    ],
+  },
+
+  // ─── Pharmacy ─────────────────────────────────────────────────────────────
+  'APharmC': {
+    name: 'APharmC (Australian Pharmacy Council)',
+    assesses: 'Pharmacists',
+    website: 'https://www.pharmacycouncil.org.au',
+    typicalTime: '12–20 weeks',
+    fee: 'AUD $1,500 – $2,500 (includes exams)',
+    documents: [
+      'Pharmacy degree certificate and official transcripts',
+      'Registration/licence in home country',
+      'Evidence of internship / supervised practice',
+      'English proficiency results (OET or IELTS)',
+      'Certified passport copy',
+      'Criminal history check',
+    ],
+    notes: [
+      'Assessment includes OPRA® or CAOP® written examination',
+      'Must register with AHPRA (Pharmacy Board) to practise',
+    ],
+  },
+
+  // ─── Psychology ───────────────────────────────────────────────────────────
+  'APS': {
+    name: 'APS (Australian Psychological Society)',
+    assesses: 'Psychologists',
+    website: 'https://www.psychology.org.au',
+    typicalTime: '8–12 weeks',
+    fee: 'AUD $1,000 – $1,500',
+    documents: [
+      'Psychology degree(s) and official transcripts',
+      'Evidence of supervised practice hours',
+      'Registration/licence in home country',
+      'English proficiency evidence',
+      'Certified passport copy',
+    ],
+    notes: [
+      'Must also register with AHPRA (Psychology Board) to practise',
+    ],
+  },
+
+  // ─── Osteopathy ───────────────────────────────────────────────────────────
+  'AOAC': {
+    name: 'AOAC (Australasian Osteopathic Accreditation Council)',
+    assesses: 'Osteopaths',
+    website: 'https://www.osteopathiccouncil.org.au',
+    typicalTime: '10–14 weeks',
+    fee: 'AUD $900 – $1,400',
+    documents: [
+      'Osteopathic degree certificate and transcripts',
+      'Registration/licence in home country',
+      'Evidence of supervised clinical training',
+      'English proficiency results',
+      'Certified passport copy',
+    ],
+    notes: [],
+  },
+
+  // ─── Orthotics & Prosthetics ──────────────────────────────────────────────
+  'AOPA': {
+    name: 'AOPA (Australian Orthotic Prosthetic Association)',
+    assesses: 'Orthotists and prosthetists',
+    website: 'https://www.aopa.org.au',
+    typicalTime: '8–12 weeks',
+    fee: 'AUD $900 – $1,300',
+    documents: [
+      'Orthotics/prosthetics degree and transcripts',
+      'Registration/licence in home country',
+      'Clinical placement records',
+      'Certified passport copy',
+    ],
+    notes: [],
+  },
+
+  // ─── Occupational Therapy ─────────────────────────────────────────────────
+  'OTC': {
+    name: 'OTC (Occupational Therapy Council of Australia)',
+    assesses: 'Occupational therapists',
+    website: 'https://www.otcouncil.com.au',
+    typicalTime: '8–10 weeks',
+    fee: 'AUD $800 – $1,200',
+    documents: [
+      'Occupational therapy degree and official transcripts',
+      'Evidence of supervised clinical placements',
+      'Registration/licence in home country',
+      'English proficiency results',
+      'Certified passport copy',
+    ],
+    notes: ['Must also register with AHPRA (OT Board) to practise'],
+  },
+
+  // ─── Podiatry ─────────────────────────────────────────────────────────────
+  'PodBA': {
+    name: 'Podiatry Board of Australia (via AHPRA)',
+    assesses: 'Podiatrists',
+    website: 'https://www.podiatryboard.gov.au',
+    typicalTime: '8–12 weeks',
+    fee: 'AUD $800 – $1,200',
+    documents: [
+      'Podiatry degree and official transcripts',
+      'Registration/licence in home country',
+      'Clinical practice records',
+      'English proficiency results',
+      'Certified passport copy',
+    ],
+    notes: ['Registration handled through AHPRA'],
+  },
+
+  // ─── Dietetics ────────────────────────────────────────────────────────────
+  'Dietitians Australia': {
+    name: 'Dietitians Australia (formerly DAA)',
+    assesses: 'Dietitians and nutrition scientists',
+    website: 'https://dietitiansaustralia.org.au',
+    typicalTime: '8–12 weeks',
+    fee: 'AUD $700 – $1,000',
+    documents: [
+      'Nutrition/dietetics degree certificate and official transcripts',
+      'Evidence of supervised professional practice',
+      'Employment references',
+      'English proficiency results',
+      'Certified passport copy',
+    ],
+    notes: [],
+  },
+
+  // ─── Maritime ─────────────────────────────────────────────────────────────
+  'AMSA': {
+    name: 'AMSA (Australian Maritime Safety Authority)',
+    assesses: 'Ship masters, maritime officers, marine surveyors',
+    website: 'https://www.amsa.gov.au',
+    typicalTime: '10–16 weeks',
+    fee: 'AUD $1,000 – $2,000',
+    documents: [
+      'Maritime qualifications and certificates of competency',
+      'Seafaring service record / sea-time logbook',
+      'STCW certificates',
+      'Medical fitness certificate',
+      'Certified passport copy',
+    ],
+    notes: [
+      'Governed by STCW Convention standards',
+      'Certificates must be recognised by the Australian flag state',
+    ],
+  },
+
+  // ─── Aviation ─────────────────────────────────────────────────────────────
+  'CASA': {
+    name: 'CASA (Civil Aviation Safety Authority)',
+    assesses: 'Aircraft maintenance engineers, avionics engineers, air traffic controllers',
+    website: 'https://www.casa.gov.au',
+    typicalTime: '10–18 weeks',
+    fee: 'AUD $1,500 – $3,000',
+    documents: [
+      'Overseas aviation licence or authorisation',
+      'Maintenance / engineering logbook',
+      'Type-rating certificates',
+      'Medical class certificate (pilots)',
+      'Certified passport copy',
+    ],
+    notes: [
+      'Australian licence or authorisation must be issued by CASA after assessment',
+      'Written examinations may be required',
+    ],
+  },
+
+  // ─── Veterinary ───────────────────────────────────────────────────────────
+  'AVBC': {
+    name: 'AVBC (Australasian Veterinary Boards Council)',
+    assesses: 'Veterinarians',
+    website: 'https://www.avbc.asn.au',
+    typicalTime: '12–18 months',
+    fee: 'AUD $2,000 – $3,500 (includes AVE exam)',
+    documents: [
+      'Veterinary degree and official transcripts',
+      'Registration/licence in home country',
+      'Evidence of clinical experience',
+      'English proficiency results',
+      'Certified passport copy',
+    ],
+    notes: [
+      'Includes the Australian Veterinary Examination (AVE)',
+      'State Veterinary Board registration required to practise',
+    ],
+  },
+
+  // ─── Chiropractic ─────────────────────────────────────────────────────────
+  'CCEA': {
+    name: 'CCEA (Council on Chiropractic Education Australasia)',
+    assesses: 'Chiropractors',
+    website: 'https://www.ccea.com.au',
+    typicalTime: '10–16 weeks',
+    fee: 'AUD $1,200 – $2,000',
+    documents: [
+      'Chiropractic degree and official transcripts',
+      'Registration/licence in home country',
+      'Evidence of clinical practice',
+      'English proficiency results',
+      'Certified passport copy',
+    ],
+    notes: ['Assessment may include a competency-based practical component'],
+  },
+
+  // ─── Chinese Medicine ─────────────────────────────────────────────────────
+  'CMBA': {
+    name: 'Chinese Medicine Board of Australia (via AHPRA)',
+    assesses: 'Chinese medicine practitioners, acupuncturists, Chinese herbal medicine practitioners',
+    website: 'https://www.chinesemedicineboard.gov.au',
+    typicalTime: '10–16 weeks',
+    fee: 'AUD $800 – $1,500',
+    documents: [
+      'Chinese medicine / acupuncture qualification and transcripts',
+      'Registration/licence in home country',
+      'Evidence of supervised clinical hours',
+      'English proficiency results',
+      'Certified passport copy',
+    ],
+    notes: ['Registration handled through AHPRA'],
+  },
+
+  // ─── Optometry ────────────────────────────────────────────────────────────
+  'OCANZ': {
+    name: 'OCANZ (Optometry Council of Australia and New Zealand)',
+    assesses: 'Optometrists',
+    website: 'https://www.ocanz.org',
+    typicalTime: '10–14 weeks',
+    fee: 'AUD $1,000 – $1,800',
+    documents: [
+      'Optometry degree and official transcripts',
+      'Registration/licence in home country',
+      'Evidence of clinical experience',
+      'English proficiency results',
+      'Certified passport copy',
+    ],
+    notes: ['Assessment may include a practical/clinical component'],
+  },
+
+  // ─── Nuclear Medicine ─────────────────────────────────────────────────────
+  'ANZSNM': {
+    name: 'ANZSNM (Australian & New Zealand Society of Nuclear Medicine)',
+    assesses: 'Nuclear medicine technologists',
+    website: 'https://www.anzsnm.org.au',
+    typicalTime: '8–12 weeks',
+    fee: 'AUD $700 – $1,100',
+    documents: [
+      'Nuclear medicine qualification and transcripts',
+      'Evidence of clinical practice experience',
+      'Registration/licence in home country',
+      'Certified passport copy',
+    ],
+    notes: [],
+  },
+
+  // ─── Surveying ────────────────────────────────────────────────────────────
+  'SSSI': {
+    name: 'SSSI (Surveying & Spatial Sciences Institute)',
+    assesses: 'Surveyors, spatial scientists, cartographers, hydrographic surveyors',
+    website: 'https://www.sssi.org.au',
+    typicalTime: '6–10 weeks',
+    fee: 'AUD $550 – $750',
+    documents: [
+      'Surveying or geospatial science degree and transcripts',
+      'Subject descriptions for core units',
+      'Employment references',
+      'CV with project portfolio',
+      'Certified passport copy',
+    ],
+    notes: [],
+  },
+
+  // ─── Legal ────────────────────────────────────────────────────────────────
+  'SLAA': {
+    name: 'State / Territory Legal Admissions Authority',
+    assesses: 'Lawyers (solicitors and barristers)',
+    website: 'https://immi.homeaffairs.gov.au/visas/working-in-australia/skills-assessment/approved-assessing-authorities',
+    typicalTime: '12–24 weeks',
+    fee: 'AUD $1,500 – $3,500 (varies by state)',
+    documents: [
+      'Law degree certificate and official transcripts',
+      'Admission history and conduct certificate from home jurisdiction',
+      'Professional references',
+      'Certified passport copy',
+      'Criminal history check',
+    ],
+    notes: [
+      'Each state/territory has its own admissions authority',
+      'Overseas lawyers may need bridging courses or further study',
+    ],
+  },
+
+  // ─── Management ───────────────────────────────────────────────────────────
+  'IML': {
+    name: 'IML (Institute of Managers and Leaders)',
+    assesses: 'Managers and senior executives (general management occupations)',
+    website: 'https://managersandleaders.com.au',
+    typicalTime: '6–10 weeks',
+    fee: 'AUD $700 – $1,100',
+    documents: [
+      'Degree certificate and transcripts (any discipline)',
+      'Detailed employment references confirming management responsibilities',
+      'CV outlining management and leadership roles',
+      'Certified passport copy',
+    ],
+    notes: [],
+  },
+
+  // ─── Community Work ───────────────────────────────────────────────────────
+  'Community Work Australia': {
+    name: 'Community Work Australia',
+    assesses: 'Community workers and welfare support workers',
+    website: 'https://communitywork.org.au',
+    typicalTime: '6–8 weeks',
+    fee: 'AUD $500 – $800',
+    documents: [
+      'Community services / welfare qualification and transcripts',
+      'Evidence of supervised field placements',
+      'Employment references',
+      'Certified passport copy',
+    ],
+    notes: [],
+  },
+
+  // ─── Medical Board (alias for AHPRA medical) ──────────────────────────────
+  'Medical Board': {
+    name: 'Medical Board of Australia (via AHPRA)',
+    assesses: 'Medical doctors (general practitioners and specialists)',
+    website: 'https://www.medicalboard.gov.au',
+    typicalTime: '3–6 months',
+    fee: 'AUD $2,500 – $4,000',
+    documents: [
+      'Primary medical degree (MBBS, MD, or equivalent)',
+      'Official academic transcripts',
+      'Certificate of good standing from home medical board',
+      'Internship / residency completion evidence',
+      'English proficiency results (OET or IELTS)',
+      'Certified passport copy',
+      'Criminal history check',
+    ],
+    notes: [
+      'Assessment and registration handled through AHPRA',
+      'Specialist pathway available for specialists (AMC or specialist college)',
+    ],
   },
 };
 
@@ -1724,9 +2162,24 @@ export default function OccupationsScreen() {
 
                   {/* ─── Skills Assessment ────────────────────────────── */}
                   {selected.assessingAuthority && (() => {
-                    const authorityKey = Object.keys(AUTHORITY_INFO).find(k =>
-                      selected.assessingAuthority!.toLowerCase().includes(k.toLowerCase())
-                    );
+                    // Aliases: maps fragments in assessingAuthority strings → AUTHORITY_INFO key
+                    const ALIASES: Record<string, string> = {
+                      'CPA Australia': 'CPAA',
+                      'CA ANZ': 'CAANZ',
+                      'Medical Board': 'Medical Board',
+                      'Dietitians Australia': 'Dietitians Australia',
+                      'Community Work': 'Community Work Australia',
+                    };
+                    const raw = selected.assessingAuthority!;
+                    const rawLower = raw.toLowerCase();
+                    // 1. Try exact AUTHORITY_INFO key match
+                    // 2. Try alias fragments
+                    // 3. Try partial include of key in authority string
+                    const authorityKey =
+                      AUTHORITY_INFO[raw]
+                        ? raw
+                        : Object.entries(ALIASES).find(([frag]) => rawLower.includes(frag.toLowerCase()))?.[1] ??
+                          Object.keys(AUTHORITY_INFO).find(k => rawLower.includes(k.toLowerCase()));
                     const info = authorityKey ? AUTHORITY_INFO[authorityKey] : null;
                     return (
                       <>
