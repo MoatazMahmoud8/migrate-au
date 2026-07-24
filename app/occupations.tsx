@@ -250,6 +250,10 @@ interface FederalVisaCondition {
   title: string;
   summary: string;
   fee: string;
+  /** Secondary applicant (adult 18+) fee */
+  familyFeeAdult: string;
+  /** Secondary applicant (child under 18) fee */
+  familyFeeChild: string;
   processingTime: string;
   minPoints?: number;
   points: string[];
@@ -261,6 +265,8 @@ const FEDERAL_VISA_CONDITIONS: Record<string, FederalVisaCondition> = {
     title: 'Skilled Independent',
     summary: 'Points-tested permanent visa with no state or employer sponsor.',
     fee: 'AUD $4,640 (primary applicant)',
+    familyFeeAdult: 'AUD $2,320 per adult',
+    familyFeeChild: 'AUD $1,160 per child',
     processingTime: '6 – 12 months (75% of cases)',
     minPoints: 65,
     points: ['SkillSelect invitation required', 'Minimum 65 points on the points test', 'Positive skills assessment required', 'Competent English required', 'Age must be under 45 at time of invitation'],
@@ -270,6 +276,8 @@ const FEDERAL_VISA_CONDITIONS: Record<string, FederalVisaCondition> = {
     title: 'Skilled Nominated',
     summary: 'Permanent visa requiring nomination by a state or territory.',
     fee: 'AUD $4,640 (primary applicant)',
+    familyFeeAdult: 'AUD $2,320 per adult',
+    familyFeeChild: 'AUD $1,160 per child',
     processingTime: '6 – 24 months (varies by state)',
     minPoints: 65,
     points: ['State or territory nomination required (+5 points)', 'Minimum 65 points on the points test', 'Positive skills assessment required', 'Competent English required', 'Age must be under 45'],
@@ -279,6 +287,8 @@ const FEDERAL_VISA_CONDITIONS: Record<string, FederalVisaCondition> = {
     title: 'Skilled Work Regional',
     summary: 'Regional provisional visa requiring state nomination or eligible family sponsorship.',
     fee: 'AUD $4,640 (primary applicant)',
+    familyFeeAdult: 'AUD $2,320 per adult',
+    familyFeeChild: 'AUD $1,160 per child',
     processingTime: '6 – 18 months',
     minPoints: 65,
     points: ['Regional nomination or eligible family sponsorship (+15 points)', 'Minimum 65 points on the points test', 'Positive skills assessment required', 'Competent English required', 'Must live and work in a designated regional area'],
@@ -288,6 +298,8 @@ const FEDERAL_VISA_CONDITIONS: Record<string, FederalVisaCondition> = {
     title: 'Skills in Demand',
     summary: 'Temporary employer-sponsored visa for nominated occupations.',
     fee: 'AUD $3,115 (primary applicant)',
+    familyFeeAdult: 'AUD $1,055 per adult',
+    familyFeeChild: 'AUD $530 per child',
     processingTime: '1 – 6 months',
     points: ['Approved employer sponsor required', 'Employer nomination required', 'Occupation must be on relevant list', 'Market salary rate must be met', 'English and work-experience requirements apply'],
     sourceUrl: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skills-in-demand-482',
@@ -296,6 +308,8 @@ const FEDERAL_VISA_CONDITIONS: Record<string, FederalVisaCondition> = {
     title: 'Employer Nomination Scheme',
     summary: 'Permanent employer-sponsored visa for nominated skilled workers.',
     fee: 'AUD $4,640 (primary applicant)',
+    familyFeeAdult: 'AUD $2,320 per adult',
+    familyFeeChild: 'AUD $1,160 per child',
     processingTime: '6 – 18 months',
     points: ['Approved Australian employer nomination required', 'Occupation and stream requirements apply', 'Skills assessment may be required (Direct Entry)', 'Competent English required', 'Age and work-experience rules apply'],
     sourceUrl: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/employer-nomination-scheme-186',
@@ -304,6 +318,8 @@ const FEDERAL_VISA_CONDITIONS: Record<string, FederalVisaCondition> = {
     title: 'Temporary Graduate',
     summary: 'Temporary visa for eligible recent graduates with Australian study.',
     fee: 'AUD $1,730 (primary applicant)',
+    familyFeeAdult: 'AUD $575 per adult',
+    familyFeeChild: 'AUD $290 per child',
     processingTime: '2 – 6 months',
     points: ['Must have completed an eligible Australian qualification', 'Applied within 6 months of completing studies', 'Age and qualification rules apply', 'Competent English required'],
     sourceUrl: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/temporary-graduate-485',
@@ -312,6 +328,8 @@ const FEDERAL_VISA_CONDITIONS: Record<string, FederalVisaCondition> = {
     title: 'Skilled Employer Sponsored Regional',
     summary: 'Regional provisional employer-sponsored visa.',
     fee: 'AUD $3,115 (primary applicant)',
+    familyFeeAdult: 'AUD $1,055 per adult',
+    familyFeeChild: 'AUD $530 per child',
     processingTime: '6 – 18 months',
     points: ['Employer in designated regional area required', 'Employer nomination required', 'Skills assessment usually required', 'English and work-experience rules apply', 'Must live and work in designated regional area'],
     sourceUrl: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skilled-employer-sponsored-regional-494',
@@ -1168,6 +1186,18 @@ export default function OccupationsScreen() {
                                     </View>
                                   </>
                                 )}
+                              </View>
+                              {/* Family member fees row */}
+                              <View style={[styles.federalFamilyFeeRow, { backgroundColor: Colors.surfaceRaised, borderColor: Colors.border }]}>
+                                <Ionicons name="people-outline" size={12} color={Colors.textMuted} />
+                                <Text style={[styles.federalFamilyFeeLabel, { color: Colors.textMuted }]}>Family</Text>
+                                <View style={styles.federalFamilyFeeItems}>
+                                  <Text style={[styles.federalFamilyFeeChip, { color: Colors.textSecondary }]}>
+                                    <Text style={{ color: Colors.textPrimary, fontWeight: '600' }}>{condition.familyFeeAdult}</Text>
+                                    {'  ·  '}
+                                    <Text style={{ color: Colors.textPrimary, fontWeight: '600' }}>{condition.familyFeeChild}</Text>
+                                  </Text>
+                                </View>
                               </View>
                               <View style={styles.federalVisaPoints}>
                                 {condition.points.map((point, index) => (
@@ -2199,6 +2229,27 @@ const styles = StyleSheet.create({
     fontSize: FontSize.xs,
     fontWeight: FontWeight.semiBold,
     flex: 1,
+  },
+  federalFamilyFeeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderRadius: Radius.sm,
+    borderWidth: 1,
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    marginTop: 6,
+  },
+  federalFamilyFeeLabel: {
+    fontSize: 10,
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
+  },
+  federalFamilyFeeItems: {
+    flex: 1,
+  },
+  federalFamilyFeeChip: {
+    fontSize: FontSize.xs,
   },
   healthNote: {
     flexDirection: 'row',

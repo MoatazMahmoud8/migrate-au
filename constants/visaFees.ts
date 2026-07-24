@@ -25,22 +25,22 @@ export const VISA_FEES_SNAPSHOT_DATE = '2026-07-24';
 
 export const VISA_FEES: VisaFeeEntry[] = [
   // ─── Skilled ──────────────────────────────────────────────────────
-  { subclass: '189', fee: 'AUD $4,640' },
-  { subclass: '190', fee: 'AUD $4,640' },
-  { subclass: '191', fee: 'AUD $4,640' },
+  { subclass: '189', fee: 'AUD $4,640', note: 'Family: +$2,320 per adult · +$1,160 per child' },
+  { subclass: '190', fee: 'AUD $4,640', note: 'Family: +$2,320 per adult · +$1,160 per child' },
+  { subclass: '191', fee: 'AUD $4,640', note: 'Family: +$2,320 per adult · +$1,160 per child' },
   { subclass: '192', fee: 'AUD $505' },
-  { subclass: '491', fee: 'AUD $4,640' },
-  { subclass: '858', fee: 'AUD $4,640' },
-  { subclass: '887', fee: 'AUD $4,640' },
+  { subclass: '491', fee: 'AUD $4,640', note: 'Family: +$2,320 per adult · +$1,160 per child' },
+  { subclass: '858', fee: 'AUD $4,640', note: 'Family: +$2,320 per adult · +$1,160 per child' },
+  { subclass: '887', fee: 'AUD $4,640', note: 'Family: +$2,320 per adult · +$1,160 per child' },
 
   // ─── Employer ─────────────────────────────────────────────────────
-  { subclass: '186', fee: 'AUD $4,640' },
+  { subclass: '186', fee: 'AUD $4,640', note: 'Family: +$2,320 per adult · +$1,160 per child' },
   { subclass: '400', fee: 'AUD $385' },
   { subclass: '403', fee: 'AUD $280' },
   { subclass: '407', fee: 'AUD $385' },
   { subclass: '408', fee: 'AUD $385' },
-  { subclass: '482', fee: 'AUD $3,115' },
-  { subclass: '494', fee: 'AUD $3,115' },
+  { subclass: '482', fee: 'AUD $3,115', note: 'Family: +$1,055 per adult · +$530 per child' },
+  { subclass: '494', fee: 'AUD $3,115', note: 'Family: +$1,055 per adult · +$530 per child' },
 
   // ─── Working Holiday ──────────────────────────────────────────────
   { subclass: '417', fee: 'AUD $635' },
@@ -52,7 +52,7 @@ export const VISA_FEES: VisaFeeEntry[] = [
   { subclass: '888', fee: 'AUD $5,885' },
 
   // ─── Graduate ─────────────────────────────────────────────────────
-  { subclass: '485', fee: 'AUD $1,730' },
+  { subclass: '485', fee: 'AUD $1,730', note: 'Family: +$575 per adult · +$290 per child' },
 
   // ─── Family — Partner ─────────────────────────────────────────────
   { subclass: '300', fee: 'AUD $9,095', note: 'Prospective marriage (fiancé)' },
