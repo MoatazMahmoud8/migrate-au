@@ -249,6 +249,9 @@ const VISA_ENGLISH: Record<string, EnglishReq> = {
 interface FederalVisaCondition {
   title: string;
   summary: string;
+  fee: string;
+  processingTime: string;
+  minPoints?: number;
   points: string[];
   sourceUrl: string;
 }
@@ -257,43 +260,60 @@ const FEDERAL_VISA_CONDITIONS: Record<string, FederalVisaCondition> = {
   '189': {
     title: 'Skilled Independent',
     summary: 'Points-tested permanent visa with no state or employer sponsor.',
-    points: ['SkillSelect invitation required', 'Positive skills assessment', 'Competent English', 'Age and points-test rules apply'],
+    fee: 'AUD $4,640 (primary applicant)',
+    processingTime: '6 – 12 months (75% of cases)',
+    minPoints: 65,
+    points: ['SkillSelect invitation required', 'Minimum 65 points on the points test', 'Positive skills assessment required', 'Competent English required', 'Age must be under 45 at time of invitation'],
     sourceUrl: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skilled-independent-189',
   },
   '190': {
     title: 'Skilled Nominated',
     summary: 'Permanent visa requiring nomination by a state or territory.',
-    points: ['State or territory nomination required', 'Positive skills assessment', 'Competent English', 'Points-test rules apply'],
+    fee: 'AUD $4,640 (primary applicant)',
+    processingTime: '6 – 24 months (varies by state)',
+    minPoints: 65,
+    points: ['State or territory nomination required (+5 points)', 'Minimum 65 points on the points test', 'Positive skills assessment required', 'Competent English required', 'Age must be under 45'],
     sourceUrl: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skilled-nominated-190',
   },
   '491': {
     title: 'Skilled Work Regional',
     summary: 'Regional provisional visa requiring state nomination or eligible family sponsorship.',
-    points: ['Regional nomination or family sponsorship', 'Positive skills assessment', 'Competent English', 'Regional residence and work conditions'],
+    fee: 'AUD $4,640 (primary applicant)',
+    processingTime: '6 – 18 months',
+    minPoints: 65,
+    points: ['Regional nomination or eligible family sponsorship (+15 points)', 'Minimum 65 points on the points test', 'Positive skills assessment required', 'Competent English required', 'Must live and work in a designated regional area'],
     sourceUrl: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skilled-work-regional-provisional-491',
   },
   '482': {
     title: 'Skills in Demand',
     summary: 'Temporary employer-sponsored visa for nominated occupations.',
-    points: ['Approved employer sponsor required', 'Employer nomination required', 'Occupation and salary rules apply', 'Skills and English requirements vary by stream'],
+    fee: 'AUD $3,115 (primary applicant)',
+    processingTime: '1 – 6 months',
+    points: ['Approved employer sponsor required', 'Employer nomination required', 'Occupation must be on relevant list', 'Market salary rate must be met', 'English and work-experience requirements apply'],
     sourceUrl: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skills-in-demand-482',
   },
   '186': {
     title: 'Employer Nomination Scheme',
     summary: 'Permanent employer-sponsored visa for nominated skilled workers.',
-    points: ['Approved Australian employer nomination', 'Relevant occupation and stream requirements', 'Skills assessment may be required', 'English, age and work-experience rules apply'],
+    fee: 'AUD $4,640 (primary applicant)',
+    processingTime: '6 – 18 months',
+    points: ['Approved Australian employer nomination required', 'Occupation and stream requirements apply', 'Skills assessment may be required (Direct Entry)', 'Competent English required', 'Age and work-experience rules apply'],
     sourceUrl: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/employer-nomination-scheme-186',
   },
   '485': {
     title: 'Temporary Graduate',
     summary: 'Temporary visa for eligible recent graduates with Australian study.',
-    points: ['Australian study requirement', 'Age and qualification rules apply', 'English requirement applies', 'Stream and duration depend on qualification'],
+    fee: 'AUD $1,730 (primary applicant)',
+    processingTime: '2 – 6 months',
+    points: ['Must have completed an eligible Australian qualification', 'Applied within 6 months of completing studies', 'Age and qualification rules apply', 'Competent English required'],
     sourceUrl: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/temporary-graduate-485',
   },
   '494': {
     title: 'Skilled Employer Sponsored Regional',
     summary: 'Regional provisional employer-sponsored visa.',
-    points: ['Regional employer sponsorship required', 'Employer nomination required', 'Usually requires relevant skills assessment', 'English and work-experience rules apply'],
+    fee: 'AUD $3,115 (primary applicant)',
+    processingTime: '6 – 18 months',
+    points: ['Employer in designated regional area required', 'Employer nomination required', 'Skills assessment usually required', 'English and work-experience rules apply', 'Must live and work in designated regional area'],
     sourceUrl: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skilled-employer-sponsored-regional-494',
   },
 };
@@ -1125,6 +1145,30 @@ export default function OccupationsScreen() {
                                   <Text style={[styles.federalVisaSummary, { color: Colors.textSecondary }]}>{condition.summary}</Text>
                                 </View>
                               </View>
+                              {/* Fee + processing strip */}
+                              <View style={[styles.federalVisaMetaStrip, { borderTopColor: Colors.border }]}>
+                                <View style={styles.federalVisaMetaItem}>
+                                  <Ionicons name="card-outline" size={12} color={Colors.accent} />
+                                  <Text style={[styles.federalVisaMetaLabel, { color: Colors.textMuted }]}>Fee</Text>
+                                  <Text style={[styles.federalVisaMetaVal, { color: Colors.textPrimary }]}>{condition.fee}</Text>
+                                </View>
+                                <View style={[styles.federalVisaMetaDivider, { backgroundColor: Colors.border }]} />
+                                <View style={styles.federalVisaMetaItem}>
+                                  <Ionicons name="time-outline" size={12} color={Colors.accent} />
+                                  <Text style={[styles.federalVisaMetaLabel, { color: Colors.textMuted }]}>Processing</Text>
+                                  <Text style={[styles.federalVisaMetaVal, { color: Colors.textPrimary }]}>{condition.processingTime}</Text>
+                                </View>
+                                {condition.minPoints && (
+                                  <>
+                                    <View style={[styles.federalVisaMetaDivider, { backgroundColor: Colors.border }]} />
+                                    <View style={styles.federalVisaMetaItem}>
+                                      <Ionicons name="stats-chart-outline" size={12} color={Colors.success} />
+                                      <Text style={[styles.federalVisaMetaLabel, { color: Colors.textMuted }]}>Min. pts</Text>
+                                      <Text style={[styles.federalVisaMetaVal, { color: Colors.success }]}>{condition.minPoints}</Text>
+                                    </View>
+                                  </>
+                                )}
+                              </View>
                               <View style={styles.federalVisaPoints}>
                                 {condition.points.map((point, index) => (
                                   <View key={index} style={styles.federalVisaPointRow}>
@@ -1144,13 +1188,19 @@ export default function OccupationsScreen() {
                             </View>
                           ))}
                         </View>
+                        {/* Universal health & character note */}
+                        <View style={[styles.healthNote, { backgroundColor: `${Colors.warning}0D`, borderColor: `${Colors.warning}40` }]}>
+                          <Ionicons name="alert-circle-outline" size={13} color={Colors.warning} />
+                          <Text style={[styles.healthNoteText, { color: Colors.textSecondary }]}>
+                            All Australian visas require health examinations and character checks (police clearance). Fees shown are for primary applicant — secondary applicants incur additional charges.
+                          </Text>
+                        </View>
                       </>
                     );
                   })()}
 
                   {(() => {
                     // Normalize plural ANZSCO names → singular SkillSelect names
-                    // e.g. "Architects" → "Architect", "Registered Nurses (Aged Care)" → "Registered Nurse (Aged Care)"
                     const normName = (n: string) => {
                       let s = n.toLowerCase().trim().replace(/s \(/g, ' (');
                       if (s.length > 5 && s.endsWith('ies')) return s.slice(0, -3) + 'y';
@@ -1167,6 +1217,7 @@ export default function OccupationsScreen() {
                       : null;
                     const hasBoth189 = history.some(h => h.sc189 != null);
                     const hasBoth491 = history.some(h => h.sc491Family != null);
+                    const isPremium = profile?.isPremium === true;
                     return (
                       <>
                         <Text style={[styles.sectionLabel, { color: Colors.textPrimary }]}>SkillSelect cutoffs</Text>
@@ -1191,6 +1242,7 @@ export default function OccupationsScreen() {
                             </View>
                           )}
                           {history.length > 1 && (
+                            isPremium ? (
                             <View style={styles.cutoffHistory}>
                               <Text style={[styles.cutoffHistoryTitle, { color: Colors.textSecondary }]}>Points history</Text>
                               <View style={[styles.cutoffHistoryHeader, { borderBottomColor: Colors.border }]}>
@@ -1209,6 +1261,17 @@ export default function OccupationsScreen() {
                                 );
                               })}
                             </View>
+                            ) : (
+                              <TouchableOpacity
+                                style={[styles.premiumGate, { backgroundColor: `${Colors.secondary}0D`, borderColor: `${Colors.secondary}40` }]}
+                                onPress={() => setShowPaywall(true)}
+                                activeOpacity={0.8}
+                              >
+                                <Ionicons name="lock-closed" size={14} color={Colors.secondary} />
+                                <Text style={[styles.premiumGateText, { color: Colors.secondary }]}>Unlock full points history — Premium</Text>
+                                <Ionicons name="chevron-forward" size={13} color={Colors.secondary} />
+                              </TouchableOpacity>
+                            )
                           )}
                           <TouchableOpacity
                             onPress={() => Linking.openURL('https://immi.homeaffairs.gov.au/visas/working-in-australia/skillselect/invitation-rounds')}
@@ -1633,22 +1696,36 @@ export default function OccupationsScreen() {
                                 <Text style={[styles.authRowVal, {color: Colors.textPrimary}]}>{info.typicalTime}</Text>
                               </View>
 
-                              <View style={styles.authRow}>
-                                <Ionicons name="card-outline" size={13} color={Colors.textMuted} />
-                                <Text style={[styles.authRowKey, {color: Colors.textPrimary}]}>Assessment fee</Text>
-                                <Text style={[styles.authRowVal, {color: Colors.textPrimary}]}>{info.fee}</Text>
-                              </View>
+                              {profile?.isPremium ? (
+                                <>
+                                  <View style={styles.authRow}>
+                                    <Ionicons name="card-outline" size={13} color={Colors.textMuted} />
+                                    <Text style={[styles.authRowKey, {color: Colors.textPrimary}]}>Assessment fee</Text>
+                                    <Text style={[styles.authRowVal, {color: Colors.textPrimary}]}>{info.fee}</Text>
+                                  </View>
 
-                              {info.documents.length > 0 && (
-                                <View style={styles.authNotes}>
-                                  <Text style={[styles.authSectionHeading, {color: Colors.textMuted}]}>Required documents</Text>
-                                  {info.documents.map((d, i) => (
-                                    <View key={i} style={styles.authNoteRow}>
-                                      <Ionicons name="document-text-outline" size={12} color={Colors.accent} style={{ marginTop: 2 }} />
-                                      <Text style={[styles.authNoteText, {color: Colors.textPrimary}]}>{d}</Text>
+                                  {info.documents.length > 0 && (
+                                    <View style={styles.authNotes}>
+                                      <Text style={[styles.authSectionHeading, {color: Colors.textMuted}]}>Required documents</Text>
+                                      {info.documents.map((d, i) => (
+                                        <View key={i} style={styles.authNoteRow}>
+                                          <Ionicons name="document-text-outline" size={12} color={Colors.accent} style={{ marginTop: 2 }} />
+                                          <Text style={[styles.authNoteText, {color: Colors.textPrimary}]}>{d}</Text>
+                                        </View>
+                                      ))}
                                     </View>
-                                  ))}
-                                </View>
+                                  )}
+                                </>
+                              ) : (
+                                <TouchableOpacity
+                                  style={[styles.premiumGate, { backgroundColor: `${Colors.secondary}0D`, borderColor: `${Colors.secondary}40`, marginTop: Spacing.sm }]}
+                                  onPress={() => setShowPaywall(true)}
+                                  activeOpacity={0.8}
+                                >
+                                  <Ionicons name="lock-closed" size={14} color={Colors.secondary} />
+                                  <Text style={[styles.premiumGateText, { color: Colors.secondary }]}>Unlock fee & required documents — Premium</Text>
+                                  <Ionicons name="chevron-forward" size={13} color={Colors.secondary} />
+                                </TouchableOpacity>
                               )}
 
                               {info.notes.length > 0 && (
@@ -2090,6 +2167,65 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   federalVisaLinkText: {
+    fontSize: FontSize.xs,
+    fontWeight: FontWeight.semiBold,
+  },
+  federalVisaMetaStrip: {
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    borderTopWidth: 1,
+    paddingTop: Spacing.sm,
+    gap: 6,
+    flexWrap: 'wrap',
+  },
+  federalVisaMetaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    flex: 1,
+    minWidth: 100,
+  },
+  federalVisaMetaDivider: {
+    width: 1,
+    alignSelf: 'stretch',
+  },
+  federalVisaMetaLabel: {
+    fontSize: 10,
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
+    marginRight: 2,
+  },
+  federalVisaMetaVal: {
+    fontSize: FontSize.xs,
+    fontWeight: FontWeight.semiBold,
+    flex: 1,
+  },
+  healthNote: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 6,
+    borderRadius: Radius.sm,
+    borderWidth: 1,
+    padding: Spacing.sm,
+    marginTop: Spacing.xs,
+  },
+  healthNoteText: {
+    flex: 1,
+    fontSize: FontSize.xs,
+    lineHeight: 16,
+  },
+  premiumGate: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderRadius: Radius.sm,
+    borderWidth: 1,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.sm,
+    marginTop: Spacing.sm,
+  },
+  premiumGateText: {
+    flex: 1,
     fontSize: FontSize.xs,
     fontWeight: FontWeight.semiBold,
   },
