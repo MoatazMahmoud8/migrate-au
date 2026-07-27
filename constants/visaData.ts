@@ -26,8 +26,8 @@ export interface VisaEntry {
   code: string;
   name: string;
   icon: string;
-  /** 'Permanent' | 'Temporary' | 'Repealed' — used for the badge */
-  type: 'Permanent' | 'Temporary' | 'Repealed';
+  /** Current grant type, or unavailable status for historical records. */
+  type: 'Permanent' | 'Temporary' | 'Closed' | 'Repealed';
   category: VisaCategory;
   subclasses: string[];
   conditions: string[];
@@ -35,6 +35,70 @@ export interface VisaEntry {
   fee?: string;
   url: string;
 }
+
+const REPEALED_LIST_URL = 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing';
+
+const REPEALED_ARCHIVE: VisaEntry[] = [
+  ['456', 'Business (Short Stay) visa'],
+  ['160', 'Business Skills (Provisional) visa'],
+  ['165', 'Business Skills (Provisional) visa'],
+  ['124', 'Distinguished Talent visa'],
+  ['426', 'Domestic Worker (Temporary) Diplomatic and Consular visa'],
+  ['427', 'Domestic Worker (Temporary) Executive visa'],
+  ['956', 'Electronic Travel Authority (Business Entrant) visa'],
+  ['977', 'Electronic Travel Authority (Business Entrant) visa'],
+  ['976', 'Electronic Travel Authority (Visitor) visa'],
+  ['121', 'Employer Nomination Scheme'],
+  ['856', 'Employer Nomination Scheme'],
+  ['845', 'Established Business in Australia visa'],
+  ['411', 'Exchange visa'],
+  ['415', 'Foreign Government Agency visa'],
+  ['406', 'Government Agreement visa'],
+  ['120', 'Labour Agreement visa'],
+  ['855', 'Labour Agreement visa'],
+  ['423', 'Media and Film Staff visa'],
+  ['422', 'Medical Practitioner visa'],
+  ['675', 'Medical Treatment (Short Stay) visa'],
+  ['685', 'Medical Treatment Long Stay visa'],
+  ['119', 'Regional Sponsored Migration Scheme'],
+  ['857', 'Regional Sponsored Migration Scheme'],
+  ['428', 'Religious Worker visa'],
+  ['410', 'Retirement visa'],
+  ['496', 'Skilled Designated Area Sponsored visa'],
+  ['495', 'Skilled Independent Regional (Provisional) visa'],
+  ['175', 'Skilled Independent visa'],
+  ['885', 'Skilled Independent visa'],
+  ['475', 'Skilled Regional Sponsored visa'],
+  ['487', 'Skilled Regional Sponsored visa'],
+  ['176', 'Skilled Sponsored visa'],
+  ['416', 'Special Program visa'],
+  ['886', 'Sponsored visa'],
+  ['421', 'Sport visa'],
+  ['488', 'Superyacht Crew visa'],
+  ['846', 'State or Territory Sponsored Regional Established Business in Australia visa'],
+  ['420', 'Temporary Work (Entertainment) visa'],
+  ['676', 'Tourist visa'],
+  ['401', 'Temporary Work (Long Stay Activity) visa'],
+  ['402', 'Training and Research visa'],
+  ['419', 'Visiting Academic visa'],
+  ['576', 'Foreign Affairs or Defence Sector visa'],
+  ['573', 'Higher Education Sector visa'],
+  ['570', 'Independent ELICOS Sector visa'],
+  ['575', 'Non Award Sector visa'],
+  ['574', 'Postgraduate Research Sector visa'],
+  ['571', 'School Sector visa'],
+  ['580', 'Student Guardian visa'],
+  ['572', 'Vocational Education and Training Sector visa'],
+].map(([code, name]) => ({
+  code,
+  name: `${name} – REPEALED`,
+  icon: 'archive-outline',
+  type: 'Repealed',
+  category: 'Historical',
+  subclasses: [`${code} – ${name}`],
+  conditions: ['REPEALED', 'Unavailable for new applications', 'Retained for historical reference and existing-holder context'],
+  url: REPEALED_LIST_URL,
+}));
 
 export const ALL_VISAS: VisaEntry[] = [
 
@@ -45,14 +109,14 @@ export const ALL_VISAS: VisaEntry[] = [
     code: '189', name: 'Skilled Independent', icon: 'globe-outline', type: 'Permanent', category: 'Skilled',
     subclasses: ['189 – Points-tested stream', '189 – New Zealand stream'],
     conditions: ['No sponsorship required', 'Occupation on MLTSSL', 'Points score ≥ 65', 'Age under 45'],
-    fee: 'AUD $4,640',
+    fee: 'AUD $6,140',
     url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skilled-independent-189',
   },
   {
     code: '190', name: 'Skilled Nominated', icon: 'location-outline', type: 'Permanent', category: 'Skilled',
     subclasses: ['190 – State/Territory Nominated'],
     conditions: ['Nominated by a state or territory', 'Occupation on state occupation list', 'Points score ≥ 65 (+5 nomination bonus)', 'Must live & work in nominating state for 2 years'],
-    fee: 'AUD $4,640',
+    fee: 'AUD $6,140',
     url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skilled-nominated-190',
   },
   {
@@ -71,7 +135,7 @@ export const ALL_VISAS: VisaEntry[] = [
     code: '491', name: 'Skilled Work Regional (Provisional)', icon: 'map-outline', type: 'Temporary', category: 'Skilled',
     subclasses: ['491 – State/Territory Nominated', '491 – Family Sponsored (regional)'],
     conditions: ['Live & work in designated regional area', '+15 points for nomination/family sponsorship', 'Pathway to permanent 191 after 3 years', 'Occupation on MLTSSL/STSOL/ROL'],
-    fee: 'AUD $4,640',
+    fee: 'AUD $6,140',
     url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skilled-work-regional-provisional-491',
   },
   {
@@ -96,19 +160,19 @@ export const ALL_VISAS: VisaEntry[] = [
     code: '186', name: 'Employer Nomination Scheme (ENS)', icon: 'briefcase-outline', type: 'Permanent', category: 'Employer',
     subclasses: ['186 – Direct Entry', '186 – Temporary Residence Transition', '186 – Labour Agreement'],
     conditions: ['Nominated by approved Australian employer', 'Occupation on eligible list', 'Skills & qualification assessment', 'Age under 45 (most streams)'],
-    fee: 'AUD $4,640',
+    fee: 'AUD $6,140',
     url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/employer-nomination-scheme-186',
   },
   {
-    code: '187', name: 'Regional Sponsored Migration Scheme (RSMS) – REPEALED', icon: 'location-outline', type: 'Repealed', category: 'Employer',
+    code: '187', name: 'Regional Sponsored Migration Scheme (RSMS)', icon: 'location-outline', type: 'Closed', category: 'Historical',
     subclasses: ['187 – Direct Entry (CLOSED)', '187 – Temporary Residence Transition (transition only)'],
     conditions: ['REPEALED 16 November 2019', 'Replaced by subclass 494 (provisional) and 191 (permanent)', 'Transition applications only for existing holders'],
     url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/regional-sponsor-migration-scheme-187',
   },
   {
-    code: '188', name: 'Business Innovation and Investment (Provisional)', icon: 'trending-up-outline', type: 'Temporary', category: 'Business',
+    code: '188', name: 'Business Innovation and Investment (Provisional)', icon: 'trending-up-outline', type: 'Closed', category: 'Historical',
     subclasses: ['188A – Business Innovation', '188B – Investor', '188C – Significant Investor', '188E – Entrepreneur'],
-    conditions: ['State/territory nomination required', 'Business or investment background', 'Minimum net assets and business turnover thresholds', 'Pathway to permanent 888 visa'],
+    conditions: ['CLOSED TO NEW APPLICATIONS 31 July 2024', 'Existing applications continue to be processed', 'Eligible existing holders may retain a pathway to subclass 888'],
     fee: 'AUD $10,280–$11,035',
     url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/business-innovation-and-investment-188',
   },
@@ -158,24 +222,24 @@ export const ALL_VISAS: VisaEntry[] = [
     code: '482', name: 'Skills in Demand', icon: 'briefcase-outline', type: 'Temporary', category: 'Employer',
     subclasses: ['482 – Core Skills Stream', '482 – Specialist Skills Stream', '482 – Labour Agreement Stream'],
     conditions: ['Sponsored by an approved employer', 'Occupation on eligible skills list', 'Meet English language requirements'],
-    fee: 'AUD $3,115',
+    fee: 'AUD $4,015',
     url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skills-in-demand-visa-subclass-482',
   },
   {
     code: '494', name: 'Skilled Employer Sponsored Regional (Provisional)', icon: 'location-outline', type: 'Temporary', category: 'Employer',
     subclasses: ['494 – Employer Sponsored', '494 – Labour Agreement'],
     conditions: ['Sponsored by approved regional employer', 'Occupation on RSMS occupation list', 'Live & work in specified regional area', 'Pathway to permanent 191 after 3 years'],
-    fee: 'AUD $3,115',
+    fee: 'AUD $6,140',
     url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skilled-employer-sponsored-regional-provisional-494',
   },
 
   // ─────────────────────────────────────────────────────────────────
-  // BUSINESS & INVESTMENT (3 ACTIVE)
+  // BUSINESS & INVESTMENT
   // ─────────────────────────────────────────────────────────────────
   {
-    code: '132', name: 'Business Talent (Permanent)', icon: 'trophy-outline', type: 'Permanent', category: 'Business',
+    code: '132', name: 'Business Talent (Permanent) – REPEALED', icon: 'archive-outline', type: 'Repealed', category: 'Historical',
     subclasses: ['132A – Significant Business History', '132B – Venture Capital Entrepreneur'],
-    conditions: ['State/territory nomination required', 'Significant business background', 'Net assets of AUD 1.5M+'],
+    conditions: ['REPEALED', 'No new applications accepted', 'Historical visa record only'],
     fee: 'AUD $5,885',
     url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/business-talent-permanent-132',
   },
@@ -554,7 +618,7 @@ export const ALL_VISAS: VisaEntry[] = [
     url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/bridging-visa-e-050-051',
   },
   {
-    code: '405', name: 'Investor Retirement Visa – REPEALED', icon: 'cash-outline', type: 'Repealed', category: 'Other',
+    code: '405', name: 'Investor Retirement Visa – REPEALED', icon: 'cash-outline', type: 'Repealed', category: 'Historical',
     subclasses: ['405 – Investor Retirement (closed)'],
     conditions: ['CLOSED TO NEW APPLICATIONS', 'Required AUD 750K investment', 'Existing holders may extend in some states'],
     url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/repealed-visas/investor-retirement-visa-subclass-405',
@@ -588,6 +652,18 @@ export const ALL_VISAS: VisaEntry[] = [
     url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/crew-travel-authority-942',
   },
   {
+    code: '945', name: 'Special Purpose Travel Authority', icon: 'document-text-outline', type: 'Temporary', category: 'Other',
+    subclasses: ['945 – Special Purpose Travel Authority'],
+    conditions: ['For prescribed classes of people travelling in specific circumstances', 'Eligibility depends on the purpose and status of travel', 'Not a general visitor or work visa'],
+    url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/special-purpose-visa',
+  },
+  {
+    code: 'SPV', name: 'Special Purpose Visa', icon: 'document-outline', type: 'Temporary', category: 'Other',
+    subclasses: ['Special Purpose Visa – no subclass number'],
+    conditions: ['Applies automatically to prescribed classes of people in specific circumstances', 'Validity depends on the person’s status and purpose in Australia', 'Not available as a general visa application pathway'],
+    url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/special-purpose-visa',
+  },
+  {
     code: '988', name: 'Maritime Crew', icon: 'boat-outline', type: 'Temporary', category: 'Other',
     subclasses: ['988 – Maritime Crew'],
     conditions: ['Crew of foreign vessel in Australian waters', 'Granted automatically on arrival', 'Stay while vessel remains in Australian waters'],
@@ -596,8 +672,9 @@ export const ALL_VISAS: VisaEntry[] = [
   },
 
   // ─────────────────────────────────────────────────────────────────
-  // HISTORICAL & REPEALED (9 REPEALED/CLOSED)
+  // HISTORICAL, CLOSED & REPEALED
   // ─────────────────────────────────────────────────────────────────
+  ...REPEALED_ARCHIVE,
   {
     code: '457', name: 'Temporary Work (Skilled) – REPEALED', icon: 'archive-outline', type: 'Repealed', category: 'Historical',
     subclasses: ['457 – Temporary Work (Skilled)'],
@@ -611,7 +688,7 @@ export const ALL_VISAS: VisaEntry[] = [
     url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/repealed-visas/skilled-recognised-graduate-visa-subclass-476',
   },
   {
-    code: '489', name: 'Skilled Regional (Provisional) – CLOSED', icon: 'archive-outline', type: 'Repealed', category: 'Historical',
+    code: '489', name: 'Skilled Regional (Provisional) – CLOSED', icon: 'archive-outline', type: 'Closed', category: 'Historical',
     subclasses: ['489 – Skilled Regional (Provisional)'],
     conditions: ['CLOSED TO NEW APPLICATIONS 16 November 2019', 'Replaced by Skilled Work Regional (491) visa', 'Transition to permanent 887 visa available for holders'],
     url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skilled-regional-provisional-489',

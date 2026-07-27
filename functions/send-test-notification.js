@@ -2,14 +2,12 @@
 /**
  * send-test-notification.js
  *
- * Manual test harness for MigrateAU notifications.
+ * Manual draft-queue test harness for MigrateAU notifications.
  *
- *   node send-test-notification.js --feed                 # writes 1 doc to Firestore (in-app feed)
- *   node send-test-notification.js --push                 # sends FCM push to a topic
- *   node send-test-notification.js --feed --push          # both
+ *   node send-test-notification.js --feed                 # queues one admin draft
  *
  * Options:
- *   --topic=<name>    FCM topic for --push  (default: au_migration)
+ *   --topic=<name>    Requested topic stored for admin review
  *   --state=<CODE>    Tag notification with state, e.g. NSW (also picks state_NSW topic)
  *   --title="..."     Override title
  *   --body="..."      Override body
@@ -42,7 +40,12 @@ const doFeed = flags.has('--feed');
 const doPush = flags.has('--push');
 
 if (!doFeed && !doPush) {
-  console.error('Specify --feed and/or --push. See header for usage.');
+  console.error('Specify --feed. See header for usage.');
+  process.exit(1);
+}
+
+if (doPush) {
+  console.error('Direct push is prohibited. Queue a draft with --feed instead.');
   process.exit(1);
 }
 
@@ -62,8 +65,6 @@ admin.initializeApp({
 });
 
 const db = admin.firestore();
-const messaging = admin.messaging();
-
 // ─── Run ─────────────────────────────────────────────────────────────────────
 (async () => {
   try {
@@ -73,36 +74,16 @@ const messaging = admin.messaging();
         body,
         url,
         category,
-        topic,
+        requestedTopic: topic,
         state: state || null,
+        status: 'draft',
+        createdAt: new Date().toISOString(),
         timestamp: new Date().toISOString(),
-        read: false,
+        createdBy: 'manual_test_tool',
       };
-      const ref = await db.collection('notifications').add(doc);
-      console.log(`✅ Feed doc written → notifications/${ref.id}`);
+      const ref = await db.collection('notifications_draft').add(doc);
+      console.log(`Draft queued for admin approval → notifications_draft/${ref.id}`);
       console.log('   ', JSON.stringify(doc));
-    }
-
-    if (doPush) {
-      const message = {
-        topic,
-        notification: { title, body },
-        data: {
-          route,
-          category,
-          ...(url ? { url } : {}),
-          ...(state ? { state } : {}),
-        },
-        android: { priority: 'high' },
-        apns: {
-          payload: { aps: { sound: 'default', 'content-available': 1 } },
-        },
-      };
-      const id = await messaging.send(message);
-      console.log(`✅ Push sent to topic "${topic}" → messageId=${id}`);
-      console.log(
-        '   Device must be subscribed (initNotifications runs on app start).',
-      );
     }
 
     process.exit(0);

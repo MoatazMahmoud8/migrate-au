@@ -9,7 +9,6 @@ import {
   ActivityIndicator,
   ScrollView,
   Platform,
-  Linking,
   Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';

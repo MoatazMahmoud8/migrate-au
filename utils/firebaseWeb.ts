@@ -21,6 +21,7 @@ import {
   onSnapshot,
   Unsubscribe,
 } from 'firebase/firestore';
+import { isNotificationVisible } from './notificationVisibility';
 
 // Firebase config from google-services.json
 const firebaseConfig = {
@@ -91,7 +92,9 @@ export function subscribeToNotificationsWeb(
     );
 
     return onSnapshot(q, snapshot => {
-      const items = snapshot.docs.map(doc => {
+      const items = snapshot.docs
+        .filter(doc => isNotificationVisible(doc.data()))
+        .map(doc => {
         const data = doc.data();
         // Convert Firestore Timestamp to ISO string for timeAgo function
         const timestamp = data.timestamp?.toDate?.()?.toISOString?.() || data.timestamp || new Date().toISOString();
@@ -100,7 +103,7 @@ export function subscribeToNotificationsWeb(
           ...data,
           timestamp, // Ensure it's an ISO string
         };
-      });
+        });
       console.log('[firebaseWeb] Updated with', items.length, 'items');
       onUpdate(items);
     });

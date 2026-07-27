@@ -110,6 +110,7 @@ export function validateOccupationsSnapshot(
 
 // --- Processing Times -----------------------------------------------------
 export interface ValidatedProcessingTimesSnapshot {
+  schemaVersion: number;
   snapshotDate: string;
   items: ProcessingTime[];
 }
@@ -122,6 +123,15 @@ export function validateProcessingTimesSnapshot(
   if (!isIsoDate(obj.snapshotDate)) throw new Error('snapshot: bad snapshotDate');
   if (!Array.isArray(obj.items)) throw new Error('snapshot: items not array');
   if (obj.items.length > MAX_ITEMS) throw new Error('snapshot: too many items');
+  if (obj.schemaVersion !== undefined &&
+      (!Number.isInteger(obj.schemaVersion) || (obj.schemaVersion as number) < 1)) {
+    throw new Error('snapshot: bad schemaVersion');
+  }
+
+  const inferredSchemaVersion = obj.items.every((item) =>
+    !!item && typeof item === 'object' && Array.isArray((item as Record<string, unknown>).streams)
+  ) ? 2 : 1;
+  const schemaVersion = (obj.schemaVersion as number | undefined) ?? inferredSchemaVersion;
 
   const items: ProcessingTime[] = [];
   for (const item of obj.items) {
@@ -171,7 +181,7 @@ export function validateProcessingTimesSnapshot(
   }
 
   if (items.length === 0) throw new Error('snapshot: no valid items');
-  return { snapshotDate: obj.snapshotDate, items };
+  return { schemaVersion, snapshotDate: obj.snapshotDate, items };
 }
 
 // --- Visa Fees ------------------------------------------------------------

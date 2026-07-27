@@ -10,7 +10,6 @@ import {
   Platform,
   ActivityIndicator,
   Animated,
-  Linking,
   Modal,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -23,6 +22,7 @@ import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { hasExceededLimit, getRemainingUses, incrementUsage } from '../../utils/paywall';
 import { getProfile, saveProfile } from '../../utils/storage';
 import { PaywallModal } from '../../components/PaywallModal';
+import { openExternalUrl } from '../../utils/openExternalUrl';
 import { UsageMeter } from '../../components/UsageMeter';
 import { sendAriaMessage, AriaHistoryMessage } from '../../utils/aria';
 import { recordEngagement } from '../../utils/rateApp';
@@ -213,7 +213,7 @@ export default function AiScreen() {
               Aria provides info based on official docs. Double-check on{' '}
               <Text
                 style={styles.disclaimerLink}
-                onPress={() => Linking.openURL('https://immi.homeaffairs.gov.au')}
+                onPress={() => void openExternalUrl('https://immi.homeaffairs.gov.au')}
               >
                 immi.homeaffairs.gov.au
               </Text>
@@ -247,7 +247,7 @@ export default function AiScreen() {
           Verify on{' '}
           <Text
             style={styles.sourceNoteLink}
-            onPress={() => Linking.openURL('https://immi.homeaffairs.gov.au')}
+            onPress={() => void openExternalUrl('https://immi.homeaffairs.gov.au')}
           >
             immi.homeaffairs.gov.au
           </Text>

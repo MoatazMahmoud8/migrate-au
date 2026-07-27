@@ -28,8 +28,10 @@ const LAST_CHECK_KEY = '@migrate_au_processing_times_last_check';
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 const MIN_FORCE_INTERVAL_MS = 30 * 1000;
 const FETCH_TIMEOUT_MS = 15 * 1000;
+const PROCESSING_SCHEMA_VERSION = 2;
 
 interface Snapshot {
+  schemaVersion: number;
   snapshotDate: string;
   items: ProcessingTime[];
 }
@@ -38,9 +40,13 @@ interface Snapshot {
 export async function getProcessingTimes(): Promise<Snapshot> {
   try {
     const raw = await AsyncStorage.getItem(CACHE_KEY);
-    if (raw) return JSON.parse(raw) as Snapshot;
+    if (raw) return validateProcessingTimesSnapshot(JSON.parse(raw));
   } catch {}
-  return { snapshotDate: PROCESSING_SNAPSHOT_DATE, items: PROCESSING_TIMES };
+  return {
+    schemaVersion: PROCESSING_SCHEMA_VERSION,
+    snapshotDate: PROCESSING_SNAPSHOT_DATE,
+    items: PROCESSING_TIMES,
+  };
 }
 
 /** Returns ISO timestamp of when we last successfully checked for updates. */
@@ -52,8 +58,28 @@ export async function getLastCheckedAt(): Promise<string | null> {
   }
 }
 
-function keyOf(p: ProcessingTime): string {
-  return `${p.subclass}|${p.stream ?? ''}`;
+interface ProcessingTimeRecord {
+  subclass: string;
+  stream?: string;
+  name: string;
+  p50: string;
+  p90: string;
+}
+
+function flattenProcessingTimes(items: ProcessingTime[]): ProcessingTimeRecord[] {
+  return items.flatMap((item) =>
+    item.streams.map((stream) => ({
+      subclass: item.subclass,
+      stream: stream.name,
+      name: item.name,
+      p50: stream.p50,
+      p90: stream.p90,
+    }))
+  );
+}
+
+function keyOf(record: ProcessingTimeRecord): string {
+  return `${record.subclass}|${record.stream ?? ''}`;
 }
 
 export interface ProcessingTimeChange {
@@ -106,24 +132,28 @@ export async function refreshProcessingTimes(
     const current = await getProcessingTimes();
     await AsyncStorage.setItem(LAST_CHECK_KEY, new Date().toISOString());
 
-    // Diff
-    const currentMap = new Map(current.items.map((p) => [keyOf(p), p] as const));
     const changes: ProcessingTimeChange[] = [];
-    for (const next of remote.items) {
-      const prev = currentMap.get(keyOf(next));
-      if (!prev) continue;
-      if (prev.p50 !== next.p50 || prev.p90 !== next.p90) {
-        changes.push({
-          subclass: next.subclass,
-          stream: next.stream,
-          name: next.name,
-          before: { p50: prev.p50, p90: prev.p90 },
-          after: { p50: next.p50, p90: next.p90 },
-        });
+    if (remote.schemaVersion === current.schemaVersion) {
+      const currentRecords = flattenProcessingTimes(current.items);
+      const remoteRecords = flattenProcessingTimes(remote.items);
+      const currentMap = new Map(currentRecords.map((record) => [keyOf(record), record] as const));
+      for (const next of remoteRecords) {
+        const prev = currentMap.get(keyOf(next));
+        if (!prev) continue;
+        if (prev.p50 !== next.p50 || prev.p90 !== next.p90) {
+          changes.push({
+            subclass: next.subclass,
+            stream: next.stream,
+            name: next.name,
+            before: { p50: prev.p50, p90: prev.p90 },
+            after: { p50: next.p50, p90: next.p90 },
+          });
+        }
       }
     }
 
-    if (remote.snapshotDate !== current.snapshotDate || changes.length > 0) {
+    if (remote.schemaVersion !== current.schemaVersion ||
+        remote.snapshotDate !== current.snapshotDate || changes.length > 0) {
       await AsyncStorage.setItem(CACHE_KEY, JSON.stringify(remote));
       return { updated: true, snapshot: remote, changes };
     }

@@ -1,19 +1,20 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  FlatList,
-  Linking,
+  RefreshControl,
+  ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, FontSize, FontWeight, Radius, Spacing } from '../../constants/theme';
 import { useColors } from '../../constants/ThemeContext';
+import { openExternalUrl } from '../../utils/openExternalUrl';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -183,8 +184,37 @@ interface RoundSummary {
 
 interface StateNominations {
   period: string;
+  reportingPeriod?: string;
+  metric?: 'nominations-issued';
   sc190: Record<string, number>;
   sc491: Record<string, number>;
+}
+
+interface StateAllocation {
+  financialYear: string;
+  stateCode: string;
+  subclass: '190' | '491';
+  totalQuota: number;
+  issuedCount: number;
+  lastUpdated: string;
+  isMock?: boolean;
+}
+
+interface MigrationProgramPlanning {
+  financialYear: string;
+  total: number;
+  skilled: number;
+  family: number;
+  specialEligibility: number;
+  skilledIndependent: number;
+  regional: number;
+  employerSponsored: number;
+  stateTerritoryNominated: number;
+  talentInnovation: number;
+  onshore: number;
+  offshore: number;
+  sourceUrl: string;
+  announcedAt: string;
 }
 
 interface RoundsData {
@@ -192,18 +222,58 @@ interface RoundsData {
   sourceUrl: string;
   note: string;
   currentRound: RoundSummary;
+  migrationProgramPlanning: MigrationProgramPlanning[];
   stateNominations: StateNominations;
+  stateAllocations: StateAllocation[];
   occupationScores: OccupationScore[];
   rounds: RoundSummary[];
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const CACHE_KEY = 'rounds_v3';
-const CACHE_TS_KEY = 'rounds_v3_ts';
+const CACHE_KEY = 'rounds_v10';
+const CACHE_TS_KEY = 'rounds_v10_ts';
 const CACHE_HOURS = 6;
 const REMOTE_URL = 'https://swift-shore-238707.web.app/invitation-rounds.json';
 const STATE_ORDER = ['NSW', 'VIC', 'QLD', 'WA', 'SA', 'TAS', 'ACT', 'NT'];
+
+const OFFICIAL_STATE_ALLOCATIONS: StateAllocation[] = [
+  { financialYear: '2025-26', stateCode: 'NSW', subclass: '190', totalQuota: 2100, issuedCount: 2082, lastUpdated: '2026-06-23' },
+  { financialYear: '2025-26', stateCode: 'NSW', subclass: '491', totalQuota: 1500, issuedCount: 1424, lastUpdated: '2026-06-23' },
+  { financialYear: '2025-26', stateCode: 'VIC', subclass: '190', totalQuota: 2700, issuedCount: 2649, lastUpdated: '2026-06-23' },
+  { financialYear: '2025-26', stateCode: 'VIC', subclass: '491', totalQuota: 700, issuedCount: 694, lastUpdated: '2026-06-23' },
+  { financialYear: '2025-26', stateCode: 'QLD', subclass: '190', totalQuota: 1850, issuedCount: 1602, lastUpdated: '2026-06-23' },
+  { financialYear: '2025-26', stateCode: 'QLD', subclass: '491', totalQuota: 750, issuedCount: 694, lastUpdated: '2026-06-23' },
+  { financialYear: '2025-26', stateCode: 'WA', subclass: '190', totalQuota: 2000, issuedCount: 1742, lastUpdated: '2026-06-23' },
+  { financialYear: '2025-26', stateCode: 'WA', subclass: '491', totalQuota: 1400, issuedCount: 1400, lastUpdated: '2026-06-23' },
+  { financialYear: '2025-26', stateCode: 'SA', subclass: '190', totalQuota: 1350, issuedCount: 1164, lastUpdated: '2026-06-23' },
+  { financialYear: '2025-26', stateCode: 'SA', subclass: '491', totalQuota: 900, issuedCount: 796, lastUpdated: '2026-06-23' },
+  { financialYear: '2025-26', stateCode: 'TAS', subclass: '190', totalQuota: 1200, issuedCount: 1152, lastUpdated: '2026-06-23' },
+  { financialYear: '2025-26', stateCode: 'TAS', subclass: '491', totalQuota: 650, issuedCount: 501, lastUpdated: '2026-06-23' },
+  { financialYear: '2025-26', stateCode: 'ACT', subclass: '190', totalQuota: 800, issuedCount: 715, lastUpdated: '2026-06-23' },
+  { financialYear: '2025-26', stateCode: 'ACT', subclass: '491', totalQuota: 800, issuedCount: 745, lastUpdated: '2026-06-23' },
+  { financialYear: '2025-26', stateCode: 'NT', subclass: '190', totalQuota: 850, issuedCount: 755, lastUpdated: '2026-06-23' },
+  { financialYear: '2025-26', stateCode: 'NT', subclass: '491', totalQuota: 800, issuedCount: 532, lastUpdated: '2026-06-23' },
+];
+
+const OFFICIAL_PROGRAM_PLANNING: MigrationProgramPlanning[] = [
+  {
+    financialYear: '2025-26', total: 185000, skilled: 132200, family: 52500,
+    specialEligibility: 300, skilledIndependent: 16900, regional: 33000,
+    employerSponsored: 44000, stateTerritoryNominated: 33000,
+    talentInnovation: 5300, onshore: 0, offshore: 0,
+    sourceUrl: 'https://immi.homeaffairs.gov.au/what-we-do/migration-program-planning-levels',
+    announcedAt: '2025-05-13',
+  },
+  {
+    financialYear: '2026-27', total: 185000, skilled: 132240, family: 52460,
+    specialEligibility: 300, skilledIndependent: 21090, regional: 14110,
+    employerSponsored: 58040, stateTerritoryNominated: 35500,
+    talentInnovation: 3500, onshore: 129590, offshore: 55110,
+    sourceUrl: 'https://immi.homeaffairs.gov.au/what-we-do/migration-program-planning-levels',
+    announcedAt: '2026-05-12',
+  },
+];
 
 // ─── Bundled fallback (13 November 2025 — Dept of Home Affairs) ───────────────
 
@@ -212,20 +282,24 @@ const FALLBACK: RoundsData = {
   sourceUrl: 'https://immi.homeaffairs.gov.au/visas/working-in-australia/skillselect/invitation-rounds',
   note: 'SC 190 and SC 491 (State/Territory Nominated) are managed by states independently — no departmental rounds apply. SC 189 and SC 491 (Family Sponsored) rounds are issued by the Dept of Home Affairs.',
   currentRound: {
-    date: '2026-05-28',
-    label: '28 May 2026',
-    sc189Total: 3500,
-    sc189TieBreak: '2026-05',
-    sc491FamilyTotal: 400,
-    sc491FamilyTieBreak: '2026-04',
+    date: '2026-06-04',
+    label: '4 June 2026',
+    sc189Total: 10000,
+    sc189TieBreak: '2026-04',
+    sc491FamilyTotal: 0,
+    sc491FamilyTieBreak: undefined,
   },
+  migrationProgramPlanning: OFFICIAL_PROGRAM_PLANNING,
   stateNominations: {
-    period: '2026-27 (Jul 2025 – Apr 2026)',
-    sc190: { NSW: 604, VIC: 1894, QLD: 741, WA: 1254, SA: 911, TAS: 988, ACT: 2237, NT: 1443 },
-    sc491: { NSW: 653, VIC: 1049, QLD: 438, WA: 630, SA: 594, TAS: 367, ACT: 656, NT: 1067 },
+    period: '2025-26 program year',
+    reportingPeriod: '1 Jul 2025 – 31 May 2026',
+    metric: 'nominations-issued',
+    sc190: { NSW: 2082, VIC: 2649, QLD: 1602, WA: 1742, SA: 1164, TAS: 1152, ACT: 715, NT: 755 },
+    sc491: { NSW: 1424, VIC: 694, QLD: 694, WA: 1400, SA: 796, TAS: 501, ACT: 745, NT: 532 },
   },
+  stateAllocations: OFFICIAL_STATE_ALLOCATIONS,
   rounds: [
-    { date: '2026-05-28', label: '28 May 2026', sc189Total: 3500, sc189TieBreak: '2026-05', sc491FamilyTotal: 400, sc491FamilyTieBreak: '2026-04' },
+    { date: '2026-06-04', label: '4 June 2026', sc189Total: 10000, sc189TieBreak: '2026-04', sc491FamilyTotal: 0 },
     { date: '2025-11-13', label: '13 November 2025', sc189Total: 10000, sc189TieBreak: '2025-11', sc491FamilyTotal: 300, sc491FamilyTieBreak: '2025-10' },
     { date: '2025-08-21', label: '21 August 2025', sc189Total: 6887, sc491FamilyTotal: 150 },
     { date: '2024-11-07', label: '7 November 2024', sc189Total: 5000, sc491FamilyTotal: 100 },
@@ -406,12 +480,36 @@ function fmtDateLabel(iso: string | undefined): string {
 
 /** Normalise entire RoundsData — handles both nested and flat JSON formats */
 function normaliseData(raw: any): RoundsData {
+  const stateAllocations = Array.isArray(raw.stateAllocations)
+    ? raw.stateAllocations.map((allocation: any): StateAllocation => ({
+        financialYear: allocation.financialYear ?? allocation.financial_year ?? '',
+        stateCode: allocation.stateCode ?? allocation.state_code ?? '',
+        subclass: allocation.subclass,
+        totalQuota: allocation.totalQuota ?? allocation.total_quota ?? 0,
+        issuedCount: allocation.issuedCount ?? allocation.issued_count ?? 0,
+        lastUpdated: allocation.lastUpdated ?? allocation.last_updated ?? '',
+        isMock: allocation.isMock ?? allocation.is_mock ?? false,
+      })).filter((allocation: StateAllocation) =>
+        allocation.financialYear &&
+        STATE_ORDER.includes(allocation.stateCode) &&
+        (allocation.subclass === '190' || allocation.subclass === '491') &&
+        allocation.totalQuota >= 0 &&
+        allocation.issuedCount >= 0
+      )
+    : [];
+
   return {
     lastUpdated: raw.lastUpdated ?? '',
     sourceUrl: raw.sourceUrl ?? 'https://immi.homeaffairs.gov.au/visas/working-in-australia/skillselect/invitation-rounds',
     note: raw.note ?? FALLBACK.note,
     currentRound: normaliseRound(raw.currentRound ?? {}),
+    migrationProgramPlanning: Array.isArray(raw.migrationProgramPlanning)
+      ? raw.migrationProgramPlanning
+      : FALLBACK.migrationProgramPlanning,
     stateNominations: raw.stateNominations ?? FALLBACK.stateNominations,
+    stateAllocations: stateAllocations.length > 0
+      ? stateAllocations
+      : FALLBACK.stateAllocations,
     occupationScores: raw.occupationScores ?? FALLBACK.occupationScores,
     rounds: (raw.rounds ?? []).map(normaliseRound),
   };
@@ -421,12 +519,25 @@ function normaliseData(raw: any): RoundsData {
 
 async function loadData(): Promise<RoundsData> {
   try {
+    const cached = await AsyncStorage.getItem(CACHE_KEY);
+    const cachedData = cached ? normaliseData(JSON.parse(cached)) : null;
+    const cacheHasCurrentNominationSchema =
+      cachedData?.stateNominations.metric === 'nominations-issued' &&
+      Boolean(cachedData.stateNominations.reportingPeriod) &&
+      cachedData.stateAllocations.length > 0 &&
+      cachedData.stateAllocations.every((allocation) => !allocation.isMock);
     const ts = await AsyncStorage.getItem(CACHE_TS_KEY);
-    const stale = !ts || (Date.now() - parseInt(ts)) / 3600000 >= CACHE_HOURS;
+    const stale =
+      !ts ||
+      (Date.now() - parseInt(ts)) / 3600000 >= CACHE_HOURS ||
+      !cacheHasCurrentNominationSchema;
     if (stale) {
       const ctrl = new AbortController();
       const timer = setTimeout(() => ctrl.abort(), 8000);
-      const res = await fetch(REMOTE_URL, { signal: ctrl.signal });
+      const res = await fetch(`${REMOTE_URL}?t=${Date.now()}`, {
+        signal: ctrl.signal,
+        cache: 'no-store',
+      });
       clearTimeout(timer);
       if (res.ok) {
         const raw = await res.json();
@@ -436,8 +547,7 @@ async function loadData(): Promise<RoundsData> {
         return data;
       }
     }
-    const cached = await AsyncStorage.getItem(CACHE_KEY);
-    if (cached) return normaliseData(JSON.parse(cached));
+    if (cacheHasCurrentNominationSchema && cachedData) return cachedData;
   } catch (_) {}
   return FALLBACK;
 }
@@ -474,68 +584,34 @@ function fmtTieBreak(ym: string | undefined): string {
   } catch { return ym; }
 }
 
-function numK(n: number | undefined): string {
-  if (!n) return '—';
-  return n >= 1000 ? `${(n / 1000).toFixed(n % 1000 === 0 ? 0 : 1)}k` : String(n);
+function financialYearForDate(iso: string): string {
+  const date = new Date(`${iso}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return 'Financial year unavailable';
+  const year = date.getFullYear();
+  const startYear = date.getMonth() >= 6 ? year : year - 1;
+  return `${startYear}-${String(startYear + 1).slice(-2)} financial year`;
 }
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
+function financialYearCode(iso: string): string {
+  return financialYearForDate(iso).replace(' financial year', '');
+}
 
-const ScoreBadge = React.memo(({ pts }: { pts: number | null }) => {
-  const C = useColors();
-
-  const bg = (() => {
-    if (pts === null) return C.surface;
-    if (pts <= 65) return C.success + '22';
-    if (pts <= 75) return C.secondary + '22';
-    if (pts <= 85) return C.warning + '22';
-    return '#FF6B6B22';
-  })();
-
-  const fg = (() => {
-    if (pts === null) return C.textMuted;
-    if (pts <= 65) return C.success;
-    if (pts <= 75) return C.secondary;
-    if (pts <= 85) return C.warning;
-    return '#FF6B6B';
-  })();
-
-  return (
-    <View style={[styles.scoreBadge, { backgroundColor: bg }]}>
-      <Text style={[styles.scoreVal, { color: fg }]}>
-        {pts === null ? 'N/A' : String(pts)}
-      </Text>
-    </View>
-  );
-});
-
-const OccupationRow = React.memo(({ item, index }: { item: OccupationScore; index: number }) => {
-  const C = useColors();
-  const anzsco = ANZSCO_MAP[item.name] || item.anzsco || null;
-  return (
-    <View style={[styles.occRow, { borderBottomColor: C.divider }, index % 2 === 0 && { backgroundColor: C.surface + '80' }]}>
-      <View style={styles.occNameCol}>
-        <Text style={[styles.occName, { color: C.textPrimary }]} numberOfLines={2}>{item.name}</Text>
-        {anzsco ? <Text style={[styles.occAnzsco, { color: C.textMuted }]}>{anzsco}</Text> : null}
-      </View>
-      <ScoreBadge pts={item.sc189} />
-      <ScoreBadge pts={item.sc491Family} />
-    </View>
-  );
-});
+function numK(n: number | undefined): string {
+  if (n === undefined) return '—';
+  return n >= 1000 ? `${(n / 1000).toFixed(n % 1000 === 0 ? 0 : 1)}k` : String(n);
+}
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 
 export default function RoundsScreen() {
   const Colors = useColors();
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const [data, setData] = useState<RoundsData>(FALLBACK);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [query, setQuery] = useState('');
-  const [stateExpanded, setStateExpanded] = useState(false);
-  const [historyExpanded, setHistoryExpanded] = useState(false);
-  const [filter, setFilter] = useState<'all' | '189' | '491'>('all');
+  const [stateExpanded, setStateExpanded] = useState(true);
+  const [historyExpanded, setHistoryExpanded] = useState(true);
 
   const fetchData = useCallback(async (isRefresh = false) => {
     if (isRefresh) {
@@ -550,22 +626,47 @@ export default function RoundsScreen() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  const filtered = useMemo(() => {
-    let list = data.occupationScores;
-    if (filter === '189') list = list.filter((o) => o.sc189 !== null);
-    if (filter === '491') list = list.filter((o) => o.sc491Family !== null);
-    if (query.trim()) {
-      const q = query.toLowerCase();
-      list = list.filter((o) => {
-        const anzsco = ANZSCO_MAP[o.name] || o.anzsco || '';
-        return o.name.toLowerCase().includes(q) || anzsco.includes(q);
-      });
-    }
-    return list;
-  }, [data.occupationScores, query, filter]);
-
   const cr = data.currentRound;
+  const currentRoundYear = financialYearCode(cr.date);
+  const currentPlanning = data.migrationProgramPlanning.find(
+    (planning) => planning.financialYear === currentRoundYear
+  );
+  const nextPlanning = data.migrationProgramPlanning.find(
+    (planning) => planning.financialYear === '2026-27'
+  );
+  const currentYearRounds = data.rounds.filter(
+    (round) => financialYearCode(round.date) === currentRoundYear
+  );
+  const currentYear189Invitations = currentYearRounds.reduce(
+    (total, round) => total + (round.sc189Total ?? 0), 0
+  );
+  const currentYear491Invitations = currentYearRounds.reduce(
+    (total, round) => total + (round.sc491FamilyTotal ?? 0), 0
+  );
+  const nextYearRounds = data.rounds.filter(
+    (round) => financialYearCode(round.date) === '2026-27'
+  );
+  const nextYear189Invitations = nextYearRounds.reduce(
+    (total, round) => total + (round.sc189Total ?? 0), 0
+  );
+  const nextYear491Invitations = nextYearRounds.reduce(
+    (total, round) => total + (round.sc491FamilyTotal ?? 0), 0
+  );
+  const historyByFinancialYear = data.rounds.reduce<Record<string, RoundSummary[]>>(
+    (groups, round) => {
+      const financialYear = financialYearCode(round.date);
+      groups[financialYear] = [...(groups[financialYear] ?? []), round];
+      return groups;
+    },
+    {}
+  );
   const sn = data.stateNominations;
+  const allocations = data.stateAllocations;
+  const allocationYear = allocations[0]?.financialYear ?? 'Current year';
+  const allocationLastUpdated = allocations.reduce(
+    (latest, allocation) => allocation.lastUpdated > latest ? allocation.lastUpdated : latest,
+    ''
+  );
 
   const ListHeader = (
     <View style={{ paddingTop: insets.top }}>
@@ -589,22 +690,60 @@ export default function RoundsScreen() {
             <Text style={[styles.summaryBadgeText, { color: Colors.accent }]}>SC 189</Text>
           </View>
           <Text style={[styles.summaryLabel, { color: Colors.textSecondary }]}>Skilled Independent</Text>
-          <Text style={[styles.summaryInv, {color: Colors.textPrimary}]}>{numK(cr.sc189Total)}</Text>
-          <Text style={[styles.summaryInvLabel, { color: Colors.textSecondary }]}>invitations</Text>
-          <Text style={[styles.summaryTb, { color: Colors.textSecondary }]}>Tie break: {fmtTieBreak(cr.sc189TieBreak)}</Text>
-          <Text style={[styles.summaryDate, { color: Colors.textMuted }]}>{cr.label}</Text>
+          <Text style={[styles.summaryRoundPeriod, { color: Colors.accent }]}>LATEST ROUND · {cr.label.toUpperCase()} · {currentRoundYear}</Text>
+          <Text style={[styles.summaryInv, {color: Colors.textPrimary}]}>{(cr.sc189Total ?? 0).toLocaleString()}</Text>
+          <Text style={[styles.summaryInvLabel, { color: Colors.textSecondary }]}>SC 189 invitations in this round</Text>
+          <Text style={[styles.summaryYearTotal, { color: Colors.accent }]}>Included in {currentYear189Invitations.toLocaleString()} total invitations for {currentRoundYear}</Text>
+          {currentPlanning && <Text style={[styles.summaryPlanning, { color: Colors.textSecondary }]}>{currentPlanning.skilledIndependent.toLocaleString()} visa-place planning level · not an invitation quota</Text>}
+          <Text style={[styles.summaryTb, { color: Colors.textSecondary }]}>EOI tie-break month: {fmtTieBreak(cr.sc189TieBreak)}</Text>
         </View>
         <View style={[styles.summaryCard, { backgroundColor: Colors.surface, borderColor: Colors.secondary + '55' }]}>
           <View style={[styles.summaryBadge, { backgroundColor: Colors.secondary + '22' }]}>
             <Text style={[styles.summaryBadgeText, { color: Colors.secondary }]}>SC 491</Text>
           </View>
           <Text style={[styles.summaryLabel, { color: Colors.textSecondary }]}>Regional (Family Sponsored)</Text>
-          <Text style={[styles.summaryInv, {color: Colors.textPrimary}]}>{numK(cr.sc491FamilyTotal)}</Text>
-          <Text style={[styles.summaryInvLabel, { color: Colors.textSecondary }]}>invitations</Text>
-          <Text style={[styles.summaryTb, { color: Colors.textSecondary }]}>Tie break: {fmtTieBreak(cr.sc491FamilyTieBreak)}</Text>
-          <Text style={[styles.summaryDate, { color: Colors.textMuted }]}>{cr.label}</Text>
+          <Text style={[styles.summaryRoundPeriod, { color: Colors.secondary }]}>LATEST ROUND · {cr.label.toUpperCase()} · {currentRoundYear}</Text>
+          <Text style={[styles.summaryInv, {color: Colors.textPrimary}]}>{(cr.sc491FamilyTotal ?? 0).toLocaleString()}</Text>
+          <Text style={[styles.summaryInvLabel, { color: Colors.textSecondary }]}>SC 491 Family invitations in this round</Text>
+          <Text style={[styles.summaryYearTotal, { color: Colors.secondary }]}>Included in {currentYear491Invitations.toLocaleString()} total Family invitations for {currentRoundYear}</Text>
+          {currentPlanning && <Text style={[styles.summaryPlanning, { color: Colors.textSecondary }]}>{currentPlanning.regional.toLocaleString()} Regional visa-place planning level · broader category, not a Family Sponsored quota</Text>}
+          <Text style={[styles.summaryTb, { color: Colors.textSecondary }]}>EOI tie-break month: {fmtTieBreak(cr.sc491FamilyTieBreak)}</Text>
         </View>
       </View>
+
+      {nextPlanning && (
+        <View style={[styles.programPanel, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
+          <View style={styles.programHeader}>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.programTitle, { color: Colors.textPrimary }]}>2026-27 Permanent Migration Program</Text>
+              <Text style={[styles.programSubtitle, { color: Colors.textSecondary }]}>Next financial year planning · separate from the 2025-26 invitation round above</Text>
+            </View>
+          </View>
+          <View style={styles.programStats}>
+            <View style={[styles.programStat, { backgroundColor: Colors.background }]}>
+              <Text style={[styles.programStatLabel, { color: Colors.textSecondary }]}>SC 189</Text>
+              <Text style={[styles.programStatValue, { color: Colors.accent }]}>{nextPlanning.skilledIndependent.toLocaleString()}</Text>
+              <Text style={[styles.programStatNote, { color: Colors.textSecondary }]}>visa places planned</Text>
+              <Text style={[styles.programInvited, { color: Colors.textPrimary }]}>{nextYear189Invitations.toLocaleString()} invitations published</Text>
+            </View>
+            <View style={[styles.programStat, { backgroundColor: Colors.background }]}>
+              <Text style={[styles.programStatLabel, { color: Colors.textSecondary }]}>Regional</Text>
+              <Text style={[styles.programStatValue, { color: Colors.secondary }]}>{nextPlanning.regional.toLocaleString()}</Text>
+              <Text style={[styles.programStatNote, { color: Colors.textSecondary }]}>visa places planned</Text>
+              <Text style={[styles.programInvited, { color: Colors.textPrimary }]}>{nextYear491Invitations.toLocaleString()} SC 491 Family invitations published</Text>
+            </View>
+          </View>
+          <Text style={[styles.programBreakdown, { color: Colors.textSecondary }]}>
+            Total {nextPlanning.total.toLocaleString()} · Skilled {nextPlanning.skilled.toLocaleString()} · Family {nextPlanning.family.toLocaleString()} · Special Eligibility {nextPlanning.specialEligibility.toLocaleString()}
+          </Text>
+          <Text style={[styles.programNotice, { color: Colors.textSecondary }]}>
+            Planning levels are targets for visas granted, not invitation caps. Remaining invitations cannot be calculated from these figures. The latest published invitation round was 4 June 2026; the next SC 189 round is expected by 30 September 2026.
+          </Text>
+          <TouchableOpacity onPress={() => void openExternalUrl(nextPlanning.sourceUrl)} style={styles.programSource}>
+            <Text style={[styles.sourceLinkText, { color: Colors.accent }]}>Source: Department of Home Affairs ↗</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* SC 190 note */}
       <View style={[styles.noteBox, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
@@ -615,27 +754,98 @@ export default function RoundsScreen() {
       {/* State nominations toggle */}
       <TouchableOpacity style={[styles.sectionToggle, { backgroundColor: Colors.surface, borderColor: Colors.border }]} onPress={() => setStateExpanded((v) => !v)} activeOpacity={0.7}>
         <Ionicons name="map-outline" size={16} color={Colors.success} />
-        <Text style={[styles.sectionToggleText, {color: Colors.textPrimary}]}>SC 190 & 491 State Nominations</Text>
+        <Text style={[styles.sectionToggleText, {color: Colors.textPrimary}]}>SC 190 & 491 Nominations Issued</Text>
         <Text style={[styles.sectionToggleSub, { color: Colors.textSecondary }]}>{sn.period}</Text>
         <Ionicons name={stateExpanded ? 'chevron-up' : 'chevron-down'} size={14} color={Colors.textMuted} style={{ marginLeft: 'auto' }} />
       </TouchableOpacity>
 
       {stateExpanded && (
-        <View style={[styles.stateTable, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
-          <View style={[styles.stateRow, styles.tableHeader, { backgroundColor: Colors.primaryDark }]}>
-            <Text style={[styles.stateNameCell, styles.headerText, { color: Colors.white }]}>State</Text>
-            <Text style={[styles.tableCell, styles.headerText, { color: Colors.white }]}>SC 190</Text>
-            <Text style={[styles.tableCell, styles.headerText, { color: Colors.white }]}>SC 491</Text>
-          </View>
-          {STATE_ORDER.map((s) => (
-            <View key={s} style={[styles.stateRow, { borderBottomColor: Colors.divider }]}>
-              <Text style={[styles.stateNameCell, {color: Colors.textPrimary}]}>{s}</Text>
-              <Text style={[styles.tableCell, { color: Colors.success }]}>{(sn.sc190[s] ?? 0).toLocaleString()}</Text>
-              <Text style={[styles.tableCell, { color: Colors.secondary }]}>{(sn.sc491[s] ?? 0).toLocaleString()}</Text>
+        <>
+          <View style={[styles.stateTable, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
+            <View style={[styles.stateRow, styles.tableHeader, { backgroundColor: Colors.primaryDark }]}>
+              <Text style={[styles.stateNameCell, styles.headerText, { color: Colors.white }]}>State</Text>
+              <Text style={[styles.tableCell, styles.headerText, { color: Colors.white }]}>SC 190</Text>
+              <Text style={[styles.tableCell, styles.headerText, { color: Colors.white }]}>SC 491</Text>
             </View>
-          ))}
-          <Text style={[styles.tableFootNote, { color: Colors.textSecondary }]}>Nominations 1 Jul 2025 – 30 Apr 2026. States nominate continuously throughout the month.</Text>
-        </View>
+            {STATE_ORDER.map((s) => (
+              <View key={s} style={[styles.stateRow, { borderBottomColor: Colors.divider }]}>
+                <Text style={[styles.stateNameCell, {color: Colors.textPrimary}]}>{s}</Text>
+                <Text style={[styles.tableCell, { color: Colors.success }]}>{(sn.sc190[s] ?? 0).toLocaleString()}</Text>
+                <Text style={[styles.tableCell, { color: Colors.secondary }]}>{(sn.sc491[s] ?? 0).toLocaleString()}</Text>
+              </View>
+            ))}
+            <Text style={[styles.tableFootNote, { color: Colors.textSecondary }]}>
+              Actual EOIs nominated{sn.reportingPeriod ? ` from ${sn.reportingPeriod}` : ` during ${sn.period}`}. These are cumulative outcomes, not annual allocation quotas.
+            </Text>
+          </View>
+
+          <View style={[styles.allocationPanel, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
+            <View style={styles.allocationHeader}>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.allocationTitle, { color: Colors.textPrimary }]}>Latest published allocation usage</Text>
+                <Text style={[styles.allocationSubtitle, { color: Colors.textSecondary }]}>SC 190 & 491 · {allocationYear}</Text>
+              </View>
+              <View style={[styles.officialBadge, { backgroundColor: Colors.success + '18', borderColor: Colors.success + '45' }]}>
+                <Text style={[styles.officialBadgeText, { color: Colors.success }]}>OFFICIAL</Text>
+              </View>
+            </View>
+
+            <View style={[styles.allocationNotice, { backgroundColor: Colors.accent + '0D', borderColor: Colors.accent + '30' }]}>
+              <Ionicons name="information-circle-outline" size={14} color={Colors.accent} />
+              <Text style={[styles.allocationNoticeText, { color: Colors.textSecondary }]}>
+                Official {allocationYear} allocations compared with actual EOIs nominated{sn.reportingPeriod ? ` from ${sn.reportingPeriod}` : ''}. Allocations are not visa grants.
+              </Text>
+            </View>
+
+            {STATE_ORDER.map((stateCode) => (
+              <View key={stateCode} style={[styles.allocationStateGroup, { borderBottomColor: Colors.divider }]}>
+                <Text style={[styles.allocationStateHeading, { color: Colors.textPrimary }]}>{stateCode}</Text>
+                {(['190', '491'] as const).map((subclass) => {
+                const allocation = allocations.find(
+                  (item) => item.stateCode === stateCode && item.subclass === subclass
+                );
+                if (!allocation) return null;
+                const remaining = Math.max(allocation.totalQuota - allocation.issuedCount, 0);
+                const percentageUsed = allocation.totalQuota > 0
+                  ? Math.min((allocation.issuedCount / allocation.totalQuota) * 100, 100)
+                  : 0;
+                const barColor = subclass === '190' ? Colors.success : Colors.secondary;
+
+                return (
+                  <View key={`${stateCode}-${subclass}`} style={styles.allocationRow}>
+                    <View style={styles.allocationRowTop}>
+                      <View style={styles.allocationIdentity}>
+                        <View style={[styles.allocationSubclassBadge, { backgroundColor: barColor + '18' }]}>
+                          <Text style={[styles.allocationSubclass, { color: barColor }]}>SC {subclass}</Text>
+                        </View>
+                      </View>
+                      <Text style={[styles.allocationPercent, { color: barColor }]}>{percentageUsed.toFixed(1)}% used</Text>
+                    </View>
+                    <View style={[styles.progressTrack, { backgroundColor: Colors.background }]}>
+                      <View style={[styles.progressFill, { backgroundColor: barColor, width: `${percentageUsed}%` }]} />
+                    </View>
+                    <View style={styles.allocationStats}>
+                      <Text style={[styles.allocationStat, { color: Colors.textSecondary }]}>
+                        Issued <Text style={{ color: Colors.textPrimary, fontWeight: '700' }}>{allocation.issuedCount.toLocaleString()}</Text>
+                      </Text>
+                      <Text style={[styles.allocationStat, { color: Colors.textSecondary }]}>
+                        Quota <Text style={{ color: Colors.textPrimary, fontWeight: '700' }}>{allocation.totalQuota.toLocaleString()}</Text>
+                      </Text>
+                      <Text style={[styles.allocationStat, { color: Colors.textSecondary }]}>
+                        Remaining <Text style={{ color: Colors.textPrimary, fontWeight: '700' }}>{remaining.toLocaleString()}</Text>
+                      </Text>
+                    </View>
+                  </View>
+                );
+                })}
+              </View>
+            ))}
+
+            <Text style={[styles.allocationUpdated, { color: Colors.textMuted }]}>
+              Home Affairs data updated {allocationLastUpdated ? fmtDate(allocationLastUpdated) : 'Not available'}
+            </Text>
+          </View>
+        </>
       )}
 
       {/* Round history toggle */}
@@ -653,87 +863,60 @@ export default function RoundsScreen() {
             <Text style={[styles.tableCell, styles.headerText, { color: Colors.white }]}>SC 189</Text>
             <Text style={[styles.tableCell, styles.headerText, { color: Colors.white }]}>SC 491 Fam.</Text>
           </View>
-          {data.rounds.map((r) => (
-            <View key={r.date} style={[styles.stateRow, { borderBottomColor: Colors.divider }]}>
-              <Text style={[styles.histDateCell, {color: Colors.textPrimary}]}>{r.label}</Text>
-              <Text style={[styles.tableCell, { color: Colors.accent }]}>{numK(r.sc189Total)}</Text>
-              <Text style={[styles.tableCell, { color: Colors.secondary }]}>{r.sc491FamilyTotal ? numK(r.sc491FamilyTotal) : '—'}</Text>
-            </View>
-          ))}
-          <TouchableOpacity onPress={() => Linking.openURL('https://immi.homeaffairs.gov.au/visas/working-in-australia/skillselect/previous-rounds')} style={styles.sourceLink}>
-            <Text style={[styles.sourceLinkText, { color: Colors.accent }]}>View all official previous rounds ↗</Text>
+          {Object.entries(historyByFinancialYear).map(([financialYear, rounds]) => {
+            const total189 = rounds.reduce((total, round) => total + (round.sc189Total ?? 0), 0);
+            const total491 = rounds.reduce((total, round) => total + (round.sc491FamilyTotal ?? 0), 0);
+            return (
+              <React.Fragment key={financialYear}>
+                <View style={[styles.historyYearRow, { backgroundColor: Colors.background, borderBottomColor: Colors.divider }]}>
+                  <View style={styles.histDateCell}>
+                    <Text style={[styles.historyYearTitle, { color: Colors.textPrimary }]}>{financialYear} financial year</Text>
+                    <Text style={[styles.historyYearSubtitle, { color: Colors.textSecondary }]}>{rounds.length} invitation {rounds.length === 1 ? 'round' : 'rounds'} · annual total</Text>
+                  </View>
+                  <Text style={[styles.tableCell, styles.historyYearTotal, { color: Colors.accent }]}>{total189.toLocaleString()}</Text>
+                  <Text style={[styles.tableCell, styles.historyYearTotal, { color: Colors.secondary }]}>{total491.toLocaleString()}</Text>
+                </View>
+                {rounds.map((round) => (
+                  <View
+                    key={round.date}
+                    style={[
+                      styles.stateRow,
+                      styles.historyRoundRow,
+                      { borderBottomColor: Colors.divider },
+                      round.date === cr.date && { backgroundColor: `${Colors.accent}0D` },
+                    ]}
+                  >
+                    <View style={styles.histDateCell}>
+                      <Text style={{ color: Colors.textPrimary }}>{round.label}</Text>
+                      {round.date === cr.date && <Text style={[styles.historyLatest, { color: Colors.accent }]}>Latest round · shown above</Text>}
+                    </View>
+                    <Text style={[styles.tableCell, { color: Colors.accent }]}>{(round.sc189Total ?? 0).toLocaleString()}</Text>
+                    <Text style={[styles.tableCell, { color: Colors.secondary }]}>{(round.sc491FamilyTotal ?? 0).toLocaleString()}</Text>
+                  </View>
+                ))}
+              </React.Fragment>
+            );
+          })}
+          <TouchableOpacity onPress={() => void openExternalUrl('https://immi.homeaffairs.gov.au/visas/working-in-australia/skillselect/previous-rounds')} style={styles.sourceLink}>
+            <Text style={[styles.sourceLinkText, { color: Colors.accent }]}>View Home Affairs previous rounds ↗</Text>
           </TouchableOpacity>
         </View>
       )}
 
-      {/* Occupation scores section header */}
-      <View style={styles.occSection}>
-        <Text style={[styles.occSectionTitle, {color: Colors.textPrimary}]}>Min Points by Occupation</Text>
-        <Text style={[styles.occSectionSub, { color: Colors.textSecondary }]}>Current round · {cr.label} · {data.occupationScores.length} occupations</Text>
-      </View>
-
-      {/* Filter chips */}
-      <View style={styles.filterRow}>
-        {([['all', 'All'], ['189', 'SC 189'], ['491', 'SC 491 Fam.']] as const).map(([key, label]) => (
-          <TouchableOpacity
-            key={key}
-            style={[styles.filterChip, { backgroundColor: Colors.surface, borderColor: Colors.border }, filter === key && [styles.filterChipActive, { backgroundColor: Colors.accent + '22', borderColor: Colors.accent }]]}
-            onPress={() => setFilter(key)}
-            activeOpacity={0.7}
-          >
-            <Text style={[styles.filterChipText, { color: Colors.textMuted }, filter === key && [styles.filterChipTextActive, { color: Colors.accent }]]}>{label}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      {/* Search bar */}
-      <View style={[styles.searchBar, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
-        <Ionicons name="search-outline" size={16} color={Colors.textMuted} />
-        <TextInput
-          style={[styles.searchInput, {color: Colors.textPrimary}]}
-          value={query}
-          onChangeText={setQuery}
-          placeholder="Search your occupation..."
-          placeholderTextColor={Colors.textMuted}
-          clearButtonMode="while-editing"
-          autoCorrect={false}
-          autoCapitalize="none"
-        />
-        {query.length > 0 && (
-          <TouchableOpacity onPress={() => setQuery('')}>
-            <Ionicons name="close-circle" size={16} color={Colors.textMuted} />
-          </TouchableOpacity>
-        )}
-      </View>
-
-      {/* Legend */}
-      <View style={styles.legend}>
-        {([
-          { pts: 65, label: '≤65 pts', fg: Colors.success },
-          { pts: 70, label: '70–75 pts', fg: Colors.secondary },
-          { pts: 80, label: '80–85 pts', fg: Colors.warning },
-          { pts: 90, label: '≥90 pts', fg: '#FF6B6B' },
-        ]).map(({ label, fg }) => (
-          <View key={label} style={styles.legendItem}>
-            <View style={[styles.legendDot, { backgroundColor: fg }]} />
-            <Text style={[styles.legendText, {color: Colors.textPrimary}]}>{label}</Text>
-          </View>
-        ))}
-      </View>
-
-      {/* Column headers */}
-      <View style={[styles.occHeaderRow, { backgroundColor: Colors.primaryDark }]}>
-        <Text style={[styles.occHeaderCell, { flex: 1, textAlign: 'left', color: Colors.white }]}>Occupation</Text>
-        <Text style={[styles.occHeaderCell, { color: Colors.white }]}>SC 189</Text>
-        <Text style={[styles.occHeaderCell, { color: Colors.white }]}>SC 491</Text>
-      </View>
-
-      {filtered.length === 0 && (
-        <View style={styles.emptyState}>
-          <Ionicons name="search-outline" size={36} color={Colors.textMuted} />
-          <Text style={[styles.emptyText, {color: Colors.textPrimary}]}>No occupations match "{query}"</Text>
+      <TouchableOpacity
+        style={[styles.occupationsLink, { backgroundColor: Colors.surface, borderColor: Colors.border }]}
+        onPress={() => router.push('/occupations')}
+        activeOpacity={0.75}
+      >
+        <View style={[styles.occupationsLinkIcon, { backgroundColor: `${Colors.accent}18` }]}>
+          <Ionicons name="search-outline" size={18} color={Colors.accent} />
         </View>
-      )}
+        <View style={styles.occupationsLinkText}>
+          <Text style={[styles.occupationsLinkTitle, { color: Colors.textPrimary }]}>Search occupations and cutoffs</Text>
+          <Text style={[styles.occupationsLinkSub, { color: Colors.textSecondary }]}>Latest SC 189 and SC 491 points, ANZSCO details and round history</Text>
+        </View>
+        <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
+      </TouchableOpacity>
     </View>
   );
 
@@ -747,28 +930,18 @@ export default function RoundsScreen() {
   }
 
   return (
-    <FlatList
+    <ScrollView
       style={[styles.container, { backgroundColor: Colors.background }]}
-      data={filtered}
-      keyExtractor={(item) => item.name}
-      ListHeaderComponent={ListHeader}
-      renderItem={({ item, index }) => <OccupationRow item={item} index={index} />}
-      ListFooterComponent={
-        <View style={[styles.footer, { paddingBottom: insets.bottom + 80 }]}>
-          <TouchableOpacity onPress={() => Linking.openURL(data.sourceUrl)}>
-            <Text style={[styles.footerSource, { color: Colors.accent }]}>Source: Dept of Home Affairs ↗</Text>
-          </TouchableOpacity>
-          <Text style={[styles.footerNote, { color: Colors.textSecondary }]}>N/A = no invitations or no eligible EOIs for that visa type in this round.</Text>
-          <Text style={[styles.footerNote, { color: Colors.textSecondary }]}>Data auto-refreshes every {CACHE_HOURS} hours. Pull down to force refresh.</Text>
-        </View>
-      }
-      onRefresh={() => fetchData(true)}
-      refreshing={refreshing}
-      removeClippedSubviews
-      initialNumToRender={40}
-      maxToRenderPerBatch={40}
-      windowSize={10}
-    />
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => fetchData(true)} tintColor={Colors.accent} />}
+    >
+      {ListHeader}
+      <View style={[styles.footer, { paddingBottom: insets.bottom + 80 }]}>
+        <TouchableOpacity onPress={() => void openExternalUrl(data.sourceUrl)}>
+          <Text style={[styles.footerSource, { color: Colors.accent }]}>Source: Dept of Home Affairs ↗</Text>
+        </TouchableOpacity>
+        <Text style={[styles.footerNote, { color: Colors.textSecondary }]}>Data auto-refreshes every {CACHE_HOURS} hours. Pull down to force refresh.</Text>
+      </View>
+    </ScrollView>
   );
 }
 
@@ -806,10 +979,30 @@ const styles = StyleSheet.create({
   },
   summaryBadgeText: { fontSize: FontSize.xs, fontWeight: FontWeight.bold },
   summaryLabel: { fontSize: FontSize.xs, marginBottom: Spacing.sm },
+  summaryRoundPeriod: { fontSize: 10, fontWeight: FontWeight.bold, marginBottom: 2 },
   summaryInv: { fontSize: FontSize.xxxl, fontWeight: FontWeight.extraBold, lineHeight: 36 },
   summaryInvLabel: { fontSize: FontSize.xs, marginBottom: Spacing.sm },
+  summaryYearTotal: { fontSize: FontSize.xs, fontWeight: FontWeight.bold, marginBottom: 3 },
+  summaryPlanning: { fontSize: 10, lineHeight: 14, marginBottom: Spacing.sm },
   summaryTb: { fontSize: FontSize.xs },
   summaryDate: { fontSize: FontSize.xs, marginTop: 2 },
+
+  programPanel: {
+    marginHorizontal: Spacing.lg, marginBottom: Spacing.md,
+    borderRadius: Radius.md, borderWidth: 1, padding: Spacing.md,
+  },
+  programHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginBottom: Spacing.sm },
+  programTitle: { fontSize: FontSize.md, fontWeight: FontWeight.bold },
+  programSubtitle: { fontSize: FontSize.xs, marginTop: 2 },
+  programStats: { flexDirection: 'row', gap: Spacing.sm },
+  programStat: { flex: 1, borderRadius: Radius.sm, padding: Spacing.sm },
+  programStatLabel: { fontSize: FontSize.xs, fontWeight: FontWeight.bold },
+  programStatValue: { fontSize: FontSize.xl, fontWeight: FontWeight.extraBold, marginTop: 2 },
+  programStatNote: { fontSize: 10 },
+  programInvited: { fontSize: 10, fontWeight: FontWeight.semiBold, marginTop: 5 },
+  programBreakdown: { fontSize: 10, lineHeight: 15, marginTop: Spacing.sm },
+  programNotice: { fontSize: FontSize.xs, lineHeight: 16, marginTop: Spacing.sm },
+  programSource: { alignItems: 'center', paddingTop: Spacing.sm },
 
   noteBox: {
     flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.sm,
@@ -841,59 +1034,61 @@ const styles = StyleSheet.create({
   tableCell: { flex: 1, fontSize: FontSize.sm, textAlign: 'center' },
   stateNameCell: { flex: 1.2, fontSize: FontSize.sm, fontWeight: FontWeight.semiBold },
   histDateCell: { flex: 2.5, fontSize: FontSize.sm },
+  historyYearRow: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingVertical: Spacing.sm, paddingHorizontal: Spacing.md,
+    borderBottomWidth: 1,
+  },
+  historyYearTitle: { fontSize: FontSize.sm, fontWeight: FontWeight.bold },
+  historyYearSubtitle: { fontSize: 10, marginTop: 2 },
+  historyYearTotal: { fontWeight: FontWeight.bold },
+  historyRoundRow: { paddingLeft: Spacing.xl },
+  historyLatest: { fontSize: 10, fontWeight: FontWeight.bold, marginTop: 2 },
   tableFootNote: { fontSize: FontSize.xs, padding: Spacing.md, textAlign: 'center' },
   sourceLink: { padding: Spacing.md, alignItems: 'center' },
   sourceLinkText: { fontSize: FontSize.xs },
 
-  occSection: { paddingHorizontal: Spacing.lg, paddingTop: Spacing.xl, paddingBottom: Spacing.sm },
-  occSectionTitle: { fontSize: FontSize.lg, fontWeight: FontWeight.bold },
-  occSectionSub: { fontSize: FontSize.xs, marginTop: 2 },
-
-  filterRow: { flexDirection: 'row', paddingHorizontal: Spacing.lg, gap: Spacing.sm, marginBottom: Spacing.md },
-  filterChip: {
-    paddingHorizontal: Spacing.md, paddingVertical: 6,
-    borderRadius: Radius.full,
-    borderWidth: 1,
+  allocationPanel: {
+    marginHorizontal: Spacing.lg, marginBottom: Spacing.md,
+    borderRadius: Radius.md, borderWidth: 1, padding: Spacing.md,
   },
-  filterChipActive: { },
-  filterChipText: { fontSize: FontSize.xs, fontWeight: FontWeight.semiBold },
-  filterChipTextActive: { },
+  allocationHeader: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginBottom: Spacing.sm },
+  allocationTitle: { fontSize: FontSize.md, fontWeight: FontWeight.bold },
+  allocationSubtitle: { fontSize: FontSize.xs, marginTop: 2 },
+  officialBadge: { borderWidth: 1, borderRadius: Radius.sm, paddingHorizontal: 7, paddingVertical: 3 },
+  officialBadgeText: { fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 0.5 },
+  allocationNotice: {
+    flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.sm,
+    borderWidth: 1, borderRadius: Radius.sm, padding: Spacing.sm, marginBottom: Spacing.sm,
+  },
+  allocationNoticeText: { flex: 1, fontSize: FontSize.xs, lineHeight: 16 },
+  allocationStateGroup: { borderBottomWidth: 1, paddingVertical: Spacing.sm },
+  allocationStateHeading: { fontSize: FontSize.sm, fontWeight: FontWeight.bold, marginBottom: 2 },
+  allocationRow: { paddingVertical: 6 },
+  allocationRowTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: Spacing.sm },
+  allocationIdentity: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+  allocationSubclassBadge: { borderRadius: Radius.sm, paddingHorizontal: 7, paddingVertical: 3 },
+  allocationSubclass: { fontSize: 10, fontWeight: FontWeight.bold },
+  allocationPercent: { fontSize: FontSize.xs, fontWeight: FontWeight.bold },
+  progressTrack: { height: 7, borderRadius: Radius.full, overflow: 'hidden', marginTop: 7 },
+  progressFill: { height: '100%', borderRadius: Radius.full },
+  allocationStats: { flexDirection: 'row', justifyContent: 'space-between', gap: Spacing.xs, marginTop: 6 },
+  allocationStat: { fontSize: 10 },
+  allocationUpdated: { fontSize: 10, textAlign: 'right', marginTop: Spacing.sm },
 
-  searchBar: {
+  occupationsLink: {
     flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
-    marginHorizontal: Spacing.lg, marginBottom: Spacing.sm,
-    paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, borderRadius: Radius.md,
-    borderWidth: 1,
+    marginHorizontal: Spacing.lg, marginTop: Spacing.lg,
+    padding: Spacing.md,
+    borderWidth: 1, borderRadius: Radius.md,
   },
-  searchInput: { flex: 1, fontSize: FontSize.sm, paddingVertical: 0 },
-
-  legend: {
-    flexDirection: 'row', gap: Spacing.md, paddingHorizontal: Spacing.lg,
-    marginBottom: Spacing.sm, flexWrap: 'wrap',
+  occupationsLinkIcon: {
+    width: 36, height: 36, borderRadius: Radius.sm,
+    alignItems: 'center', justifyContent: 'center',
   },
-  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  legendDot: { width: 8, height: 8, borderRadius: 4 },
-  legendText: { fontSize: FontSize.xs },
-
-  occHeaderRow: {
-    flexDirection: 'row', paddingHorizontal: Spacing.lg, paddingVertical: Spacing.sm, borderTopWidth: 1,
-  },
-  occHeaderCell: { width: 56, fontSize: FontSize.xs, fontWeight: FontWeight.bold, textAlign: 'center' },
-
-  occRow: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: Spacing.lg, paddingVertical: Spacing.sm,
-    borderBottomWidth: 1,
-  },
-  occRowAlt: { backgroundColor: 'rgba(255,255,255,0.02)' },
-  occNameCol: { flex: 1, paddingRight: Spacing.sm },
-  occName: { fontSize: FontSize.sm },
-  occAnzsco: { fontSize: 10, marginTop: 1, fontFamily: 'monospace' },
-  scoreBadge: { width: 52, paddingVertical: 4, borderRadius: Radius.sm, alignItems: 'center', marginLeft: Spacing.xs },
-  scoreVal: { fontSize: FontSize.sm, fontWeight: FontWeight.bold },
-
-  emptyState: { alignItems: 'center', padding: Spacing.xxxl, gap: Spacing.md },
-  emptyText: { fontSize: FontSize.sm },
+  occupationsLinkText: { flex: 1 },
+  occupationsLinkTitle: { fontSize: FontSize.sm, fontWeight: FontWeight.bold },
+  occupationsLinkSub: { fontSize: FontSize.xs, lineHeight: 17, marginTop: 2 },
 
   footer: { paddingHorizontal: Spacing.lg, paddingTop: Spacing.xl, gap: Spacing.sm, alignItems: 'center' },
   footerSource: { fontSize: FontSize.xs },

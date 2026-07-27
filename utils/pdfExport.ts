@@ -11,7 +11,6 @@ export function generateJourneyPDF(profile: UserProfile): string {
     '╚════════════════════════════════════════════════════╝',
     '',
     `📋 Name: ${profile.name || 'Not set'}`,
-    `🆔 User ID: ${profile.userId}`,
     `📅 Generated: ${new Date().toLocaleDateString('en-AU')}`,
     '',
     '═══════════════════════════════════════════════════════',

@@ -4,134 +4,60 @@
  */
 
 import { Platform } from 'react-native';
-import { getRevenueCatUserId } from './iap';
-import { getFirestore } from '@react-native-firebase/firestore';
+import auth from '@react-native-firebase/auth';
+import firestore from '@react-native-firebase/firestore';
+import { isNotificationVisible } from './notificationVisibility';
+import functions from '@react-native-firebase/functions';
 import { initializeFirebaseWeb } from './firebaseWeb';
 import {
   getFirestore as getWebFirestore,
   collection as webCollection,
   doc as webDoc,
   setDoc as webSetDoc,
-  getDoc as webGetDoc,
 } from 'firebase/firestore';
-
-// Admin user IDs (can be set via environment or Firestore)
-const ADMIN_USER_IDS = [
-  'moataz', // Test admin
-  'admin@migrateAU.app',
-];
+import {
+  getFunctions as getWebFunctions,
+  httpsCallable as webHttpsCallable,
+} from 'firebase/functions';
 
 /**
  * Check if user is an admin
- * @param userId - RevenueCat user ID or email
  * @returns true if admin
  */
-export async function isUserAdmin(userId?: string): Promise<boolean> {
+export async function isUserAdmin(): Promise<boolean> {
   try {
-    // If no userId provided, get from RevenueCat
-    let uid = userId || (await getRevenueCatUserId().catch(() => undefined));
-    
-    console.log('[admin] isUserAdmin check - uid:', uid, 'DEV:', __DEV__);
-    
-    // DEV MODE: If no user ID or 'anonymous', default to 'moataz'
-    // (RevenueCat returns 'anonymous' on web when not initialized)
-    if ((!uid || uid === 'anonymous') && __DEV__) {
-      console.log('[admin] Using dev mode fallback');
-      uid = 'moataz';
-    }
-    
-    if (!uid) {
-      console.log('[admin] No user ID after checks');
-      return false;
-    }
-
-    // Check local admin list
-    if (ADMIN_USER_IDS.includes(uid)) {
-      console.log('[admin] User found in ADMIN_USER_IDS:', uid);
-      return true;
-    }
-
-    // Check Firestore admin list
-    try {
-      const db = getFirestore();
-      const adminDoc = await db.collection('admin_users').doc(uid).get();
-      const result = adminDoc.exists && adminDoc.data()?.isAdmin === true;
-      console.log('[admin] Firestore check result:', result);
-      return result;
-    } catch (err) {
-      // Firestore not available (offline), use local list only
-      console.error('[admin] Firestore check error:', err);
-      return false;
-    }
+    const user = auth().currentUser;
+    if (!user) return false;
+    const token = await user.getIdTokenResult(true);
+    return token.claims.admin === true;
   } catch (err) {
     console.error('[admin] isUserAdmin error:', err);
     return false;
   }
 }
 
-/**
- * Create a notification in Firestore
- * @param notification - Notification object to create
- * @returns notification ID
- */
-export async function createNotification(notification: {
-  title: string;
-  body: string;
-  category: string;
-  source?: string;
-  imageUrl?: string;
-  link?: string;
-}): Promise<string> {
-  try {
-    console.log('[admin] createNotification called with:', {
-      title: notification.title?.substring(0, 50),
-      body: notification.body?.substring(0, 50),
-      category: notification.category,
-      platform: Platform.OS,
-    });
+interface CallableResult {
+  success: boolean;
+  message: string;
+  notificationId?: string;
+  alreadyPublished?: boolean;
+  notification?: Record<string, unknown>;
+}
 
-    // Map category to topic (required field)
-    const topic = notification.category.toLowerCase().replace(/\s+/g, '_');
-    const notifId = `notif_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-    
-    const docData = {
-      id: notifId,
-      title: notification.title,
-      body: notification.body,
-      category: notification.category,
-      topic: topic,
-      url: notification.link || 'https://swift-shore-238707.web.app',
-      timestamp: new Date().toISOString(),
-      read: false,
-      source: notification.source || 'Admin',
-      sourceUrl: notification.link || '',
-    };
-
-    if (Platform.OS === 'web') {
-      // Use Firebase Web SDK on web platform
-      console.log('[admin] Using Firebase Web SDK');
-      initializeFirebaseWeb();
-      const webDb = getWebFirestore();
-      const docRef = webDoc(webCollection(webDb, 'notifications'), notifId);
-      await webSetDoc(docRef, docData);
-      console.log('[admin] ✅ Web: Notification created:', notifId);
-    } else {
-      // Use native Firebase on mobile
-      console.log('[admin] Using native Firebase');
-      const db = getFirestore();
-      const newRef = db.collection('notifications').doc(notifId);
-      await newRef.set(docData);
-      console.log('[admin] ✅ Native: Notification created:', notifId);
-    }
-
-    return notifId;
-  } catch (err: any) {
-    console.error('[admin] createNotification failed:', {
-      message: err?.message,
-      code: err?.code,
-    });
-    throw new Error(`Failed to create notification: ${err?.message || 'Unknown error'}`);
+async function callAdminFunction(
+  name: 'approveNotification' | 'rejectNotification' | 'editDraftNotification',
+  payload: Record<string, unknown>,
+): Promise<CallableResult> {
+  if (Platform.OS === 'web') {
+    initializeFirebaseWeb();
+    const callable = webHttpsCallable<Record<string, unknown>, CallableResult>(getWebFunctions(), name);
+    const result = await callable(payload);
+    return result.data;
   }
+
+  const callable = functions().httpsCallable(name);
+  const result = await callable(payload);
+  return result.data as CallableResult;
 }
 
 /**
@@ -199,89 +125,39 @@ export async function saveDraft(notification: {
     const docRef = webDoc(webCollection(webDb, 'notifications_draft'), notifId);
     await webSetDoc(docRef, docData);
   } else {
-    const db = getFirestore();
+    const db = firestore();
     await db.collection('notifications_draft').doc(notifId).set(docData);
   }
 
   return notifId;
 }
 
-/**
- * Approve a draft — moves it from drafts to published notifications
- * and writes an fcm_triggers doc so the Cloud Function sends FCM push
- */
+/** Approve a draft through the backend, which publishes, audits, and triggers FCM atomically. */
 export async function approveDraft(draftId: string): Promise<string> {
-  /** Build the FCM trigger payload shared by both paths */
-  function buildTrigger(publishedData: any, notifId: string) {
-    const topics = ['au_migration'];
-    if (publishedData.state && publishedData.state !== 'FED') {
-      topics.push(`state_${publishedData.state}`);
-    }
-    return {
-      title: publishedData.title,
-      body: publishedData.body,
-      topics,
-      articleUrl: publishedData.url || publishedData.sourceUrl || '',
-      route: '/(tabs)/notifications',
-      createdAt: new Date(),
-      sent: false,
-    };
-  }
+  const result = await callAdminFunction('approveNotification', { notificationId: draftId });
+  if (!result.success || !result.notificationId) throw new Error(result.message || 'Approval failed');
+  return result.notificationId;
+}
 
-  if (Platform.OS === 'web') {
-    initializeFirebaseWeb();
-    const webDb = getWebFirestore();
-    const draftRef = webDoc(webCollection(webDb, 'notifications_draft'), draftId);
-    const { getDoc: webGetDoc, deleteDoc: webDeleteDoc } = await import('firebase/firestore');
-    const snap = await webGetDoc(draftRef);
-    if (!snap.exists()) throw new Error('Draft not found');
-    const data = snap.data();
+export async function rejectDraft(draftId: string, reason?: string): Promise<void> {
+  const result = await callAdminFunction('rejectNotification', {
+    notificationId: draftId,
+    ...(reason?.trim() ? { reason: reason.trim() } : {}),
+  });
+  if (!result.success) throw new Error(result.message || 'Rejection failed');
+}
 
-    const notifId = `notif_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-    const publishedData = {
-      ...data,
-      id: notifId,
-      status: 'published',
-      read: false,
-      timestamp: new Date().toISOString(),
-      sourceUrl: data?.url || '',
-    };
-
-    const pubRef = webDoc(webCollection(webDb, 'notifications'), notifId);
-    await webSetDoc(pubRef, publishedData);
-
-    // Write FCM trigger so processFcmTrigger Cloud Function sends push notification
-    const triggerId = notifId.substring(0, 20);
-    const triggerRef = webDoc(webCollection(webDb, 'fcm_triggers'), triggerId);
-    await webSetDoc(triggerRef, buildTrigger(publishedData, notifId));
-
-    await webDeleteDoc(draftRef);
-    return notifId;
-  } else {
-    const db = getFirestore();
-    const draftSnap = await db.collection('notifications_draft').doc(draftId).get();
-    if (!draftSnap.exists) throw new Error('Draft not found');
-    const data = draftSnap.data()!;
-
-    const notifId = `notif_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-    const publishedData = {
-      ...data,
-      id: notifId,
-      status: 'published',
-      read: false,
-      timestamp: new Date().toISOString(),
-      sourceUrl: data?.url || '',
-    };
-
-    await db.collection('notifications').doc(notifId).set(publishedData);
-
-    // Write FCM trigger so processFcmTrigger Cloud Function sends push notification
-    const triggerId = notifId.substring(0, 20);
-    await db.collection('fcm_triggers').doc(triggerId).set(buildTrigger(publishedData, notifId));
-
-    await db.collection('notifications_draft').doc(draftId).delete();
-    return notifId;
-  }
+export async function editDraft(
+  draftId: string,
+  updates: { title: string; body: string; category: string },
+): Promise<void> {
+  const result = await callAdminFunction('editDraftNotification', {
+    notificationId: draftId,
+    title: updates.title,
+    body: updates.body,
+    category: updates.category,
+  });
+  if (!result.success) throw new Error(result.message || 'Edit failed');
 }
 
 /**
@@ -295,7 +171,7 @@ export async function deleteNotification(notifId: string): Promise<void> {
     const docRef = webDoc(webCollection(webDb, 'notifications'), notifId);
     await webDeleteDoc(docRef);
   } else {
-    const db = getFirestore();
+    const db = firestore();
     await db.collection('notifications').doc(notifId).delete();
   }
 }
@@ -311,7 +187,7 @@ export async function deleteDraft(draftId: string): Promise<void> {
     const docRef = webDoc(webCollection(webDb, 'notifications_draft'), draftId);
     await webDeleteDoc(docRef);
   } else {
-    const db = getFirestore();
+    const db = firestore();
     await db.collection('notifications_draft').doc(draftId).delete();
   }
 }
@@ -328,7 +204,7 @@ export async function getDrafts(): Promise<any[]> {
     const snap = await webGetDocs(q);
     return snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
   } else {
-    const db = getFirestore();
+    const db = firestore();
     const snap = await db.collection('notifications_draft').orderBy('timestamp', 'desc').get();
     return snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
   }
@@ -344,10 +220,14 @@ export async function getPublishedNotifications(): Promise<any[]> {
     const { getDocs: webGetDocs, query: webQuery, orderBy: webOrderBy, limit: webLimit } = await import('firebase/firestore');
     const q = webQuery(webCollection(webDb, 'notifications'), webOrderBy('timestamp', 'desc'), webLimit(30));
     const snap = await webGetDocs(q);
-    return snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    return snap.docs
+      .filter(doc => isNotificationVisible(doc.data()))
+      .map(doc => ({ id: doc.id, ...doc.data() }));
   } else {
-    const db = getFirestore();
+    const db = firestore();
     const snap = await db.collection('notifications').orderBy('timestamp', 'desc').limit(30).get();
-    return snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    return snap.docs
+      .filter(doc => isNotificationVisible(doc.data()))
+      .map(doc => ({ id: doc.id, ...doc.data() }));
   }
 }

@@ -120,7 +120,14 @@ export default function ExploreScreen() {
             <View style={[styles.cardIcon, { backgroundColor: tool.bg }]}>
               <Ionicons name={tool.icon} size={26} color={tool.color} />
             </View>
-            <Text style={[styles.cardLabel, { color: Colors.textPrimary }]}>{tool.label}</Text>
+            <Text
+              style={[styles.cardLabel, { color: Colors.textPrimary }]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.75}
+            >
+              {tool.label}
+            </Text>
             <Text style={[styles.cardDesc, { color: Colors.textMuted }]}>{tool.desc}</Text>
             <View style={styles.cardArrow}>
               <Ionicons name="arrow-forward" size={13} color={tool.color} />
@@ -156,7 +163,8 @@ const styles = StyleSheet.create({
     width: CARD_W,
     borderRadius: Radius.xl,
     borderWidth: 1,
-    padding: Spacing.lg,
+    paddingVertical: Spacing.lg,
+    paddingHorizontal: Spacing.md,
     gap: Spacing.xs,
   },
   cardIcon: {
@@ -168,6 +176,7 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.sm,
   },
   cardLabel: {
+    width: '100%',
     fontSize: FontSize.md,
     fontWeight: FontWeight.bold,
     lineHeight: 20,

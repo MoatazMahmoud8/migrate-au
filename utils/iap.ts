@@ -10,7 +10,7 @@ import Purchases, {
   PurchasesOffering,
   CustomerInfo,
 } from 'react-native-purchases';
-import { Platform } from 'react-native';
+import { Linking, Platform } from 'react-native';
 import Constants from 'expo-constants';
 import { BillingCycle, PaymentMethod } from '../types/subscription';
 import { convertTrialToPaid, startTrial, PRICING } from './billing';
@@ -117,8 +117,7 @@ export async function startFreeTrialIAP(userId: string): Promise<boolean> {
 
     if (!trialPackage) {
       console.warn('[IAP] Trial package not found');
-      // Fallback: start trial in Firestore without IAP
-      return await startTrial(userId);
+      return false;
     }
 
     // Purchase the trial package
@@ -132,11 +131,10 @@ export async function startFreeTrialIAP(userId: string): Promise<boolean> {
         return true;
       }
     } catch (err: any) {
-      // If user cancels or error, just start trial in Firestore
-      if (err.code !== 'PurchaseCancelledError') {
-        throw err;
+      if (err?.userCancelled || err?.code === 'PurchaseCancelledError' || err?.code === '1') {
+        return false;
       }
-      return await startTrial(userId);
+      throw err;
     }
 
     return false;
@@ -289,12 +287,29 @@ export async function restorePurchases(): Promise<{ restored: boolean; message: 
  * iOS → App Store subscriptions page
  * Android → Google Play subscriptions page
  */
-export async function manageSubscription(): Promise<void> {
-  if (Platform.OS === 'web') return;
+export async function manageSubscription(): Promise<{ opened: boolean; message?: string }> {
+  if (Platform.OS === 'web') {
+    return { opened: false, message: 'Subscription management is only available in the mobile app.' };
+  }
   try {
-    await Purchases.showManageSubscriptions();
-  } catch (err) {
-    console.warn('[IAP] showManageSubscriptions error:', err);
+    if (!rcInitialized) await initRevenueCat();
+
+    if (Platform.OS === 'ios') {
+      await Purchases.showManageSubscriptions();
+      return { opened: true };
+    }
+
+    const customerInfo = await Purchases.getCustomerInfo();
+    const managementUrl = customerInfo.managementURL
+      ?? 'https://play.google.com/store/account/subscriptions?package=com.jsmglobal.migration_au';
+    await Linking.openURL(managementUrl);
+    return { opened: true };
+  } catch (err: any) {
+    console.warn('[IAP] manageSubscription error:', err);
+    return {
+      opened: false,
+      message: err?.message || 'Could not open subscription management. Please try again.',
+    };
   }
 }
 

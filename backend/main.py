@@ -1,5 +1,5 @@
 """
-Main orchestrator — runs all scrapers, sends FCM notifications.
+Main orchestrator — runs all scrapers and queues updates for admin approval.
 Designed to run as a GitHub Actions cron job every 30 minutes.
 
 Environment variables required:
@@ -15,8 +15,7 @@ import firebase_admin
 from firebase_admin import credentials, firestore
 
 from scrapers import home_affairs, anzsco, state_nominations, news_rss
-from notify import send_batch
-from watchlist_dispatcher import dispatch as dispatch_watchlist
+from notify import queue_batch
 
 
 def get_db():
@@ -64,32 +63,26 @@ def run():
     all_notifications.extend(news_notifications)
     print(f"      → {len(news_notifications)} new article(s)")
 
-    # ── Send FCM notifications for all detected changes
+    # ── Queue all detected changes for administrator review
     print(f"\n{'─'*55}")
     total = len(all_notifications)
     if total == 0:
-        print("  ✅ No changes detected — no notifications sent.")
+        print("  No changes detected — no drafts queued.")
     else:
-        print(f"  📤 Sending {total} notification(s) via FCM...")
-        stats = send_batch(db, all_notifications)
-        print(f"  ✅ Sent: {stats['sent']}  ❌ Failed: {stats['failed']}")
-
-        # ── Per-user watchlist (Pro) targeted dispatch
-        try:
-            wl_stats = dispatch_watchlist(db, all_notifications)
-            print(
-                f"  📌 Watchlist: {wl_stats['sent']} sent to "
-                f"{wl_stats['users']} user(s) ({wl_stats['matches']} match(es))"
-            )
-        except Exception as e:
-            print(f"  ⚠️  Watchlist dispatch failed: {e}")
+        print(f"  Queuing {total} update(s) for admin approval...")
+        stats = queue_batch(db, all_notifications)
+        print(
+            f"  Queued: {stats['queued']}  "
+            f"Duplicates/failed: {stats['duplicates_or_failed']}"
+        )
 
     # ── Log run to Firestore
     elapsed = (datetime.now(timezone.utc) - started_at).total_seconds()
     db.collection("_scraper_runs").add({
         "timestamp": started_at.isoformat(),
         "duration_seconds": round(elapsed, 1),
-        "notifications_sent": len(all_notifications),
+        "notifications_sent": 0,
+        "drafts_queued": stats["queued"] if total else 0,
         "breakdown": {
             "home_affairs": len(ha_notifications),
             "anzsco": len(anzsco_notifications),

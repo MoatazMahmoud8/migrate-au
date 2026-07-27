@@ -30,6 +30,22 @@ const USAGE_LIMITS: Record<SubscriptionTier, UsageLimit> = {
   },
 };
 
+type MeteredFeature = 'calculation' | 'ai_message' | 'export' | 'anzsco_search';
+
+const USAGE_KEY_BY_FEATURE: Record<MeteredFeature, keyof UserSubscription> = {
+  calculation: 'calculationsUsed',
+  ai_message: 'aiMessagesUsed',
+  export: 'exportsUsed',
+  anzsco_search: 'anzscoSearchesUsed',
+};
+
+const LIMIT_KEY_BY_FEATURE: Record<MeteredFeature, keyof UsageLimit> = {
+  calculation: 'calculations',
+  ai_message: 'aiMessages',
+  export: 'exports',
+  anzsco_search: 'anzscoSearches',
+};
+
 /**
  * Get current subscription & usage for a user
  */
@@ -49,7 +65,7 @@ export async function getSubscription(userId: string): Promise<UserSubscription 
  */
 export async function recordUsage(
   userId: string,
-  feature: 'calculation' | 'ai_message' | 'export' | 'anzsco_search'
+  feature: MeteredFeature
 ): Promise<boolean> {
   if (Platform.OS === 'web') return true;
   const sub = await getSubscription(userId);
@@ -61,12 +77,9 @@ export async function recordUsage(
 
   // Check if usage is within limit for this month
   const limit = USAGE_LIMITS[sub.tier];
-  const featureKey = `${feature}sUsed`;
-  const currentUsage = sub[featureKey as keyof UserSubscription] as number;
-  const featureLimitKey = feature === 'ai_message' ? 'aiMessages' : 
-                         feature === 'anzsco_search' ? 'anzscoSearches' : 
-                         feature === 'pdf_export' ? 'exports' : 'calculations';
-  const monthlyLimit = limit[featureLimitKey as keyof UsageLimit] as number;
+  const featureKey = USAGE_KEY_BY_FEATURE[feature];
+  const currentUsage = sub[featureKey] as number;
+  const monthlyLimit = limit[LIMIT_KEY_BY_FEATURE[feature]] as number;
 
   // If Pro → always allow
   if (sub.tier === 'pro') return true;
@@ -75,12 +88,11 @@ export async function recordUsage(
   if (currentUsage >= monthlyLimit) return false;
 
   // Increment counter
-  const updateKey = `${feature}sUsed`;
   await firestore()
     .collection('subscriptions')
     .doc(userId)
     .update({
-      [updateKey]: firestore.FieldValue.increment(1),
+      [featureKey]: firestore.FieldValue.increment(1),
       updatedAt: Date.now(),
     });
 
@@ -92,16 +104,14 @@ export async function recordUsage(
  */
 export async function getRemainingUsage(
   userId: string,
-  feature: 'calculation' | 'ai_message' | 'export' | 'anzsco_search'
+  feature: MeteredFeature
 ): Promise<{ remaining: number; limit: number; tier: SubscriptionTier }> {
   if (Platform.OS === 'web') return { remaining: Infinity, limit: Infinity, tier: 'pro' };
   const sub = await getSubscription(userId);
   if (!sub) {
     // New user = free tier limits
     const freeLimit = USAGE_LIMITS.free;
-    const featureKey = feature === 'ai_message' ? 'aiMessages' : 
-                      feature === 'anzsco_search' ? 'anzscoSearches' : 
-                      feature === 'pdf_export' ? 'exports' : 'calculations';
+    const featureKey = LIMIT_KEY_BY_FEATURE[feature];
     return {
       remaining: freeLimit[featureKey as keyof UsageLimit] as number,
       limit: freeLimit[featureKey as keyof UsageLimit] as number,
@@ -110,12 +120,9 @@ export async function getRemainingUsage(
   }
 
   const limit = USAGE_LIMITS[sub.tier];
-  const featureKey = `${feature}sUsed`;
-  const currentUsage = sub[featureKey as keyof UserSubscription] as number;
-  const limitKey = feature === 'ai_message' ? 'aiMessages' : 
-                  feature === 'anzsco_search' ? 'anzscoSearches' : 
-                  feature === 'pdf_export' ? 'exports' : 'calculations';
-  const monthlyLimit = limit[limitKey as keyof UsageLimit] as number;
+  const featureKey = USAGE_KEY_BY_FEATURE[feature];
+  const currentUsage = sub[featureKey] as number;
+  const monthlyLimit = limit[LIMIT_KEY_BY_FEATURE[feature]] as number;
 
   return {
     remaining: Math.max(0, monthlyLimit - currentUsage),
@@ -137,7 +144,7 @@ export async function canUseFeature(
 }> {
   if (Platform.OS === 'web') return { allowed: true };
   const sub = await getSubscription(userId);
-  if (!sub) return { allowed: feature === 'calculator', reason: 'free_tier' };
+  if (!sub) return { allowed: feature === 'pdf_export', reason: 'free_tier' };
 
   // These features require Pro
   const proOnlyFeatures = ['scenario_planner', 'aria_pro', 'state_alerts', 'advanced_analytics'];

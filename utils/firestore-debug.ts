@@ -23,7 +23,7 @@ export async function diagnoseFirebase() {
     // 2. Check Firebase app initialization
     console.log('\n--- Firebase App ---');
     try {
-      const firebaseApp = app();
+      const firebaseApp = app.app();
       console.log('✅ Firebase app initialized:', firebaseApp.name);
       console.log('   Project ID:', firebaseApp.options?.projectId);
       console.log('   Storage bucket:', firebaseApp.options?.storageBucket);

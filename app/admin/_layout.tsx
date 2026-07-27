@@ -13,6 +13,7 @@ export default function AdminLayout() {
         },
       }}
     >
+      <Stack.Screen name="login" />
       <Stack.Screen name="dashboard" />
     </Stack>
   );

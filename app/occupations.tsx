@@ -7,7 +7,6 @@ import {
   StyleSheet,
   FlatList,
   RefreshControl,
-  Linking,
   Modal,
   ScrollView,
   Alert,
@@ -19,6 +18,7 @@ import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Spacing, Radius, FontSize, FontWeight } from '../constants/theme';
 import { useColors } from '../constants/ThemeContext';
+import { openExternalUrl } from '../utils/openExternalUrl';
 import {
   SkilledOccupation,
   SkillList,
@@ -54,6 +54,8 @@ import {
   formatAnnualShort,
   formatAnnualFull,
 } from '../utils/salaries';
+import { getVisaFees, refreshVisaFees } from '../utils/visaFees';
+import type { VisaFeeEntry } from '../constants/visaFees';
 import { PaywallModal } from '../components/PaywallModal';
 
 type ListFilter = 'All' | SkillList;
@@ -199,56 +201,70 @@ interface EnglishReq {
   ielts: string;        // e.g. "6.0 each band"
   pte: string;
   toefl: string;
+  oet: string;
+  scoreDate: string;
   color: string;
 }
 const VISA_ENGLISH: Record<string, EnglishReq> = {
   '189': {
     level: 'Competent English',
     description: 'Required to sit the skills assessment and earn points.',
-    ielts: '6.0 each band', pte: '50 each component', toefl: '12 L · 13 R · 21 W · 18 S',
+    ielts: '6.0 each band', pte: '47 L · 48 R · 51 W · 54 S', toefl: '16 L · 16 R · 19 W · 19 S', oet: '290 L · 310 R · 290 W · 330 S', scoreDate: '7 Aug 2025',
     color: Colors.accent,
   },
   '190': {
     level: 'Competent English',
     description: 'Must be met at time of invitation.',
-    ielts: '6.0 each band', pte: '50 each component', toefl: '12 L · 13 R · 21 W · 18 S',
+    ielts: '6.0 each band', pte: '47 L · 48 R · 51 W · 54 S', toefl: '16 L · 16 R · 19 W · 19 S', oet: '290 L · 310 R · 290 W · 330 S', scoreDate: '7 Aug 2025',
     color: Colors.accent,
   },
   '491': {
     level: 'Competent English',
     description: 'Required for all applicants.',
-    ielts: '6.0 each band', pte: '50 each component', toefl: '12 L · 13 R · 21 W · 18 S',
+    ielts: '6.0 each band', pte: '47 L · 48 R · 51 W · 54 S', toefl: '16 L · 16 R · 19 W · 19 S', oet: '290 L · 310 R · 290 W · 330 S', scoreDate: '7 Aug 2025',
     color: Colors.accent,
   },
   '482': {
-    level: 'Proficient English (Core Skills)',
-    description: 'Short-term stream occupations need Vocational; Core Skills and Specialist need Proficient.',
-    ielts: '7.0 each band', pte: '65 each component', toefl: '24 L · 24 R · 27 W · 23 S',
+    level: 'SC 482 minimum English',
+    description: 'Core and Specialist Skills streams, unless an exemption applies.',
+    ielts: '5.0 each band', pte: '33 L · 36 R · 29 W · 24 S', toefl: '8 L · 8 R · 9 W · 14 S', oet: '220 L · 240 R · 200 W · 270 S', scoreDate: '13 Sep 2025',
     color: Colors.success,
   },
   '186': {
     level: 'Competent English',
     description: 'Required for Direct Entry and Agreement streams.',
-    ielts: '6.0 each band', pte: '50 each component', toefl: '12 L · 13 R · 21 W · 18 S',
+    ielts: '6.0 each band', pte: '47 L · 48 R · 51 W · 54 S', toefl: '16 L · 16 R · 19 W · 19 S', oet: '290 L · 310 R · 290 W · 330 S', scoreDate: '7 Aug 2025',
     color: Colors.accent,
   },
   '485': {
     level: 'Competent English',
     description: 'Required unless you studied in Australia for 2+ years.',
-    ielts: '6.0 each band', pte: '50 each component', toefl: '12 L · 13 R · 21 W · 18 S',
+    ielts: '6.0 each band', pte: '50 each component', toefl: '12 L · 13 R · 21 W · 18 S', oet: 'Check current SC 485 requirements', scoreDate: 'current visa rules',
     color: Colors.accent,
   },
   '494': {
     level: 'Competent English',
     description: 'Required at time of application.',
-    ielts: '6.0 each band', pte: '50 each component', toefl: '12 L · 13 R · 21 W · 18 S',
+    ielts: '6.0 each band', pte: '47 L · 48 R · 51 W · 54 S', toefl: '16 L · 16 R · 19 W · 19 S', oet: '290 L · 310 R · 290 W · 330 S', scoreDate: '7 Aug 2025',
     color: Colors.accent,
   },
 };
 
+const OET_ASSESSING_AUTHORITIES = new Set([
+  'ANMAC', 'Medical Board', 'Medical Board of Australia', 'MedBA', 'ADC', 'Dietitians Australia', 'DAA',
+  'OTC', 'OCANZ', 'APC', 'APharmC', 'PodBA', 'ASMIRT', 'ANZSNM', 'SPA', 'AVBC',
+]);
+
+function supportsOet(occupation: SkilledOccupation): boolean {
+  if (OET_ASSESSING_AUTHORITIES.has(occupation.assessingAuthority ?? '')) return true;
+  return /doctor|medical practitioner|physician|surgeon|psychiatrist|anaesthetist|pharmacist|nurse|midwi(?:fe|ves)|dentist|dental (?:specialist|hygienist|therapist|prosthetist)|dietitian|occupational therapist|optometrist|physiotherapist|podiatrist|radiographer|radiation therapist|sonographer|nuclear medicine technologist|speech pathologist|veterinarian/i.test(occupation.name);
+}
+
 interface FederalVisaCondition {
   title: string;
   summary: string;
+  pathway: string;
+  category: 'permanent' | 'provisional';
   fee: string;
   /** Secondary applicant (adult 18+) fee */
   familyFeeAdult: string;
@@ -264,9 +280,11 @@ const FEDERAL_VISA_CONDITIONS: Record<string, FederalVisaCondition> = {
   '189': {
     title: 'Skilled Independent',
     summary: 'Points-tested permanent visa with no state or employer sponsor.',
-    fee: 'AUD $4,640 (primary applicant)',
-    familyFeeAdult: 'AUD $2,320 per adult',
-    familyFeeChild: 'AUD $1,160 per child',
+    pathway: 'PR Direct Entry',
+    category: 'permanent',
+    fee: 'AUD $6,140 (primary applicant)',
+    familyFeeAdult: 'AUD $3,070 per adult',
+    familyFeeChild: 'AUD $1,535 per child',
     processingTime: '6 – 12 months (75% of cases)',
     minPoints: 65,
     points: ['SkillSelect invitation required', 'Minimum 65 points on the points test', 'Positive skills assessment required', 'Competent English required', 'Age must be under 45 at time of invitation'],
@@ -275,9 +293,11 @@ const FEDERAL_VISA_CONDITIONS: Record<string, FederalVisaCondition> = {
   '190': {
     title: 'Skilled Nominated',
     summary: 'Permanent visa requiring nomination by a state or territory.',
-    fee: 'AUD $4,640 (primary applicant)',
-    familyFeeAdult: 'AUD $2,320 per adult',
-    familyFeeChild: 'AUD $1,160 per child',
+    pathway: 'State Nominated PR',
+    category: 'permanent',
+    fee: 'AUD $6,140 (primary applicant)',
+    familyFeeAdult: 'AUD $3,070 per adult',
+    familyFeeChild: 'AUD $1,535 per child',
     processingTime: '6 – 24 months (varies by state)',
     minPoints: 65,
     points: ['State or territory nomination required (+5 points)', 'Minimum 65 points on the points test', 'Positive skills assessment required', 'Competent English required', 'Age must be under 45'],
@@ -286,9 +306,11 @@ const FEDERAL_VISA_CONDITIONS: Record<string, FederalVisaCondition> = {
   '491': {
     title: 'Skilled Work Regional',
     summary: 'Regional provisional visa requiring state nomination or eligible family sponsorship.',
-    fee: 'AUD $4,640 (primary applicant)',
-    familyFeeAdult: 'AUD $2,320 per adult',
-    familyFeeChild: 'AUD $1,160 per child',
+    pathway: 'Regional Provisional',
+    category: 'provisional',
+    fee: 'AUD $6,140 (primary applicant)',
+    familyFeeAdult: 'AUD $3,070 per adult',
+    familyFeeChild: 'AUD $1,535 per child',
     processingTime: '6 – 18 months',
     minPoints: 65,
     points: ['Regional nomination or eligible family sponsorship (+15 points)', 'Minimum 65 points on the points test', 'Positive skills assessment required', 'Competent English required', 'Must live and work in a designated regional area'],
@@ -297,9 +319,11 @@ const FEDERAL_VISA_CONDITIONS: Record<string, FederalVisaCondition> = {
   '482': {
     title: 'Skills in Demand',
     summary: 'Temporary employer-sponsored visa for nominated occupations.',
-    fee: 'AUD $3,115 (primary applicant)',
-    familyFeeAdult: 'AUD $1,055 per adult',
-    familyFeeChild: 'AUD $530 per child',
+    pathway: 'Employer Sponsored · Temporary',
+    category: 'provisional',
+    fee: 'AUD $4,015 (primary applicant)',
+    familyFeeAdult: 'Use pricing estimator',
+    familyFeeChild: 'Dependant charges vary',
     processingTime: '1 – 6 months',
     points: ['Approved employer sponsor required', 'Employer nomination required', 'Occupation must be on relevant list', 'Market salary rate must be met', 'English and work-experience requirements apply'],
     sourceUrl: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skills-in-demand-482',
@@ -307,9 +331,11 @@ const FEDERAL_VISA_CONDITIONS: Record<string, FederalVisaCondition> = {
   '186': {
     title: 'Employer Nomination Scheme',
     summary: 'Permanent employer-sponsored visa for nominated skilled workers.',
-    fee: 'AUD $4,640 (primary applicant)',
-    familyFeeAdult: 'AUD $2,320 per adult',
-    familyFeeChild: 'AUD $1,160 per child',
+    pathway: 'Employer Sponsored PR',
+    category: 'permanent',
+    fee: 'AUD $6,140 (primary applicant)',
+    familyFeeAdult: 'AUD $3,070 per adult',
+    familyFeeChild: 'AUD $1,535 per child',
     processingTime: '6 – 18 months',
     points: ['Approved Australian employer nomination required', 'Occupation and stream requirements apply', 'Skills assessment may be required (Direct Entry)', 'Competent English required', 'Age and work-experience rules apply'],
     sourceUrl: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/employer-nomination-scheme-186',
@@ -317,6 +343,8 @@ const FEDERAL_VISA_CONDITIONS: Record<string, FederalVisaCondition> = {
   '485': {
     title: 'Temporary Graduate',
     summary: 'Temporary visa for eligible recent graduates with Australian study.',
+    pathway: 'Graduate · Temporary',
+    category: 'provisional',
     fee: 'AUD $1,730 (primary applicant)',
     familyFeeAdult: 'AUD $575 per adult',
     familyFeeChild: 'AUD $290 per child',
@@ -327,9 +355,11 @@ const FEDERAL_VISA_CONDITIONS: Record<string, FederalVisaCondition> = {
   '494': {
     title: 'Skilled Employer Sponsored Regional',
     summary: 'Regional provisional employer-sponsored visa.',
-    fee: 'AUD $3,115 (primary applicant)',
-    familyFeeAdult: 'AUD $1,055 per adult',
-    familyFeeChild: 'AUD $530 per child',
+    pathway: 'Employer Sponsored · Regional',
+    category: 'provisional',
+    fee: 'AUD $6,140 (primary applicant)',
+    familyFeeAdult: 'Use pricing estimator',
+    familyFeeChild: 'Dependant charges vary',
     processingTime: '6 – 18 months',
     points: ['Employer in designated regional area required', 'Employer nomination required', 'Skills assessment usually required', 'English and work-experience rules apply', 'Must live and work in designated regional area'],
     sourceUrl: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skilled-employer-sponsored-regional-494',
@@ -407,8 +437,8 @@ const AUTHORITY_INFO: Record<string, AuthorityInfo> = {
     name: 'ANMAC (Australian Nursing & Midwifery Accreditation Council)',
     assesses: 'Registered nurses, enrolled nurses, and midwives',
     website: 'https://www.anmac.org.au',
-    typicalTime: '3–6 months',
-    fee: 'AUD $750 – $900',
+    typicalTime: '6–8 weeks',
+    fee: 'AUD $395 – $595 (modified or full assessment)',
     documents: [
       'Nursing/midwifery degree certificate and transcripts',
       'Current professional registration certificate',
@@ -725,7 +755,7 @@ const AUTHORITY_INFO: Record<string, AuthorityInfo> = {
 
   // ─── Pharmacy ─────────────────────────────────────────────────────────────
   'APharmC': {
-    name: 'APharmC (Australian Pharmacy Council)',
+    name: 'APC (Australian Pharmacy Council)',
     assesses: 'Pharmacists',
     website: 'https://www.pharmacycouncil.org.au',
     typicalTime: '12–20 weeks',
@@ -1089,6 +1119,39 @@ function formatSnapshot(date: string): string {
   }
 }
 
+function normalizeAssessingAuthority(occupation: SkilledOccupation): SkilledOccupation {
+  const pharmacistOverrides: Record<string, { authority: string; lists: SkillList[]; visas: string[] }> = {
+    '251511': { authority: 'APharmC', lists: ['CSOL', 'STSOL'], visas: ['190', '491', '482', '494', '186'] },
+    '251512': { authority: 'VETASSESS', lists: ['CSOL', 'STSOL'], visas: ['190', '491', '482', '494', '186'] },
+    '251513': { authority: 'APharmC', lists: ['CSOL', 'STSOL'], visas: ['190', '491', '482', '494', '186'] },
+  };
+  const pharmacist = pharmacistOverrides[occupation.anzsco];
+  if (pharmacist) {
+    return { ...occupation, assessingAuthority: pharmacist.authority, lists: pharmacist.lists, visas: pharmacist.visas };
+  }
+  if (/^254[14]\d{2}$/.test(occupation.anzsco) || /registered nurse|nurse practitioner|midwi(?:fe|ves)/i.test(occupation.name)) {
+    return { ...occupation, assessingAuthority: 'ANMAC' };
+  }
+  return occupation;
+}
+
+function normalizeOccupationAuthorities(items: SkilledOccupation[]): SkilledOccupation[] {
+  return items.map(normalizeAssessingAuthority);
+}
+
+function conditionWithCurrentFee(condition: FederalVisaCondition, visa: string, fees: VisaFeeEntry[]): FederalVisaCondition {
+  const current = fees.find((entry) => entry.subclass === visa);
+  if (!current) return condition;
+
+  const family = current.note?.match(/Family:\s*\+?([^·]+?)\s+per adult\s*·\s*\+?(.+?)\s+per child/i);
+  return {
+    ...condition,
+    fee: `${current.fee} (primary applicant)`,
+    familyFeeAdult: family ? `${family[1].trim()} per adult` : condition.familyFeeAdult,
+    familyFeeChild: family ? `${family[2].trim()} per child` : condition.familyFeeChild,
+  };
+}
+
 export default function OccupationsScreen() {
   const Colors = useColors();
   const router = useRouter();
@@ -1120,13 +1183,14 @@ export default function OccupationsScreen() {
     snapshotDate: '1970-01-01',
     salaries: {},
   });
+  const [visaFees, setVisaFees] = useState<VisaFeeEntry[]>([]);
 
   useEffect(() => {
     (async () => {
       const snap = await getSkilledOccupations();
       const reqSnap = await refreshStateRequirements();
       const merged = mergeStateRequirements(snap.items, reqSnap.snapshot);
-      setItems(deduplicateOccupations(merged));
+      setItems(normalizeOccupationAuthorities(deduplicateOccupations(merged)));
       setSnapshotDate(snap.snapshotDate);
       setLastChecked(await getOccupationsLastCheckedAt());
       const p = await getProfile();
@@ -1135,22 +1199,24 @@ export default function OccupationsScreen() {
       // Salaries: show cache first, refresh in background.
       setSalaries(await getSalaries());
       refreshSalaries().then((s) => setSalaries(s)).catch(() => {});
+      setVisaFees((await getVisaFees()).items);
+      refreshVisaFees().then(({ snapshot }) => setVisaFees(snapshot.items)).catch(() => {});
       // Daily-monitor data (cost, processing cutoff, next invitation round)
       getDailyUpdates().then((u) => setDailyUpdates(u)).catch(() => {});
       // SkillSelect invitation round cutoffs (shared cache with Rounds tab)
       (async () => {
         try {
-          const ROUNDS_CACHE = 'rounds_v3';
+          const ROUNDS_CACHE = 'rounds_v10';
           const ROUNDS_URL = 'https://swift-shore-238707.web.app/invitation-rounds.json';
           const cached = await AsyncStorage.getItem(ROUNDS_CACHE);
           let data = cached ? JSON.parse(cached) : null;
-          if (!data) {
+          try {
             const resp = await fetch(ROUNDS_URL);
             if (resp.ok) {
               data = await resp.json();
               await AsyncStorage.setItem(ROUNDS_CACHE, JSON.stringify(data));
             }
-          }
+          } catch { /* use cached data when offline */ }
           if (data?.occupationScores) {
             const map = new Map<string, { sc189: number | null; sc491Family: number | null }>();
             for (const s of data.occupationScores) {
@@ -1180,7 +1246,7 @@ export default function OccupationsScreen() {
         .then((res) => {
           if (res.updated) {
             const merged2 = mergeStateRequirements(res.snapshot.items, reqSnap.snapshot);
-            setItems(deduplicateOccupations(merged2));
+            setItems(normalizeOccupationAuthorities(deduplicateOccupations(merged2)));
             setSnapshotDate(res.snapshot.snapshotDate);
           }
         })
@@ -1220,7 +1286,7 @@ export default function OccupationsScreen() {
       refreshSalaries({ force: true }),
     ]);
     const finalSnapshot = allAnzscoUpdated ? allAnzscoSnap : snapshot;
-    setItems(deduplicateOccupations(mergeStateRequirements(finalSnapshot.items, reqResult.snapshot)));
+    setItems(normalizeOccupationAuthorities(deduplicateOccupations(mergeStateRequirements(finalSnapshot.items, reqResult.snapshot))));
     setSnapshotDate(finalSnapshot.snapshotDate);
     setLastChecked(await getOccupationsLastCheckedAt());
     setSalaries(salarySnap);
@@ -1499,7 +1565,7 @@ export default function OccupationsScreen() {
                           {salary.sourceLevel === '4-digit' ? ' · unit-group figure' : ''}
                         </Text>
                         <TouchableOpacity
-                          onPress={() => { hapticTap(); Linking.openURL(salary.sourceUrl); }}
+                          onPress={() => { hapticTap(); void openExternalUrl(salary.sourceUrl); }}
                           style={styles.salaryCardLink}
                         >
                           <Text style={[styles.salaryCardLinkText, { color: Colors.accent }]}>
@@ -1535,7 +1601,8 @@ export default function OccupationsScreen() {
                   {(() => {
                     const federalConditions = [...new Set(selected.visas)]
                       .map((visa) => {
-                        const base = FEDERAL_VISA_CONDITIONS[visa];
+                        const baseCondition = FEDERAL_VISA_CONDITIONS[visa];
+                        const base = baseCondition ? conditionWithCurrentFee(baseCondition, visa, visaFees) : null;
                         if (!base) return { visa, condition: null };
                         // SC 186: streams vary by which list the occupation appears on
                         if (visa === '186') {
@@ -1591,35 +1658,45 @@ export default function OccupationsScreen() {
                                 <View
                                   style={[
                                     styles.federalVisaBadge,
-                                    { backgroundColor: `${Colors.accent}18`, borderColor: `${Colors.accent}55` },
+                                    {
+                                      backgroundColor: condition.category === 'permanent' ? `${Colors.success}18` : `${Colors.warning}18`,
+                                      borderColor: condition.category === 'permanent' ? `${Colors.success}66` : `${Colors.warning}66`,
+                                    },
                                   ]}
                                 >
-                                  <Text style={[styles.federalVisaBadgeText, { color: Colors.accent }]}>SC {visa}</Text>
+                                  <Text style={[styles.federalVisaBadgeText, { color: condition.category === 'permanent' ? Colors.success : Colors.warning }]}>SC {visa}</Text>
                                 </View>
                                 <View style={{ flex: 1 }}>
                                   <Text style={[styles.federalVisaTitle, { color: Colors.textPrimary }]}>{condition.title}</Text>
+                                  <Text style={[styles.federalVisaPathway, { color: condition.category === 'permanent' ? Colors.success : Colors.warning }]}>{condition.pathway}</Text>
                                   <Text style={[styles.federalVisaSummary, { color: Colors.textSecondary }]}>{condition.summary}</Text>
                                 </View>
                               </View>
                               {/* Fee + processing strip */}
                               <View style={[styles.federalVisaMetaStrip, { borderTopColor: Colors.border }]}>
                                 <View style={styles.federalVisaMetaItem}>
-                                  <Ionicons name="card-outline" size={12} color={Colors.accent} />
-                                  <Text style={[styles.federalVisaMetaLabel, { color: Colors.textMuted }]}>Fee</Text>
+                                  <View style={styles.federalVisaMetaHeading}>
+                                    <Ionicons name="card-outline" size={12} color={Colors.accent} />
+                                    <Text style={[styles.federalVisaMetaLabel, { color: Colors.textMuted }]}>Fee</Text>
+                                  </View>
                                   <Text style={[styles.federalVisaMetaVal, { color: Colors.textPrimary }]}>{condition.fee}</Text>
                                 </View>
                                 <View style={[styles.federalVisaMetaDivider, { backgroundColor: Colors.border }]} />
                                 <View style={styles.federalVisaMetaItem}>
-                                  <Ionicons name="time-outline" size={12} color={Colors.accent} />
-                                  <Text style={[styles.federalVisaMetaLabel, { color: Colors.textMuted }]}>Processing</Text>
+                                  <View style={styles.federalVisaMetaHeading}>
+                                    <Ionicons name="time-outline" size={12} color={Colors.accent} />
+                                    <Text style={[styles.federalVisaMetaLabel, { color: Colors.textMuted }]}>Processing</Text>
+                                  </View>
                                   <Text style={[styles.federalVisaMetaVal, { color: Colors.textPrimary }]}>{condition.processingTime}</Text>
                                 </View>
                                 {condition.minPoints && (
                                   <>
                                     <View style={[styles.federalVisaMetaDivider, { backgroundColor: Colors.border }]} />
                                     <View style={styles.federalVisaMetaItem}>
-                                      <Ionicons name="stats-chart-outline" size={12} color={Colors.success} />
-                                      <Text style={[styles.federalVisaMetaLabel, { color: Colors.textMuted }]}>Min. pts</Text>
+                                      <View style={styles.federalVisaMetaHeading}>
+                                        <Ionicons name="stats-chart-outline" size={12} color={Colors.success} />
+                                        <Text style={[styles.federalVisaMetaLabel, { color: Colors.textMuted }]}>Min. pts</Text>
+                                      </View>
                                       <Text style={[styles.federalVisaMetaVal, { color: Colors.success }]}>{condition.minPoints}</Text>
                                     </View>
                                   </>
@@ -1645,14 +1722,6 @@ export default function OccupationsScreen() {
                                   </View>
                                 ))}
                               </View>
-                              <TouchableOpacity
-                                style={[styles.federalVisaLink, { borderColor: `${Colors.accent}40`, backgroundColor: `${Colors.accent}0D` }]}
-                                onPress={() => Linking.openURL(condition.sourceUrl)}
-                                activeOpacity={0.8}
-                              >
-                                <Text style={[styles.federalVisaLinkText, { color: Colors.accent }]}>View DHA visa page</Text>
-                                <Ionicons name="open-outline" size={12} color={Colors.accent} />
-                              </TouchableOpacity>
                             </View>
                           ))}
                         </View>
@@ -1766,7 +1835,7 @@ export default function OccupationsScreen() {
                             )
                           )}
                           <TouchableOpacity
-                            onPress={() => Linking.openURL('https://immi.homeaffairs.gov.au/visas/working-in-australia/skillselect/invitation-rounds')}
+                            onPress={() => void openExternalUrl('https://immi.homeaffairs.gov.au/visas/working-in-australia/skillselect/invitation-rounds')}
                             style={styles.cutoffLink}
                           >
                             <Text style={[styles.cutoffLinkText, { color: Colors.accent }]}>View all invitation rounds</Text>
@@ -2077,7 +2146,7 @@ export default function OccupationsScreen() {
 
                                 <TouchableOpacity
                                   style={[styles.stateReqLink, { borderColor: `${col}40` }]}
-                                  onPress={() => Linking.openURL(req.sourceUrl)}
+                                  onPress={() => void openExternalUrl(req.sourceUrl)}
                                   activeOpacity={0.8}
                                 >
                                   <Ionicons name="open-outline" size={12} color={col} />
@@ -2153,7 +2222,19 @@ export default function OccupationsScreen() {
                                 <Text style={[styles.engScoreLabel, {color: Colors.textPrimary}]}>TOEFL iBT</Text>
                                 <Text style={[styles.engScoreVal, {color: Colors.textPrimary}]}>{req!.toefl}</Text>
                               </View>
+                              {supportsOet(selected) && (
+                                <>
+                                  <View style={styles.engDivider} />
+                                  <View style={styles.engScore}>
+                                    <Text style={[styles.engScoreLabel, {color: Colors.textPrimary}]}>OET</Text>
+                                    <Text style={[styles.engScoreVal, {color: Colors.textPrimary}]}>{req!.oet}</Text>
+                                  </View>
+                                </>
+                              )}
                             </View>
+                            {supportsOet(selected) && (
+                              <Text style={[styles.engDesc, {color: Colors.textSecondary}]}>Scores shown apply from {req!.scoreDate}. Earlier valid OET requirements depend on the visa and test date.</Text>
+                            )}
                           </View>
                         ))}
                       </>
@@ -2176,7 +2257,9 @@ export default function OccupationsScreen() {
                     // 2. Try alias fragments
                     // 3. Try partial include of key in authority string
                     const authorityKey =
-                      AUTHORITY_INFO[raw]
+                      selected.assessingAuthority === 'APharmC'
+                        ? 'APharmC'
+                        : AUTHORITY_INFO[raw]
                         ? raw
                         : Object.entries(ALIASES).find(([frag]) => rawLower.includes(frag.toLowerCase()))?.[1] ??
                           Object.keys(AUTHORITY_INFO).find(k => rawLower.includes(k.toLowerCase()));
@@ -2250,7 +2333,7 @@ export default function OccupationsScreen() {
                               <TouchableOpacity
                                 style={styles.authLink}
                                 activeOpacity={0.8}
-                                onPress={() => Linking.openURL(info.website)}
+                                onPress={() => void openExternalUrl(info.website)}
                               >
                                 <Ionicons name="open-outline" size={12} color={Colors.accent} />
                                 <Text style={[styles.authLinkText, {color: Colors.textPrimary}]}>Visit {info.name} website</Text>
@@ -2285,7 +2368,7 @@ export default function OccupationsScreen() {
                     style={[styles.modalCta, styles.modalCtaSecondary]}
                     activeOpacity={0.85}
                     onPress={() =>
-                      Linking.openURL(
+                      void openExternalUrl(
                         `https://immi.homeaffairs.gov.au/visas/working-in-australia/skill-occupation-list?anzsco=${selected.anzsco}`
                       )
                     }
@@ -2594,7 +2677,7 @@ const styles = StyleSheet.create({
     borderRadius: Radius.md,
   },
   codePillLgText: { fontWeight: FontWeight.bold, fontSize: FontSize.xs, letterSpacing: 0.5 },
-  modalTitle: { fontSize: FontSize.xl, fontWeight: FontWeight.bold, marginTop: Spacing.md },
+  modalTitle: { fontSize: FontSize.lg, fontWeight: FontWeight.bold, marginTop: Spacing.md },
   modalGroup: { fontSize: FontSize.sm, marginTop: 4 },
 
   sectionLabel: {
@@ -2639,6 +2722,11 @@ const styles = StyleSheet.create({
     fontSize: FontSize.sm,
     fontWeight: FontWeight.bold,
   },
+  federalVisaPathway: {
+    fontSize: 10,
+    fontWeight: FontWeight.bold,
+    marginTop: 2,
+  },
   federalVisaSummary: {
     fontSize: FontSize.xs,
     lineHeight: 16,
@@ -2663,20 +2751,6 @@ const styles = StyleSheet.create({
     fontSize: FontSize.xs,
     lineHeight: 16,
   },
-  federalVisaLink: {
-    alignSelf: 'flex-start',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    borderRadius: Radius.sm,
-    borderWidth: 1,
-    paddingHorizontal: 9,
-    paddingVertical: 6,
-  },
-  federalVisaLinkText: {
-    fontSize: FontSize.xs,
-    fontWeight: FontWeight.semiBold,
-  },
   federalVisaMetaStrip: {
     flexDirection: 'row',
     alignItems: 'stretch',
@@ -2686,11 +2760,16 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   federalVisaMetaItem: {
+    alignItems: 'flex-start',
+    gap: 4,
+    flex: 1,
+    minWidth: 0,
+    paddingHorizontal: 2,
+  },
+  federalVisaMetaHeading: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    flex: 1,
-    minWidth: 100,
   },
   federalVisaMetaDivider: {
     width: 1,
@@ -2705,7 +2784,7 @@ const styles = StyleSheet.create({
   federalVisaMetaVal: {
     fontSize: FontSize.xs,
     fontWeight: FontWeight.semiBold,
-    flex: 1,
+    lineHeight: 17,
   },
   federalFamilyFeeRow: {
     flexDirection: 'row',

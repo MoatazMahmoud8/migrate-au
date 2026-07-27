@@ -6,6 +6,7 @@
 import { Platform } from 'react-native';
 import firestore from '@react-native-firebase/firestore';
 import { getReadIds } from './notifications';
+import { isNotificationVisible } from './notificationVisibility';
 
 interface PollSubscription {
   unsubscribe: () => void;
@@ -61,6 +62,7 @@ export function subscribeToFeedPoll(
         // Merge and deduplicate
         const seenIds = new Set<string>();
         const allDocs = [...broadcasts.docs, ...personal.docs].filter(doc => {
+          if (!isNotificationVisible(doc.data())) return false;
           if (seenIds.has(doc.id)) return false;
           seenIds.add(doc.id);
           return true;
@@ -91,6 +93,7 @@ export function subscribeToFeedPoll(
         const snap = await col.limit(limit * 2).get();
         const readIds = await getReadIds();
         const items = snap.docs
+          .filter(doc => isNotificationVisible(doc.data()))
           .map(doc => {
             const data = doc.data();
             const timestamp = data.timestamp;

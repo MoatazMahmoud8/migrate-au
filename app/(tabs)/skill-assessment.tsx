@@ -6,7 +6,6 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  Linking,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,6 +13,7 @@ import { Colors, Spacing, Radius, FontSize, FontWeight } from '../../constants/t
 import { useColors } from '../../constants/ThemeContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { tap as hapticTap } from '../../utils/haptics';
+import { openExternalUrl } from '../../utils/openExternalUrl';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type AuthCategory =
@@ -736,7 +736,7 @@ export default function SkillAssessmentScreen() {
                         <TouchableOpacity
                           style={[styles.websiteBtn, { borderColor: `${auth.color}40`, backgroundColor: `${auth.color}0D` }]}
                           activeOpacity={0.8}
-                          onPress={() => Linking.openURL(auth.website)}
+                          onPress={() => void openExternalUrl(auth.website)}
                         >
                           <Ionicons name="open-outline" size={13} color={auth.color} />
                           <Text style={[styles.websiteBtnText, { color: auth.color }]}>

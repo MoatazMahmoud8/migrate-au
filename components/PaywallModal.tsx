@@ -7,7 +7,6 @@ import {
   Modal,
   ActivityIndicator,
   ScrollView,
-  Linking,
   Alert,
   Platform,
 } from 'react-native';
@@ -15,7 +14,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors, Spacing, Radius, FontSize, FontWeight } from '../constants/theme';
 import { useColors } from '../constants/ThemeContext';
-import { startFreeTrialIAP, purchaseSubscription, restorePurchases, getFormattedPrice, getYearlySavings, getLifetimeSavings, syncSubscriptionStatus } from '../utils/iap';
+import { startFreeTrialIAP, purchaseSubscription, restorePurchases, getFormattedPrice, getYearlySavings, getLifetimeSavings, manageSubscription, syncSubscriptionStatus } from '../utils/iap';
+import { openExternalUrl } from '../utils/openExternalUrl';
 
 interface PaywallModalProps {
   visible: boolean;
@@ -79,10 +79,6 @@ export function PaywallModal({ visible, onClose, userId, title, message, feature
   const lifetimePrice = getFormattedPrice('lifetime');
   const yearlyDiscount = getYearlySavings();
   const isIOS = Platform.OS === 'ios';
-  const isAndroid = Platform.OS === 'android';
-  const manageSubscriptionsUrl = isAndroid
-    ? 'https://play.google.com/store/account/subscriptions?package=com.jsmglobal.migration_au'
-    : 'https://apps.apple.com/account/subscriptions';
 
   // Context-specific messaging
   const getFeatureMessage = () => {
@@ -257,19 +253,24 @@ export function PaywallModal({ visible, onClose, userId, title, message, feature
                 <Text style={[styles.legalLinkText, {color: Colors.accent}]}>Restore Purchases</Text>
               </TouchableOpacity>
               <Text style={[styles.legalSeparator, {color: Colors.textPrimary}]}>·</Text>
-              <TouchableOpacity onPress={() => Linking.openURL('https://jsmglobal.xyz/migration-privacy.html')}>
+              <TouchableOpacity onPress={() => void openExternalUrl('https://jsmglobal.xyz/migration-privacy.html')}>
                 <Text style={[styles.legalLinkText, {color: Colors.textPrimary}]}>Privacy Policy</Text>
               </TouchableOpacity>
               {isIOS && (
                 <>
                   <Text style={[styles.legalSeparator, {color: Colors.textPrimary}]}>·</Text>
-                  <TouchableOpacity onPress={() => Linking.openURL('https://www.apple.com/legal/internet-services/itunes/dev/stdeula/')}>
+                  <TouchableOpacity onPress={() => void openExternalUrl('https://www.apple.com/legal/internet-services/itunes/dev/stdeula/')}>
                     <Text style={[styles.legalLinkText, {color: Colors.textPrimary}]}>Terms of Use (EULA)</Text>
                   </TouchableOpacity>
                 </>
               )}
               <Text style={[styles.legalSeparator, {color: Colors.textPrimary}]}>·</Text>
-              <TouchableOpacity onPress={() => Linking.openURL(manageSubscriptionsUrl)}>
+              <TouchableOpacity onPress={async () => {
+                const result = await manageSubscription();
+                if (!result.opened) {
+                  Alert.alert('Unable to Open Subscription', result.message);
+                }
+              }}>
                 <Text style={[styles.legalLinkText, {color: Colors.textPrimary}]}>Manage Subscriptions</Text>
               </TouchableOpacity>
             </View>

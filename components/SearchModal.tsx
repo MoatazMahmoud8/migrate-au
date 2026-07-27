@@ -7,12 +7,12 @@ import {
   TouchableOpacity,
   StyleSheet,
   FlatList,
-  Linking,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Colors, Spacing, Radius, FontSize, FontWeight } from '../constants/theme';
 import { useColors } from '../constants/ThemeContext';
+import { openExternalUrl } from '../utils/openExternalUrl';
 
 interface Props {
   visible: boolean;
@@ -89,7 +89,7 @@ export default function SearchModal({ visible, onClose }: Props) {
     onClose();
     setQuery('');
     setTimeout(() => {
-      if (item.action === 'url') Linking.openURL(item.target);
+      if (item.action === 'url') void openExternalUrl(item.target);
       else router.push(item.target as any);
     }, 100);
   };

@@ -13,6 +13,7 @@ module.exports = ({ config }) => {
 
   return {
     ...config,
+    plugins: [...(config.plugins ?? []), 'expo-web-browser'],
     android: {
       ...config.android,
       googleServicesFile:

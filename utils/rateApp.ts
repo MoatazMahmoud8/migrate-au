@@ -13,7 +13,8 @@
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as StoreReview from 'expo-store-review';
-import { Alert, Linking, Platform } from 'react-native';
+import { Alert, Platform } from 'react-native';
+import { openExternalUrl } from './openExternalUrl';
 
 const APP_STORE_ID = '6767216706';
 const ANDROID_PACKAGE = 'com.jsmglobal.migration_au';
@@ -33,11 +34,7 @@ const MIN_DAYS_AFTER_DECLINE = 60;
 
 async function openStoreListing(): Promise<void> {
   const url = Platform.OS === 'ios' ? APP_STORE_URL : Platform.OS === 'android' ? PLAY_STORE_URL : WEB_FEEDBACK_URL;
-  try {
-    await Linking.openURL(url);
-  } catch {
-    // swallow — user can try again later
-  }
+  await openExternalUrl(url);
 }
 
 /**

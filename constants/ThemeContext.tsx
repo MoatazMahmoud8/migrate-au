@@ -20,19 +20,23 @@ const ThemeContext = createContext<ThemeContextValue>({
 });
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const devDarkMode = __DEV__ && (
-    process.env.EXPO_PUBLIC_FORCE_DARK_MODE === '1' ||
-    (Platform.OS === 'web' && typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('theme') === 'dark')
-  );
+  const webThemeOverride = __DEV__ && Platform.OS === 'web' && typeof window !== 'undefined'
+    ? new URLSearchParams(window.location.search).get('theme')
+    : null;
+  const devDarkMode = process.env.EXPO_PUBLIC_FORCE_DARK_MODE === '1' || webThemeOverride === 'dark';
 
   const [isDark, setIsDark] = useState(devDarkMode);
 
   // Load saved preference on mount
   useEffect(() => {
+    if (webThemeOverride === 'dark' || webThemeOverride === 'light') {
+      setIsDark(webThemeOverride === 'dark');
+      return;
+    }
     AsyncStorage.getItem(DARK_MODE_KEY).then(val => {
       if (val !== null) setIsDark(val === 'true');
     }).catch(() => {});
-  }, []);
+  }, [webThemeOverride]);
 
   const setLightMode = (lightEnabled: boolean) => {
     const dark = !lightEnabled;

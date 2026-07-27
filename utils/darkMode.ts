@@ -12,7 +12,7 @@ export function hasDarkMode(profile: UserProfile): boolean {
  * Get the device's system color scheme preference
  */
 export function getSystemColorScheme(): 'light' | 'dark' | null {
-  return useColorScheme(); // Returns 'light', 'dark', or null
+  return useColorScheme() ?? null;
 }
 
 /**

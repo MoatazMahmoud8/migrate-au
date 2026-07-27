@@ -5,7 +5,6 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  Linking,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -13,6 +12,7 @@ import { useRouter } from 'expo-router';
 import { Colors, Spacing, Radius, FontSize, FontWeight } from '../../constants/theme';
 import { useColors } from '../../constants/ThemeContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { openExternalUrl } from '../../utils/openExternalUrl';
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
@@ -67,7 +67,7 @@ const TESTS: TestData[] = [
     color: '#4F8EF7',
     format: 'Paper-based & Computer-delivered',
     delivery: 'Test centre',
-    validity: '2 years',
+    validity: 'Usually up to 3 years; visa-specific',
     scoreRange: '0–9 band scale (L · R · W · S)',
     website: 'https://www.ielts.org',
     overview: 'The most widely accepted English test for Australian skilled visas. Four skills assessed separately — all four bands must individually meet the minimum, no averaging allowed.',
@@ -82,9 +82,9 @@ const TESTS: TestData[] = [
       { code: '189',     name: 'Skilled Independent',      color: '#4F8EF7', level: 'Competent',  score: '6.0 each band',       notes: ['All 4 bands must individually meet 6.0 — no averaging', 'Proficient (7.0) earns +10 pts in EOI', 'Superior (8.0) earns +20 pts in EOI'], url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skilled-independent-189' },
       { code: '190',     name: 'Skilled Nominated',        color: '#00C2FF', level: 'Competent',  score: '6.0 each band',       notes: ['Same band rule as 189 — no averaging', 'State may require higher English for nomination'], url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skilled-nominated-190' },
       { code: '491',     name: 'Skilled Work Regional',    color: '#A78BFA', level: 'Competent',  score: '6.0 each band',       notes: ['Same as 189/190 minimum', 'Regional sponsor may impose higher requirements'], url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skilled-work-regional-provisional-491' },
-      { code: '482',     name: 'Skills in Demand (TSS)',   color: '#FF6B8A', level: 'Vocational', score: '5.0 avg · 4.5 min',   notes: ['Short-term stream: 5.0 avg, no band below 4.5', 'Core Skills & Specialist streams: Competent (6.0 each)'], url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skills-in-demand-visa-subclass-482' },
+      { code: '482',     name: 'Skills in Demand Visa (Subclass 482)', color: '#FF6B8A', level: 'Vocational', score: '5.0 avg · 4.5 min', notes: ['Short-term stream: 5.0 avg, no band below 4.5', 'Core Skills & Specialist streams: Competent (6.0 each)'], url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skills-in-demand-visa-subclass-482' },
       { code: '186',     name: 'Employer Nominated (ENS)', color: '#FF7043', level: 'Competent',  score: '6.0 each band',       notes: ['Direct Entry stream: 6.0 in each band', 'Result must be no more than 3 years old'], url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/employer-nomination-scheme-186' },
-      { code: '485',     name: 'Temporary Graduate',       color: '#00D68F', level: 'Competent',  score: '6.0 each band',       notes: ['Waived if 2+ years of study completed in Australia', 'Test must be taken within 3 years of application date'], url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/temporary-graduate-485' },
+      { code: '485',     name: 'Temporary Graduate',       color: '#00D68F', level: 'Minimum English', score: '6.5 overall · 5.5 each', notes: ['For IELTS Academic or General Training', 'Test must be taken in the 12 months before application'], url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/temporary-graduate-485' },
       { code: '820/801', name: 'Partner Visa',             color: '#FFB800', level: 'Functional', score: '4.5 avg · 4.0 min',   notes: ['Functional English or pay language fee (BIIP)', 'Sponsor may waive in some circumstances'], url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/partner-820-801' },
       { code: '500',     name: 'Student Visa',             color: '#7C3AED', level: 'Varies',     score: 'Set by institution',  notes: ['University degrees: typically IELTS 6.0–6.5', 'TAFE/VET: typically 5.5', 'English schools: typically 4.5–5.5'], url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/student-500' },
     ],
@@ -115,9 +115,9 @@ const TESTS: TestData[] = [
       { code: '189', name: 'Skilled Independent',      color: '#4F8EF7', level: 'Competent',  score: '50 each skill', notes: ['All 4 skills must individually reach 50 — no averaging', 'Proficient (65) earns +10 pts; Superior (79) earns +20 pts'], url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skilled-independent-189' },
       { code: '190', name: 'Skilled Nominated',        color: '#00C2FF', level: 'Competent',  score: '50 each skill', notes: ['Same as 189 — each skill must individually reach 50', 'State nomination may require higher scores'], url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skilled-nominated-190' },
       { code: '491', name: 'Skilled Work Regional',    color: '#A78BFA', level: 'Competent',  score: '50 each skill', notes: ['Same as 189/190 minimum', 'Regional sponsor may require higher scores'], url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skilled-work-regional-provisional-491' },
-      { code: '482', name: 'Skills in Demand (TSS)',   color: '#FF6B8A', level: 'Vocational', score: '36 each skill', notes: ['Short-term stream: 36 in each skill', 'Core Skills & Specialist streams: 50 in each skill'], url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skills-in-demand-visa-subclass-482' },
+      { code: '482', name: 'Skills in Demand Visa (Subclass 482)', color: '#FF6B8A', level: 'Vocational', score: '36 each skill', notes: ['Short-term stream: 36 in each skill', 'Core Skills & Specialist streams: 50 in each skill'], url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skills-in-demand-visa-subclass-482' },
       { code: '186', name: 'Employer Nominated (ENS)', color: '#FF7043', level: 'Competent',  score: '50 each skill', notes: ['50 in each communicative skill', 'Results accepted up to 3 years from application date'], url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/employer-nomination-scheme-186' },
-      { code: '485', name: 'Temporary Graduate',       color: '#00D68F', level: 'Competent',  score: '50 each skill', notes: ['Waived if 2+ years of Australian study completed', 'Must be within 3 years of application'], url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/temporary-graduate-485' },
+      { code: '485', name: 'Temporary Graduate',       color: '#00D68F', level: 'Minimum English', score: '55 overall · 40 L · 42 R · 41 W · 39 S', notes: ['For tests taken on or after 7 August 2025', 'Earlier tests: 57 overall · 43 L · 48 R · 51 W · 42 S; test must be within 12 months'], url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/temporary-graduate-485' },
       { code: '500', name: 'Student Visa',             color: '#7C3AED', level: 'Varies',     score: 'Set by institution', notes: ['Minimum set by education provider, not DHA', 'Most universities: equivalent to IELTS 6.0–6.5'], url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/student-500' },
     ],
     centers: [
@@ -130,27 +130,26 @@ const TESTS: TestData[] = [
     icon: 'school-outline',
     color: '#FF6B8A',
     format: 'Internet-based (iBT)',
-    delivery: 'Test centre & At-home option',
-    validity: '2 years',
+    delivery: 'Approved test centre only',
+    validity: 'Usually up to 3 years; visa-specific',
     scoreRange: 'R 0–30 · L 0–30 · W 0–30 · S 0–30 (Total 0–120)',
     website: 'https://www.ets.org/toefl',
-    overview: 'Internet-based test accepted for most skilled visas. Note: TOEFL iBT does not qualify for Superior English (+20 pts) bonus in EOI. Available at test centres and via home delivery option.',
+    overview: 'Accepted only when taken at an approved test centre. Tests from 26 July 2023 to 4 May 2024 were not approved. For tests from 7 August 2025, select “Taking TOEFL for Australia” when registering. TOEFL iBT Home Edition is not accepted.',
     proficiency: [
-      { label: 'Vocational', score: 'R 3 · L 3 · W 14 · S 12',  description: 'SC 482 Short-term stream', color: '#FF7043' },
-      { label: 'Competent',  score: 'R 24 · L 21 · W 27 · S 23', description: 'Minimum for skilled & employer visas', pointsBonus: '0 pts', color: '#0096CC' },
-      { label: 'Proficient', score: 'R 24 · L 24 · W 27 · S 23', description: 'EOI bonus points', pointsBonus: '+10 pts', color: '#D4A600' },
-      { label: 'Superior',   score: 'Not applicable',              description: 'TOEFL iBT does not qualify for Superior English', color: '#6B7280' },
+      { label: 'Competent',  score: '16 L · 16 R · 19 W · 19 S', description: 'Tests from 7 August 2025', pointsBonus: '0 pts', color: '#0096CC' },
+      { label: 'Proficient', score: '22 L · 22 R · 26 W · 24 S', description: 'EOI English-language points', pointsBonus: '+10 pts', color: '#D4A600' },
+      { label: 'Superior',   score: '26 L · 27 R · 30 W · 28 S', description: 'EOI English-language points', pointsBonus: '+20 pts', color: '#FF6B8A' },
     ],
     visaRequirements: [
-      { code: '189', name: 'Skilled Independent',      color: '#4F8EF7', level: 'Competent',  score: 'R 24 · L 21 · W 27 · S 23', notes: ['Each section score must meet the minimum individually', 'Proficient qualifies for +10 pts; Superior NOT available via TOEFL iBT'], url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skilled-independent-189' },
-      { code: '190', name: 'Skilled Nominated',        color: '#00C2FF', level: 'Competent',  score: 'R 24 · L 21 · W 27 · S 23', notes: ['Same as 189 per-section minimums', 'State nomination may require higher scores'], url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skilled-nominated-190' },
-      { code: '491', name: 'Skilled Work Regional',    color: '#A78BFA', level: 'Competent',  score: 'R 24 · L 21 · W 27 · S 23', notes: ['Same as 189/190 Competent minimums', 'TOEFL iBT does not qualify for Superior English level'], url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skilled-work-regional-provisional-491' },
-      { code: '482', name: 'Skills in Demand (TSS)',   color: '#FF6B8A', level: 'Vocational', score: 'R 3 · L 3 · W 14 · S 12',   notes: ['Short-term stream: vocational minimums per section', 'Core Skills & Specialist: R 24 · L 21 · W 27 · S 23'], url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skills-in-demand-visa-subclass-482' },
-      { code: '186', name: 'Employer Nominated (ENS)', color: '#FF7043', level: 'Competent',  score: 'R 24 · L 21 · W 27 · S 23', notes: ['Each section must meet the minimum individually', 'Valid for up to 3 years from test date'], url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/employer-nomination-scheme-186' },
-      { code: '485', name: 'Temporary Graduate',       color: '#00D68F', level: 'Competent',  score: 'R 24 · L 21 · W 27 · S 23', notes: ['Test waived if 2+ years of Australian study', 'Must be within 3 years of application date'], url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/temporary-graduate-485' },
+      { code: '189', name: 'Skilled Independent',      color: '#4F8EF7', level: 'Competent', score: '16 L · 16 R · 19 W · 19 S', notes: ['Current thresholds apply to tests from 7 August 2025', 'Proficient and Superior TOEFL scores can earn EOI points'], url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skilled-independent-189' },
+      { code: '190', name: 'Skilled Nominated',        color: '#00C2FF', level: 'Competent', score: '16 L · 16 R · 19 W · 19 S', notes: ['Current thresholds apply to tests from 7 August 2025', 'State nomination may require higher scores'], url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skilled-nominated-190' },
+      { code: '491', name: 'Skilled Work Regional',    color: '#A78BFA', level: 'Competent', score: '16 L · 16 R · 19 W · 19 S', notes: ['Current thresholds apply to tests from 7 August 2025', 'Nomination criteria may require higher scores'], url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skilled-work-regional-provisional-491' },
+      { code: '482', name: 'Skills in Demand Visa (Subclass 482)', color: '#FF6B8A', level: 'Minimum English', score: '8 L · 8 R · 9 W · 14 S', notes: ['For Core and Specialist Skills tests from 13 September 2025', 'Exemptions may apply'], url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skills-in-demand-visa-subclass-482' },
+      { code: '186', name: 'Employer Nominated (ENS)', color: '#FF7043', level: 'Competent', score: '16 L · 16 R · 19 W · 19 S', notes: ['Current thresholds apply to tests from 7 August 2025', 'Evidence window and exemptions depend on the stream'], url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/employer-nomination-scheme-186' },
+      { code: '485', name: 'Temporary Graduate',       color: '#00D68F', level: 'Visa-specific', score: 'Check current stream rules', notes: ['TOEFL iBT Home Edition is not accepted', 'Test must generally be taken in the 1 year before application'], url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/temporary-graduate-485' },
     ],
     centers: [
-      { label: 'ETS — Find TOEFL Test Centres', sublabel: 'At-home & test centre options across Australia', url: 'https://www.ets.org/toefl/test-takers/ibt/about/', badge: 'Official' },
+      { label: 'ETS — Find TOEFL Test Centres', sublabel: 'Choose an approved test centre and the Australia pathway', url: 'https://www.ets.org/toefl/test-takers/ibt/about/', badge: 'Official' },
     ],
   },
   {
@@ -174,7 +173,7 @@ const TESTS: TestData[] = [
       { code: '189', name: 'Skilled Independent',      color: '#4F8EF7', level: 'Competent',  score: '169 each component', notes: ['Each component (L, R, W, S, Use of English) must reach 169', 'Proficient (185) earns +10 pts; Superior (200) earns +20 pts'], url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skilled-independent-189' },
       { code: '190', name: 'Skilled Nominated',        color: '#00C2FF', level: 'Competent',  score: '169 each component', notes: ['Same as 189 — each component individually', 'State/territory nomination may set higher requirement'], url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skilled-nominated-190' },
       { code: '491', name: 'Skilled Work Regional',    color: '#A78BFA', level: 'Competent',  score: '169 each component', notes: ['Same as 189/190 minimum per component', 'Regional sponsor may require higher scores'], url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skilled-work-regional-provisional-491' },
-      { code: '482', name: 'Skills in Demand (TSS)',   color: '#FF6B8A', level: 'Vocational', score: '154 each component', notes: ['Short-term stream: 154 each component', 'Core Skills & Specialist streams: 169 each component'], url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skills-in-demand-visa-subclass-482' },
+      { code: '482', name: 'Skills in Demand Visa (Subclass 482)', color: '#FF6B8A', level: 'Vocational', score: '154 each component', notes: ['Short-term stream: 154 each component', 'Core Skills & Specialist streams: 169 each component'], url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skills-in-demand-visa-subclass-482' },
       { code: '186', name: 'Employer Nominated (ENS)', color: '#FF7043', level: 'Competent',  score: '169 each component', notes: ['Each component must meet 169 individually', 'Cambridge results do not have an expiry date'], url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/employer-nomination-scheme-186' },
       { code: '485', name: 'Temporary Graduate',       color: '#00D68F', level: 'Competent',  score: '169 each component', notes: ['Waived if 2+ years of Australian study completed', 'Test must be within 3 years of application'], url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/temporary-graduate-485' },
     ],
@@ -203,7 +202,7 @@ const TESTS: TestData[] = [
       { code: '189', name: 'Skilled Independent',      color: '#4F8EF7', level: 'Competent',  score: '7 in each skill', notes: ['All 4 skills must individually reach Level 7 — no averaging', 'Proficient (8) earns +10 pts; Superior NOT available via CELPIP'], url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skilled-independent-189' },
       { code: '190', name: 'Skilled Nominated',        color: '#00C2FF', level: 'Competent',  score: '7 in each skill', notes: ['Same as 189 — each skill must individually reach 7', 'State nomination may require higher scores'], url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skilled-nominated-190' },
       { code: '491', name: 'Skilled Work Regional',    color: '#A78BFA', level: 'Competent',  score: '7 in each skill', notes: ['Same as 189/190 minimum per skill', 'Regional sponsor may require higher scores'], url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skilled-work-regional-provisional-491' },
-      { code: '482', name: 'Skills in Demand (TSS)',   color: '#FF6B8A', level: 'Vocational', score: '4 in each skill', notes: ['Short-term stream: 4 in each skill', 'Core Skills & Specialist streams: 7 in each skill'], url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skills-in-demand-visa-subclass-482' },
+      { code: '482', name: 'Skills in Demand Visa (Subclass 482)', color: '#FF6B8A', level: 'Vocational', score: '4 in each skill', notes: ['Short-term stream: 4 in each skill', 'Core Skills & Specialist streams: 7 in each skill'], url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skills-in-demand-visa-subclass-482' },
       { code: '186', name: 'Employer Nominated (ENS)', color: '#FF7043', level: 'Competent',  score: '7 in each skill', notes: ['Each skill must individually meet 7', 'Results must not be more than 2 years old at time of application'], url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/employer-nomination-scheme-186' },
       { code: '485', name: 'Temporary Graduate',       color: '#00D68F', level: 'Competent',  score: '7 in each skill', notes: ['Waived if 2+ years of Australian study completed', 'Test must be within 2 years of application'], url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/temporary-graduate-485' },
     ],
@@ -221,18 +220,18 @@ const TESTS: TestData[] = [
     validity: '2 years',
     scoreRange: '0–500 per sub-test (A · B · C · D)',
     website: 'https://oet.com',
-    overview: 'Designed exclusively for healthcare professionals. Accepted by DHA for health-related occupations applying for skilled and employer-sponsored visas. OET does not qualify for Superior English (+20 pts) in EOI.',
+    overview: 'Developed for health professionals and accepted by DHA for visa English evidence. Tests taken from 7 August 2025 use numeric component scores; earlier valid results use letter grades.',
     proficiency: [
-      { label: 'Competent',  score: 'B in each sub-test', description: 'Minimum for skilled & employer visas (healthcare occupations)', pointsBonus: '0 pts', color: '#0096CC' },
-      { label: 'Proficient', score: 'B in each sub-test', description: 'Same score required — does not earn additional EOI points via OET', pointsBonus: '+10 pts*', color: '#D4A600' },
-      { label: 'Superior',   score: 'Not applicable',     description: 'OET does not qualify for Superior English level', color: '#6B7280' },
+      { label: 'Competent',  score: '290 L · 310 R · 290 W · 330 S', description: 'Tests taken from 7 August 2025', pointsBonus: '0 pts', color: '#0096CC' },
+      { label: 'Proficient', score: '350 L · 360 R · 380 W · 360 S', description: 'EOI English-language points', pointsBonus: '+10 pts', color: '#D4A600' },
+      { label: 'Superior',   score: '390 L · 400 R · 420 W · 400 S', description: 'EOI English-language points', pointsBonus: '+20 pts', color: '#FF6B8A' },
     ],
     visaRequirements: [
-      { code: '189', name: 'Skilled Independent',      color: '#4F8EF7', level: 'Competent', score: 'B in each sub-test', notes: ['Available for health professions on MLTSSL/STSOL', 'B in all four sub-tests (L, R, W, S)', 'OET does not qualify for Superior (+20 pts) English'], url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skilled-independent-189' },
-      { code: '190', name: 'Skilled Nominated',        color: '#00C2FF', level: 'Competent', score: 'B in each sub-test', notes: ['Same requirement as 189 for health professions', 'State/territory may require additional evidence'], url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skilled-nominated-190' },
-      { code: '491', name: 'Skilled Work Regional',    color: '#A78BFA', level: 'Competent', score: 'B in each sub-test', notes: ['B in all four OET sub-tests', 'Healthcare occupations on the relevant skilled list only'], url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skilled-work-regional-provisional-491' },
-      { code: '482', name: 'Skills in Demand (TSS)',   color: '#FF6B8A', level: 'Competent', score: 'B in each sub-test', notes: ['Available for healthcare occupations under Core Skills / Specialist streams', 'B in all four sub-tests required'], url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skills-in-demand-visa-subclass-482' },
-      { code: '186', name: 'Employer Nominated (ENS)', color: '#FF7043', level: 'Competent', score: 'B in each sub-test', notes: ['B in each of the four OET sub-tests', 'Result must not be more than 2 years old at time of application'], url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/employer-nomination-scheme-186' },
+      { code: '189', name: 'Skilled Independent',      color: '#4F8EF7', level: 'Competent', score: '290 L · 310 R · 290 W · 330 S', notes: ['Current thresholds apply to tests from 7 August 2025', 'Proficient and Superior OET can earn EOI English-language points'], url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skilled-independent-189' },
+      { code: '190', name: 'Skilled Nominated',        color: '#00C2FF', level: 'Competent', score: '290 L · 310 R · 290 W · 330 S', notes: ['Current thresholds apply to tests from 7 August 2025', 'State or territory criteria may require higher scores'], url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skilled-nominated-190' },
+      { code: '491', name: 'Skilled Work Regional',    color: '#A78BFA', level: 'Competent', score: '290 L · 310 R · 290 W · 330 S', notes: ['Current thresholds apply to tests from 7 August 2025', 'Nomination criteria may require higher scores'], url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skilled-work-regional-provisional-491' },
+      { code: '482', name: 'Skills in Demand Visa (Subclass 482)', color: '#FF6B8A', level: 'Minimum English', score: '220 L · 240 R · 200 W · 270 S', notes: ['For Core and Specialist Skills tests from 13 September 2025', 'OET@Home is not accepted; exemptions may apply'], url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skills-in-demand-visa-subclass-482' },
+      { code: '186', name: 'Employer Nominated (ENS)', color: '#FF7043', level: 'Competent', score: '290 L · 310 R · 290 W · 330 S', notes: ['Current thresholds apply to tests from 7 August 2025', 'Validity and exemptions depend on the stream'], url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/employer-nomination-scheme-186' },
     ],
     centers: [
       { label: 'OET — Book a Test', sublabel: 'Computer-delivered · healthcare professionals only', url: 'https://oet.com/', badge: 'Official' },
@@ -281,6 +280,10 @@ export default function EnglishTestsScreen() {
       showsVerticalScrollIndicator={false}
       contentContainerStyle={{ paddingBottom: 100 }}
       keyboardShouldPersistTaps="handled"
+      onScrollBeginDrag={() => setDropdownOpen(false)}
+      onTouchStart={() => {
+        if (dropdownOpen) setDropdownOpen(false);
+      }}
     >
       {/* Header */}
       <LinearGradient
@@ -303,7 +306,7 @@ export default function EnglishTestsScreen() {
       </LinearGradient>
 
       {/* ── Test selector ── */}
-      <View style={styles.selectorSection}>
+      <View style={styles.selectorSection} onTouchStart={(event) => event.stopPropagation()}>
         <Text style={[styles.selectorLabel, { color: Colors.textMuted }]}>Select an approved test</Text>
 
         <TouchableOpacity
@@ -315,6 +318,11 @@ export default function EnglishTestsScreen() {
           ]}
           onPress={() => setDropdownOpen(!dropdownOpen)}
           activeOpacity={0.85}
+          accessibilityRole="button"
+          accessibilityLabel="Select an approved English test"
+          accessibilityState={{ expanded: dropdownOpen }}
+          aria-expanded={dropdownOpen}
+          aria-haspopup="listbox"
         >
           <View style={[styles.selectorIcon, { backgroundColor: selectedTest ? selectedTest.color + '18' : Colors.surfaceRaised }]}
           >
@@ -354,6 +362,9 @@ export default function EnglishTestsScreen() {
                 ]}
                 onPress={() => selectTest(t)}
                 activeOpacity={0.8}
+                accessibilityRole="button"
+                accessibilityLabel={`${t.name}, ${t.full}`}
+                accessibilityState={{ selected: selectedTest?.name === t.name }}
               >
                 <View style={[styles.dropdownIcon, { backgroundColor: t.color + '18' }]}>
                   <Ionicons name={t.icon as any} size={15} color={t.color} />
@@ -416,7 +427,7 @@ export default function EnglishTestsScreen() {
                 </View>
                 <TouchableOpacity
                   style={[styles.webBtn, { borderColor: selectedTest.color + '40' }]}
-                  onPress={() => Linking.openURL(selectedTest.website)}
+                  onPress={() => void openExternalUrl(selectedTest.website)}
                 >
                   <Ionicons name="open-outline" size={12} color={selectedTest.color} />
                   <Text style={[styles.webBtnText, { color: selectedTest.color }]}>Website</Text>
@@ -427,7 +438,7 @@ export default function EnglishTestsScreen() {
 
               <OverviewRow icon="construct-outline"  label="Format"      value={selectedTest.format} />
               <OverviewRow icon="location-outline"   label="Delivery"    value={selectedTest.delivery} />
-              <OverviewRow icon="time-outline"       label="Validity"    value={selectedTest.validity} />
+              <OverviewRow icon="time-outline"       label="Visa evidence" value={selectedTest.validity} />
               <OverviewRow icon="bar-chart-outline"  label="Score range" value={selectedTest.scoreRange} />
             </View>
           </View>
@@ -493,7 +504,7 @@ export default function EnglishTestsScreen() {
                           ))}
                           <TouchableOpacity
                             style={[styles.dhaBtn, { borderColor: v.color + '40', backgroundColor: v.color + '08' }]}
-                            onPress={() => Linking.openURL(v.url)}
+                            onPress={() => void openExternalUrl(v.url)}
                           >
                             <Ionicons name="open-outline" size={12} color={v.color} />
                             <Text style={[styles.dhaBtnText, { color: v.color }]}>View on DHA website</Text>
@@ -516,7 +527,7 @@ export default function EnglishTestsScreen() {
                 <TouchableOpacity
                   key={c.url}
                   style={[styles.centerRow, { backgroundColor: Colors.surfaceRaised, borderColor: selectedTest.color + '30' }]}
-                  onPress={() => Linking.openURL(c.url)}
+                  onPress={() => void openExternalUrl(c.url)}
                   activeOpacity={0.8}
                 >
                   <View style={[styles.centerIcon, { backgroundColor: selectedTest.color + '18' }]}>
@@ -545,7 +556,7 @@ export default function EnglishTestsScreen() {
       <TouchableOpacity
         activeOpacity={0.8}
         style={styles.partnerBanner}
-        onPress={() => Linking.openURL('mailto:support@jsmglobal.xyz?subject=Test%20Centre%20Partnership%20Enquiry')}
+        onPress={() => void openExternalUrl('mailto:support@jsmglobal.xyz?subject=Test%20Centre%20Partnership%20Enquiry')}
       >
         <LinearGradient colors={['#0A1A2E', '#0D2240']} style={styles.partnerGrad} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
           <View style={styles.partnerLeft}>
@@ -569,9 +580,9 @@ export default function EnglishTestsScreen() {
         <Ionicons name="alert-circle-outline" size={14} color={Colors.textMuted} />
         <Text style={[styles.disclaimerText, { color: Colors.textSecondary }]}>
           Requirements may change. Always verify on{' '}
-          <Text style={[styles.disclaimerLink, { color: Colors.accent }]} onPress={() => Linking.openURL('https://immi.homeaffairs.gov.au')}>immi.homeaffairs.gov.au</Text>
+          <Text style={[styles.disclaimerLink, { color: Colors.accent }]} onPress={() => void openExternalUrl('https://immi.homeaffairs.gov.au')}>immi.homeaffairs.gov.au</Text>
           {' '}or consult a{' '}
-          <Text style={[styles.disclaimerLink, { color: Colors.accent }]} onPress={() => Linking.openURL('https://portal.mara.gov.au')}>MARA-registered agent</Text>.
+          <Text style={[styles.disclaimerLink, { color: Colors.accent }]} onPress={() => void openExternalUrl('https://portal.mara.gov.au')}>MARA-registered agent</Text>.
         </Text>
       </View>
     </ScrollView>

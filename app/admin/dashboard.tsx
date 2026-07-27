@@ -11,13 +11,15 @@ import {
   KeyboardAvoidingView,
   Platform,
   Modal,
+  Linking,
 } from 'react-native';
+import auth, { FirebaseAuthTypes } from '@react-native-firebase/auth';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Spacing, Radius, FontSize, FontWeight } from '../../constants/theme';
 import { useColors } from '../../constants/ThemeContext';
-import { isUserAdmin, createNotification, saveDraft, approveDraft, deleteNotification, deleteDraft, getDrafts, getPublishedNotifications, NOTIFICATION_CATEGORIES, validateNotification } from '../../utils/admin';
+import { saveDraft, approveDraft, rejectDraft, editDraft, deleteNotification, deleteDraft, getDrafts, getPublishedNotifications, NOTIFICATION_CATEGORIES, validateNotification } from '../../utils/admin';
 import { tap as hapticTap, success as hapticSuccess } from '../../utils/haptics';
 
 interface NotificationDraft {
@@ -37,10 +39,24 @@ export default function AdminDashboard() {
   const [submitting, setSubmitting] = useState(false);
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
-  const [activeTab, setActiveTab] = useState<'compose' | 'manage'>('compose');
+  const [activeTab, setActiveTab] = useState<'compose' | 'manage' | 'security'>('compose');
   const [drafts, setDrafts] = useState<any[]>([]);
   const [published, setPublished] = useState<any[]>([]);
   const [loadingManage, setLoadingManage] = useState(false);
+  const [busyDraftId, setBusyDraftId] = useState<string | null>(null);
+  const [editingDraft, setEditingDraft] = useState<any | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editBody, setEditBody] = useState('');
+  const [editCategory, setEditCategory] = useState('');
+  const [rejectionReason, setRejectionReason] = useState('');
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [totpSecret, setTotpSecret] = useState<FirebaseAuthTypes.TotpSecret | null>(null);
+  const [totpUrl, setTotpUrl] = useState('');
+  const [totpCode, setTotpCode] = useState('');
+  const [securityBusy, setSecurityBusy] = useState(false);
+  const [mfaEnabled, setMfaEnabled] = useState(false);
 
   const [draft, setDraft] = useState<NotificationDraft>({
     title: '',
@@ -50,12 +66,34 @@ export default function AdminDashboard() {
     link: '',
   });
 
-  // Check admin on mount
-  // PIN-based access is already verified in profile.tsx before navigating here
   useEffect(() => {
-    setIsAdmin(true);
-    setLoading(false);
-  }, []);
+    return auth().onAuthStateChanged(async (user) => {
+      if (!user) {
+        setIsAdmin(false);
+        setLoading(false);
+        router.replace('/admin/login' as any);
+        return;
+      }
+
+      try {
+        const token = await user.getIdTokenResult(true);
+        const hasAdminClaim = token.claims.admin === true;
+        setIsAdmin(hasAdminClaim);
+        if (!hasAdminClaim) {
+          await auth().signOut();
+          router.replace('/admin/login' as any);
+          return;
+        }
+        const factors = await auth.multiFactor(auth());
+        setMfaEnabled(factors.enrolledFactors.some((factor) => factor.factorId === 'totp'));
+      } catch {
+        setIsAdmin(false);
+        router.replace('/admin/login' as any);
+      } finally {
+        setLoading(false);
+      }
+    });
+  }, [router]);
 
   // Load manage data when tab switches
   useEffect(() => {
@@ -113,17 +151,74 @@ export default function AdminDashboard() {
         text: 'Publish',
         style: 'default',
         onPress: async () => {
+          setBusyDraftId(draftId);
           try {
             const notifId = await approveDraft(draftId);
             try { hapticSuccess(); } catch (e) {}
             Alert.alert('✅ Published', `Notification sent to all users.\nID: ${notifId}`);
-            loadManageData();
+            await loadManageData();
           } catch (err: any) {
             Alert.alert('Error', err?.message || 'Failed to publish');
+          } finally {
+            setBusyDraftId(null);
           }
         },
       },
     ]);
+  };
+
+  const openDraftEditor = (item: any) => {
+    setEditingDraft(item);
+    setEditTitle(item.title || '');
+    setEditBody(item.body || '');
+    setEditCategory(item.category || 'News');
+    setRejectionReason('');
+  };
+
+  const closeDraftEditor = () => {
+    if (busyDraftId) return;
+    setEditingDraft(null);
+  };
+
+  const handleEditDraft = async () => {
+    if (!editingDraft) return;
+    const validation = validateNotification({ title: editTitle, body: editBody, category: editCategory });
+    if (!validation.valid) {
+      Alert.alert('Validation Error', validation.errors.join('\n'));
+      return;
+    }
+
+    setBusyDraftId(editingDraft.id);
+    try {
+      await editDraft(editingDraft.id, {
+        title: editTitle,
+        body: editBody,
+        category: editCategory,
+      });
+      setEditingDraft(null);
+      await loadManageData();
+      Alert.alert('Draft Updated', 'The draft changes were saved.');
+    } catch (err: any) {
+      Alert.alert('Error', err?.message || 'Failed to update draft');
+    } finally {
+      setBusyDraftId(null);
+    }
+  };
+
+  const handleRejectDraft = async () => {
+    if (!editingDraft) return;
+    const draftId = editingDraft.id;
+    setBusyDraftId(draftId);
+    try {
+      await rejectDraft(draftId, rejectionReason);
+      setEditingDraft(null);
+      await loadManageData();
+      Alert.alert('Draft Rejected', 'The draft was removed and the decision was recorded.');
+    } catch (err: any) {
+      Alert.alert('Error', err?.message || 'Failed to reject draft');
+    } finally {
+      setBusyDraftId(null);
+    }
   };
 
   const handleDeletePublished = async (notifId: string, title: string) => {
@@ -151,6 +246,82 @@ export default function AdminDashboard() {
       loadManageData();
     } catch (err: any) {
       Alert.alert('Error', err?.message || 'Failed to delete draft');
+    }
+  };
+
+  const reauthenticateAdmin = async () => {
+    const user = auth().currentUser;
+    if (!user?.email || !currentPassword) throw new Error('Enter your current password.');
+    const credential = auth.EmailAuthProvider.credential(user.email, currentPassword);
+    await user.reauthenticateWithCredential(credential);
+    return user;
+  };
+
+  const handleChangePassword = async () => {
+    if (newPassword.length < 12) {
+      Alert.alert('Password Too Short', 'Use at least 12 characters.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      Alert.alert('Passwords Do Not Match', 'Re-enter the new password.');
+      return;
+    }
+
+    setSecurityBusy(true);
+    try {
+      const user = await reauthenticateAdmin();
+      await user.updatePassword(newPassword);
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      Alert.alert('Password Updated', 'Your Firebase admin password has been changed.');
+    } catch (error: any) {
+      Alert.alert('Password Not Changed', error?.message || 'Please try again.');
+    } finally {
+      setSecurityBusy(false);
+    }
+  };
+
+  const handleStartTotpEnrollment = async () => {
+    setSecurityBusy(true);
+    try {
+      await reauthenticateAdmin();
+      const factors = await auth.multiFactor(auth());
+      const session = await factors.getSession();
+      const secret = await (auth as any).TotpMultiFactorGenerator.generateSecret(session, auth());
+      const qrUrl = await secret.generateQrCodeUrl(auth().currentUser?.email ?? 'admin', 'MigrateAU');
+      setTotpSecret(secret);
+      setTotpUrl(qrUrl);
+      setTotpCode('');
+      await Linking.openURL(qrUrl).catch(() => {});
+    } catch (error: any) {
+      Alert.alert('2FA Setup Failed', error?.message || 'Please try again.');
+    } finally {
+      setSecurityBusy(false);
+    }
+  };
+
+  const handleConfirmTotpEnrollment = async () => {
+    if (!totpSecret || !/^\d{6}$/.test(totpCode)) {
+      Alert.alert('Invalid Code', 'Enter the 6-digit code from your authenticator app.');
+      return;
+    }
+
+    setSecurityBusy(true);
+    try {
+      const assertion = (auth as any).TotpMultiFactorGenerator.assertionForEnrollment(totpSecret, totpCode);
+      const factors = await auth.multiFactor(auth());
+      await factors.enroll(assertion, 'MigrateAU Admin');
+      setMfaEnabled(true);
+      setTotpSecret(null);
+      setTotpUrl('');
+      setTotpCode('');
+      setCurrentPassword('');
+      Alert.alert('2FA Enabled', 'Future admin sign-ins require your authenticator code.');
+    } catch (error: any) {
+      Alert.alert('Code Not Accepted', error?.message || 'Generate a new code and try again.');
+    } finally {
+      setSecurityBusy(false);
     }
   };
 
@@ -199,6 +370,12 @@ export default function AdminDashboard() {
           <Text style={[styles.tabText, activeTab === 'manage' && styles.tabTextActive]}>
             Manage {drafts.length > 0 ? `(${drafts.length})` : ''}
           </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'security' && styles.tabActive]}
+          onPress={() => setActiveTab('security')}
+        >
+          <Text style={[styles.tabText, activeTab === 'security' && styles.tabTextActive]}>Security</Text>
         </TouchableOpacity>
       </View>
 
@@ -301,7 +478,7 @@ export default function AdminDashboard() {
 
         <View style={{ height: 40 }} />
       </ScrollView>
-      ) : (
+      ) : activeTab === 'manage' ? (
       /* Manage Tab */
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {loadingManage ? (
@@ -322,10 +499,13 @@ export default function AdminDashboard() {
                     <Text style={[styles.manageMeta, {color: Colors.textPrimary}]}>{d.category} · {d.timestamp?.substring(0, 16)}</Text>
                   </View>
                   <View style={styles.manageActions}>
-                    <TouchableOpacity style={styles.approveBtn} onPress={() => handleApprove(d.id, d.title)}>
-                      <Ionicons name="checkmark-circle" size={22} color="#4CAF50" />
+                    <TouchableOpacity style={styles.manageIconBtn} onPress={() => openDraftEditor(d)} disabled={!!busyDraftId} accessibilityLabel={`Edit ${d.title}`}>
+                      <Ionicons name="create-outline" size={22} color={Colors.accent} />
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.deleteBtn} onPress={() => handleDeleteDraft(d.id)}>
+                    <TouchableOpacity style={styles.manageIconBtn} onPress={() => handleApprove(d.id, d.title)} disabled={!!busyDraftId} accessibilityLabel={`Publish ${d.title}`}>
+                      {busyDraftId === d.id ? <ActivityIndicator size="small" color={Colors.success} /> : <Ionicons name="checkmark-circle" size={22} color={Colors.success} />}
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.manageIconBtn} onPress={() => handleDeleteDraft(d.id)} disabled={!!busyDraftId} accessibilityLabel={`Delete ${d.title}`}>
                       <Ionicons name="trash" size={22} color={Colors.error} />
                     </TouchableOpacity>
                   </View>
@@ -350,6 +530,86 @@ export default function AdminDashboard() {
             </View>
           </>
         )}
+        <View style={{ height: 40 }} />
+      </ScrollView>
+      ) : (
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+        <View style={styles.section}>
+          <Text style={[styles.label, { color: Colors.textPrimary }]}>Admin account</Text>
+          <Text style={[styles.securityValue, { color: Colors.textSecondary }]}>{auth().currentUser?.email}</Text>
+          <TouchableOpacity
+            style={[styles.signOutButton, { borderColor: Colors.border }]}
+            onPress={async () => { await auth().signOut(); router.replace('/admin/login' as any); }}
+          >
+            <Ionicons name="log-out-outline" size={18} color={Colors.error} />
+            <Text style={[styles.signOutText, { color: Colors.error }]}>Sign Out</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={[styles.label, { color: Colors.textPrimary }]}>Change password</Text>
+          <TextInput
+            style={[styles.input, { color: Colors.textPrimary, borderColor: Colors.border, backgroundColor: Colors.surface }]}
+            value={currentPassword}
+            onChangeText={setCurrentPassword}
+            placeholder="Current password"
+            placeholderTextColor={Colors.textMuted}
+            secureTextEntry
+          />
+          <TextInput
+            style={[styles.input, { color: Colors.textPrimary, borderColor: Colors.border, backgroundColor: Colors.surface }]}
+            value={newPassword}
+            onChangeText={setNewPassword}
+            placeholder="New password (12+ characters)"
+            placeholderTextColor={Colors.textMuted}
+            secureTextEntry
+          />
+          <TextInput
+            style={[styles.input, { color: Colors.textPrimary, borderColor: Colors.border, backgroundColor: Colors.surface }]}
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+            placeholder="Confirm new password"
+            placeholderTextColor={Colors.textMuted}
+            secureTextEntry
+          />
+          <TouchableOpacity style={[styles.securityButton, { backgroundColor: Colors.secondary }]} onPress={handleChangePassword} disabled={securityBusy}>
+            <Text style={[styles.securityButtonText, { color: Colors.primaryDark }]}>Update Password</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={[styles.label, { color: Colors.textPrimary }]}>Authenticator app (TOTP)</Text>
+          <Text style={[styles.securityValue, { color: mfaEnabled ? Colors.success : Colors.textSecondary }]}>
+            {mfaEnabled ? 'Enabled' : 'Not enabled'}
+          </Text>
+          {!mfaEnabled && !totpSecret && (
+            <TouchableOpacity style={[styles.securityButton, { backgroundColor: Colors.accent }]} onPress={handleStartTotpEnrollment} disabled={securityBusy}>
+              <Text style={[styles.securityButtonText, { color: Colors.primaryDark }]}>Set Up Authenticator</Text>
+            </TouchableOpacity>
+          )}
+          {!!totpSecret && (
+            <View style={[styles.totpSetup, { borderColor: Colors.border, backgroundColor: Colors.surface }]}>
+              <Text style={[styles.securityValue, { color: Colors.textSecondary }]}>Add this key to your authenticator if it did not open automatically:</Text>
+              <Text selectable style={[styles.secretKey, { color: Colors.textPrimary }]}>{totpSecret.secretKey}</Text>
+              <TouchableOpacity onPress={() => Linking.openURL(totpUrl)}>
+                <Text style={[styles.openAuthenticator, { color: Colors.accent }]}>Open authenticator app</Text>
+              </TouchableOpacity>
+              <TextInput
+                style={[styles.input, styles.totpInput, { color: Colors.textPrimary, borderColor: Colors.border, backgroundColor: Colors.background }]}
+                value={totpCode}
+                onChangeText={(value) => setTotpCode(value.replace(/\D/g, '').slice(0, 6))}
+                placeholder="000000"
+                placeholderTextColor={Colors.textMuted}
+                keyboardType="number-pad"
+                maxLength={6}
+              />
+              <TouchableOpacity style={[styles.securityButton, { backgroundColor: Colors.success }]} onPress={handleConfirmTotpEnrollment} disabled={securityBusy}>
+                <Text style={[styles.securityButtonText, { color: Colors.primaryDark }]}>Confirm and Enable 2FA</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
+        {securityBusy && <ActivityIndicator color={Colors.secondary} style={{ marginTop: Spacing.lg }} />}
         <View style={{ height: 40 }} />
       </ScrollView>
       )}
@@ -452,6 +712,44 @@ export default function AdminDashboard() {
           </ScrollView>
         </View>
       </Modal>
+
+      <Modal
+        visible={!!editingDraft}
+        transparent
+        animationType="slide"
+        onRequestClose={closeDraftEditor}
+      >
+        <KeyboardAvoidingView style={styles.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <View style={[styles.editModalContent, { backgroundColor: Colors.surface }]}>
+            <View style={styles.editModalHeader}>
+              <Text style={[styles.modalTitleText, { color: Colors.textPrimary }]}>Review Draft</Text>
+              <TouchableOpacity onPress={closeDraftEditor} disabled={!!busyDraftId} accessibilityLabel="Close draft editor">
+                <Ionicons name="close" size={24} color={Colors.textPrimary} />
+              </TouchableOpacity>
+            </View>
+            <ScrollView keyboardShouldPersistTaps="handled">
+              <Text style={[styles.label, { color: Colors.textPrimary }]}>Title</Text>
+              <TextInput style={[styles.input, { color: Colors.textPrimary, borderColor: Colors.border }]} value={editTitle} onChangeText={setEditTitle} maxLength={100} />
+              <Text style={[styles.label, styles.editFieldLabel, { color: Colors.textPrimary }]}>Body</Text>
+              <TextInput style={[styles.input, styles.bodyInput, { color: Colors.textPrimary, borderColor: Colors.border }]} value={editBody} onChangeText={setEditBody} maxLength={500} multiline textAlignVertical="top" />
+              <Text style={[styles.label, styles.editFieldLabel, { color: Colors.textPrimary }]}>Category</Text>
+              <TextInput style={[styles.input, { color: Colors.textPrimary, borderColor: Colors.border }]} value={editCategory} onChangeText={setEditCategory} maxLength={80} />
+              <Text style={[styles.label, styles.editFieldLabel, { color: Colors.textPrimary }]}>Rejection reason (optional)</Text>
+              <TextInput style={[styles.input, { color: Colors.textPrimary, borderColor: Colors.border }]} value={rejectionReason} onChangeText={setRejectionReason} maxLength={500} placeholder="Reason recorded in the audit trail" placeholderTextColor={Colors.textMuted} />
+              <View style={styles.editModalActions}>
+                <TouchableOpacity style={[styles.reviewAction, { borderColor: Colors.error }]} onPress={handleRejectDraft} disabled={!!busyDraftId}>
+                  <Ionicons name="close-circle-outline" size={19} color={Colors.error} />
+                  <Text style={[styles.reviewActionText, { color: Colors.error }]}>Reject</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.reviewAction, { backgroundColor: Colors.secondary }]} onPress={handleEditDraft} disabled={!!busyDraftId}>
+                  {busyDraftId ? <ActivityIndicator size="small" color={Colors.primaryDark} /> : <Ionicons name="save-outline" size={19} color={Colors.primaryDark} />}
+                  <Text style={[styles.reviewActionText, { color: Colors.primaryDark }]}>Save</Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </KeyboardAvoidingView>
   );
 }
@@ -552,6 +850,15 @@ const styles = StyleSheet.create({
     fontSize: FontSize.md,
     fontWeight: FontWeight.bold,
   },
+  securityValue: { fontSize: FontSize.sm, lineHeight: 19, marginBottom: Spacing.md },
+  securityButton: { minHeight: 46, borderRadius: Radius.md, alignItems: 'center', justifyContent: 'center', marginTop: Spacing.sm },
+  securityButtonText: { fontSize: FontSize.sm, fontWeight: FontWeight.bold },
+  signOutButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.sm, borderWidth: 1, borderRadius: Radius.md, minHeight: 44 },
+  signOutText: { fontSize: FontSize.sm, fontWeight: FontWeight.semiBold },
+  totpSetup: { borderWidth: 1, borderRadius: Radius.md, padding: Spacing.md },
+  secretKey: { fontSize: FontSize.sm, fontWeight: FontWeight.bold, letterSpacing: 1, marginBottom: Spacing.md },
+  openAuthenticator: { fontSize: FontSize.sm, fontWeight: FontWeight.semiBold, marginBottom: Spacing.md },
+  totpInput: { textAlign: 'center', fontSize: FontSize.xl, letterSpacing: 6 },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
@@ -723,10 +1030,48 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
     marginLeft: Spacing.sm,
   },
-  approveBtn: {
+  manageIconBtn: {
     padding: 6,
   },
   deleteBtn: {
     padding: 6,
+  },
+  editModalContent: {
+    maxHeight: '88%',
+    borderTopLeftRadius: Radius.xl,
+    borderTopRightRadius: Radius.xl,
+    padding: Spacing.lg,
+  },
+  editModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: Spacing.lg,
+  },
+  modalTitleText: {
+    fontSize: FontSize.lg,
+    fontWeight: FontWeight.bold,
+  },
+  editFieldLabel: {
+    marginTop: Spacing.md,
+  },
+  editModalActions: {
+    flexDirection: 'row',
+    gap: Spacing.md,
+    marginTop: Spacing.xl,
+  },
+  reviewAction: {
+    flex: 1,
+    minHeight: 46,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.sm,
+    borderWidth: 1,
+    borderRadius: Radius.md,
+  },
+  reviewActionText: {
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.bold,
   },
 });

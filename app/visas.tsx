@@ -6,7 +6,6 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  Linking,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,6 +13,7 @@ import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Spacing, Radius, FontSize, FontWeight } from '../constants/theme';
 import { useColors } from '../constants/ThemeContext';
+import { openExternalUrl } from '../utils/openExternalUrl';
 import {
   ALL_VISAS,
   CATEGORY_META,
@@ -76,7 +76,9 @@ export default function VisasScreen() {
 
   const groups = useMemo(() => {
     let visas =
-      filter === 'All' ? ALL_VISAS : ALL_VISAS.filter((v) => v.category === filter);
+      filter === 'All'
+        ? ALL_VISAS.filter((v) => v.category !== 'Historical')
+        : ALL_VISAS.filter((v) => v.category === filter);
 
     // Apply search filter
     if (searchQuery.trim()) {
@@ -122,7 +124,7 @@ export default function VisasScreen() {
           </View>
           <Text style={[styles.title, { color: Colors.white }]}>Visa Pathways</Text>
           <Text style={[styles.subtitle, { color: 'rgba(255,255,255,0.75)' }]}>
-            All Australian visa subclasses organised by category — streams, conditions and official links in one place.
+            Current Australian visa pathways organised by category, with a separate archive for closed and repealed visas.
           </Text>
         </LinearGradient>
 
@@ -162,7 +164,7 @@ export default function VisasScreen() {
             const chipBorderColor = active ? `${activeColor}90` : Colors.border;
             const count =
               f === 'All'
-                ? ALL_VISAS.length
+                ? ALL_VISAS.filter((v) => v.category !== 'Historical').length
                 : ALL_VISAS.filter((v) => v.category === f).length;
             return (
               <TouchableOpacity
@@ -194,6 +196,17 @@ export default function VisasScreen() {
 
         {/* Grouped sections */}
         <View style={styles.body}>
+          {filter === 'Historical' && (
+            <View style={[styles.archiveNotice, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
+              <Ionicons name="warning-outline" size={18} color="#D97706" />
+              <View style={styles.archiveNoticeText}>
+                <Text style={[styles.archiveNoticeTitle, { color: Colors.textPrimary }]}>Historical visa archive</Text>
+                <Text style={[styles.archiveNoticeBody, { color: Colors.textSecondary }]}>
+                  These visas are closed to new applications or repealed. They are retained only for existing holders, transition information and reference.
+                </Text>
+              </View>
+            </View>
+          )}
           {groups.map(({ category, items }) => {
             const meta = CATEGORY_META[category];
             return (
@@ -238,7 +251,15 @@ export default function VisasScreen() {
                 <View style={styles.cardList}>
                   {items.map((v) => {
                     const open = expanded === `${category}-${v.code}`;
-                    const times = getTimesForCode(snapshot, v.code);
+                    const unavailable = v.type === 'Closed' || v.type === 'Repealed';
+                    const times = getTimesForCode(snapshot, v.code).flatMap((processingTime) =>
+                      processingTime.streams.map((stream) => ({
+                        subclass: processingTime.subclass,
+                        stream: stream.name,
+                        p50: stream.p50,
+                        p90: stream.p90,
+                      }))
+                    );
                     // Pick the fastest stream's p50 for the collapsed badge
                     const fastestTime = times.length > 0 ? times[0] : null;
                     const feeEntry = getFeeForCode(feeSnapshot, v.code);
@@ -257,9 +278,9 @@ export default function VisasScreen() {
 
                           <View style={styles.cardHeadContent}>
                             <View style={styles.codeRow}>
-                              <Text style={[styles.cardCode, { color: Colors.textPrimary, backgroundColor: Colors.surfaceRaised }]}>SC {v.code}</Text>
-                              <View style={[styles.typeBadge, v.type === 'Permanent' ? styles.typePerm : v.type === 'Repealed' ? styles.typeRepealed : styles.typeTemp]}>
-                                <Text style={[styles.typeText, v.type === 'Permanent' ? styles.typeTextPerm : v.type === 'Repealed' ? styles.typeTextRepealed : styles.typeTextTemp]}>
+                              <Text style={[styles.cardCode, { color: Colors.textPrimary, backgroundColor: Colors.surfaceRaised }]}>{v.code === 'SPV' ? 'SPV' : `SC ${v.code}`}</Text>
+                              <View style={[styles.typeBadge, v.type === 'Permanent' ? styles.typePerm : unavailable ? styles.typeUnavailable : styles.typeTemp]}>
+                                <Text style={[styles.typeText, v.type === 'Permanent' ? styles.typeTextPerm : unavailable ? styles.typeTextUnavailable : styles.typeTextTemp]}>
                                   {v.type}
                                 </Text>
                               </View>
@@ -348,7 +369,7 @@ export default function VisasScreen() {
 
                             <TouchableOpacity
                               style={[styles.dhaBtn, { borderColor: meta.color + '40', backgroundColor: meta.bg }]}
-                              onPress={() => Linking.openURL(v.url)}
+                              onPress={() => void openExternalUrl(v.url)}
                               activeOpacity={0.8}
                             >
                               <Ionicons name="open-outline" size={13} color={meta.color} />
@@ -369,7 +390,7 @@ export default function VisasScreen() {
           <Ionicons name="information-circle-outline" size={13} color={Colors.textMuted} />
           <Text style={[styles.footerText, { color: Colors.textSecondary }]}>
             Information is indicative. For formal advice consult a{' '}
-            <Text style={[styles.footerLink, { color: Colors.accent }]} onPress={() => Linking.openURL('https://portal.mara.gov.au')}>
+            <Text style={[styles.footerLink, { color: Colors.accent }]} onPress={() => void openExternalUrl('https://portal.mara.gov.au')}>
               MARA-registered agent
             </Text>.
           </Text>
@@ -431,6 +452,16 @@ const styles = StyleSheet.create({
   /* Body */
   body: { paddingHorizontal: Spacing.lg, paddingTop: Spacing.sm, gap: Spacing.xl },
 
+  archiveNotice: {
+    flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.sm,
+    padding: Spacing.md,
+    borderWidth: 1,
+    borderRadius: Radius.md,
+  },
+  archiveNoticeText: { flex: 1 },
+  archiveNoticeTitle: { fontSize: FontSize.sm, fontWeight: FontWeight.bold as any, marginBottom: 3 },
+  archiveNoticeBody: { fontSize: FontSize.xs, lineHeight: 18 },
+
   /* Section */
   section: { gap: Spacing.sm },
   sectionHeader: {
@@ -468,11 +499,11 @@ const styles = StyleSheet.create({
   typeBadge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: Radius.full },
   typePerm: { backgroundColor: 'rgba(0,214,143,0.15)' },
   typeTemp: { backgroundColor: 'rgba(0,194,255,0.15)' },
-  typeRepealed: { backgroundColor: 'rgba(107,114,128,0.15)' },
+  typeUnavailable: { backgroundColor: 'rgba(217,119,6,0.14)' },
   typeText: { fontSize: 9, fontWeight: '700', letterSpacing: 0.4 },
   typeTextPerm: { },
   typeTextTemp: { },
-  typeTextRepealed: { color: '#9CA3AF' },
+  typeTextUnavailable: { color: '#D97706' },
   cardName: { fontSize: FontSize.sm, fontWeight: FontWeight.semiBold as any },
 
   /* Processing time inline badge (collapsed) */

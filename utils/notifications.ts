@@ -17,6 +17,7 @@ import firestore from '@react-native-firebase/firestore';
 import app from '@react-native-firebase/app';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { registerWatchlistDevice } from './watchlist';
+import { isNotificationVisible } from './notificationVisibility';
 
 // Verify Firebase is initialized
 if (Platform.OS !== 'web') {
@@ -78,6 +79,19 @@ export async function initNotifications(subscribedStates: string[] = [], userId?
     //    even if permission or topic subscription later fails.
     registerBackgroundOpenHandler();
     console.log('[notifications] ✅ Tap/open handlers registered (early)');
+
+    // Android 13+ will not present notification permission until a channel exists.
+    // This ID must match the channelId used by the FCM backend.
+    if (Platform.OS === 'android') {
+      await Notifications.setNotificationChannelAsync('migration_news', {
+        name: 'Migration updates',
+        importance: Notifications.AndroidImportance.MAX,
+        sound: 'default',
+        vibrationPattern: [0, 250, 250, 250],
+        lightColor: '#002D62',
+      });
+      console.log('[notifications] ✅ Android notification channel ready');
+    }
 
     // 1. Request permission
     const granted = await requestPermission();
@@ -353,6 +367,14 @@ export interface AppNotification {
   sourceUrl?: string;
 }
 
+function notificationTimestamp(value: unknown): string {
+  if (typeof value === 'string') return value;
+  if (value && typeof (value as { toDate?: unknown }).toDate === 'function') {
+    return (value as { toDate: () => Date }).toDate().toISOString();
+  }
+  return '';
+}
+
 /**
  * Subscribe to the real-time Firestore notification feed.
  *
@@ -384,7 +406,7 @@ export function subscribeToFeed(
   
   let unsubscribed = false;
   let testQueryCompleted = false;
-  let testQueryTimeout: NodeJS.Timeout | null = null;
+  let testQueryTimeout: ReturnType<typeof setTimeout> | null = null;
 
   try {
     // Get Firestore instance
@@ -442,11 +464,11 @@ export function subscribeToFeed(
               console.log('[subscribeToFeed] 📬 Snapshot received:', snapshot.docs.length, 'docs');
               const readIds = await getReadIds();
               const items: AppNotification[] = snapshot.docs
+                .filter(doc => isNotificationVisible(doc.data()))
                 .map(doc => {
                   const data = doc.data() as Omit<AppNotification, 'id'>;
                   // Convert Firestore Timestamp to ISO string if needed
-                  const timestamp = data.timestamp;
-                  const isoTimestamp = typeof timestamp === 'string' ? timestamp : (timestamp?.toDate?.().toISOString() || '');
+                  const isoTimestamp = notificationTimestamp(data.timestamp);
                   return { id: doc.id, ...data, timestamp: isoTimestamp, read: readIds.has(doc.id) };
                 })
                 .sort((a, b) => (b.timestamp || '').localeCompare(a.timestamp || ''))
@@ -498,10 +520,10 @@ export function subscribeToFeed(
           try {
             console.log('[subscribeToFeed] Broadcast snapshot:', snap.docs.length, 'docs');
             broadcasts = snap.docs
+              .filter(d => isNotificationVisible(d.data()))
               .map(d => {
                 const data = d.data() as Omit<AppNotification, 'id'>;
-                const timestamp = data.timestamp;
-                const isoTimestamp = typeof timestamp === 'string' ? timestamp : (timestamp?.toDate?.().toISOString() || '');
+                const isoTimestamp = notificationTimestamp(data.timestamp);
                 return { id: d.id, ...data, timestamp: isoTimestamp };
               })
               .sort((a, b) => (b.timestamp || '').localeCompare(a.timestamp || ''));
@@ -525,10 +547,10 @@ export function subscribeToFeed(
           try {
             console.log('[subscribeToFeed] Personal snapshot:', snap.docs.length, 'docs');
             personal = snap.docs
+              .filter(d => isNotificationVisible(d.data()))
               .map(d => {
                 const data = d.data() as Omit<AppNotification, 'id'>;
-                const timestamp = data.timestamp;
-                const isoTimestamp = typeof timestamp === 'string' ? timestamp : (timestamp?.toDate?.().toISOString() || '');
+                const isoTimestamp = notificationTimestamp(data.timestamp);
                 return { id: d.id, ...data, timestamp: isoTimestamp };
               })
               .sort((a, b) => (b.timestamp || '').localeCompare(a.timestamp || ''));
@@ -568,7 +590,8 @@ export async function getReadIds(): Promise<Set<string>> {
   try {
     const raw = await AsyncStorage.getItem(READ_IDS_KEY);
     return raw ? new Set(JSON.parse(raw)) : new Set();
-  } catch {
+  } catch (err) {
+    console.warn('[notifications] Failed to read notification state:', err);
     return new Set();
   }
 }
@@ -591,8 +614,8 @@ export async function markAsRead(notificationId: string) {
     await AsyncStorage.setItem(READ_IDS_KEY, JSON.stringify([...readIds]));
     // Notify badge listeners
     readChangeListeners.forEach(fn => fn());
-  } catch {
-    // ignore storage errors
+  } catch (err) {
+    console.warn('[notifications] Failed to mark notification as read:', err);
   }
 }
 
@@ -604,8 +627,8 @@ export async function markAllAsRead(ids: string[]) {
     ids.forEach(id => readIds.add(id));
     await AsyncStorage.setItem(READ_IDS_KEY, JSON.stringify([...readIds]));
     readChangeListeners.forEach(fn => fn());
-  } catch {
-    // ignore storage errors
+  } catch (err) {
+    console.warn('[notifications] Failed to mark notifications as read:', err);
   }
 }
 

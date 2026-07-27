@@ -21,26 +21,26 @@ export interface VisaFeeEntry {
 }
 
 /** ISO date of when the bundled fees were last verified. */
-export const VISA_FEES_SNAPSHOT_DATE = '2026-07-24';
+export const VISA_FEES_SNAPSHOT_DATE = '2026-07-25';
 
 export const VISA_FEES: VisaFeeEntry[] = [
   // ─── Skilled ──────────────────────────────────────────────────────
-  { subclass: '189', fee: 'AUD $4,640', note: 'Family: +$2,320 per adult · +$1,160 per child' },
-  { subclass: '190', fee: 'AUD $4,640', note: 'Family: +$2,320 per adult · +$1,160 per child' },
+  { subclass: '189', fee: 'AUD $6,140', note: 'Family: +$3,070 per adult · +$1,535 per child' },
+  { subclass: '190', fee: 'AUD $6,140', note: 'Family: +$3,070 per adult · +$1,535 per child' },
   { subclass: '191', fee: 'AUD $4,640', note: 'Family: +$2,320 per adult · +$1,160 per child' },
   { subclass: '192', fee: 'AUD $505' },
-  { subclass: '491', fee: 'AUD $4,640', note: 'Family: +$2,320 per adult · +$1,160 per child' },
+  { subclass: '491', fee: 'AUD $6,140', note: 'Family: +$3,070 per adult · +$1,535 per child' },
   { subclass: '858', fee: 'AUD $4,640', note: 'Family: +$2,320 per adult · +$1,160 per child' },
   { subclass: '887', fee: 'AUD $4,640', note: 'Family: +$2,320 per adult · +$1,160 per child' },
 
   // ─── Employer ─────────────────────────────────────────────────────
-  { subclass: '186', fee: 'AUD $4,640', note: 'Family: +$2,320 per adult · +$1,160 per child' },
+  { subclass: '186', fee: 'AUD $6,140', note: 'Family: +$3,070 per adult · +$1,535 per child' },
   { subclass: '400', fee: 'AUD $385' },
   { subclass: '403', fee: 'AUD $280' },
   { subclass: '407', fee: 'AUD $385' },
   { subclass: '408', fee: 'AUD $385' },
-  { subclass: '482', fee: 'AUD $3,115', note: 'Family: +$1,055 per adult · +$530 per child' },
-  { subclass: '494', fee: 'AUD $3,115', note: 'Family: +$1,055 per adult · +$530 per child' },
+  { subclass: '482', fee: 'AUD $4,015', note: 'Check the pricing estimator for dependant charges' },
+  { subclass: '494', fee: 'AUD $6,140', note: 'Check the pricing estimator for dependant charges' },
 
   // ─── Working Holiday ──────────────────────────────────────────────
   { subclass: '417', fee: 'AUD $635' },

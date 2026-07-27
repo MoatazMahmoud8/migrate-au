@@ -5,7 +5,6 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  Linking,
   Animated,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -17,6 +16,7 @@ import { useRouter } from 'expo-router';
 import { getProfile, saveProfile } from '../../utils/storage';
 import { tap as hapticTap } from '../../utils/haptics';
 import PaywallModal from '../../components/PaywallModal';
+import { openExternalUrl } from '../../utils/openExternalUrl';
 
 interface StateVisa { sub: string; label: string; desc: string }
 interface StateVisaGroup { category: string; icon: string; visas: StateVisa[] }
@@ -372,7 +372,7 @@ export default function StatesScreen() {
                       {/* Official Portal */}
                       <TouchableOpacity
                         style={[styles.linkBtn, { borderColor: Colors.border }]}
-                        onPress={() => Linking.openURL(state.portalUrl)}
+                        onPress={() => void openExternalUrl(state.portalUrl)}
                       >
                         <View style={[styles.linkBtnGrad, { backgroundColor: Colors.surface }]}>
                           <Ionicons name="globe-outline" size={16} color={Colors.textSecondary} />

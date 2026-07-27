@@ -79,7 +79,8 @@
 			[
 				"expo-notifications",
 				{
-					"icon": "./assets/icon.png"
+					"icon": "./assets/icon.png",
+					"defaultChannel": "migration_news"
 				}
 			],
 			"@react-native-community/datetimepicker",

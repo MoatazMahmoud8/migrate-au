@@ -137,13 +137,13 @@ def main() -> int:
         firebase_admin.initialize_app(cred)
     db = firestore.client()
 
-    # Send (uses the same code path as the scraper)
+    # Queue for administrator review (uses the same code path as the scraper)
     ok = send_topic_notification(db, notification)
     if not ok:
-        print("❌ Send failed. See error above.")
+        print("Draft was not queued. It may already exist; see output above.")
         return 1
 
-    print("✅ Announcement delivered (FCM push sent + feed entry written).")
+    print("Announcement queued as a draft. No users were notified.")
     return 0
 
 

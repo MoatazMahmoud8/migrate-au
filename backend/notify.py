@@ -1,10 +1,6 @@
-"""
-FCM notifier — sends push notifications via Firebase Admin SDK.
-Uses FCM topics so no need to manage individual device tokens.
-"""
+"""Queue automated updates for administrator review before publication."""
 
-import firebase_admin
-from firebase_admin import messaging
+import hashlib
 from datetime import datetime, timezone
 
 
@@ -25,10 +21,10 @@ TOPIC_CHANNELS = {
 }
 
 
-def send_topic_notification(db, notification: dict) -> bool:
+def queue_draft_notification(db, notification: dict) -> bool:
     """
-    Send an FCM topic push and persist the notification to Firestore.
-    Returns True on success.
+    Persist an automated update to the admin draft queue without sending FCM.
+    Returns True when a new draft is created and False for a duplicate/error.
     """
     topic = notification["topic"]
     title = notification["title"]
@@ -37,71 +33,53 @@ def send_topic_notification(db, notification: dict) -> bool:
     category = notification.get("category", "Update")
     source_id = notification.get("source_id", "unknown")
 
-    message = messaging.Message(
-        notification=messaging.Notification(title=title, body=body),
-        android=messaging.AndroidConfig(
-            priority="high",
-            notification=messaging.AndroidNotification(
-                channel_id="migration_updates",
-                icon="notification_icon",
-                color="#002D62",
-                click_action="FLUTTER_NOTIFICATION_CLICK",
-            ),
-        ),
-        apns=messaging.APNSConfig(
-            payload=messaging.APNSPayload(
-                aps=messaging.Aps(
-                    badge=1,
-                    sound="default",
-                    content_available=True,
-                )
-            )
-        ),
-        data={
-            "url": url,
-            "category": category,
-            "source_id": source_id,
-            "timestamp": notification["timestamp"],
-        },
-        topic=topic,
-    )
-
     try:
-        response = messaging.send(message)
-        print(f"  [notify] ✅ Sent to topic '{topic}': {response}")
+        fingerprint = hashlib.sha256(
+            f"{source_id}|{title}|{url}".encode("utf-8")
+        ).hexdigest()[:24]
+        draft_id = f"automation-{fingerprint}"
+        draft_ref = db.collection("notifications_draft").document(draft_id)
+        if draft_ref.get().exists:
+            print(f"  [notify] Draft already queued: {draft_id}")
+            return False
 
-        # Persist notification to Firestore for the in-app feed
+        created_at = datetime.now(timezone.utc).isoformat()
         doc = {
+            "id": draft_id,
             "title": title,
             "body": body,
             "url": url,
+            "sourceUrl": url,
             "category": category,
-            "topic": topic,
-            "source_id": source_id,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-            "read": False,
-            # Broadcast docs are visible to every user; per-user (watchlist)
-            # docs set userId to the recipient's RC id. The client merges both
-            # streams in subscribeToFeed.
-            "userId": None,
+            "source": source_id,
+            "requestedTopic": topic,
+            "status": "draft",
+            "createdAt": created_at,
+            "timestamp": created_at,
+            "createdBy": "scraper_automation",
         }
         if "state" in notification:
             doc["state"] = notification["state"]
 
-        db.collection("notifications").add(doc)
+        draft_ref.create(doc)
+        print(f"  [notify] Queued for admin approval: {draft_id}")
         return True
 
     except Exception as e:
-        print(f"  [notify] ❌ Failed to send to topic '{topic}': {e}")
+        print(f"  [notify] Failed to queue draft: {e}")
         return False
 
 
-def send_batch(db, notifications: list[dict]) -> dict:
-    """Send all queued notifications. Returns stats."""
-    stats = {"sent": 0, "failed": 0}
+def queue_batch(db, notifications: list[dict]) -> dict:
+    """Queue detected updates for admin review. Returns stats."""
+    stats = {"queued": 0, "duplicates_or_failed": 0}
     for n in notifications:
-        if send_topic_notification(db, n):
-            stats["sent"] += 1
+        if queue_draft_notification(db, n):
+            stats["queued"] += 1
         else:
-            stats["failed"] += 1
+            stats["duplicates_or_failed"] += 1
     return stats
+
+
+# Backward-compatible name for local tooling. It only queues a draft.
+send_topic_notification = queue_draft_notification

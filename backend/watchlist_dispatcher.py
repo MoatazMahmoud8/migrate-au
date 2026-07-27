@@ -1,15 +1,10 @@
 """
 backend/watchlist_dispatcher.py
 
-Per-occupation Pro alerts. After the broad topic broadcast, this module:
+Legacy per-occupation alert matching.
 
-  1. Iterates every notification produced this run.
-  2. For each notification that is occupation-relevant (SkillSelect, ANZSCO,
-     or state nomination), inspects every saved watchlist item to see if the
-     change matters to that user.
-  3. Sends a personalised FCM push to that user's device token AND writes a
-     per-user notification doc (`notifications` collection with `userId`)
-     so the in-app feed can show it tagged "From your watchlist".
+Direct watchlist delivery is disabled. Automated updates must be reviewed in
+the admin draft queue before any user can receive them.
 
 Matching rules (v1 — coarse but safe):
   - Topic "skillselect" → matches every watchlist item whose visa subclass
@@ -20,18 +15,12 @@ Matching rules (v1 — coarse but safe):
   - Topic "state_XXX" → matches items whose `states` list (if any) contains
     the matching state.
 
-The dispatcher is intentionally conservative: it is far better to send a
-relevant ping for a real upstream event than to silently filter it out.
-
 userId in Firestore = RevenueCat anonymous app user ID (see utils/iap.ts).
 """
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
 from typing import Any, Iterable
-
-from firebase_admin import messaging
 
 
 # Topics that warrant per-user dispatch.
@@ -101,116 +90,11 @@ def _load_watchlists(db) -> list[dict]:
     return rows
 
 
-def _send_personal_push(token: str, notification: dict, item: dict) -> bool:
-    """Send a single targeted push to one device token."""
-    title = f"📌 Watchlist: {item.get('anzscoTitle', 'Occupation update')}"
-    body = notification.get("body") or notification.get("title") or "New update available"
-
-    message = messaging.Message(
-        notification=messaging.Notification(title=title, body=body),
-        android=messaging.AndroidConfig(
-            priority="high",
-            notification=messaging.AndroidNotification(
-                channel_id="migration_updates",
-                icon="notification_icon",
-                color="#FFCD00",
-            ),
-        ),
-        apns=messaging.APNSConfig(
-            payload=messaging.APNSPayload(
-                aps=messaging.Aps(badge=1, sound="default", content_available=True),
-            ),
-        ),
-        data={
-            "url": notification.get("url", ""),
-            "category": "Watchlist",
-            "source_id": notification.get("source_id", "watchlist"),
-            "anzsco": str(item.get("anzsco", "")),
-            "visaSubclass": str(item.get("visaSubclass", "")),
-            "timestamp": notification.get("timestamp", datetime.now(timezone.utc).isoformat()),
-        },
-        token=token,
-    )
-
-    try:
-        messaging.send(message)
-        return True
-    except messaging.UnregisteredError:
-        # Token is dead — caller should clean up.
-        return False
-    except Exception as e:
-        print(f"  [watchlist] ❌ push to token failed: {e}")
-        return False
-
-
 def dispatch(db, notifications: Iterable[dict]) -> dict[str, Any]:
     """
-    Iterate all detected upstream notifications and fan out personalised pushes
-    to every matching watchlist item. Also persists a per-user notification doc
-    so the in-app feed shows the watchlist hit.
-
-    Returns stats dict.
+    Refuse automated watchlist delivery until a moderated targeted-notification
+    approval path is implemented.
     """
-    notifications = list(notifications)
-    if not notifications:
-        return {"matches": 0, "sent": 0, "failed": 0, "users": 0}
-
-    rows = _load_watchlists(db)
-    if not rows:
-        print("  [watchlist] no users with watchlists yet")
-        return {"matches": 0, "sent": 0, "failed": 0, "users": 0}
-
-    print(f"  [watchlist] checking {len(rows)} watched item(s) across users…")
-    matches = sent = failed = 0
-    dead_tokens: set[str] = set()
-    user_ids: set[str] = set()
-
-    for n in notifications:
-        for row in rows:
-            item = row["item"]
-            if not _matches(item, n):
-                continue
-
-            matches += 1
-            user_ids.add(row["userId"])
-
-            ok = _send_personal_push(row["fcmToken"], n, item)
-            if ok:
-                sent += 1
-                # Persist personal feed entry.
-                try:
-                    db.collection("notifications").add({
-                        "userId": row["userId"],
-                        "title": f"📌 {item.get('anzscoTitle', 'Watchlist alert')}",
-                        "body": n.get("body", ""),
-                        "url": n.get("url", ""),
-                        "category": "Watchlist",
-                        "topic": n.get("topic", ""),
-                        "source_id": n.get("source_id", ""),
-                        "anzsco": item.get("anzsco"),
-                        "visaSubclass": item.get("visaSubclass"),
-                        "timestamp": datetime.now(timezone.utc).isoformat(),
-                        "read": False,
-                    })
-                except Exception as e:
-                    print(f"  [watchlist] firestore write failed: {e}")
-            else:
-                failed += 1
-                dead_tokens.add(row["fcmToken"])
-
-    # Best-effort cleanup of dead tokens.
-    for tok in dead_tokens:
-        for row in rows:
-            if row["fcmToken"] == tok:
-                try:
-                    db.collection("watchlists").document(row["userId"]).set(
-                        {"fcmToken": None}, merge=True
-                    )
-                except Exception:
-                    pass
-
-    print(
-        f"  [watchlist] ✅ {sent} sent / {failed} failed across "
-        f"{len(user_ids)} user(s) ({matches} match(es))"
-    )
-    return {"matches": matches, "sent": sent, "failed": failed, "users": len(user_ids)}
+    del db, notifications
+    print("  [watchlist] direct delivery disabled; admin approval is required")
+    return {"matches": 0, "sent": 0, "failed": 0, "users": 0}

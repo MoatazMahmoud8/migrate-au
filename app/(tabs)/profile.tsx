@@ -7,8 +7,8 @@ import {
   StyleSheet,
   TextInput,
   Alert,
-  Linking,
   ActivityIndicator,
+  AppState,
   Modal,
   Platform,
   Switch,
@@ -26,13 +26,13 @@ import { checkRenewalStatus } from '../../utils/billing';
 import { restorePurchases, getRevenueCatUserId, syncSubscriptionStatus, manageSubscription } from '../../utils/iap';
 import PaywallModal from '../../components/PaywallModal';
 import { tap as hapticTap, success as hapticSuccess } from '../../utils/haptics';
+import { openExternalUrl } from '../../utils/openExternalUrl';
 import { SKILLED_OCCUPATIONS } from '../../constants/skilledOccupations';
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import { canAddJourneyEntry, canAddStateSubscription } from '../../utils/paywall';
 import { askToRate } from '../../utils/rateApp';
 import { Sentry } from '../../utils/sentry';
 import { generateJourneyPDF, sharePDF } from '../../utils/pdfExport';
-import { isUserAdmin } from '../../utils/admin';
 import Constants from 'expo-constants';
 
 const JOURNEY_STAGES: Array<{ key: JourneyStageKey; label: string; desc: string }> = [
@@ -66,14 +66,31 @@ function formatJourneyDate(iso: string): string {
   } catch { return iso; }
 }
 function parseInputDate(input: string): string | null {
-  const m = input.trim().match(/^(\d{1,2})[/\-](\d{1,2})[/\-](\d{4})$/);
-  if (!m) return null;
-  const d = new Date(+m[3], +m[2] - 1, +m[1]);
-  return isNaN(d.getTime()) ? null : d.toISOString().split('T')[0];
+  const match = input.trim().match(/^(\d{1,2})[/\-](\d{1,2})[/\-](\d{4})$/);
+  if (!match) return null;
+
+  const day = Number(match[1]);
+  const month = Number(match[2]);
+  const year = Number(match[3]);
+  const date = new Date(year, month - 1, day);
+
+  if (
+    date.getFullYear() !== year ||
+    date.getMonth() !== month - 1 ||
+    date.getDate() !== day
+  ) {
+    return null;
+  }
+
+  return `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 }
 function dateToInput(iso: string): string {
+  const calendarDate = iso.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (calendarDate) return `${calendarDate[3]}/${calendarDate[2]}/${calendarDate[1]}`;
+
   try {
     const d = new Date(iso);
+    if (isNaN(d.getTime())) return iso;
     return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
   } catch { return iso; }
 }
@@ -153,7 +170,6 @@ export default function ProfileScreen() {
   const [rcUserId, setRcUserId] = useState<string>('');
   const [restoring, setRestoring] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
   // Journey
   const [journeyEntries, setJourneyEntries] = useState<JourneyEntry[]>([]);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -166,14 +182,10 @@ export default function ProfileScreen() {
   const [dateInput, setDateInput] = useState('');
   const [showBirthDatePicker, setShowBirthDatePicker] = useState(false);
   const [birthDateInput, setBirthDateInput] = useState('');
-  const [showAdminPin, setShowAdminPin] = useState(false);
-  const [adminPinInput, setAdminPinInput] = useState('');
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const adminTapCount = useRef(0);
   const adminTapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const ADMIN_PIN = 'sob7anallah';
 
   const handleAvatarTap = () => {
     adminTapCount.current += 1;
@@ -181,19 +193,7 @@ export default function ProfileScreen() {
     adminTapTimer.current = setTimeout(() => { adminTapCount.current = 0; }, 2000);
     if (adminTapCount.current >= 5) {
       adminTapCount.current = 0;
-      setAdminPinInput('');
-      setShowAdminPin(true);
-    }
-  };
-
-  const handleAdminPinSubmit = () => {
-    if (adminPinInput === ADMIN_PIN) {
-      setShowAdminPin(false);
-      setAdminPinInput('');
-      router.push('/admin/dashboard' as any);
-    } else {
-      Alert.alert('Incorrect', 'Access denied.');
-      setAdminPinInput('');
+      router.push('/admin/login' as any);
     }
   };
 
@@ -209,22 +209,28 @@ export default function ProfileScreen() {
           checkRenewalStatus(uid).then((res) => {
             setRenewalStatus(res.status);
             setRenewalDays(res.daysUntilExpiry ?? null);
-          });
-        });
+          }).catch(() => {});
+        }).catch(() => {});
       }
-    });
-    getRevenueCatUserId().then(setRcUserId);
-  }, []);
+    }).catch(() => {});
+    getRevenueCatUserId().then(setRcUserId).catch(() => {});
 
-  // Check if user is admin
-  useEffect(() => {
-    isUserAdmin().then(setIsAdmin).catch(() => setIsAdmin(false));
+    const appStateSubscription = AppState.addEventListener('change', (state) => {
+      if (state !== 'active') return;
+      void syncSubscriptionStatus()
+        .then(() => getProfile())
+        .then(setProfile)
+        .catch((err) => console.warn('[profile] Subscription refresh failed:', err));
+    });
+    return () => appStateSubscription.remove();
   }, []);
 
   // Refresh profile after paywall closes (purchase may have set isPremium)
-  const handlePaywallClose = () => {
+  const handlePaywallClose = async () => {
     setShowPaywall(false);
-    getProfile().then(setProfile);
+    await syncSubscriptionStatus();
+    const updated = await getProfile();
+    setProfile(updated);
   };
 
   const saveName = async () => {
@@ -240,6 +246,11 @@ export default function ProfileScreen() {
   };
 
   const handleUpgrade = () => setShowPaywall(true);
+
+  const handleManagePlans = () => {
+    hapticTap();
+    setShowPaywall(true);
+  };
 
   // Journey helpers
   const addJourneyEntry = async () => {
@@ -432,12 +443,21 @@ export default function ProfileScreen() {
     try {
       const result = await restorePurchases();
       if (result.restored) {
+        await syncSubscriptionStatus();
         const updated = await getProfile();
         setProfile(updated);
       }
       Alert.alert(result.restored ? 'Restored ✓' : 'Not Found', result.message);
     } finally {
       setRestoring(false);
+    }
+  };
+
+  const handleManageSubscription = async () => {
+    hapticTap();
+    const result = await manageSubscription();
+    if (!result.opened) {
+      Alert.alert('Unable to Open Subscription', result.message);
     }
   };
 
@@ -502,8 +522,9 @@ export default function ProfileScreen() {
           {profile.isPremium
             ? <TouchableOpacity
                 style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.xs }}
-                onPress={() => { hapticTap(); manageSubscription(); }}
+                onPress={handleManagePlans}
                 activeOpacity={0.7}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
                 <Ionicons name="star" size={12} color={Colors.secondary} />
                 <Text style={[styles.planText, { color: Colors.white }]}>Premium Member</Text>
@@ -523,6 +544,7 @@ export default function ProfileScreen() {
               </>
           }
         </View>
+
       </LinearGradient>
 
       {/* My Journey */}
@@ -745,18 +767,50 @@ export default function ProfileScreen() {
             </View>
             <TouchableOpacity
               style={styles.manageBillingBtn}
-              onPress={() => {
-                hapticTap();
-                manageSubscription();
-              }}
+              onPress={handleManagePlans}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
-              <Text style={[styles.manageBillingText, {color: Colors.textPrimary}]}>Manage</Text>
+              <Text style={[styles.manageBillingText, {color: Colors.textPrimary}]}>Manage Plans</Text>
             </TouchableOpacity>
           </LinearGradient>
         </View>
       ) : null}
 
       {/* Settings rows */}
+      <View style={styles.section}>
+        <Text style={[styles.sectionLabel, { color: Colors.textMuted }]}>Display</Text>
+        <View style={[styles.card, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
+          {profile.isPremium ? (
+            <View style={styles.settingRow}>
+              <View style={styles.settingContent}>
+                <Ionicons name={isDark ? 'moon-outline' : 'sunny-outline'} size={18} color={Colors.secondary} />
+                <View style={styles.settingTextContainer}>
+                  <Text style={[styles.settingLabel, { color: Colors.textPrimary }]}>Dark Mode</Text>
+                  <Text style={[styles.settingValue, { color: Colors.textSecondary }]}>Use the dark app theme</Text>
+                </View>
+              </View>
+              <Switch
+                value={isDark}
+                onValueChange={(darkOn) => { hapticTap(); setLightMode(!darkOn); }}
+                trackColor={{ false: Colors.border, true: Colors.secondary + '70' }}
+                thumbColor={isDark ? Colors.secondary : Colors.textMuted}
+                accessibilityLabel="Dark mode"
+              />
+            </View>
+          ) : (
+            <SettingRow
+              icon="moon-outline"
+              label="Dark Mode"
+              value="Premium"
+              locked
+              onPress={() => { hapticTap(); handleUpgrade(); }}
+              showArrow
+              last
+            />
+          )}
+        </View>
+      </View>
+
       <View style={styles.section}>
         <Text style={[styles.sectionLabel, { color: Colors.textMuted }]}>Alerts</Text>
         <View style={[styles.card, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
@@ -771,30 +825,6 @@ export default function ProfileScreen() {
         </View>
       </View>
 
-      {/* Display Settings */}
-      {profile.isPremium && (
-        <View style={styles.section}>
-          <Text style={[styles.sectionLabel, { color: Colors.secondary }]}>Display</Text>
-          <View style={[styles.card, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
-            <View style={styles.settingRow}>
-              <View style={styles.settingContent}>
-                <Ionicons name={isDark ? 'moon-outline' : 'sunny-outline'} size={18} color={Colors.secondary} />
-                <View style={styles.settingTextContainer}>
-                  <Text style={[styles.settingLabel, { color: Colors.textPrimary }]}>{isDark ? 'Dark Mode' : 'Light Mode'}</Text>
-                  <Text style={[styles.settingValue, { color: Colors.textSecondary }]}>Tap to switch theme</Text>
-                </View>
-              </View>
-              <Switch
-                value={!isDark}
-                onValueChange={(lightOn) => { hapticTap(); setLightMode(lightOn); }}
-                trackColor={{ false: Colors.border, true: Colors.secondary + '50' }}
-                thumbColor={Colors.secondary}
-              />
-            </View>
-          </View>
-        </View>
-      )}
-
       <View style={styles.section}>
         <Text style={[styles.sectionLabel, { color: Colors.textMuted }]}>Subscription</Text>
         <View style={[styles.card, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
@@ -804,13 +834,22 @@ export default function ProfileScreen() {
             value={profile.isPremium ? 'Premium' : 'Free'}
           />
           {profile.isPremium && (
-            <SettingRow
-              icon="rocket-outline"
-              label="Upgrade Plan"
-              value="Save more with Annual or Lifetime"
-              onPress={() => { hapticTap(); setShowPaywall(true); }}
-              showArrow
-            />
+            <>
+              <SettingRow
+                icon="rocket-outline"
+                label="Manage Plans"
+                value="Switch to Annual or Lifetime"
+                onPress={handleManagePlans}
+                showArrow
+              />
+              <SettingRow
+                icon="card-outline"
+                label="Manage Google Play Subscription"
+                value="Billing, renewal, or cancellation"
+                onPress={handleManageSubscription}
+                showArrow
+              />
+            </>
           )}
           <SettingRow
             icon="refresh-outline"
@@ -832,14 +871,14 @@ export default function ProfileScreen() {
             icon="globe-outline"
             label="Official Source"
             value="immi.homeaffairs.gov.au"
-            onPress={() => Linking.openURL('https://immi.homeaffairs.gov.au')}
+            onPress={() => void openExternalUrl('https://immi.homeaffairs.gov.au')}
             showArrow
           />
           <SettingRow
             icon="person-circle-outline"
             label="Find a MARA Agent"
             value="portal.mara.gov.au"
-            onPress={() => Linking.openURL('https://portal.mara.gov.au')}
+            onPress={() => void openExternalUrl('https://portal.mara.gov.au')}
             showArrow
             last
           />
@@ -874,7 +913,7 @@ export default function ProfileScreen() {
           <SettingRow
             icon="shield-outline"
             label="Privacy Policy"
-            onPress={() => Linking.openURL('https://jsmglobal.xyz/migration-privacy.html')}
+            onPress={() => void openExternalUrl('https://jsmglobal.xyz/migration-privacy.html')}
             showArrow
           />
           <SettingRow icon="key-outline" label="Account ID" value={rcUserId ? rcUserId.slice(0, 18) + '…' : '—'} last />
@@ -915,7 +954,7 @@ export default function ProfileScreen() {
           Information is general in nature. Always consult a{' '}
           <Text
             style={styles.disclaimerLink}
-            onPress={() => Linking.openURL('https://portal.mara.gov.au')}
+            onPress={() => void openExternalUrl('https://portal.mara.gov.au')}
           >
             MARA-registered migration agent
           </Text>
@@ -1214,7 +1253,7 @@ export default function ProfileScreen() {
                 onPress={() => {
                   setShowFeedback(false);
                   const mailto = `mailto:support@jsmglobal.xyz?subject=${encodeURIComponent(item.subject)}&body=${encodeURIComponent(item.body)}`;
-                  Linking.openURL(mailto);
+                  void openExternalUrl(mailto);
                 }}
               >
                 <View style={feedbackStyles.optionIcon}>
@@ -1239,43 +1278,6 @@ export default function ProfileScreen() {
         </View>
       </Modal>
 
-      {/* Admin PIN Modal */}
-      <Modal
-        visible={showAdminPin}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowAdminPin(false)}
-      >
-        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center', paddingHorizontal: 40 }}>
-          <View style={{ backgroundColor: Colors.surface, borderRadius: 16, padding: 24, width: '100%', maxWidth: 300, alignItems: 'center' }}>
-            <Text style={{ color: Colors.textPrimary, fontSize: 16, fontWeight: '700', marginBottom: 16 }}>Enter Passphrase</Text>
-            <TextInput
-              style={{ width: '100%', backgroundColor: Colors.background, borderRadius: 8, padding: 12, color: Colors.textPrimary, fontSize: 16, borderWidth: 1, borderColor: Colors.border, marginBottom: 16 }}
-              value={adminPinInput}
-              onChangeText={setAdminPinInput}
-              placeholder="Passphrase"
-              placeholderTextColor={Colors.textMuted}
-              autoFocus
-              secureTextEntry
-              onSubmitEditing={handleAdminPinSubmit}
-            />
-            <View style={{ flexDirection: 'row', gap: 12, width: '100%' }}>
-              <TouchableOpacity
-                onPress={() => setShowAdminPin(false)}
-                style={{ flex: 1, padding: 12, borderRadius: 8, alignItems: 'center', borderWidth: 1, borderColor: Colors.border }}
-              >
-                <Text style={{ color: Colors.textMuted, fontWeight: '600' }}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={handleAdminPinSubmit}
-                style={{ flex: 1, padding: 12, borderRadius: 8, alignItems: 'center', backgroundColor: Colors.accent }}
-              >
-                <Text style={{ color: '#fff', fontWeight: '600' }}>Enter</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
     </View>
   );
 }
@@ -1332,10 +1334,10 @@ const rowStyles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  label: { flexGrow: 1, flexShrink: 0, flexBasis: 'auto', fontSize: FontSize.md },
+  label: { flex: 1, minWidth: 0, fontSize: FontSize.md },
   labelMuted: { },
-  right: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, flexShrink: 1, justifyContent: 'flex-end' },
-  value: { fontSize: FontSize.sm, flexShrink: 1, textAlign: 'right' },
+  right: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, flexShrink: 1, minWidth: 0, justifyContent: 'flex-end' },
+  value: { fontSize: FontSize.sm, flexShrink: 1, minWidth: 0, textAlign: 'right' },
   badge: {
     borderRadius: Radius.full,
     paddingHorizontal: Spacing.sm,

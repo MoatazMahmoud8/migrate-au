@@ -55,9 +55,9 @@ export const PROCESSING_TIMES: ProcessingTime[] = [
       { name: 'Points-tested stream', p50: '9 months', p90: '17 months' },
       { name: 'New Zealand stream',   p50: '4 months', p90: '8 months'  },
     ],
-    fee: 'AUD $4,640',
-    familyFeeAdult: '+$2,320 per adult',
-    familyFeeChild: '+$1,160 per child',
+    fee: 'AUD $6,140',
+    familyFeeAdult: '+$3,070 per adult',
+    familyFeeChild: '+$1,535 per child',
     conditions: [
       'No employer sponsorship required',
       'Occupation on MLTSSL',
@@ -76,9 +76,9 @@ export const PROCESSING_TIMES: ProcessingTime[] = [
     streams: [
       { name: 'State/Territory Nominated', p50: '5 months', p90: '11 months' },
     ],
-    fee: 'AUD $4,640',
-    familyFeeAdult: '+$2,320 per adult',
-    familyFeeChild: '+$1,160 per child',
+    fee: 'AUD $6,140',
+    familyFeeAdult: '+$3,070 per adult',
+    familyFeeChild: '+$1,535 per child',
     conditions: [
       'Nomination by an Australian state or territory',
       'Occupation on MLTSSL or STSOL (state-specific)',
@@ -98,9 +98,9 @@ export const PROCESSING_TIMES: ProcessingTime[] = [
       { name: 'State/Territory Nominated', p50: '7 months', p90: '15 months' },
       { name: 'Family Sponsored',          p50: '9 months', p90: '18 months' },
     ],
-    fee: 'AUD $4,640',
-    familyFeeAdult: '+$2,320 per adult',
-    familyFeeChild: '+$1,160 per child',
+    fee: 'AUD $6,140',
+    familyFeeAdult: '+$3,070 per adult',
+    familyFeeChild: '+$1,535 per child',
     conditions: [
       'Nomination by state/territory or sponsorship by eligible family member',
       'Must live and work in a designated regional area',
@@ -161,7 +161,7 @@ export const PROCESSING_TIMES: ProcessingTime[] = [
       { name: 'Core Skills stream',       p50: '34 days',  p90: '4 months'  },
       { name: 'Labour Agreement stream',  p50: '3 months', p90: '6 months'  },
     ],
-    fee: 'AUD $3,035',
+    fee: 'AUD $4,015',
     familyFeeAdult: '+$1,515 per adult',
     familyFeeChild: '+$760 per child',
     conditions: [
@@ -183,9 +183,9 @@ export const PROCESSING_TIMES: ProcessingTime[] = [
       { name: 'Temp Residence Transition stream', p50: '5 months', p90: '10 months' },
       { name: 'Agreements stream',               p50: '7 months', p90: '14 months' },
     ],
-    fee: 'AUD $4,640',
-    familyFeeAdult: '+$2,320 per adult',
-    familyFeeChild: '+$1,160 per child',
+    fee: 'AUD $6,140',
+    familyFeeAdult: '+$3,070 per adult',
+    familyFeeChild: '+$1,535 per child',
     conditions: [
       'Approved sponsor and approved nomination',
       'Occupation on MLTSSL (Direct Entry & Agreements streams)',
@@ -203,9 +203,7 @@ export const PROCESSING_TIMES: ProcessingTime[] = [
     streams: [
       { name: 'Employer Sponsored stream', p50: '6 months', p90: '13 months' },
     ],
-    fee: 'AUD $4,640',
-    familyFeeAdult: '+$2,320 per adult',
-    familyFeeChild: '+$1,160 per child',
+    fee: 'AUD $6,140',
     conditions: [
       'Business operating in a designated regional area',
       'Occupation on the relevant regional list',

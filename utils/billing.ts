@@ -39,7 +39,7 @@ export async function startTrial(userId: string): Promise<boolean> {
         tier: 'pro',
         trialStartedAt: now,
         trialExpiresAt,
-        trialUsed: false,  // Not marked as "used" until trial ends without conversion
+        trialUsed: true,
         renewsAt: trialExpiresAt,
         updatedAt: now,
       },

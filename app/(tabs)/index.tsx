@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   StyleSheet,
   Animated,
-  Linking,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,6 +17,7 @@ import { useColors, useTheme } from '../../constants/ThemeContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import SearchModal from '../../components/SearchModal';
 import { ALL_VISAS, CATEGORY_META, VisaCategory } from '../../constants/visaData';
+import { openExternalUrl } from '../../utils/openExternalUrl';
 import { calculatePoints } from '../../utils/pointsCalculator';
 import { PointsInput } from '../../constants/types';
 
@@ -89,7 +89,22 @@ const VISA_PURPOSES = [
     bg: 'rgba(0,214,143,0.12)',
     visas: [
       { code: '500', name: 'Student Visa',        why: 'Study full-time at any registered Australian institution.' },
+      { code: '590', name: 'Student Guardian',    why: 'For parents or relatives accompanying a student under 18.' },
       { code: '485', name: 'Temporary Graduate',  why: 'Stay and work in Australia after completing your degree.' },
+    ],
+  },
+  {
+    id: 'visit',
+    icon: 'camera-outline' as const,
+    label: 'Visit / Tourism',
+    hint: 'Short stay & tourism',
+    color: '#7A9BBF',
+    bg: 'rgba(122,155,191,0.12)',
+    visas: [
+      { code: '600', name: 'Visitor Visa',               why: 'For tourists, business visitors and sponsored family — up to 12 months.' },
+      { code: '601', name: 'Electronic Travel Authority', why: 'Online ETA for eligible passport holders — quick and low cost.' },
+      { code: '651', name: 'eVisitor',                   why: 'Free online visa for European passport holders visiting for up to 3 months.' },
+      { code: '602', name: 'Medical Treatment',          why: 'For people seeking medical treatment in Australia.' },
     ],
   },
   {
@@ -100,8 +115,8 @@ const VISA_PURPOSES = [
     color: Colors.secondary,
     bg: 'rgba(255,205,0,0.12)',
     visas: [
-      { code: '188', name: 'Business Innovation', why: 'For business owners, investors and entrepreneurs with strong track records.' },
-      { code: '888',  name: 'Business Talent PR',  why: 'Permanent residency after demonstrating successful business outcomes.' },
+      { code: '858', name: 'National Innovation Visa', why: 'Invitation-only pathway for people with an internationally recognised record of exceptional achievement.' },
+      { code: '888', name: 'Business Innovation and Investment (Permanent)', why: 'Permanent pathway for eligible existing subclass 188 holders; not a new investor entry visa.' },
     ],
   },
   {
@@ -124,9 +139,22 @@ const VISA_PURPOSES = [
     color: '#A78BFA',
     bg: 'rgba(167,139,250,0.12)',
     visas: [
-      { code: '482', name: 'TSS Visa',   why: 'Temporary 2–4 year work visa sponsored by an approved Australian employer.' },
-      { code: '186', name: 'ENS Visa',   why: 'Permanent residency sponsored directly by your Australian employer.' },
-      { code: '494', name: 'SESR Visa',  why: 'Employer-sponsored regional visa — leads to PR after 3 years.' },
+      { code: '482', name: 'TSS / Skills in Demand', why: 'Temporary 2–4 year work visa sponsored by an approved Australian employer.' },
+      { code: '186', name: 'ENS Visa',               why: 'Permanent residency sponsored directly by your Australian employer.' },
+      { code: '494', name: 'SESR Visa',              why: 'Employer-sponsored regional visa — leads to PR after 3 years.' },
+    ],
+  },
+  {
+    id: 'humanitarian',
+    icon: 'shield-outline' as const,
+    label: 'Humanitarian',
+    hint: 'Protection & refuge',
+    color: '#FF4757',
+    bg: 'rgba(255,71,87,0.12)',
+    visas: [
+      { code: '200', name: 'Refugee Visa',              why: 'For people referred by UNHCR who are outside their home country.' },
+      { code: '202', name: 'Global Special Humanitarian', why: 'For those in humanitarian situations with an Australian proposer.' },
+      { code: '866', name: 'Protection Visa',            why: 'For people already in Australia who cannot return home safely.' },
     ],
   },
 ] as const;
@@ -218,7 +246,14 @@ function VisaFinder() {
               <View style={[styles.purposeIconWrap, { backgroundColor: p.bg }]}>
                 <Ionicons name={p.icon} size={18} color={p.color} />
               </View>
-              <Text style={[styles.purposeLabel, { color: Colors.textPrimary }, active && { color: p.color }]}>{p.label}</Text>
+              <Text
+                style={[styles.purposeLabel, { color: Colors.textPrimary }, active && { color: p.color }]}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.72}
+              >
+                {p.label}
+              </Text>
               <Text style={[styles.purposeHint, { color: Colors.textMuted }]}>{p.hint}</Text>
             </TouchableOpacity>
           );
@@ -665,7 +700,7 @@ export default function HomeScreen() {
           Points are indicative only. Consult a{' '}
           <Text
             style={styles.disclaimerLink}
-            onPress={() => Linking.openURL('https://portal.mara.gov.au')}
+            onPress={() => void openExternalUrl('https://portal.mara.gov.au')}
           >
             MARA-registered agent
           </Text>
@@ -733,7 +768,8 @@ const styles = StyleSheet.create({
     width: '31%',
     flexShrink: 0,
     borderRadius: Radius.lg,
-    padding: Spacing.md,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.sm,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.07)',
@@ -745,7 +781,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   purposeLabel: {
-    fontSize: FontSize.xs, fontWeight: FontWeight.semiBold, textAlign: 'center',
+    width: '100%', fontSize: FontSize.xs, fontWeight: FontWeight.semiBold, textAlign: 'center',
   },
   purposeHint: {
     fontSize: 9,

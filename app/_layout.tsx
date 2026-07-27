@@ -2,7 +2,7 @@ import { Tabs } from 'expo-router';
 import { DefaultTheme, ThemeProvider as NavigationThemeProvider } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
-import { View, Text, StyleSheet, Platform } from 'react-native';
+import { AppState, View, Text, StyleSheet, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -64,6 +64,21 @@ const StrictDarkAppTheme = {
   },
 };
 
+function processingTimeDays(value: string): number | null {
+  const match = value.trim().toLowerCase().match(/^(\d+(?:\.\d+)?)\s*(day|week|month|year)s?$/);
+  if (!match) return null;
+  const amount = Number(match[1]);
+  const unitDays: Record<string, number> = { day: 1, week: 7, month: 30.5, year: 365 };
+  return amount * unitDays[match[2]];
+}
+
+function processingTimeDirection(before: string, after: string): string {
+  const beforeDays = processingTimeDays(before);
+  const afterDays = processingTimeDays(after);
+  if (beforeDays === null || afterDays === null || beforeDays === afterDays) return 'Updated';
+  return afterDays < beforeDays ? '↓ Faster' : '↑ Slower';
+}
+
 function TabIcon({
   name,
   color,
@@ -77,7 +92,7 @@ function TabIcon({
 }) {
   return (
     <View style={tabStyles.iconWrap}>
-      <View style={[tabStyles.iconInner, focused && tabStyles.iconActive]}>
+      <View style={[tabStyles.iconInner, focused && tabStyles.iconActive, focused && { borderColor: color }]}>
         <Ionicons name={name} size={20} color={color} />
       </View>
       {badge != null && badge > 0 && (
@@ -116,6 +131,11 @@ function RootLayout() {
       // Handles reinstalls, device switches, and subscription expirations
       syncSubscriptionStatus();
     });
+    const appStateSubscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') {
+        void syncSubscriptionStatus();
+      }
+    });
 
     // Initialise FCM — subscribe to all migration topics + register device for watchlist
     let unsubFeed: (() => void) | undefined;
@@ -140,7 +160,7 @@ function RootLayout() {
         let latestFeedItems: any[] = [];
         const recount = () => {
           getReadIds().then(readIds => {
-            const newCount = latestFeedItems.filter(n => !readIds.has(n.id)).length;
+            const newCount = latestFeedItems.filter(n => !n.read && !readIds.has(n.id)).length;
             console.log('[_layout] Badge recount:', latestFeedItems.length, 'total,', newCount, 'unread');
             setUnread(newCount);
           });
@@ -159,7 +179,7 @@ function RootLayout() {
           else unsubFeed = unsubReadChange;
         } else {
           const unsubNative = subscribeToFeed(
-            items => { latestFeedItems = items; setUnread(items.filter(n => !n.read).length); },
+            items => { latestFeedItems = items; recount(); },
             30,
             userId ?? undefined,
           );
@@ -192,16 +212,47 @@ function RootLayout() {
         if (!changes.length) return;
         try {
           const Notifications = await import('expo-notifications');
-          for (const change of changes) {
+          const validChanges = changes.filter((change) => {
+            const values = [change.before.p50, change.before.p90, change.after.p50, change.after.p90];
+            if (!values.every((value) => typeof value === 'string' && value.trim().length > 0)) {
+              console.warn('[processing-times] skipped malformed change:', change.subclass, change.stream);
+              return false;
+            }
+            return true;
+          });
+          if (!validChanges.length) return;
+
+          if (validChanges.length > 3) {
+            const subclassCount = new Set(validChanges.map((change) => change.subclass)).size;
+            await Notifications.scheduleNotificationAsync({
+              content: {
+                title: 'Visa processing times updated',
+                body: `${validChanges.length} processing streams across ${subclassCount} visa subclasses changed. Tap to review.`,
+                data: { route: '/processing-times' },
+                sound: 'default',
+              },
+              trigger: null,
+            });
+            return;
+          }
+
+          for (const change of validChanges) {
             const label = change.stream
               ? `${change.name} — ${change.stream}`
               : change.name;
-            const direction =
-              change.after.p50 < change.before.p50 ? '↓ Faster' : '↑ Slower';
+            const medianChanged = change.before.p50 !== change.after.p50;
+            const percentileChanged = change.before.p90 !== change.after.p90;
+            const direction = medianChanged
+              ? processingTimeDirection(change.before.p50, change.after.p50)
+              : processingTimeDirection(change.before.p90, change.after.p90);
+            const details = [
+              medianChanged ? `Median: ${change.before.p50} → ${change.after.p50}` : null,
+              percentileChanged ? `90%: ${change.before.p90} → ${change.after.p90}` : null,
+            ].filter(Boolean).join('; ');
             await Notifications.scheduleNotificationAsync({
               content: {
                 title: `SC ${change.subclass} processing time changed`,
-                body: `${label}: ${direction} — now ${change.after.p50} (was ${change.before.p50})`,
+                body: `${label}: ${direction} — ${details}`,
                 data: { route: '/processing-times' },
                 sound: 'default',
               },
@@ -324,6 +375,7 @@ function RootLayout() {
       .catch(() => {});
 
     return () => {
+      appStateSubscription.remove();
       if (unsubFeed) unsubFeed();
     };
   }, []);
@@ -356,7 +408,7 @@ function RootLayoutContent({ unread, onboardingVisible, closeOnboarding }: {
       <StatusBar style={isDark ? 'light' : 'dark'} />
       <Tabs
         screenOptions={{
-          tabBarActiveTintColor: '#FFD700',
+          tabBarActiveTintColor: isDark ? '#FFD700' : C.primaryDark,
           tabBarInactiveTintColor: C.textMuted,
           tabBarBackground: () => (
             Platform.OS === 'ios'
@@ -453,7 +505,7 @@ function RootLayoutContent({ unread, onboardingVisible, closeOnboarding }: {
             title: 'Profile',
             headerShown: false,
             tabBarIcon: ({ color, focused }) => (
-              <TabIcon name={focused ? 'person-circle' : 'person-circle-outline'} color={color} focused={focused} />
+              <TabIcon name="person" color={color} focused={focused} />
             ),
           }}
         />
@@ -505,7 +557,8 @@ const tabStyles = StyleSheet.create({
   },
   // kept for backward compat
   iconActive: {
-    backgroundColor: 'rgba(255,205,0,0.15)',
+    backgroundColor: 'rgba(255,205,0,0.18)',
+    borderWidth: 1,
   },
   fabWrap: {
     alignItems: 'center',
