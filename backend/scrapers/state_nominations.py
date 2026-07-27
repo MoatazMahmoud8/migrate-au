@@ -49,6 +49,8 @@ STATES = [
         "topic": "state_QLD",
         "url": "https://migration.qld.gov.au/",
         "link_url": "https://migration.qld.gov.au/",
+        "news_url": "https://migration.qld.gov.au/news",
+        "news_link_selector": "a[href*='/news/']",
         "selector": "h2, h3, article p, .alert, .notice",
         "icon": "🟡",
     },
@@ -67,6 +69,8 @@ STATES = [
         "topic": "state_SA",
         "url": "https://www.migration.sa.gov.au/",
         "link_url": "https://www.migration.sa.gov.au/",
+        "news_url": "https://www.migration.sa.gov.au/about/news",
+        "news_link_selector": "a[href*='/news/']",
         "selector": "h2, h3, .views-field-title, .alert, p",
         "icon": "🔴",
     },
@@ -76,6 +80,8 @@ STATES = [
         "topic": "state_TAS",
         "url": "https://www.migration.tas.gov.au/",
         "link_url": "https://www.migration.tas.gov.au/",
+        "news_url": "https://www.migration.tas.gov.au/news",
+        "news_link_selector": "a[href*='/news/']",
         "selector": "h2, h3, article p, .alert",
         "icon": "🟢",
     },
@@ -234,5 +240,98 @@ def scrape(db) -> list[dict]:
 
         except Exception as e:
             print(f"  [states] ⚠️  {state['code']}: {e}")
+
+    # ── News article tracker: detects individual new articles on state news pages
+    for state in STATES:
+        if not state.get("news_url"):
+            continue
+        src_id = f"state_{state['code']}_news"
+        try:
+            resp = _fetch_with_fallbacks(session, state["news_url"], timeout=20)
+            if resp is None:
+                continue
+
+            base = state["news_url"].split("/news")[0]  # e.g. https://www.migration.tas.gov.au
+            soup = BeautifulSoup(resp.text, "html.parser")
+            selector = state.get("news_link_selector", "a[href*='/news/']")
+            links = soup.select(selector)
+
+            # Normalise to absolute URLs, deduplicate, skip the listing page itself
+            seen_urls: set[str] = set()
+            article_urls: list[str] = []
+            for a in links:
+                href = a.get("href", "")
+                if not href:
+                    continue
+                if href.startswith("/"):
+                    href = base + href
+                # Skip the news listing page itself and anchor-only links
+                if href.rstrip("/") in (state["news_url"].rstrip("/"), base.rstrip("/")):
+                    continue
+                if href not in seen_urls:
+                    seen_urls.add(href)
+                    article_urls.append(href)
+
+            if not article_urls:
+                continue
+
+            # Load the set of already-seen URLs from Firestore
+            meta_doc = meta_ref.document(src_id).get()
+            known_urls: set[str] = set(meta_doc.to_dict().get("seen_urls", [])) if meta_doc.exists else set()
+
+            new_articles = [u for u in article_urls if u not in known_urls]
+            if not new_articles:
+                # Still update last_checked timestamp
+                meta_ref.document(src_id).set({
+                    "seen_urls": list(seen_urls),
+                    "last_checked": datetime.now(timezone.utc).isoformat(),
+                    "state": state["code"],
+                }, merge=True)
+                continue
+
+            for article_url in new_articles:
+                # Fetch the article page to get a real title + snippet
+                article_title = None
+                article_body = None
+                try:
+                    art_resp = _fetch_with_fallbacks(session, article_url, timeout=20)
+                    if art_resp:
+                        art_soup = BeautifulSoup(art_resp.text, "html.parser")
+                        h1 = art_soup.find("h1")
+                        article_title = h1.get_text(strip=True) if h1 else None
+                        # First non-empty paragraph
+                        for p in art_soup.select("article p, .content p, main p"):
+                            text = p.get_text(" ", strip=True)
+                            if len(text) > 30:
+                                article_body = text[:200]
+                                break
+                except Exception:
+                    pass
+
+                title = f"{state['icon']} {state['name']}: {article_title}" if article_title else f"{state['icon']} {state['name']} — New Update"
+                body = article_body or f"New update published on the {state['name']} Migration website."
+
+                notifications.append({
+                    "source_id": f"{src_id}_{_hash(article_url)}",
+                    "topic": state["topic"],
+                    "category": "State Nomination",
+                    "title": title[:100],
+                    "body": body[:500],
+                    "url": article_url,
+                    "state": state["code"],
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                })
+                print(f"  [states] ✅ {state['code']} new article: {article_url}")
+
+            # Save updated seen URLs
+            meta_ref.document(src_id).set({
+                "seen_urls": list(seen_urls),
+                "last_checked": datetime.now(timezone.utc).isoformat(),
+                "last_changed": datetime.now(timezone.utc).isoformat(),
+                "state": state["code"],
+            })
+
+        except Exception as e:
+            print(f"  [states] ⚠️  {state['code']} news: {e}")
 
     return notifications
