@@ -52,13 +52,19 @@ def run():
     print(f"      → {len(anzsco_notifications)} change(s) detected")
 
     # ── 3. State & territory nominations (all 8)
-    print("\n[3/4] Scraping state nominations...")
+    print("\n[3/5] Scraping state nominations...")
     state_notifications = state_nominations.scrape(db)
     all_notifications.extend(state_notifications)
     print(f"      → {len(state_notifications)} change(s) detected")
 
-    # ── 4. RSS news (migration-relevant media articles)
-    print("\n[4/4] Checking RSS news feeds...")
+    # ── 4. Visa fee page monitoring (detects fee changes, queues admin review)
+    print("\n[4/5] Monitoring visa fee pages...")
+    fee_notifications = home_affairs.scrape_fees(db)
+    all_notifications.extend(fee_notifications)
+    print(f"      → {len(fee_notifications)} fee change(s) detected")
+
+    # ── 5. RSS news (migration-relevant media articles)
+    print("\n[5/5] Checking RSS news feeds...")
     news_notifications = news_rss.scrape(db)
     all_notifications.extend(news_notifications)
     print(f"      → {len(news_notifications)} new article(s)")
@@ -87,6 +93,7 @@ def run():
             "home_affairs": len(ha_notifications),
             "anzsco": len(anzsco_notifications),
             "states": len(state_notifications),
+            "visa_fees": len(fee_notifications),
             "news_rss": len(news_notifications),
         },
     })

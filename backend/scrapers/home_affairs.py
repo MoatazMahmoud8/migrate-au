@@ -138,3 +138,132 @@ def scrape(db) -> list[dict]:
             print(f"  [home_affairs] ⚠️  {src['id']}: {e}")
 
     return notifications
+
+
+# ── Visa fee monitoring ────────────────────────────────────────────────────────
+# Each entry maps a visa subclass to its DHA listing page.
+# We hash the fee-bearing section of the page (the visaCost JSON field embedded
+# in the page source). When the hash changes we queue an admin-review notification
+# so the admin can verify and update visa-fees.json.
+
+FEE_VISAS = [
+    ("189",  "skilled-independent-189"),
+    ("190",  "skilled-nominated-190"),
+    ("491",  "skilled-work-regional-provisional-491"),
+    ("191",  "skilled-regional-191"),
+    ("485",  "temporary-graduate-485"),
+    ("482",  "temporary-skill-shortage-482"),
+    ("186",  "employer-nomination-scheme-186"),
+    ("494",  "skilled-employer-sponsored-regional-494"),
+    ("417",  "working-holiday-417"),
+    ("462",  "work-and-holiday-462"),
+    ("500",  "student-500"),
+    ("590",  "student-guardian-590"),
+    ("600",  "visitor-600"),
+    ("820",  "partner-820-801"),
+    ("300",  "prospective-marriage-300"),
+    ("103",  "parent-103"),
+    ("804",  "aged-parent-804"),
+    ("143",  "contributory-parent-143"),
+    ("864",  "contributory-aged-parent-864-884"),
+    ("887",  "skilled-regional-887"),
+    ("858",  "distinguished-talent-858"),
+    ("132",  "business-talent-132"),
+    ("188",  "business-innovation-and-investment-188"),
+]
+
+FEE_BASE = "https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing"
+
+
+def scrape_fees(db) -> list[dict]:
+    """
+    Monitors individual visa listing pages for fee section changes.
+    Returns admin-review notifications for any visa whose fee section changed.
+    Fee changes need human verification — we can't reliably extract the exact
+    new amount from server-rendered HTML (DHA loads prices via JavaScript).
+    """
+    import re
+    notifications = []
+    meta_ref = db.collection("_scraper_meta")
+    session = requests.Session()
+    session.headers.update(HEADERS)
+
+    for subclass, slug in FEE_VISAS:
+        src_id = f"visa_fee_{subclass}"
+        url = f"{FEE_BASE}/{slug}"
+        try:
+            resp = session.get(url, timeout=20)
+            resp.raise_for_status()
+            content = resp.text
+
+            # The DHA page embeds fee data in a JSON blob inside the page HTML.
+            # Extract everything between "visaCost" and the next top-level key —
+            # this contains the fee amount even before JS renders it.
+            fee_section = ""
+            match = re.search(r'"visaCost"\s*:\s*"(.*?)"(?:,\s*"[a-z])', content, re.DOTALL)
+            if match:
+                fee_section = match.group(1)
+            else:
+                # Fallback: hash the whole page cost-related section
+                soup = BeautifulSoup(content, "html.parser")
+                fee_section = " ".join(
+                    el.get_text(" ", strip=True)
+                    for el in soup.select(
+                        "[data-svpattribute], .visa-cost, #visa-cost, "
+                        ".field--name-field-visa-cost, .cost-section"
+                    )
+                ) or content[content.find("visaCost"):content.find("visaCost") + 500]
+
+            if not fee_section.strip():
+                continue
+
+            current_hash = _hash(fee_section)
+            meta_doc = meta_ref.document(src_id).get()
+            stored = meta_doc.to_dict() if meta_doc.exists else {}
+            stored_hash = stored.get("hash")
+
+            # First time seeing this page — store hash, no notification
+            if not stored_hash:
+                meta_ref.document(src_id).set({
+                    "hash": current_hash,
+                    "last_checked": datetime.now(timezone.utc).isoformat(),
+                    "subclass": subclass,
+                    "url": url,
+                })
+                print(f"  [fees] 📌 SC {subclass}: baseline stored")
+                continue
+
+            if current_hash == stored_hash:
+                meta_ref.document(src_id).set(
+                    {"last_checked": datetime.now(timezone.utc).isoformat()}, merge=True
+                )
+                continue
+
+            # Fee section changed — queue for admin review
+            notifications.append({
+                "source_id": src_id,
+                "topic": "visa_fees",
+                "category": "Visa Fee Update",
+                "title": f"💰 SC {subclass} fee page changed — verify fee",
+                "body": (
+                    f"The SC {subclass} visa listing page fee section has changed on immi.homeaffairs.gov.au. "
+                    f"Please check the current fee and update visa-fees.json if needed."
+                ),
+                "url": url,
+                "state": "FED",
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            })
+
+            meta_ref.document(src_id).set({
+                "hash": current_hash,
+                "last_checked": datetime.now(timezone.utc).isoformat(),
+                "last_changed": datetime.now(timezone.utc).isoformat(),
+                "subclass": subclass,
+                "url": url,
+            })
+            print(f"  [fees] 🔔 SC {subclass} fee section changed — admin notification queued")
+
+        except Exception as e:
+            print(f"  [fees] ⚠️  SC {subclass}: {e}")
+
+    return notifications
