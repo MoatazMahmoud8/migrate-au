@@ -33,6 +33,7 @@ import NotificationDetail from '../../components/NotificationDetail';
 import InAppBrowser from '../../components/InAppBrowser';
 import { ErrorBoundary } from '../../components/ErrorBoundary';
 import { useNavigation } from '@react-navigation/native';
+import { useLocalSearchParams } from 'expo-router';
 
 const CATEGORY_COLORS: Record<string, string> = {
   'Policy Update':          Colors.accent,         // Cyan
@@ -138,6 +139,30 @@ export default function NotificationsScreen() {
   const [selectedNotification, setSelectedNotification] = useState<AppNotification | null>(null);
   const [showInAppBrowser, setShowInAppBrowser] = useState(false);
   const [browserUrl, setBrowserUrl] = useState<string | null>(null);
+
+  // Deep-link: when tapping an FCM notification, open the specific notification
+  const { notificationId: deepLinkedId } = useLocalSearchParams<{ notificationId?: string }>();
+  const deepLinkedIdRef = React.useRef<string | null>(null);
+
+  // When a new deepLinkedId arrives (from notification tap), store it.
+  // Once the feed loads, open the matching notification automatically.
+  useEffect(() => {
+    if (deepLinkedId) {
+      deepLinkedIdRef.current = deepLinkedId;
+    }
+  }, [deepLinkedId]);
+
+  // Watch feed: as soon as items arrive, check if we have a pending deep-link
+  useEffect(() => {
+    const targetId = deepLinkedIdRef.current;
+    if (!targetId || feed.length === 0) return;
+    const match = feed.find((n) => n.id === targetId);
+    if (match) {
+      deepLinkedIdRef.current = null; // consume it
+      setSelectedNotification(match);
+      if (!match.read) void markAsRead(match.id);
+    }
+  }, [feed]);
 
   useEffect(() => {
     let cancelled = false;

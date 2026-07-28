@@ -329,9 +329,15 @@ function handleNotificationNavigation(
   setTimeout(() => {
     try {
       const { router } = require('expo-router');
-      const target = data?.route || '/(tabs)/notifications';
-      router.push(target as any);
-      console.log('[notifications] navigated to:', target);
+      const baseRoute = data?.route || '/(tabs)/notifications';
+      // If the notification has an id, pass it as a param so the Updates
+      // screen can auto-open that specific notification.
+      const notifId = data?.notificationId;
+      const target = notifId
+        ? { pathname: baseRoute as any, params: { notificationId: notifId } }
+        : (baseRoute as any);
+      router.push(target);
+      console.log('[notifications] navigated to:', baseRoute, notifId ? `(id: ${notifId})` : '');
     } catch (e) {
       // Router not ready yet — retry a few times with backoff.
       if (attempt < 5) {
