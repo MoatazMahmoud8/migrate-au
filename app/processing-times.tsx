@@ -16,16 +16,14 @@ import { Colors, Spacing, Radius, FontSize, FontWeight } from '../constants/them
 import { useColors } from '../constants/ThemeContext';
 import { openExternalUrl } from '../utils/openExternalUrl';
 import { CATEGORIES, ProcessingTime } from '../constants/processingTimes';
-import { VISA_FEES } from '../constants/visaFees';
+import { VisaFeeEntry } from '../constants/visaFees';
+import { getVisaFees, refreshVisaFees } from '../utils/visaFees';
 import {
   getProcessingTimes,
   getLastCheckedAt,
   refreshProcessingTimes,
 } from '../utils/processingTimes';
 import { tap as hapticTap } from '../utils/haptics';
-
-// Build a lookup map from visaFees (single source of truth)
-const FEE_MAP = new Map(VISA_FEES.map((f) => [f.subclass, f]));
 
 function timeAgo(iso: string | null): string {
   if (!iso) return 'never';
@@ -61,23 +59,37 @@ export default function ProcessingTimesScreen() {
   const [filter, setFilter] = useState<string>('All');
   const [search, setSearch] = useState('');
   const [expanded, setExpanded] = useState<string | null>(null);
+  // Runtime fee map — loaded from utils/visaFees (remote-refreshed, 3-day TTL)
+  const [feeMap, setFeeMap] = useState<Map<string, VisaFeeEntry>>(new Map());
 
   useEffect(() => {
     (async () => {
-      const snap = await getProcessingTimes();
+      const [snap, fees] = await Promise.all([
+        getProcessingTimes(),
+        getVisaFees(),
+      ]);
       setItems(snap.items);
       setSnapshotDate(snap.snapshotDate);
       setLastChecked(await getLastCheckedAt());
+      setFeeMap(new Map(fees.items.map((f) => [f.subclass, f])));
+      // Silently refresh fees in background; update map if remote has newer data
+      refreshVisaFees().then(({ updated, snapshot }) => {
+        if (updated) setFeeMap(new Map(snapshot.items.map((f) => [f.subclass, f])));
+      });
     })();
   }, []);
 
   const onRefresh = async () => {
     setRefreshing(true);
     hapticTap();
-    const { snapshot } = await refreshProcessingTimes({ force: true });
+    const [{ snapshot }, fees] = await Promise.all([
+      refreshProcessingTimes({ force: true }),
+      refreshVisaFees({ force: true }),
+    ]);
     setItems(snapshot.items);
     setSnapshotDate(snapshot.snapshotDate);
     setLastChecked(await getLastCheckedAt());
+    setFeeMap(new Map(fees.snapshot.items.map((f) => [f.subclass, f])));
     setRefreshing(false);
   };
 
@@ -195,8 +207,8 @@ export default function ProcessingTimesScreen() {
             const cardKey = p.subclass;
             const isExpanded = expanded === cardKey;
             const singleUnnamed = p.streams.length === 1 && !p.streams[0].name;
-            // Always pull fee from single source of truth (visaFees.ts)
-            const feeEntry = FEE_MAP.get(p.subclass);
+            // Always pull fee from runtime fee map (remote-refreshed via utils/visaFees)
+            const feeEntry = feeMap.get(p.subclass);
             return (
               <TouchableOpacity
                 key={cardKey}

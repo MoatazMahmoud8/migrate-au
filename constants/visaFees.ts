@@ -21,7 +21,7 @@ export interface VisaFeeEntry {
 }
 
 /** ISO date of when the bundled fees were last verified. */
-export const VISA_FEES_SNAPSHOT_DATE = '2026-07-25';
+export const VISA_FEES_SNAPSHOT_DATE = '2026-07-29';
 
 export const VISA_FEES: VisaFeeEntry[] = [
   // ─── Skilled ──────────────────────────────────────────────────────
@@ -89,8 +89,8 @@ export const VISA_FEES: VisaFeeEntry[] = [
   { subclass: '461', fee: 'AUD $420', note: 'NZ Citizen Family Relationship' },
 
   // ─── Student ──────────────────────────────────────────────────────
-  { subclass: '500', fee: 'AUD $710' },
-  { subclass: '590', fee: 'AUD $710', note: 'Student Guardian' },
+  { subclass: '500', fee: 'AUD $2,500', note: 'Concessions apply in limited circumstances' },
+  { subclass: '590', fee: 'AUD $2,500', note: 'Student Guardian — concessions may apply' },
 
   // ─── Visitor ──────────────────────────────────────────────────────
   { subclass: '600', fee: 'AUD $190', note: 'Tourist stream (offshore). Onshore extension: AUD $365' },
