@@ -4,6 +4,7 @@ import {
   View,
   Text,
   TouchableOpacity,
+  TextInput,
   StyleSheet,
   RefreshControl,
 } from 'react-native';
@@ -15,12 +16,16 @@ import { Colors, Spacing, Radius, FontSize, FontWeight } from '../constants/them
 import { useColors } from '../constants/ThemeContext';
 import { openExternalUrl } from '../utils/openExternalUrl';
 import { CATEGORIES, ProcessingTime } from '../constants/processingTimes';
+import { VISA_FEES } from '../constants/visaFees';
 import {
   getProcessingTimes,
   getLastCheckedAt,
   refreshProcessingTimes,
 } from '../utils/processingTimes';
 import { tap as hapticTap } from '../utils/haptics';
+
+// Build a lookup map from visaFees (single source of truth)
+const FEE_MAP = new Map(VISA_FEES.map((f) => [f.subclass, f]));
 
 function timeAgo(iso: string | null): string {
   if (!iso) return 'never';
@@ -54,6 +59,7 @@ export default function ProcessingTimesScreen() {
   const [lastChecked, setLastChecked] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [filter, setFilter] = useState<string>('All');
+  const [search, setSearch] = useState('');
   const [expanded, setExpanded] = useState<string | null>(null);
 
   useEffect(() => {
@@ -76,9 +82,19 @@ export default function ProcessingTimesScreen() {
   };
 
   const filtered = useMemo(() => {
-    if (filter === 'All') return items;
-    return items.filter((i) => i.category === filter);
-  }, [items, filter]);
+    let result = filter === 'All' ? items : items.filter((i) => i.category === filter);
+    if (search.trim()) {
+      const q = search.trim().toLowerCase();
+      result = result.filter(
+        (i) =>
+          i.subclass.includes(q) ||
+          i.name.toLowerCase().includes(q) ||
+          i.category.toLowerCase().includes(q) ||
+          i.streams.some((s) => s.name?.toLowerCase().includes(q))
+      );
+    }
+    return result;
+  }, [items, filter, search]);
 
   const FILTERS = ['All', ...CATEGORIES];
 
@@ -125,6 +141,25 @@ export default function ProcessingTimesScreen() {
           </View>
         </LinearGradient>
 
+        {/* Search bar */}
+        <View style={[styles.searchWrap, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
+          <Ionicons name="search-outline" size={16} color={Colors.textMuted} />
+          <TextInput
+            style={[styles.searchInput, { color: Colors.textPrimary }]}
+            placeholder="Search by visa number or name…"
+            placeholderTextColor={Colors.textMuted}
+            value={search}
+            onChangeText={setSearch}
+            returnKeyType="search"
+            clearButtonMode="while-editing"
+          />
+          {search.length > 0 && (
+            <TouchableOpacity onPress={() => setSearch('')}>
+              <Ionicons name="close-circle" size={16} color={Colors.textMuted} />
+            </TouchableOpacity>
+          )}
+        </View>
+
         {/* Filter pills */}
         <ScrollView
           horizontal
@@ -146,12 +181,22 @@ export default function ProcessingTimesScreen() {
           })}
         </ScrollView>
 
+        {/* No results */}
+        {filtered.length === 0 && (
+          <View style={styles.emptyWrap}>
+            <Ionicons name="search-outline" size={32} color={Colors.textMuted} />
+            <Text style={[styles.emptyText, { color: Colors.textMuted }]}>No visas match "{search}"</Text>
+          </View>
+        )}
+
         {/* List */}
         <View style={styles.list}>
           {filtered.map((p) => {
             const cardKey = p.subclass;
             const isExpanded = expanded === cardKey;
             const singleUnnamed = p.streams.length === 1 && !p.streams[0].name;
+            // Always pull fee from single source of truth (visaFees.ts)
+            const feeEntry = FEE_MAP.get(p.subclass);
             return (
               <TouchableOpacity
                 key={cardKey}
@@ -241,20 +286,19 @@ export default function ProcessingTimesScreen() {
                         </View>
                       )}
 
-                      {/* Application fee */}
-                      {p.fee && (
+                      {/* Application fee — from visaFees.ts (single source of truth) */}
+                      {feeEntry && (
                         <View style={[styles.detailSection, { borderColor: Colors.border }]}>
                           <Text style={[styles.sectionHead, { color: Colors.textSecondary }]}>
                             <Ionicons name="card-outline" size={11} /> Application fee
                           </Text>
                           <View style={styles.feeRow}>
-                            <Text style={[styles.feeMain, { color: Colors.textPrimary }]}>{p.fee}</Text>
+                            <Text style={[styles.feeMain, { color: Colors.textPrimary }]}>{feeEntry.fee}</Text>
                             <Text style={[styles.feeLabel, { color: Colors.textMuted }]}>main applicant</Text>
                           </View>
-                          {(p.familyFeeAdult || p.familyFeeChild) && (
+                          {feeEntry.note && (
                             <Text style={[styles.familyFee, { color: Colors.textSecondary }]}>
-                              Family:{' '}
-                              {[p.familyFeeAdult, p.familyFeeChild].filter(Boolean).join(' · ')}
+                              {feeEntry.note}
                             </Text>
                           )}
                         </View>
@@ -327,10 +371,22 @@ const styles = StyleSheet.create({
   },
   metaText: { fontSize: 10, fontWeight: '600' },
 
+  // Search bar
+  searchWrap: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    marginHorizontal: Spacing.lg, marginTop: Spacing.md,
+    paddingHorizontal: Spacing.md, paddingVertical: 10,
+    borderRadius: Radius.md, borderWidth: 1,
+  },
+  searchInput: { flex: 1, fontSize: FontSize.sm, padding: 0 },
+
   filterRow: { paddingHorizontal: Spacing.lg, paddingVertical: Spacing.md },
   pill: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: Radius.full, borderWidth: 1, marginRight: 8 },
   pillActive: { backgroundColor: 'rgba(255,205,0,0.12)' },
   pillText: { fontSize: FontSize.xs, fontWeight: '600' },
+
+  emptyWrap: { alignItems: 'center', paddingVertical: Spacing.xxl, gap: Spacing.sm },
+  emptyText: { fontSize: FontSize.sm },
 
   list: { paddingHorizontal: Spacing.lg, gap: 10 },
   card: { flexDirection: 'row', borderRadius: Radius.lg, borderWidth: 1, overflow: 'hidden' },
@@ -345,7 +401,6 @@ const styles = StyleSheet.create({
   cardCat: { fontSize: 10, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4 },
   cardName: { fontSize: FontSize.sm, fontWeight: FontWeight.semiBold as any },
 
-  // Single-stream timing display
   statsRow: {
     flexDirection: 'row', alignItems: 'center',
     borderRadius: Radius.md, paddingVertical: Spacing.sm, paddingHorizontal: Spacing.md,
@@ -355,7 +410,6 @@ const styles = StyleSheet.create({
   statValue: { fontSize: FontSize.md, fontWeight: FontWeight.bold as any },
   statDivider: { width: 1, height: 24, marginHorizontal: Spacing.sm },
 
-  // Multi-stream display
   streamsSection: { borderTopWidth: 1, paddingTop: Spacing.sm },
   streamRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 6 },
   streamName: { flex: 1, fontSize: FontSize.xs, paddingRight: Spacing.sm },
@@ -364,22 +418,18 @@ const styles = StyleSheet.create({
   streamBadgeLabel: { fontSize: 9, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.3 },
   streamBadgeVal: { fontSize: 11, fontWeight: '700' },
 
-  // Section headers for expanded content
   sectionHead: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: Spacing.xs },
 
-  // Expanded details
   detailSection: { borderTopWidth: 1, paddingTop: Spacing.sm },
   condRow: { flexDirection: 'row', gap: 6, marginBottom: 3 },
   condDot: { fontSize: 12, fontWeight: '700', lineHeight: 18 },
   condText: { flex: 1, fontSize: FontSize.xs, lineHeight: 18 },
 
-  // Fee display
   feeRow: { flexDirection: 'row', alignItems: 'baseline', gap: 6, marginBottom: 2 },
   feeMain: { fontSize: FontSize.sm, fontWeight: FontWeight.bold as any },
   feeLabel: { fontSize: 10 },
   familyFee: { fontSize: FontSize.xs, lineHeight: 16 },
 
-  // DHA link
   dhaLink: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
     borderTopWidth: 1, paddingTop: Spacing.sm, marginTop: 2,

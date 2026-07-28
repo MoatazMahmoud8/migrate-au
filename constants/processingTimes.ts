@@ -55,9 +55,6 @@ export const PROCESSING_TIMES: ProcessingTime[] = [
       { name: 'Points-tested stream', p50: '9 months', p90: '17 months' },
       { name: 'New Zealand stream',   p50: '4 months', p90: '8 months'  },
     ],
-    fee: 'AUD $6,140',
-    familyFeeAdult: '+$3,070 per adult',
-    familyFeeChild: '+$1,535 per child',
     conditions: [
       'No employer sponsorship required',
       'Occupation on MLTSSL',
@@ -76,9 +73,6 @@ export const PROCESSING_TIMES: ProcessingTime[] = [
     streams: [
       { name: 'State/Territory Nominated', p50: '5 months', p90: '11 months' },
     ],
-    fee: 'AUD $6,140',
-    familyFeeAdult: '+$3,070 per adult',
-    familyFeeChild: '+$1,535 per child',
     conditions: [
       'Nomination by an Australian state or territory',
       'Occupation on MLTSSL or STSOL (state-specific)',
@@ -98,9 +92,6 @@ export const PROCESSING_TIMES: ProcessingTime[] = [
       { name: 'State/Territory Nominated', p50: '7 months', p90: '15 months' },
       { name: 'Family Sponsored',          p50: '9 months', p90: '18 months' },
     ],
-    fee: 'AUD $6,140',
-    familyFeeAdult: '+$3,070 per adult',
-    familyFeeChild: '+$1,535 per child',
     conditions: [
       'Nomination by state/territory or sponsorship by eligible family member',
       'Must live and work in a designated regional area',
@@ -119,9 +110,6 @@ export const PROCESSING_TIMES: ProcessingTime[] = [
     streams: [
       { p50: '6 months', p90: '12 months' },
     ],
-    fee: 'AUD $2,650',
-    familyFeeAdult: '+$1,330 per adult',
-    familyFeeChild: '+$665 per child',
     conditions: [
       'Must have lived and worked in regional Australia',
       'Held eligible temporary visa (e.g. 487, 495, 496)',
@@ -138,9 +126,6 @@ export const PROCESSING_TIMES: ProcessingTime[] = [
     streams: [
       { p50: '8 months', p90: '16 months' },
     ],
-    fee: 'AUD $2,650',
-    familyFeeAdult: '+$1,330 per adult',
-    familyFeeChild: '+$665 per child',
     conditions: [
       'Must hold 491 or 494 visa for at least 3 years',
       'Must have lived and worked in a regional area',
@@ -161,9 +146,6 @@ export const PROCESSING_TIMES: ProcessingTime[] = [
       { name: 'Core Skills stream',       p50: '34 days',  p90: '4 months'  },
       { name: 'Labour Agreement stream',  p50: '3 months', p90: '6 months'  },
     ],
-    fee: 'AUD $4,015',
-    familyFeeAdult: '+$1,515 per adult',
-    familyFeeChild: '+$760 per child',
     conditions: [
       'Approved sponsor (standard business sponsor)',
       'Occupation must be on the relevant occupation list',
@@ -183,9 +165,6 @@ export const PROCESSING_TIMES: ProcessingTime[] = [
       { name: 'Temp Residence Transition stream', p50: '5 months', p90: '10 months' },
       { name: 'Agreements stream',               p50: '7 months', p90: '14 months' },
     ],
-    fee: 'AUD $6,140',
-    familyFeeAdult: '+$3,070 per adult',
-    familyFeeChild: '+$1,535 per child',
     conditions: [
       'Approved sponsor and approved nomination',
       'Occupation on MLTSSL (Direct Entry & Agreements streams)',
@@ -203,7 +182,6 @@ export const PROCESSING_TIMES: ProcessingTime[] = [
     streams: [
       { name: 'Employer Sponsored stream', p50: '6 months', p90: '13 months' },
     ],
-    fee: 'AUD $6,140',
     conditions: [
       'Business operating in a designated regional area',
       'Occupation on the relevant regional list',
@@ -224,9 +202,6 @@ export const PROCESSING_TIMES: ProcessingTime[] = [
       { name: 'Post-Vocational Education Work stream', p50: '3 months', p90: '6 months' },
       { name: 'Graduate Research stream', p50: '4 months', p90: '8 months' },
     ],
-    fee: 'AUD $1,895',
-    familyFeeAdult: '+$950 per adult',
-    familyFeeChild: '+$475 per child',
     conditions: [
       'Completed a degree from an Australian institution',
       'Must apply within 6 months of completing studies',
@@ -245,9 +220,6 @@ export const PROCESSING_TIMES: ProcessingTime[] = [
     streams: [
       { name: '820 (temporary) + 801 (permanent) — applied onshore', p50: '20 months', p90: '32 months' },
     ],
-    fee: 'AUD $9,095',
-    familyFeeAdult: '+$4,550 per adult (on 801 grant)',
-    familyFeeChild: '+$2,280 per child',
     conditions: [
       'Must be in Australia when you apply',
       'Genuine relationship with an Australian citizen, PR, or eligible NZ citizen',
@@ -264,9 +236,6 @@ export const PROCESSING_TIMES: ProcessingTime[] = [
     streams: [
       { name: '309 (temporary) + 100 (permanent) — applied offshore', p50: '14 months', p90: '26 months' },
     ],
-    fee: 'AUD $9,095',
-    familyFeeAdult: '+$4,550 per adult (on 100 grant)',
-    familyFeeChild: '+$2,280 per child',
     conditions: [
       'Must be outside Australia when you apply',
       'Genuine relationship with an Australian citizen, PR, or eligible NZ citizen',
@@ -283,7 +252,6 @@ export const PROCESSING_TIMES: ProcessingTime[] = [
     streams: [
       { p50: '13 months', p90: '24 months' },
     ],
-    fee: 'AUD $9,095',
     conditions: [
       'Must marry your sponsor within 9 months of arriving in Australia',
       'Both parties must be free to marry',
@@ -300,8 +268,6 @@ export const PROCESSING_TIMES: ProcessingTime[] = [
     streams: [
       { p50: '5 years', p90: '6 years' },
     ],
-    fee: 'AUD $47,825',
-    familyFeeAdult: '+$23,900 per additional applicant',
     conditions: [
       'At least half of your children must live in Australia',
       'Significant government charge (2nd instalment ~$44,000)',
@@ -318,9 +284,6 @@ export const PROCESSING_TIMES: ProcessingTime[] = [
     streams: [
       { p50: '29 years', p90: '31 years' },
     ],
-    fee: 'AUD $4,640',
-    familyFeeAdult: '+$2,320 per adult',
-    familyFeeChild: '+$1,160 per child',
     conditions: [
       'At least half of your children must live in Australia',
       'Very long wait — currently 29+ years in the queue',
@@ -337,8 +300,6 @@ export const PROCESSING_TIMES: ProcessingTime[] = [
     streams: [
       { p50: '4 years', p90: '5 years' },
     ],
-    fee: 'AUD $47,825',
-    familyFeeAdult: '+$23,900 per additional applicant',
     conditions: [
       'Must be of retirement age',
       'Must be in Australia when you apply',
@@ -355,7 +316,6 @@ export const PROCESSING_TIMES: ProcessingTime[] = [
     streams: [
       { p50: '29 years', p90: '30 years' },
     ],
-    fee: 'AUD $4,640',
     conditions: [
       'Must be of retirement age',
       'Must be in Australia when you apply',
@@ -376,9 +336,6 @@ export const PROCESSING_TIMES: ProcessingTime[] = [
       { name: 'Vocational Education',   p50: '2 months', p90: '6 months' },
       { name: 'Schools',                p50: '6 weeks',  p90: '3 months' },
     ],
-    fee: 'AUD $775',
-    familyFeeAdult: '+$775 per adult',
-    familyFeeChild: '+$195 per child',
     conditions: [
       'Enrolment in a registered course (CRICOS)',
       'Genuine Temporary Entrant (GTE) requirement',
@@ -396,7 +353,6 @@ export const PROCESSING_TIMES: ProcessingTime[] = [
     streams: [
       { p50: '3 months', p90: '6 months' },
     ],
-    fee: 'AUD $775',
     conditions: [
       'Child must be a student visa holder under 18',
       'Must be a parent or relative of the student',
@@ -416,7 +372,6 @@ export const PROCESSING_TIMES: ProcessingTime[] = [
       { name: 'Tourist stream (online)', p50: '22 days', p90: '47 days' },
       { name: 'Business Visitor stream', p50: '15 days', p90: '35 days' },
     ],
-    fee: 'AUD $190',
     conditions: [
       'Genuine temporary intention',
       'Sufficient funds to support stay',
@@ -433,7 +388,6 @@ export const PROCESSING_TIMES: ProcessingTime[] = [
     streams: [
       { p50: '21 days', p90: '53 days' },
     ],
-    fee: 'AUD $650',
     conditions: [
       'Age 18–30 (or 35 for some passport holders)',
       'Eligible passport (31 countries)',
@@ -450,7 +404,6 @@ export const PROCESSING_TIMES: ProcessingTime[] = [
     streams: [
       { p50: '18 days', p90: '49 days' },
     ],
-    fee: 'AUD $650',
     conditions: [
       'Age 18–30',
       'Eligible passport (19 countries, incl. USA, China, Spain)',
