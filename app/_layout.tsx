@@ -428,7 +428,7 @@ function RootLayoutContent({ unread, onboardingVisible, closeOnboarding }: {
             fontSize: 10,
             fontWeight: '600',
             letterSpacing: 0.3,
-            marginTop: -4,
+            marginTop: 2,
           },
           tabBarItemStyle: {
             flex: 1,

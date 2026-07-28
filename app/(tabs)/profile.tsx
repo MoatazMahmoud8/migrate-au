@@ -1583,14 +1583,16 @@ const styles = StyleSheet.create({
   },
   premiumBadgeSmall: {
     position: 'absolute',
-    bottom: 2,
-    right: 2,
+    bottom: -2,
+    right: -4,
     width: 22,
     height: 22,
     borderRadius: 11,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: '#FFD700',
     borderWidth: 2,
+    borderColor: '#FFFFFF',
   },
 
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, marginBottom: Spacing.sm },
