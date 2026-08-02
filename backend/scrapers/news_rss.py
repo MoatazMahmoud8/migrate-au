@@ -206,6 +206,7 @@ def _is_recent(pub_date_str: str) -> bool:
 GUIDE_TITLE_PATTERNS = [
     # "How to" / instructional
     r"^how to ", r"how to .* in australia", r"step.by.step",
+    r"\bvs\b.*visa", r"vs\s+\d{3}\s+visa",  # comparison guides
     r"complete guide", r"ultimate guide", r"beginner.?s guide",
     r"your guide to", r"a guide to", r"tips for",
     # "What to do if" / contingency advice
@@ -251,6 +252,19 @@ NEWS_INDICATORS = [
     # System events
     "system outage", "maintenance", "downtime",
     "immiaccount", "online system",
+    # Visa-specific news terms not previously covered
+    "humanitarian", "temporary stay", "stay arrangement",
+    "subclass", "sc 4", "sc 5", "sc 8",  # sc 4xx, 5xx, 8xx visa numbers
+    "visa class", "visa category",
+    "pathway announced", "pathway introduced",
+    "new arrangement", "new measure", "new rule",
+    "takes effect", "come into effect", "in effect",
+    "suspended", "paused", "reinstated", "reopen", "reopening",
+    "extended", "extension announced",
+    "approved", "granted to", "eligible for",
+    "july 2026", "august 2026", "september 2026", "october 2026",
+    "november 2026", "december 2026", "january 2027",
+    # Note: bare "2026"/"2027" intentionally excluded — too broad
 ]
 
 # Feeds known to publish mostly blog/guide content (need NEWS_INDICATORS)
@@ -342,11 +356,21 @@ def scrape(db) -> list[dict]:
                     if _is_guide_content(title):
                         print(f"  [news_rss] ❌ GUIDE rejected: {title[:80]}")
                         continue
-                    # Blog feeds must contain a news indicator
+                    # Blog feeds must contain a news indicator OR a visa subclass
+                    # reference / year (strong news signal — e.g. "Sc 449", "2026")
                     is_blog_feed = any(bf in url for bf in BLOG_FEEDS)
                     if is_blog_feed and not _has_news_indicator(title, desc):
-                        print(f"  [news_rss] ❌ NO NEWS indicator (blog feed): {title[:80]}")
-                        continue
+                        import re as _re
+                        t_lower = title.lower()
+                        has_strong_signal = (
+                            bool(_re.search(r'sc\s*\d{3}|subclass\s*\d{3}|202[5-9]|203\d', t_lower))
+                            and b' vs ' not in t_lower.encode()
+                            and 'courses' not in t_lower
+                            and 'how to' not in t_lower
+                        )
+                        if not has_strong_signal:
+                            print(f"  [news_rss] ❌ NO NEWS indicator (blog feed): {title[:80]}")
+                            continue
                     candidates.append({
                         "title": title,
                         "desc": desc,
