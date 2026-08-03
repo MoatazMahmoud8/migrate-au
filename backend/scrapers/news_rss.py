@@ -30,7 +30,7 @@ RSS_FEEDS = [
 # Prevents old articles re-surfacing from feed pagination.
 # Set to 7 days — migration blogs post infrequently; deduplication
 # prevents re-sending the same article twice.
-MAX_AGE_HOURS = 168
+MAX_AGE_HOURS = 48
 
 # Articles MUST contain at least one of these to be considered migration-relevant.
 # This prevents "visa" matching sports stories or "migration" matching political commentary.
@@ -397,7 +397,18 @@ def scrape(db) -> list[dict]:
     # Check Firestore for already-sent URLs
     sent_ref = db.collection("_scraper_meta").document("news_rss_sent")
     sent_doc = sent_ref.get()
-    sent_urls = set(sent_doc.to_dict().get("urls", [])) if sent_doc.exists else set()
+    sent_data = sent_doc.to_dict() if sent_doc.exists else {}
+    has_baseline = sent_doc.exists and "urls" in sent_data
+    sent_urls = set(sent_data.get("urls", []))
+
+    if not has_baseline:
+        # First run: snapshot all current articles so they aren't queued as news
+        sent_ref.set({
+            "urls": [a["link"] for a in unique[:200]],
+            "last_updated": datetime.now(timezone.utc).isoformat(),
+        })
+        print("  [news_rss] 📌 baseline stored — skipping current feed")
+        return []
 
     new_articles = [a for a in unique if a["link"] not in sent_urls]
 

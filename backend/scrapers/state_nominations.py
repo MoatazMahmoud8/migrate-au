@@ -13,6 +13,8 @@ import requests
 from bs4 import BeautifulSoup
 from datetime import datetime, timezone
 
+from scrapers.baseline import store_hash_baseline, store_seen_urls_baseline
+
 try:
     import cloudscraper  # type: ignore
     _HAS_CLOUDSCRAPER = True
@@ -206,6 +208,11 @@ def scrape(db) -> list[dict]:
             meta_doc = meta_ref.document(src_id).get()
             stored_hash = meta_doc.to_dict().get("hash") if meta_doc.exists else None
 
+            if not stored_hash:
+                store_hash_baseline(meta_ref, src_id, current_hash, {"state": state["code"]})
+                print(f"  [states] 📌 {state['code']}: baseline stored")
+                continue
+
             if current_hash == stored_hash:
                 continue
 
@@ -277,7 +284,14 @@ def scrape(db) -> list[dict]:
 
             # Load the set of already-seen URLs from Firestore
             meta_doc = meta_ref.document(src_id).get()
-            known_urls: set[str] = set(meta_doc.to_dict().get("seen_urls", [])) if meta_doc.exists else set()
+            meta_data = meta_doc.to_dict() if meta_doc.exists else {}
+            has_baseline = meta_doc.exists and "seen_urls" in meta_data
+            known_urls: set[str] = set(meta_data.get("seen_urls", []))
+
+            if not has_baseline:
+                store_seen_urls_baseline(meta_ref, src_id, article_urls, {"state": state["code"]})
+                print(f"  [states] 📌 {state['code']} news: baseline stored")
+                continue
 
             new_articles = [u for u in article_urls if u not in known_urls]
             if not new_articles:

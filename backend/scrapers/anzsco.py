@@ -10,6 +10,8 @@ import requests
 from bs4 import BeautifulSoup
 from datetime import datetime, timezone
 
+from scrapers.baseline import store_hash_baseline
+
 SOURCES = [
     {
         "id": "anzsco_mltssl",
@@ -83,6 +85,11 @@ def scrape(db) -> list[dict]:
             current_hash = _hash(content)
             meta_doc = meta_ref.document(src["id"]).get()
             stored_hash = meta_doc.to_dict().get("hash") if meta_doc.exists else None
+
+            if not stored_hash:
+                store_hash_baseline(meta_ref, src["id"], current_hash)
+                print(f"  [anzsco] 📌 {src['id']}: baseline stored")
+                continue
 
             if current_hash == stored_hash:
                 continue

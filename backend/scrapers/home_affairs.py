@@ -11,6 +11,8 @@ import requests
 from bs4 import BeautifulSoup
 from datetime import datetime, timezone
 
+from scrapers.baseline import store_hash_baseline
+
 SOURCES = [
     {
         "id": "home_affairs_news",
@@ -109,6 +111,11 @@ def scrape(db) -> list[dict]:
             current_hash = _hash(content)
             meta_doc = meta_ref.document(src["id"]).get()
             stored_hash = meta_doc.to_dict().get("hash") if meta_doc.exists else None
+
+            if not stored_hash:
+                store_hash_baseline(meta_ref, src["id"], current_hash)
+                print(f"  [home_affairs] 📌 {src['id']}: baseline stored")
+                continue
 
             if current_hash == stored_hash:
                 continue  # no change
@@ -224,9 +231,7 @@ def scrape_fees(db) -> list[dict]:
 
             # First time seeing this page — store hash, no notification
             if not stored_hash:
-                meta_ref.document(src_id).set({
-                    "hash": current_hash,
-                    "last_checked": datetime.now(timezone.utc).isoformat(),
+                store_hash_baseline(meta_ref, src_id, current_hash, {
                     "subclass": subclass,
                     "url": url,
                 })
@@ -240,6 +245,7 @@ def scrape_fees(db) -> list[dict]:
                 continue
 
             # Fee section changed — queue for admin review
+            normalized_fee_section = " ".join(fee_section.split())[:1000]
             notifications.append({
                 "source_id": src_id,
                 "topic": "visa_fees",
@@ -251,6 +257,8 @@ def scrape_fees(db) -> list[dict]:
                 ),
                 "url": url,
                 "state": "FED",
+                "subclass": subclass,
+                "detected_value": normalized_fee_section,
                 "timestamp": datetime.now(timezone.utc).isoformat(),
             })
 
