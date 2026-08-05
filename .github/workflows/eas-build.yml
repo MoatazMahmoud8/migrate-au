@@ -24,7 +24,7 @@ jobs:
         run: |
           grep -q '"@sentry/react-native/expo"' app.json || { echo "::error::Sentry plugin disabled in app.json"; exit 1; }
           grep -q "initSentry" app/_layout.tsx || { echo "::error::initSentry() missing"; exit 1; }
-          grep -q "EXPO_PUBLIC_SENTRY_DSN" .env || { echo "::error::Sentry DSN not set"; exit 1; }
+          grep -q "EXPO_PUBLIC_SENTRY_DSN" app.config.js || { echo "::error::Sentry DSN not set"; exit 1; }
           echo "✅ Sentry checks passed"
 
   build-android:
@@ -52,4 +52,6 @@ jobs:
         run: npm ci
 
       - name: Build Android on EAS
+        env:
+          EXPO_PUBLIC_SENTRY_DSN: ${{ secrets.EXPO_PUBLIC_SENTRY_DSN }}
         run: eas build --platform android --profile ${{ github.event.inputs.profile }} --non-interactive
