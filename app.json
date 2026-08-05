@@ -1,108 +1,108 @@
 {
-	"expo": {
-		"name": "MigrateAU",
-		"slug": "migrate-au",
-		"version": "2.4.0",
-		"orientation": "portrait",
-		"icon": "./assets/icon.png",
-		"userInterfaceStyle": "light",
-		"scheme": "migrate-au",
-		"splash": {
-			"image": "./assets/splash.png",
-			"resizeMode": "contain",
-			"backgroundColor": "#002D62"
-		},
-		"assetBundlePatterns": [
-			"**/*"
-		],
-		"ios": {
-			"userInterfaceStyle": "light",
-			"supportsTablet": true,
-			"bundleIdentifier": "com.jsmglobal.migrationau",
-			"buildNumber": "1",
-			"googleServicesFile": "./GoogleService-Info.plist",
-			"infoPlist": {
-				"NSAppTransportSecurity": {
-					"NSAllowsArbitraryLoads": false
-				},
-				"ITSAppUsesNonExemptEncryption": false,
-				"UIBackgroundModes": [
-					"remote-notification"
-				]
-			}
-		},
-		"android": {
-			"adaptiveIcon": {
-				"foregroundImage": "./assets/adaptive-icon.png",
-				"backgroundColor": "#002D62"
-			},
-			"package": "com.jsmglobal.migration_au",
-			"versionCode": 100,
-			"googleServicesFile": "./google-services.json",
-			"jsEngine": "hermes",
-			"permissions": [
-				"android.permission.INTERNET",
-				"android.permission.RECEIVE_BOOT_COMPLETED",
-				"android.permission.VIBRATE",
-				"android.permission.POST_NOTIFICATIONS"
-			]
-		},
-		"web": {
-			"favicon": "./assets/favicon.png",
-			"bundler": "metro"
-		},
-		"plugins": [
-			[
-				"expo-build-properties",
-				{
-					"ios": {
-						"useFrameworks": "static",
-						"forceStaticLinking": [
-							"RNFBApp",
-							"RNFBAuth",
-							"RNFBFirestore",
-							"RNFBMessaging"
-						],
-						"ccacheEnabled": true
-					},
-					"android": {
-						"googleServicesFile": "./google-services.json",
-						"enableHermes": true
-					}
-				}
-			],
-			"expo-router",
-			"expo-font",
-			"@react-native-firebase/app",
-			"@react-native-firebase/auth",
-			"@react-native-firebase/messaging",
-			[
-				"expo-notifications",
-				{
-					"icon": "./assets/icon.png",
-					"defaultChannel": "migration_news"
-				}
-			],
-			"@react-native-community/datetimepicker",
-			[
-				"@sentry/react-native/expo",
-				{
-					"organization": "jsm-global-pty-ltd",
-					"project": "amg-app"
-				}
-			]
-		],
-		"experiments": {
-			"typedRoutes": true
-		},
-		"extra": {
-			"revenueCatKeyAndroid": "goog_ItWTfepqXqSNKgnRyhyaCRqNCvI",
-			"revenueCatKeyIos": "appl_jPFvkmtqCjFCdxLNcFzbeveghYZ",
-			"eas": {
-				"projectId": "d89609e7-a74f-4146-9eb2-0e8387e71fd2"
-			},
-			"router": {}
-		},
-		"owner": "moataz.alsbak"
-	}
+  "expo": {
+    "name": "MigrateAU",
+    "slug": "migrate-au",
+    "version": "2.4.0",
+    "orientation": "default",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "scheme": "migrate-au",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#002D62"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "userInterfaceStyle": "light",
+      "supportsTablet": true,
+      "bundleIdentifier": "com.jsmglobal.migrationau",
+      "buildNumber": "1",
+      "googleServicesFile": "./GoogleService-Info.plist",
+      "infoPlist": {
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": false
+        },
+        "ITSAppUsesNonExemptEncryption": false,
+        "UIBackgroundModes": [
+          "remote-notification"
+        ]
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#002D62"
+      },
+      "package": "com.jsmglobal.migration_au",
+      "versionCode": 100,
+      "googleServicesFile": "./google-services.json",
+      "jsEngine": "hermes",
+      "permissions": [
+        "android.permission.INTERNET",
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.VIBRATE",
+        "android.permission.POST_NOTIFICATIONS"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "useFrameworks": "static",
+            "forceStaticLinking": [
+              "RNFBApp",
+              "RNFBAuth",
+              "RNFBFirestore",
+              "RNFBMessaging"
+            ],
+            "ccacheEnabled": true
+          },
+          "android": {
+            "googleServicesFile": "./google-services.json",
+            "enableHermes": true
+          }
+        }
+      ],
+      "expo-router",
+      "expo-font",
+      "@react-native-firebase/app",
+      "@react-native-firebase/auth",
+      "@react-native-firebase/messaging",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "defaultChannel": "migration_news"
+        }
+      ],
+      "@react-native-community/datetimepicker",
+      [
+        "@sentry/react-native/expo",
+        {
+          "organization": "jsm-global-pty-ltd",
+          "project": "amg-app"
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "revenueCatKeyAndroid": "goog_ItWTfepqXqSNKgnRyhyaCRqNCvI",
+      "revenueCatKeyIos": "appl_jPFvkmtqCjFCdxLNcFzbeveghYZ",
+      "eas": {
+        "projectId": "d89609e7-a74f-4146-9eb2-0e8387e71fd2"
+      },
+      "router": {}
+    },
+    "owner": "moataz.alsbak"
+  }
 }
