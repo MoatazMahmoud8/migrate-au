@@ -1,6 +1,6 @@
 """
-Article enrichment — fetch article content and generate Nabad-style summaries.
-Format: Title + 2-3 sentence summary focused on migration relevance.
+Article enrichment — fetch article content and generate comprehensive summaries.
+Format: Clear, informative 3-4 sentence summary with all key details.
 """
 
 import os
@@ -30,41 +30,63 @@ def _fetch_article(url: str) -> str | None:
         article = soup.find("article") or soup.find("main") or soup
         paragraphs = [p.get_text(strip=True) for p in article.find_all("p") if len(p.get_text(strip=True)) > 40]
         
-        text = "\n".join(paragraphs[:15])  # First 15 paragraphs max
-        return text[:6000] if text else None
+        text = "\n".join(paragraphs[:20])  # First 20 paragraphs
+        return text[:8000] if text else None
     except Exception as e:
         print(f"  [enricher] Fetch failed: {e}")
         return None
 
 
 def _gemini_summary(title: str, content: str) -> str | None:
-    """Generate 2-3 sentence migration-focused summary using Gemini."""
+    """Generate comprehensive migration-focused summary using Gemini Pro."""
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key or not GEMINI_AVAILABLE:
         return None
     
     try:
         genai.configure(api_key=api_key)
-        model = genai.GenerativeModel("gemini-1.5-flash")
+        # Use Pro model for better quality
+        model = genai.GenerativeModel("gemini-1.5-pro")
         
-        prompt = f"""Summarize this Australian migration news in exactly 2-3 sentences.
-Focus on: what changed, who is affected, key dates/numbers.
-Write for visa applicants. Be direct and factual.
+        prompt = f"""You are writing a news summary for an Australian migration app. The readers are visa applicants and migrants.
 
-Title: {title}
-Article: {content[:4000]}
+TASK: Write a clear, complete summary (3-4 sentences, 80-150 words) that includes ALL important details.
 
-Summary (2-3 sentences only):"""
+MUST INCLUDE (if mentioned in the article):
+• What happened or changed (the main news)
+• Specific visa subclasses affected (e.g., subclass 189, 482, 500)
+• Key numbers (fees, points, quotas, processing times)
+• Important dates or deadlines
+• Who is affected (skilled workers, students, partners, etc.)
+• Any action required by applicants
+
+STYLE:
+• Professional, factual tone
+• No filler words or generic statements
+• Include specific details, not vague summaries
+• Write complete sentences
+
+ARTICLE TITLE: {title}
+
+ARTICLE CONTENT:
+{content[:5000]}
+
+SUMMARY:"""
 
         response = model.generate_content(
             prompt,
             generation_config=genai.types.GenerationConfig(
-                max_output_tokens=200,
-                temperature=0.2,
+                max_output_tokens=300,
+                temperature=0.1,  # Very factual
             )
         )
         summary = response.text.strip()
-        return summary if 50 < len(summary) < 500 else None
+        
+        # Clean up
+        if summary.lower().startswith("summary:"):
+            summary = summary[8:].strip()
+        
+        return summary if 80 < len(summary) < 600 else None
     except Exception as e:
         print(f"  [enricher] Gemini error: {e}")
         return None
@@ -72,27 +94,31 @@ Summary (2-3 sentences only):"""
 
 def enrich(title: str, rss_desc: str, url: str) -> str:
     """
-    Get Nabad-style summary: 2-3 clear sentences.
+    Get comprehensive summary with all key migration details.
     Priority: AI summary > article excerpt > RSS description
     """
     # Try fetching full article
     article = _fetch_article(url)
     
     if article:
-        # Try AI summary
+        # Try AI summary with Pro model
         summary = _gemini_summary(title, article)
         if summary:
-            print(f"  [enricher] ✅ AI: {title[:50]}")
+            print(f"  [enricher] ✅ AI summary: {title[:50]}")
             return summary
         
-        # Fallback: first 2-3 sentences from article
+        # Fallback: first 3-4 sentences from article
         sentences = re.split(r'(?<=[.!?])\s+', article)
-        excerpt = " ".join(sentences[:3])
+        excerpt = " ".join(sentences[:4])
         if len(excerpt) > 100:
             print(f"  [enricher] 📝 Excerpt: {title[:50]}")
-            return excerpt[:400].rsplit(" ", 1)[0] + "…" if len(excerpt) > 400 else excerpt
+            if len(excerpt) > 450:
+                excerpt = excerpt[:450].rsplit(" ", 1)[0] + "…"
+            return excerpt
     
-    # Fallback: RSS description
+    # Fallback: RSS description (expanded)
     print(f"  [enricher] ⚠️ RSS fallback: {title[:50]}")
-    desc = rss_desc[:350] if rss_desc else title
-    return desc.rsplit(" ", 1)[0] + "…" if len(desc) > 300 else desc
+    desc = rss_desc[:400] if rss_desc else title
+    if len(desc) > 350:
+        desc = desc[:350].rsplit(" ", 1)[0] + "…"
+    return desc
