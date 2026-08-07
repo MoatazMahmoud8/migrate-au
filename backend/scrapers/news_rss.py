@@ -25,6 +25,11 @@ RSS_FEEDS = [
     # Mainstream media — migration sections (filtered by MUST_MATCH)
     "https://www.theguardian.com/australia-news/australian-immigration-and-asylum/rss",
     "https://www.sbs.com.au/news/feed",
+    # Broad news — covers political statements on migration policy
+    "https://www.abc.net.au/news/feed/51120/rss.xml",
+    "https://www.skynews.com.au/feeds/rssfeed/news/top.xml",
+    "https://www.9news.com.au/rss",
+    "https://www.news.com.au/content-feeds/latest-news-national/",
 ]
 
 # Only articles published within this window are considered.
@@ -73,6 +78,16 @@ MUST_MATCH = [
     "medicare enrol", "centrelink", "tax file number",
     # Cost-of-living for migrants
     "visa price", "visa cost increase", "migration cost",
+    # Political statements on migration (capture debates & policy announcements)
+    "migration debate", "immigration debate", "migration cut", "cut migration",
+    "reduce immigration", "immigration intake", "migration intake",
+    "too many migrant", "migration number", "net migration",
+    "border protection", "border force", "asylum seeker", "refugee",
+    "one nation", "pauline hanson", "peter dutton", "clare o'neil", "andrew giles",
+    "migration minister", "immigration minister", "home affairs minister",
+    "liberal immigration", "labor migration", "coalition migration",
+    "skilled migrant", "overseas worker", "foreign worker", "temporary worker",
+    "population growth", "housing crisis migrant", "rental crisis migrant",
 ]
 
 KEYWORDS_HIGH = [
