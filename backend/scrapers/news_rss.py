@@ -16,6 +16,7 @@ import requests
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone, timedelta
 from email.utils import parsedate_to_datetime
+from scrapers.article_enricher import enrich as enrich_article
 
 RSS_FEEDS = [
     # Migration-specific blogs — high quality, low noise
@@ -415,12 +416,9 @@ def scrape(db) -> list[dict]:
     # Take top N new articles
     for article in new_articles[:MAX_NOTIFICATIONS_PER_RUN]:
         category = _categorize(article["title"], article["desc"])
-        body = article["desc"][:150] if article["desc"] else article["title"]
-        # Avoid cutting mid-word
-        if article["desc"] and len(article["desc"]) > 150:
-            last_space = body.rfind(" ")
-            if last_space > 100:
-                body = body[:last_space] + "…"
+        
+        # Nabad-style: enriched 2-3 sentence summary
+        body = enrich_article(article["title"], article["desc"], article["link"])
 
         notifications.append({
             "source_id": "news_rss",
