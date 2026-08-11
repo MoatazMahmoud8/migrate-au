@@ -34,6 +34,7 @@ import { askToRate } from '../../utils/rateApp';
 import { Sentry } from '../../utils/sentry';
 import { generateJourneyPDF, sharePDF } from '../../utils/pdfExport';
 import Constants from 'expo-constants';
+import * as Clipboard from 'expo-clipboard';
 
 const JOURNEY_STAGES: Array<{ key: JourneyStageKey; label: string; desc: string }> = [
   { key: 'assess', label: 'Skills Assessment', desc: 'Skills assessment & English test preparation' },
@@ -436,6 +437,13 @@ export default function ProfileScreen() {
       setBirthDateInput(existingIso ? dateToInput(existingIso) : '');
       setShowBirthDatePicker(true);
     }
+  };
+
+  const handleCopyUserId = async () => {
+    if (!rcUserId) return;
+    hapticTap();
+    await Clipboard.setStringAsync(rcUserId);
+    Alert.alert('Copied!', 'Your Account ID has been copied to clipboard.');
   };
 
   const handleRestore = async () => {
@@ -916,7 +924,17 @@ export default function ProfileScreen() {
             onPress={() => void openExternalUrl('https://jsmglobal.xyz/migration-privacy.html')}
             showArrow
           />
-          <SettingRow icon="key-outline" label="Account ID" value={rcUserId ? rcUserId.slice(0, 18) + '…' : '—'} last />
+          <SettingRow
+            icon="key-outline"
+            label="Account ID"
+            value={rcUserId ? rcUserId.slice(0, 20) + '…' : '—'}
+            onPress={handleCopyUserId}
+            showArrow
+            last
+          />
+          <Text style={{ paddingHorizontal: 16, paddingBottom: 12, fontSize: 11, color: Colors.textMuted }}>
+            Tap to copy full ID for support
+          </Text>
         </View>
       </View>
 
