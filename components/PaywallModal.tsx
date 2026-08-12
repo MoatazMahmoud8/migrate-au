@@ -16,6 +16,7 @@ import { Colors, Spacing, Radius, FontSize, FontWeight } from '../constants/them
 import { useColors } from '../constants/ThemeContext';
 import { startFreeTrialIAP, purchaseSubscription, restorePurchases, getFormattedPrice, getYearlySavings, getLifetimeSavings, manageSubscription, syncSubscriptionStatus } from '../utils/iap';
 import { openExternalUrl } from '../utils/openExternalUrl';
+import { tap as hapticTap, success as hapticSuccess } from '../utils/haptics';
 
 interface PaywallModalProps {
   visible: boolean;
@@ -26,19 +27,12 @@ interface PaywallModalProps {
   feature?: string;
 }
 
+// Streamlined 4 high-value features (choice overload reduction)
 const BENEFITS = [
-  { icon: 'sparkles-outline',          text: 'Aria AI — unlimited expert visa consultant' },
-  { icon: 'calculator-outline',        text: 'Unlimited points calculations' },
-  { icon: 'briefcase-outline',         text: 'Unlimited ANZSCO occupation searches' },
-  { icon: 'flash-outline',             text: 'Real-time SkillSelect & state alerts' },
-  { icon: 'location-outline',          text: 'State subscriptions (unlimited)' },
-  { icon: 'stats-chart-outline',       text: 'SkillSelect cutoff history per occupation' },
-  { icon: 'school-outline',            text: 'Skills assessment fees & required documents' },
-  { icon: 'document-outline',          text: 'PDF export of your visa journey' },
-  { icon: 'shield-checkmark-outline',  text: 'Age-bracket point-drop alerts' },
-  { icon: 'map-outline',               text: 'Track up to 10 visa journeys' },
-  { icon: 'moon-outline',              text: 'Dark mode support' },
-  { icon: 'archive-outline',           text: 'Full 18-month notification history' },
+  { icon: 'sparkles-outline',     text: 'Aria AI — Unlimited expert visa advice' },
+  { icon: 'calculator-outline',   text: 'Instant ANZSCO occupation & points calculator' },
+  { icon: 'notifications-outline', text: 'Real-time SkillSelect & state invitation alerts' },
+  { icon: 'stats-chart-outline',  text: 'Full 18-month invitation trends & cutoff history' },
 ];
 
 export function PaywallModal({ visible, onClose, userId, title, message, feature }: PaywallModalProps) {
@@ -59,10 +53,12 @@ export function PaywallModal({ visible, onClose, userId, title, message, feature
   };
 
   const handlePurchase = async () => {
+    hapticTap();
     setLoading(true);
     try {
       const result = await purchaseSubscription(userId, selectedCycle);
       if (result.success) {
+        hapticSuccess();
         await syncSubscriptionStatus();
         onClose();
       } else if (result.cancelled) {
@@ -113,6 +109,13 @@ export function PaywallModal({ visible, onClose, userId, title, message, feature
           </TouchableOpacity>
 
           <ScrollView showsVerticalScrollIndicator={false} bounces={false}>
+            {/* Social Proof Banner */}
+            <View style={styles.socialProof}>
+              <Text style={[styles.socialProofText, { color: Colors.textSecondary }]}>
+                ⭐ 4.8 rated — Join thousands of applicants tracking their PR journey
+              </Text>
+            </View>
+
             {/* Hero */}
             <View style={styles.hero}>
               <LinearGradient colors={['#3D1F8A', '#5B2D9E']} style={styles.heroIcon}>
@@ -131,7 +134,7 @@ export function PaywallModal({ visible, onClose, userId, title, message, feature
                   { backgroundColor: Colors.surface, borderColor: Colors.border },
                   selectedCycle === 'monthly' && { backgroundColor: `${Colors.secondary}12`, borderColor: Colors.secondary },
                 ]}
-                onPress={() => setSelectedCycle('monthly')}
+                onPress={() => { hapticTap(); setSelectedCycle('monthly'); }}
                 activeOpacity={0.8}
               >
                 {selectedCycle === 'monthly' && (
@@ -143,10 +146,10 @@ export function PaywallModal({ visible, onClose, userId, title, message, feature
                 <Text style={[styles.planPrice, { color: Colors.textPrimary }, selectedCycle === 'monthly' && styles.planPriceActive]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
                   {monthlyPrice.amount}
                 </Text>
-                <Text style={[styles.planSub, { color: Colors.textMuted }]}>{monthlyPrice.cycle}</Text>
+                <Text style={[styles.planSub, { color: Colors.textMuted }]}>/month</Text>
               </TouchableOpacity>
 
-              {/* Yearly — most popular */}
+              {/* Yearly — most popular with price anchoring */}
               <TouchableOpacity
                 style={[
                   styles.planCard,
@@ -154,13 +157,12 @@ export function PaywallModal({ visible, onClose, userId, title, message, feature
                   { backgroundColor: Colors.surface, borderColor: Colors.border },
                   selectedCycle === 'yearly' && { backgroundColor: `${Colors.secondary}12`, borderColor: Colors.secondary },
                 ]}
-                onPress={() => setSelectedCycle('yearly')}
+                onPress={() => { hapticTap(); setSelectedCycle('yearly'); }}
                 activeOpacity={0.8}
               >
                 <View style={styles.badgeWrap} pointerEvents="none">
-                  <View style={[styles.saveBadge, { backgroundColor: Colors.secondary }]}
-                  >
-                    <Text style={[styles.saveBadgeText, { color: Colors.primaryDark }]} numberOfLines={1}>POPULAR</Text>
+                  <View style={[styles.saveBadge, { backgroundColor: Colors.secondary }]}>
+                    <Text style={[styles.saveBadgeText, { color: Colors.primaryDark }]} numberOfLines={1}>SAVE {yearlyDiscount.percent}%</Text>
                   </View>
                 </View>
                 {selectedCycle === 'yearly' && (
@@ -169,10 +171,12 @@ export function PaywallModal({ visible, onClose, userId, title, message, feature
                   </View>
                 )}
                 <Text style={[styles.planCycle, { color: Colors.textMuted }, selectedCycle === 'yearly' && styles.planCycleActive]}>Yearly</Text>
+                {/* Price anchoring: show monthly equivalent prominently */}
                 <Text style={[styles.planPrice, { color: Colors.textPrimary }, selectedCycle === 'yearly' && styles.planPriceActive]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
-                  {yearlyPrice.amount}
+                  $6.67
                 </Text>
-                <Text style={[styles.planSub, { color: Colors.textMuted }]}>Save {yearlyDiscount.percent}%</Text>
+                <Text style={[styles.planSub, { color: Colors.textMuted }]}>/month</Text>
+                <Text style={[styles.planBilled, { color: Colors.textMuted }]}>(Billed {yearlyPrice.amount}/yr)</Text>
               </TouchableOpacity>
 
               {/* Lifetime — ultimate choice */}
@@ -182,12 +186,11 @@ export function PaywallModal({ visible, onClose, userId, title, message, feature
                   { backgroundColor: Colors.surface, borderColor: Colors.border },
                   selectedCycle === 'lifetime' && { backgroundColor: `${Colors.secondary}12`, borderColor: Colors.secondary },
                 ]}
-                onPress={() => setSelectedCycle('lifetime')}
+                onPress={() => { hapticTap(); setSelectedCycle('lifetime'); }}
                 activeOpacity={0.8}
               >
                 <View style={styles.badgeWrap} pointerEvents="none">
-                  <View style={[styles.saveBadge, styles.lifetimeBadge, { backgroundColor: Colors.secondary }]}
-                  >
+                  <View style={[styles.saveBadge, styles.lifetimeBadge, { backgroundColor: Colors.secondary }]}>
                     <Text style={[styles.saveBadgeText, { color: Colors.primaryDark }]} numberOfLines={1}>BEST DEAL</Text>
                   </View>
                 </View>
@@ -200,7 +203,7 @@ export function PaywallModal({ visible, onClose, userId, title, message, feature
                 <Text style={[styles.planPrice, { color: Colors.textPrimary }, selectedCycle === 'lifetime' && styles.planPriceActive]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
                   {lifetimePrice.amount}
                 </Text>
-                <Text style={[styles.planSub, { color: Colors.textMuted }]}>Pay once · own forever</Text>
+                <Text style={[styles.planSub, { color: Colors.textMuted }]}>one time</Text>
               </TouchableOpacity>
             </View>
 
@@ -225,29 +228,39 @@ export function PaywallModal({ visible, onClose, userId, title, message, feature
                       <Ionicons name="flash" size={18} color={Colors.primaryDark} />
                       <Text style={[styles.primaryBtnText, { color: Colors.primaryDark }]}>
                         {selectedCycle === 'lifetime'
-                          ? `Buy Lifetime — ${lifetimePrice.amount}`
-                          : `Subscribe — ${selectedCycle === 'monthly' ? `${monthlyPrice.amount}/mo` : `${yearlyPrice.amount}/yr`}`}
+                          ? `Get Lifetime Access — ${lifetimePrice.amount}`
+                          : selectedCycle === 'monthly' 
+                            ? `Subscribe — ${monthlyPrice.amount}/mo`
+                            : `Subscribe — $6.67/mo`}
                       </Text>
                     </>
                   )}
                 </LinearGradient>
               </TouchableOpacity>
-
             </View>
 
-            <Text style={[styles.fineprint, { color: Colors.textMuted }]}>
-              {selectedCycle === 'lifetime'
-                ? `One-time payment · No recurring charges · ${lifetimePrice.amount}`
-                : `Cancel anytime · Auto-renews · ${monthlyPrice.amount}/mo or ${yearlyPrice.amount}/yr`}
-            </Text>
+            {/* Trust badge & fine print */}
+            <View style={styles.trustSection}>
+              <Text style={[styles.trustBadge, { color: Colors.textMuted }]}>
+                🔒 Secure payment · Cancel anytime in {isIOS ? 'App Store' : 'Google Play'}
+              </Text>
+              <Text style={[styles.fineprint, { color: Colors.textMuted }]}>
+                {selectedCycle === 'lifetime'
+                  ? `One-time payment · No recurring charges`
+                  : selectedCycle === 'yearly'
+                    ? `Billed annually at ${yearlyPrice.amount} · Auto-renews`
+                    : `${monthlyPrice.amount}/month · Auto-renews`}
+              </Text>
+            </View>
 
             {/* Subscription legal links */}
             <View style={styles.legalLinks}>
               <TouchableOpacity onPress={async () => {
+                hapticTap();
                 setLoading(true);
                 const result = await restorePurchases();
                 setLoading(false);
-                if (result.restored) { await syncSubscriptionStatus(); onClose(); }
+                if (result.restored) { hapticSuccess(); await syncSubscriptionStatus(); onClose(); }
                 Alert.alert(result.restored ? 'Restored ✓' : 'Not Found', result.message);
               }}>
                 <Text style={[styles.legalLinkText, {color: Colors.accent}]}>Restore Purchases</Text>
@@ -266,6 +279,7 @@ export function PaywallModal({ visible, onClose, userId, title, message, feature
               )}
               <Text style={[styles.legalSeparator, {color: Colors.textPrimary}]}>·</Text>
               <TouchableOpacity onPress={async () => {
+                hapticTap();
                 const result = await manageSubscription();
                 if (!result.opened) {
                   Alert.alert('Unable to Open Subscription', result.message);
@@ -281,7 +295,7 @@ export function PaywallModal({ visible, onClose, userId, title, message, feature
               <Text style={[styles.benefitsDividerText, { color: Colors.textMuted }]}>What you get</Text>
               <View style={[styles.benefitsDividerLine, { backgroundColor: Colors.border }]} />
             </View>
-            <View style={styles.benefits}>
+            <View style={[styles.benefits, { borderColor: Colors.border }]}>
               {BENEFITS.map(({ icon, text }) => (
                 <View key={text} style={styles.benefitRow}>
                   <View style={[styles.benefitIcon, { backgroundColor: `${Colors.secondary}15` }]}>
@@ -300,6 +314,7 @@ export function PaywallModal({ visible, onClose, userId, title, message, feature
 
 const styles = StyleSheet.create({
   backdrop: {
+    flex: 1,
     backgroundColor: 'rgba(0,0,0,0.75)',
     justifyContent: 'flex-end',
   },
@@ -328,8 +343,20 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
+  /* Social Proof */
+  socialProof: {
+    alignItems: 'center',
+    paddingVertical: Spacing.sm,
+    marginBottom: Spacing.xs,
+  },
+  socialProofText: {
+    fontSize: FontSize.xs,
+    fontWeight: FontWeight.medium,
+    textAlign: 'center',
+  },
+
   /* Hero */
-  hero: { alignItems: 'center', paddingTop: Spacing.lg, paddingBottom: Spacing.md },
+  hero: { alignItems: 'center', paddingTop: Spacing.sm, paddingBottom: Spacing.md },
   heroIcon: {
     width: 52, height: 52,
     borderRadius: 26,
@@ -360,11 +387,11 @@ const styles = StyleSheet.create({
     flex: 1,
     borderRadius: Radius.xl,
     borderWidth: 2,
-    padding: Spacing.md,
+    padding: Spacing.sm,
     alignItems: 'center',
     paddingTop: Spacing.xl,
     position: 'relative',
-    minHeight: 96,
+    minHeight: 110,
     justifyContent: 'center',
   },
   planCardYearly: {
@@ -401,18 +428,23 @@ const styles = StyleSheet.create({
     fontWeight: FontWeight.semiBold,
     textTransform: 'uppercase',
     letterSpacing: 0.6,
-    marginBottom: Spacing.xs,
+    marginBottom: 2,
   },
   planCycleActive: { },
   planPrice: {
-    fontSize: FontSize.xxl,
+    fontSize: FontSize.xl,
     fontWeight: FontWeight.extraBold,
     flexShrink: 1,
   },
   planPriceActive: { },
   planSub: {
-    fontSize: FontSize.xs,
+    fontSize: 10,
+    marginTop: 1,
+  },
+  planBilled: {
+    fontSize: 9,
     marginTop: 2,
+    opacity: 0.8,
   },
 
   /* Benefits */
@@ -488,10 +520,20 @@ const styles = StyleSheet.create({
     fontWeight: FontWeight.semiBold,
   },
 
-  fineprint: {
+  /* Trust & Fine print */
+  trustSection: {
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: Spacing.xs,
+  },
+  trustBadge: {
     fontSize: FontSize.xs,
     textAlign: 'center',
-    lineHeight: 16,
+  },
+  fineprint: {
+    fontSize: 10,
+    textAlign: 'center',
+    lineHeight: 14,
   },
   legalLinks: {
     flexDirection: 'row',
