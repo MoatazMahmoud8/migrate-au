@@ -61,7 +61,9 @@ def scrape_processing_times(db) -> list[dict]:
         
         # Log response info for debugging
         print(f"  [processing_times] Response length: {len(html)} chars")
-        print(f"  [processing_times] First 200 chars: {html[:200]}")
+        # Show first non-empty chars
+        clean_html = html.strip()[:300]
+        print(f"  [processing_times] Preview: {clean_html}")
         
         # Check if we got blocked
         if "Access Denied" in html or "blocked" in html.lower() or "challenge" in html.lower():
@@ -81,12 +83,15 @@ def scrape_processing_times(db) -> list[dict]:
         
         # Look for tables with processing data
         tables = soup.find_all("table")
-        for table in tables:
+        print(f"  [processing_times] Found {len(tables)} tables")
+        for i, table in enumerate(tables[:5]):  # Check first 5 tables
             rows = table.find_all("tr")
-            for row in rows:
+            print(f"  [processing_times] Table {i}: {len(rows)} rows")
+            for row in rows[:3]:  # First 3 rows for preview
                 cells = row.find_all(["td", "th"])
                 if cells:
                     row_text = " | ".join(c.get_text(strip=True) for c in cells)
+                    print(f"  [processing_times]   Row: {row_text[:100]}")
                     if any(kw in row_text.lower() for kw in ["month", "day", "week", "%", "processing"]):
                         processing_content.append(row_text)
         
