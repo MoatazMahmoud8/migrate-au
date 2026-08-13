@@ -14,7 +14,7 @@ from datetime import datetime, timezone
 import firebase_admin
 from firebase_admin import credentials, firestore
 
-from scrapers import home_affairs, anzsco, state_nominations, news_rss
+from scrapers import home_affairs, anzsco, state_nominations, news_rss, processing_times
 from notify import queue_batch
 
 
@@ -52,22 +52,28 @@ def run():
     print(f"      → {len(anzsco_notifications)} change(s) detected")
 
     # ── 3. State & territory nominations (all 8)
-    print("\n[3/5] Scraping state nominations...")
+    print("\n[3/6] Scraping state nominations...")
     state_notifications = state_nominations.scrape(db)
     all_notifications.extend(state_notifications)
     print(f"      → {len(state_notifications)} change(s) detected")
 
     # ── 4. Visa fee page monitoring (detects fee changes, queues admin review)
-    print("\n[4/5] Monitoring visa fee pages...")
+    print("\n[4/6] Monitoring visa fee pages...")
     fee_notifications = home_affairs.scrape_fees(db)
     all_notifications.extend(fee_notifications)
     print(f"      → {len(fee_notifications)} fee change(s) detected")
 
     # ── 5. RSS news (migration-relevant media articles)
-    print("\n[5/5] Checking RSS news feeds...")
+    print("\n[5/6] Checking RSS news feeds...")
     news_notifications = news_rss.scrape(db)
     all_notifications.extend(news_notifications)
     print(f"      → {len(news_notifications)} new article(s)")
+
+    # ── 6. Processing times (Playwright-based for JS-rendered content)
+    print("\n[6/6] Scraping processing times (Playwright)...")
+    pt_notifications = processing_times.scrape_processing_times(db)
+    all_notifications.extend(pt_notifications)
+    print(f"      → {len(pt_notifications)} processing time change(s)")
 
     # ── Queue all detected changes for administrator review
     print(f"\n{'─'*55}")
@@ -95,6 +101,7 @@ def run():
             "states": len(state_notifications),
             "visa_fees": len(fee_notifications),
             "news_rss": len(news_notifications),
+            "processing_times": len(pt_notifications),
         },
     })
 

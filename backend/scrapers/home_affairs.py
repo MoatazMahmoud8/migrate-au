@@ -55,16 +55,6 @@ SOURCES = [
         "title_attr": None,
         "base_url": "https://immi.homeaffairs.gov.au",
     },
-    {
-        "id": "processing_times",
-        "topic": "processing_times",
-        "category": "Processing Time",
-        "url": "https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-processing-times/global-visa-processing-times",
-        "link_url": "https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-processing-times/global-visa-processing-times",
-        "selector": "table tr",
-        "title_attr": None,
-        "base_url": "https://immi.homeaffairs.gov.au",
-    },
 ]
 
 HEADERS = {
