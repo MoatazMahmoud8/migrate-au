@@ -46,10 +46,13 @@ def scrape_processing_times(db) -> list[dict]:
                 user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
             )
             page = context.new_page()
-            page.goto(PROCESSING_TIMES_URL, wait_until="networkidle", timeout=60000)
-
-            # Wait for the dropdown to be populated
-            page.wait_for_selector("#visastream", timeout=30000)
+            page.goto(PROCESSING_TIMES_URL, timeout=60000)
+            
+            # Wait for page to fully load
+            page.wait_for_load_state("networkidle", timeout=45000)
+            
+            # Wait for the dropdown to be populated and visible
+            page.wait_for_selector("#visastream", state="visible", timeout=45000)
 
             for subclass, name in MONITORED_VISAS:
                 try:
@@ -115,7 +118,9 @@ def scrape_processing_times(db) -> list[dict]:
             browser.close()
 
     except Exception as e:
+        import traceback
         print(f"  [processing_times] ❌ Playwright error: {e}")
+        print(f"  [processing_times] Stack: {traceback.format_exc()[:500]}")
 
     return notifications
 
