@@ -63,7 +63,6 @@ def scrape_processing_times(db) -> list[dict]:
         print(f"  [processing_times] Response length: {len(html)} chars")
         # Show first non-empty chars
         clean_html = html.strip()[:300]
-        print(f"  [processing_times] Preview: {clean_html}")
         
         # Check if we got blocked
         if "Access Denied" in html or "blocked" in html.lower() or "challenge" in html.lower():
@@ -95,22 +94,18 @@ def scrape_processing_times(db) -> list[dict]:
         for pattern in json_patterns:
             matches = re.findall(pattern, html, re.IGNORECASE)
             if matches:
-                print(f"  [processing_times] Found matches for {pattern[:30]}: {matches[:3]}")
                 processing_content.extend(matches[:10])
         
         # Also check for script tags with data
         scripts = soup.find_all("script", type="application/json")
-        print(f"  [processing_times] Found {len(scripts)} JSON script tags")
         
         # Look for any text mentioning months
         month_mentions = re.findall(r'\d+\s*(?:to\s*\d+\s*)?months?', html, re.IGNORECASE)
         if month_mentions:
-            print(f"  [processing_times] Month mentions: {month_mentions[:5]}")
             processing_content.extend(month_mentions[:20])
         
         # Look for tables with processing data
         tables = soup.find_all("table")
-        print(f"  [processing_times] Found {len(tables)} tables")
         for i, table in enumerate(tables[:5]):  # Check first 5 tables
             rows = table.find_all("tr")
             for row in rows[:3]:  # First 3 rows for preview
