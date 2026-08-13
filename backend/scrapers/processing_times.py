@@ -49,10 +49,29 @@ def scrape_processing_times(db) -> list[dict]:
             page.goto(PROCESSING_TIMES_URL, timeout=60000)
             
             # Wait for page to fully load
-            page.wait_for_load_state("networkidle", timeout=45000)
+            page.wait_for_load_state("domcontentloaded", timeout=30000)
             
-            # Wait for the dropdown to be populated and visible
-            page.wait_for_selector("#visastream", state="visible", timeout=45000)
+            # Give extra time for JS to execute
+            page.wait_for_timeout(5000)
+            
+            # Try multiple selectors that might work
+            selectors = ["#visastream", "#visastreambox select", "select[name*='visa']", ".form-control"]
+            dropdown_found = False
+            for sel in selectors:
+                try:
+                    if page.locator(sel).count() > 0:
+                        page.wait_for_selector(sel, state="visible", timeout=15000)
+                        dropdown_found = True
+                        print(f"  [processing_times] Found dropdown with selector: {sel}")
+                        break
+                except Exception:
+                    continue
+            
+            if not dropdown_found:
+                # Log page content for debugging
+                print(f"  [processing_times] Page title: {page.title()}")
+                print(f"  [processing_times] Page HTML preview: {page.content()[:500]}")
+                raise Exception("Could not find visa dropdown on page")
 
             for subclass, name in MONITORED_VISAS:
                 try:
