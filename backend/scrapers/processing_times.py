@@ -59,9 +59,18 @@ def scrape_processing_times(db) -> list[dict]:
             
         html = response.text
         
+        # Log response info for debugging
+        print(f"  [processing_times] Response length: {len(html)} chars")
+        print(f"  [processing_times] First 200 chars: {html[:200]}")
+        
         # Check if we got blocked
-        if "Access Denied" in html or "blocked" in html.lower():
-            print(f"  [processing_times] ⚠️ Access still blocked by WAF")
+        if "Access Denied" in html or "blocked" in html.lower() or "challenge" in html.lower():
+            print(f"  [processing_times] ⚠️ Access blocked by WAF/Cloudflare")
+            return notifications
+        
+        # Check if it's the real page
+        if "immi.homeaffairs.gov.au" not in html and "processing" not in html.lower():
+            print(f"  [processing_times] ⚠️ Page doesn't look like Home Affairs")
             return notifications
         
         soup = BeautifulSoup(html, "html.parser")
