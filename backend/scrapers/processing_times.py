@@ -81,17 +81,42 @@ def scrape_processing_times(db) -> list[dict]:
         # The page structure may have changed, so we look for common patterns
         processing_content = []
         
+        # Look for embedded JSON data (common in SharePoint pages)
+        import re
+        
+        # Look for JSON containing processing time data
+        json_patterns = [
+            r'"processingTime[^"]*"\s*:\s*"([^"]+)"',
+            r'"VisaProcessingTime[^"]*"\s*:\s*"([^"]+)"',
+            r'months?\s*to\s*\d+\s*months?',
+            r'\d+\s*months?\s*to\s*\d+\s*months?',
+        ]
+        
+        for pattern in json_patterns:
+            matches = re.findall(pattern, html, re.IGNORECASE)
+            if matches:
+                print(f"  [processing_times] Found matches for {pattern[:30]}: {matches[:3]}")
+                processing_content.extend(matches[:10])
+        
+        # Also check for script tags with data
+        scripts = soup.find_all("script", type="application/json")
+        print(f"  [processing_times] Found {len(scripts)} JSON script tags")
+        
+        # Look for any text mentioning months
+        month_mentions = re.findall(r'\d+\s*(?:to\s*\d+\s*)?months?', html, re.IGNORECASE)
+        if month_mentions:
+            print(f"  [processing_times] Month mentions: {month_mentions[:5]}")
+            processing_content.extend(month_mentions[:20])
+        
         # Look for tables with processing data
         tables = soup.find_all("table")
         print(f"  [processing_times] Found {len(tables)} tables")
         for i, table in enumerate(tables[:5]):  # Check first 5 tables
             rows = table.find_all("tr")
-            print(f"  [processing_times] Table {i}: {len(rows)} rows")
             for row in rows[:3]:  # First 3 rows for preview
                 cells = row.find_all(["td", "th"])
                 if cells:
                     row_text = " | ".join(c.get_text(strip=True) for c in cells)
-                    print(f"  [processing_times]   Row: {row_text[:100]}")
                     if any(kw in row_text.lower() for kw in ["month", "day", "week", "%", "processing"]):
                         processing_content.append(row_text)
         
