@@ -14,7 +14,7 @@ from datetime import datetime, timezone
 import firebase_admin
 from firebase_admin import credentials, firestore
 
-from scrapers import home_affairs, anzsco, state_nominations, news_rss, processing_times
+from scrapers import home_affairs, anzsco, state_nominations, news_rss, processing_times, admin_intel
 from notify import queue_batch
 
 
@@ -40,40 +40,45 @@ def run():
     all_notifications = []
 
     # ── 1. Home Affairs (visa changes, points test, SkillSelect, processing times)
-    print("\n[1/3] Scraping Home Affairs...")
+    print("\n[1/7] Scraping Home Affairs...")
     ha_notifications = home_affairs.scrape(db)
     all_notifications.extend(ha_notifications)
     print(f"      → {len(ha_notifications)} change(s) detected")
 
     # ── 2. ANZSCO occupation lists
-    print("\n[2/3] Scraping ANZSCO occupation lists...")
+    print("\n[2/7] Scraping ANZSCO occupation lists...")
     anzsco_notifications = anzsco.scrape(db)
     all_notifications.extend(anzsco_notifications)
     print(f"      → {len(anzsco_notifications)} change(s) detected")
 
     # ── 3. State & territory nominations (all 8)
-    print("\n[3/6] Scraping state nominations...")
+    print("\n[3/7] Scraping state nominations...")
     state_notifications = state_nominations.scrape(db)
     all_notifications.extend(state_notifications)
     print(f"      → {len(state_notifications)} change(s) detected")
 
     # ── 4. Visa fee page monitoring (detects fee changes, queues admin review)
-    print("\n[4/6] Monitoring visa fee pages...")
+    print("\n[4/7] Monitoring visa fee pages...")
     fee_notifications = home_affairs.scrape_fees(db)
     all_notifications.extend(fee_notifications)
     print(f"      → {len(fee_notifications)} fee change(s) detected")
 
     # ── 5. RSS news (migration-relevant media articles)
-    print("\n[5/6] Checking RSS news feeds...")
+    print("\n[5/7] Checking RSS news feeds...")
     news_notifications = news_rss.scrape(db)
     all_notifications.extend(news_notifications)
     print(f"      → {len(news_notifications)} new article(s)")
 
-    # ── 6. Processing times (Playwright-based for JS-rendered content)
-    print("\n[6/6] Scraping processing times (Playwright)...")
+    # ── 6. Processing times (cloudscraper-based)
+    print("\n[6/7] Scraping processing times...")
     pt_notifications = processing_times.scrape_processing_times(db)
     all_notifications.extend(pt_notifications)
     print(f"      → {len(pt_notifications)} processing time change(s)")
+
+    # ── 7. Admin intel (competitor sites - admin-only, no user notifications)
+    print("\n[7/7] Scraping admin intel sources...")
+    intel_items = admin_intel.scrape_intel(db)
+    print(f"      → {len(intel_items)} intel change(s) detected (admin-only)")
 
     # ── Queue all detected changes for administrator review
     print(f"\n{'─'*55}")
@@ -102,6 +107,7 @@ def run():
             "visa_fees": len(fee_notifications),
             "news_rss": len(news_notifications),
             "processing_times": len(pt_notifications),
+            "admin_intel": len(intel_items),
         },
     })
 

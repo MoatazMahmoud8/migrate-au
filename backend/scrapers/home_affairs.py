@@ -152,20 +152,20 @@ FEE_VISAS = [
     ("482",  "temporary-skill-shortage-482"),
     ("186",  "employer-nomination-scheme-186"),
     ("494",  "skilled-employer-sponsored-regional-494"),
-    ("417",  "working-holiday-417"),
-    ("462",  "work-and-holiday-462"),
+    ("417",  "work-holiday-417"),
+    ("462",  "work-holiday-462"),
     ("500",  "student-500"),
-    ("590",  "student-guardian-590"),
+    ("590",  "student-590"),
     ("600",  "visitor-600"),
-    ("820",  "partner-820-801"),
+    ("820",  "partner-onshore"),
     ("300",  "prospective-marriage-300"),
     ("103",  "parent-103"),
     ("804",  "aged-parent-804"),
     ("143",  "contributory-parent-143"),
-    ("864",  "contributory-aged-parent-864-884"),
+    ("864",  "contributory-aged-parent-864"),
     ("887",  "skilled-regional-887"),
     ("858",  "distinguished-talent-858"),
-    ("132",  "business-talent-132"),
+    ("132",  "business-talent-permanent-132"),
     ("188",  "business-innovation-and-investment-188"),
 ]
 
@@ -175,11 +175,14 @@ FEE_BASE = "https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing"
 def scrape_fees(db) -> list[dict]:
     """
     Monitors individual visa listing pages for fee section changes.
-    Returns admin-review notifications for any visa whose fee section changed.
-    Fee changes need human verification — we can't reliably extract the exact
-    new amount from server-rendered HTML (DHA loads prices via JavaScript).
+    When a change is detected:
+    1. Tries to extract the new fee amount
+    2. Auto-updates Firestore visa_fees collection
+    3. Returns admin notification about the auto-update
     """
     import re
+    from scrapers.visa_rules_sync import extract_fee_amount, sync_fee_to_firestore, create_auto_update_notification
+    
     notifications = []
     meta_ref = db.collection("_scraper_meta")
     session = requests.Session()
@@ -193,15 +196,11 @@ def scrape_fees(db) -> list[dict]:
             resp.raise_for_status()
             content = resp.text
 
-            # The DHA page embeds fee data in a JSON blob inside the page HTML.
-            # Extract everything between "visaCost" and the next top-level key —
-            # this contains the fee amount even before JS renders it.
             fee_section = ""
             match = re.search(r'"visaCost"\s*:\s*"(.*?)"(?:,\s*"[a-z])', content, re.DOTALL)
             if match:
                 fee_section = match.group(1)
             else:
-                # Fallback: hash the whole page cost-related section
                 soup = BeautifulSoup(content, "html.parser")
                 fee_section = " ".join(
                     el.get_text(" ", strip=True)
@@ -218,12 +217,14 @@ def scrape_fees(db) -> list[dict]:
             meta_doc = meta_ref.document(src_id).get()
             stored = meta_doc.to_dict() if meta_doc.exists else {}
             stored_hash = stored.get("hash")
+            stored_fee = stored.get("last_fee")
 
-            # First time seeing this page — store hash, no notification
             if not stored_hash:
+                fee_data = extract_fee_amount(content, subclass)
                 store_hash_baseline(meta_ref, src_id, current_hash, {
                     "subclass": subclass,
                     "url": url,
+                    "last_fee": fee_data.get("fee") if fee_data else None,
                 })
                 print(f"  [fees] 📌 SC {subclass}: baseline stored")
                 continue
@@ -234,32 +235,47 @@ def scrape_fees(db) -> list[dict]:
                 )
                 continue
 
-            # Fee section changed — queue for admin review
-            normalized_fee_section = " ".join(fee_section.split())[:1000]
-            notifications.append({
-                "source_id": src_id,
-                "topic": "visa_fees",
-                "category": "Visa Fee Update",
-                "title": f"💰 SC {subclass} fee page changed — verify fee",
-                "body": (
-                    f"The SC {subclass} visa listing page fee section has changed on immi.homeaffairs.gov.au. "
-                    f"Please check the current fee and update visa-fees.json if needed."
-                ),
-                "url": url,
-                "state": "FED",
-                "subclass": subclass,
-                "detected_value": normalized_fee_section,
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-            })
+            # Fee section changed — try to extract new fee and auto-sync
+            fee_data = extract_fee_amount(content, subclass)
+            
+            if fee_data:
+                new_fee = fee_data.get("fee")
+                sync_fee_to_firestore(db, subclass, fee_data)
+                notifications.append(create_auto_update_notification(
+                    subclass=subclass,
+                    update_type="fee",
+                    old_value=stored_fee,
+                    new_value=new_fee,
+                    url=url,
+                ))
+                print(f"  [fees] 🔔 SC {subclass} fee auto-updated: {stored_fee} → {new_fee}")
+            else:
+                normalized_fee_section = " ".join(fee_section.split())[:1000]
+                notifications.append({
+                    "source_id": src_id,
+                    "topic": "visa_fees",
+                    "category": "Visa Fee Update",
+                    "title": f"💰 SC {subclass} fee page changed — manual review needed",
+                    "body": (
+                        f"The SC {subclass} visa listing page changed but the fee couldn't be auto-extracted. "
+                        f"Please check manually and update Firestore."
+                    ),
+                    "url": url,
+                    "state": "FED",
+                    "subclass": subclass,
+                    "detected_value": normalized_fee_section,
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                })
+                print(f"  [fees] ⚠️ SC {subclass} changed but couldn't extract fee — manual review queued")
 
             meta_ref.document(src_id).set({
                 "hash": current_hash,
                 "last_checked": datetime.now(timezone.utc).isoformat(),
                 "last_changed": datetime.now(timezone.utc).isoformat(),
+                "last_fee": fee_data.get("fee") if fee_data else stored_fee,
                 "subclass": subclass,
                 "url": url,
             })
-            print(f"  [fees] 🔔 SC {subclass} fee section changed — admin notification queued")
 
         except Exception as e:
             print(f"  [fees] ⚠️  SC {subclass}: {e}")

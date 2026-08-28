@@ -231,3 +231,126 @@ export async function getPublishedNotifications(): Promise<any[]> {
       .map(doc => ({ id: doc.id, ...doc.data() }));
   }
 }
+
+/**
+ * Get admin intel items (competitor site changes)
+ */
+export async function getAdminIntel(): Promise<any[]> {
+  if (Platform.OS === 'web') {
+    initializeFirebaseWeb();
+    const webDb = getWebFirestore();
+    const { getDocs: webGetDocs, query: webQuery, orderBy: webOrderBy, limit: webLimit } = await import('firebase/firestore');
+    const q = webQuery(webCollection(webDb, 'admin_intel'), webOrderBy('detectedAt', 'desc'), webLimit(50));
+    const snap = await webGetDocs(q);
+    return snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  } else {
+    const db = firestore();
+    const snap = await db.collection('admin_intel').orderBy('detectedAt', 'desc').limit(50).get();
+    return snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  }
+}
+
+/**
+ * Mark intel item as reviewed
+ */
+export async function markIntelReviewed(intelId: string): Promise<void> {
+  if (Platform.OS === 'web') {
+    initializeFirebaseWeb();
+    const webDb = getWebFirestore();
+    const { updateDoc: webUpdateDoc } = await import('firebase/firestore');
+    const docRef = webDoc(webCollection(webDb, 'admin_intel'), intelId);
+    await webUpdateDoc(docRef, { status: 'reviewed', reviewedAt: new Date().toISOString() });
+  } else {
+    const db = firestore();
+    await db.collection('admin_intel').doc(intelId).update({ 
+      status: 'reviewed', 
+      reviewedAt: new Date().toISOString() 
+    });
+  }
+}
+
+/**
+ * Dismiss intel item
+ */
+export async function dismissIntel(intelId: string): Promise<void> {
+  if (Platform.OS === 'web') {
+    initializeFirebaseWeb();
+    const webDb = getWebFirestore();
+    const { updateDoc: webUpdateDoc } = await import('firebase/firestore');
+    const docRef = webDoc(webCollection(webDb, 'admin_intel'), intelId);
+    await webUpdateDoc(docRef, { status: 'dismissed', dismissedAt: new Date().toISOString() });
+  } else {
+    const db = firestore();
+    await db.collection('admin_intel').doc(intelId).update({ 
+      status: 'dismissed', 
+      dismissedAt: new Date().toISOString() 
+    });
+  }
+}
+
+/**
+ * Get processing times monitoring status
+ */
+export async function getProcessingTimesStatus(): Promise<{
+  homeAffairs: { lastChecked: string | null; lastChanged: string | null; contentPreview: string };
+  smartVisa: { lastChecked: string | null; lastChanged: string | null; contentPreview: string };
+}> {
+  const defaultStatus = {
+    homeAffairs: { lastChecked: null, lastChanged: null, contentPreview: '' },
+    smartVisa: { lastChecked: null, lastChanged: null, contentPreview: '' },
+  };
+
+  try {
+    if (Platform.OS === 'web') {
+      initializeFirebaseWeb();
+      const webDb = getWebFirestore();
+      const { getDoc: webGetDoc } = await import('firebase/firestore');
+      
+      const haRef = webDoc(webCollection(webDb, '_scraper_meta'), 'processing_times_global');
+      const svRef = webDoc(webCollection(webDb, '_scraper_meta'), 'intel_smartvisa_processing');
+      
+      const [haSnap, svSnap] = await Promise.all([webGetDoc(haRef), webGetDoc(svRef)]);
+      
+      const haData = haSnap.exists() ? haSnap.data() : {};
+      const svData = svSnap.exists() ? svSnap.data() : {};
+      
+      return {
+        homeAffairs: {
+          lastChecked: haData?.last_checked || null,
+          lastChanged: haData?.last_changed || null,
+          contentPreview: (haData?.content_preview || '').slice(0, 500),
+        },
+        smartVisa: {
+          lastChecked: svData?.last_checked || null,
+          lastChanged: svData?.last_changed || null,
+          contentPreview: (svData?.content_preview || '').slice(0, 500),
+        },
+      };
+    } else {
+      const db = firestore();
+      const [haSnap, svSnap] = await Promise.all([
+        db.collection('_scraper_meta').doc('processing_times_global').get(),
+        db.collection('_scraper_meta').doc('intel_smartvisa_processing').get(),
+      ]);
+      
+      const haData = haSnap.exists ? haSnap.data() : {};
+      const svData = svSnap.exists ? svSnap.data() : {};
+      
+      return {
+        homeAffairs: {
+          lastChecked: haData?.last_checked || null,
+          lastChanged: haData?.last_changed || null,
+          contentPreview: (haData?.content_preview || '').slice(0, 500),
+        },
+        smartVisa: {
+          lastChecked: svData?.last_checked || null,
+          lastChanged: svData?.last_changed || null,
+          contentPreview: (svData?.content_preview || '').slice(0, 500),
+        },
+      };
+    }
+  } catch (err) {
+    console.error('[admin] getProcessingTimesStatus error:', err);
+    return defaultStatus;
+  }
+}

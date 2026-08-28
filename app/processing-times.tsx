@@ -17,7 +17,7 @@ import { useColors } from '../constants/ThemeContext';
 import { openExternalUrl } from '../utils/openExternalUrl';
 import { CATEGORIES, ProcessingTime } from '../constants/processingTimes';
 import { VisaFeeEntry } from '../constants/visaFees';
-import { getVisaFees, refreshVisaFees } from '../utils/visaFees';
+import { useVisaRules } from '../hooks/useVisaRules';
 import {
   getProcessingTimes,
   getLastCheckedAt,
@@ -59,37 +59,33 @@ export default function ProcessingTimesScreen() {
   const [filter, setFilter] = useState<string>('All');
   const [search, setSearch] = useState('');
   const [expanded, setExpanded] = useState<string | null>(null);
-  // Runtime fee map — loaded from utils/visaFees (remote-refreshed, 3-day TTL)
-  const [feeMap, setFeeMap] = useState<Map<string, VisaFeeEntry>>(new Map());
+  
+  // Dynamic fees from Firestore (with fallback to bundled constants)
+  const { fees, refresh: refreshFees } = useVisaRules({ refreshOnForeground: true });
+  const feeMap = useMemo(
+    () => new Map(fees.map((f) => [f.subclass, f])),
+    [fees]
+  );
 
   useEffect(() => {
     (async () => {
-      const [snap, fees] = await Promise.all([
-        getProcessingTimes(),
-        getVisaFees(),
-      ]);
+      const snap = await getProcessingTimes();
       setItems(snap.items);
       setSnapshotDate(snap.snapshotDate);
       setLastChecked(await getLastCheckedAt());
-      setFeeMap(new Map(fees.items.map((f) => [f.subclass, f])));
-      // Silently refresh fees in background; update map if remote has newer data
-      refreshVisaFees().then(({ updated, snapshot }) => {
-        if (updated) setFeeMap(new Map(snapshot.items.map((f) => [f.subclass, f])));
-      });
     })();
   }, []);
 
   const onRefresh = async () => {
     setRefreshing(true);
     hapticTap();
-    const [{ snapshot }, fees] = await Promise.all([
+    const [{ snapshot }] = await Promise.all([
       refreshProcessingTimes({ force: true }),
-      refreshVisaFees({ force: true }),
+      refreshFees(true), // Force refresh from Firestore
     ]);
     setItems(snapshot.items);
     setSnapshotDate(snapshot.snapshotDate);
     setLastChecked(await getLastCheckedAt());
-    setFeeMap(new Map(fees.snapshot.items.map((f) => [f.subclass, f])));
     setRefreshing(false);
   };
 
