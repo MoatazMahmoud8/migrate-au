@@ -63,6 +63,14 @@ HIGH_INTENT_KEYWORDS = [
     "migration review", "migration strategy",
     # Points test changes
     "points test change", "points requirement", "points update",
+    # Humanitarian & refugee (policy changes affect many migrants)
+    "refugee visa", "refugee intake", "refugee program",
+    "humanitarian visa", "humanitarian intake", "humanitarian program",
+    "protection visa", "asylum seeker", "refugee quota",
+    # Migration intake & caps
+    "migration intake", "immigration intake", "visa cap",
+    "migration cap", "permanent migration", "migration level",
+    "net migration", "migration cut", "migration slash",
 ]
 
 # Secondary keywords for scoring (but not required)
@@ -80,6 +88,9 @@ KEYWORDS_HIGH = [
     "state nomination", "state sponsorship", "state sponsor",
     "home affairs", "immi.homeaffairs", "immiaccount",
     "skills assessment", "migration agent",
+    # Humanitarian & refugee
+    "refugee", "refugee intake", "humanitarian", "asylum", "protection visa",
+    "migration intake", "migration cap", "migration cut", "migration level",
 ]
 
 KEYWORDS_MED = [
