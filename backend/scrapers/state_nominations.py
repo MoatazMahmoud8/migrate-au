@@ -313,14 +313,42 @@ def scrape(db) -> list[dict]:
             if current_hash == stored_hash:
                 continue
 
-            # Try to find a meaningful snippet
-            keywords = ["open", "closed", "quota", "invite", "nomination", "round", "eoi"]
-            body = next(
-                (el.get_text(" ", strip=True)[:120]
-                 for el in elements
-                 if any(kw in el.get_text(strip=True).lower() for kw in keywords)),
-                f"{state['name']} nomination page has been updated."
-            )
+            # Try to find a meaningful snippet describing WHAT changed
+            keywords = ["open", "closed", "quota", "invite", "nomination", "round", "eoi", 
+                       "application", "now accepting", "suspended", "paused", "updated",
+                       "new", "change", "occupation", "list", "requirement", "threshold",
+                       "point", "stream", "pathway", "available", "unavailable"]
+            
+            # Try multiple approaches to get meaningful content
+            body = None
+            
+            # 1. Look for alert/notice boxes first (most likely to have important updates)
+            for el in soup.select(".alert, .notice, .announcement, .update-banner, .important"):
+                text = el.get_text(" ", strip=True)
+                if len(text) > 50 and any(kw in text.lower() for kw in keywords):
+                    body = text[:300]
+                    break
+            
+            # 2. Look for elements with keywords
+            if not body:
+                for el in elements:
+                    text = el.get_text(" ", strip=True)
+                    if len(text) > 50 and any(kw in text.lower() for kw in keywords):
+                        body = text[:300]
+                        break
+            
+            # 3. Get the main content summary
+            if not body:
+                main_paragraphs = soup.select("main p, article p, .content p")[:5]
+                for p in main_paragraphs:
+                    text = p.get_text(" ", strip=True)
+                    if len(text) > 60:
+                        body = text[:300]
+                        break
+            
+            # 4. Final fallback - but make it clear we don't know what changed
+            if not body:
+                body = f"{state['name']} nomination page has been updated. Check the official website for details."
 
             notifications.append({
                 "source_id": src_id,

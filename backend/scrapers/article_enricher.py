@@ -15,6 +15,42 @@ except ImportError:
     GEMINI_AVAILABLE = False
     genai = None
 
+# Common junk patterns to remove from article text
+JUNK_PATTERNS = [
+    r'Get our\s*breaking news email.*?podcast',
+    r'Sign up for.*?newsletter',
+    r'Subscribe to.*?email',
+    r'Download our.*?app',
+    r'Follow us on.*?(?:Twitter|Facebook|Instagram)',
+    r'Share this article',
+    r'Click here to.*?(?:subscribe|sign up)',
+    r'Read more:',
+    r'See also:',
+    r'Related articles?:',
+    r'ADVERTISEMENT',
+    r'Loading\.\.\.',
+    r'Comments are closed',
+    r'Leave a comment',
+    r'\d+\s*shares?',
+    r'Print this article',
+    r'Email this article',
+    r'Get the latest.*?inbox',
+    r'Breaking news.*?free app',
+    r'daily news podcast',
+    r'breaking news email',
+    r'free app',
+]
+
+
+def _clean_junk_text(text: str) -> str:
+    """Remove newsletter prompts, social media links, and other junk from article text."""
+    cleaned = text
+    for pattern in JUNK_PATTERNS:
+        cleaned = re.sub(pattern, ' ', cleaned, flags=re.IGNORECASE)
+    # Collapse multiple spaces
+    cleaned = re.sub(r'\s{2,}', ' ', cleaned).strip()
+    return cleaned
+
 
 def _fetch_article(url: str) -> str | None:
     """Fetch main article text from URL."""
@@ -24,13 +60,22 @@ def _fetch_article(url: str) -> str | None:
         resp.raise_for_status()
         
         soup = BeautifulSoup(resp.content, "lxml")
-        for tag in soup(["script", "style", "nav", "footer", "aside", "iframe"]):
-            tag.decompose()
+        
+        # Remove unwanted elements
+        for tag in soup(["script", "style", "nav", "footer", "aside", "iframe", 
+                         "form", "button", ".newsletter", ".social-share", ".ad",
+                         ".advertisement", ".promo", ".signup"]):
+            if hasattr(tag, 'decompose'):
+                tag.decompose()
         
         article = soup.find("article") or soup.find("main") or soup
         paragraphs = [p.get_text(strip=True) for p in article.find_all("p") if len(p.get_text(strip=True)) > 40]
         
         text = "\n".join(paragraphs[:20])  # First 20 paragraphs
+        
+        # Clean junk from the text
+        text = _clean_junk_text(text)
+        
         return text[:8000] if text else None
     except Exception as e:
         print(f"  [enricher] Fetch failed: {e}")
@@ -45,7 +90,6 @@ def _gemini_summary(title: str, content: str) -> str | None:
     
     try:
         genai.configure(api_key=api_key)
-        # Use Pro model for better quality
         model = genai.GenerativeModel("gemini-1.5-pro")
         
         prompt = f"""You are writing a news summary for an Australian migration app. The readers are visa applicants and migrants.
@@ -65,6 +109,7 @@ STYLE:
 • No filler words or generic statements
 • Include specific details, not vague summaries
 • Write complete sentences
+• Do NOT include phrases like "Get our newsletter", "Subscribe", "Download our app", etc.
 
 ARTICLE TITLE: {title}
 
@@ -77,7 +122,7 @@ SUMMARY:"""
             prompt,
             generation_config=genai.types.GenerationConfig(
                 max_output_tokens=300,
-                temperature=0.1,  # Very factual
+                temperature=0.1,
             )
         )
         summary = response.text.strip()
@@ -85,6 +130,9 @@ SUMMARY:"""
         # Clean up
         if summary.lower().startswith("summary:"):
             summary = summary[8:].strip()
+        
+        # Final cleanup of any junk
+        summary = _clean_junk_text(summary)
         
         return summary if 80 < len(summary) < 600 else None
     except Exception as e:
@@ -97,6 +145,9 @@ def enrich(title: str, rss_desc: str, url: str) -> str:
     Get comprehensive summary with all key migration details.
     Priority: AI summary > article excerpt > RSS description
     """
+    # Clean RSS description first
+    rss_desc = _clean_junk_text(rss_desc)
+    
     # Try fetching full article
     article = _fetch_article(url)
     
@@ -109,16 +160,18 @@ def enrich(title: str, rss_desc: str, url: str) -> str:
         
         # Fallback: first 3-4 sentences from article
         sentences = re.split(r'(?<=[.!?])\s+', article)
-        excerpt = " ".join(sentences[:4])
+        # Filter out short/junk sentences
+        good_sentences = [s for s in sentences if len(s) > 30 and not any(j in s.lower() for j in ['subscribe', 'newsletter', 'download', 'follow us'])]
+        excerpt = " ".join(good_sentences[:4])
         if len(excerpt) > 100:
             print(f"  [enricher] 📝 Excerpt: {title[:50]}")
-            if len(excerpt) > 450:
-                excerpt = excerpt[:450].rsplit(" ", 1)[0] + "…"
+            if len(excerpt) > 800:
+                excerpt = excerpt[:800].rsplit(" ", 1)[0] + "…"
             return excerpt
     
     # Fallback: RSS description (expanded)
     print(f"  [enricher] ⚠️ RSS fallback: {title[:50]}")
-    desc = rss_desc[:400] if rss_desc else title
-    if len(desc) > 350:
-        desc = desc[:350].rsplit(" ", 1)[0] + "…"
+    desc = rss_desc[:700] if rss_desc else title
+    if len(desc) > 600:
+        desc = desc[:600].rsplit(" ", 1)[0] + "…"
     return desc

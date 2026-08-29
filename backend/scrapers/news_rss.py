@@ -102,7 +102,7 @@ KEYWORDS_MED = [
     "labour agreement", "dama", "regional",
 ]
 
-MAX_NOTIFICATIONS_PER_RUN = 3
+MAX_NOTIFICATIONS_PER_RUN = 10
 
 
 AUSTRALIA_MARKERS = [
@@ -306,7 +306,7 @@ def scrape(db) -> list[dict]:
             root = ET.fromstring(r.content)
             for item in root.findall(".//item"):
                 title = (item.findtext("title") or "").strip()
-                desc = re.sub(r"<[^>]+>", "", item.findtext("description") or "").strip()[:400]
+                desc = re.sub(r"<[^>]+>", "", item.findtext("description") or "").strip()[:700]
                 link = (item.findtext("link") or "").strip()
                 pub_date = (item.findtext("pubDate") or "").strip()
 
@@ -393,7 +393,7 @@ def scrape(db) -> list[dict]:
             "source_id": "news_rss",
             "topic": "au_migration",
             "category": category,
-            "title": article["title"][:100],
+            "title": article["title"][:150],
             "body": body,
             "url": article["link"],
             "timestamp": datetime.now(timezone.utc).isoformat(),
