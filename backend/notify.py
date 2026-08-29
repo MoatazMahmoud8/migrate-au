@@ -32,7 +32,13 @@ CATEGORY_TO_CONTENT_TYPE = {
     "ANZSCO Occupation List": "anzsco",
     "ANZSCO Classification": "anzsco",
     "State Nomination": "state_nominations",
-    "News": "news",
+    
+}
+
+# Categories from RSS news (should NOT go to pending_content_changes)
+NEWS_CATEGORIES = {
+    "News", "Visa & Migration", "SkillSelect", "Occupation Lists",
+    "Visa Fees", "System Update", "Visa Conditions", "Citizenship", "How to Apply",
 }
 
 
@@ -168,9 +174,11 @@ def queue_draft_notification(db, notification: dict) -> bool:
     try:
         if draft_ref.get().exists:
             print(f"  [notify] Draft already queued: {draft_id}")
-            change_id = queue_content_change(db, notification)
-            if change_id:
-                draft_ref.set({"contentChangeId": change_id}, merge=True)
+            # Only queue content change for non-news categories
+            if category not in NEWS_CATEGORIES:
+                change_id = queue_content_change(db, notification)
+                if change_id:
+                    draft_ref.set({"contentChangeId": change_id}, merge=True)
             return False
 
         created_at = notification.get("timestamp") or datetime.now(timezone.utc).isoformat()
@@ -192,9 +200,11 @@ def queue_draft_notification(db, notification: dict) -> bool:
             doc["state"] = notification["state"]
 
         draft_ref.create(doc)
-        change_id = queue_content_change(db, notification)
-        if change_id:
-            draft_ref.set({"contentChangeId": change_id}, merge=True)
+        # Only queue content change for non-news categories
+        if category not in NEWS_CATEGORIES:
+            change_id = queue_content_change(db, notification)
+            if change_id:
+                draft_ref.set({"contentChangeId": change_id}, merge=True)
         print(f"  [notify] Queued for admin approval: {draft_id}")
         return True
 
