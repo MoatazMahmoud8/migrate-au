@@ -1,12 +1,15 @@
 import React, { useState, useMemo } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
-import { useLocalSearchParams, Stack, router } from 'expo-router';
+import { useLocalSearchParams, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { VISA_JOURNEYS, ENGLISH_TESTS, getVisaJourney } from '../constants/visaJourney';
-import { getAssessingAuthority, ASSESSING_AUTHORITIES } from '../constants/assessingAuthorities';
+import { getAssessingAuthority } from '../constants/assessingAuthorities';
 import { tap as hapticTap } from '../utils/haptics';
+import { useColors } from '../constants/ThemeContext';
+import { Spacing, Radius, FontSize, FontWeight } from '../constants/theme';
 
 export default function VisaJourneyScreen() {
+  const Colors = useColors();
   const { visa, anzsco, authority } = useLocalSearchParams<{ visa?: string; anzsco?: string; authority?: string }>();
   const [expandedStep, setExpandedStep] = useState<string | null>('english');
   const [selectedVisa, setSelectedVisa] = useState(visa || '189');
@@ -18,7 +21,7 @@ export default function VisaJourneyScreen() {
     if (authority) return authority;
     if (anzsco) {
       const derived = getAssessingAuthority(anzsco);
-      return derived?.code;
+      return derived;
     }
     return undefined;
   }, [authority, anzsco]);
@@ -33,25 +36,33 @@ export default function VisaJourneyScreen() {
       <Stack.Screen
         options={{
           title: 'Visa Journey',
-          headerStyle: { backgroundColor: '#1a1a2e' },
-          headerTintColor: '#fff',
+          headerStyle: { backgroundColor: Colors.surface },
+          headerTintColor: Colors.textPrimary,
         }}
       />
-      <ScrollView style={styles.container}>
+      <ScrollView style={[styles.container, { backgroundColor: Colors.background }]}>
         {/* Visa Selector */}
-        <View style={styles.selectorContainer}>
-          <Text style={styles.selectorLabel}>Select Visa Subclass</Text>
+        <View style={[styles.selectorContainer, { borderBottomColor: Colors.border }]}>
+          <Text style={[styles.selectorLabel, { color: Colors.textMuted }]}>Select Visa Subclass</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             {visaOptions.map(v => (
               <TouchableOpacity
                 key={v.code}
-                style={[styles.visaChip, selectedVisa === v.code && styles.visaChipActive]}
+                style={[
+                  styles.visaChip,
+                  { backgroundColor: Colors.surfaceRaised, borderColor: Colors.border },
+                  selectedVisa === v.code && { backgroundColor: Colors.accent, borderColor: Colors.accent },
+                ]}
                 onPress={() => {
                   hapticTap();
                   setSelectedVisa(v.code);
                 }}
               >
-                <Text style={[styles.visaChipText, selectedVisa === v.code && styles.visaChipTextActive]}>
+                <Text style={[
+                  styles.visaChipText,
+                  { color: Colors.textSecondary },
+                  selectedVisa === v.code && { color: '#fff' },
+                ]}>
                   {v.code}
                 </Text>
               </TouchableOpacity>
@@ -63,44 +74,60 @@ export default function VisaJourneyScreen() {
           <>
             {/* Visa Header */}
             <View style={styles.header}>
-              <Text style={styles.visaTitle}>{journey.visaName}</Text>
+              <Text style={[styles.visaTitle, { color: Colors.textPrimary }]}>{journey.visaName}</Text>
               <View style={styles.badges}>
-                <View style={[styles.badge, journey.type === 'Permanent' ? styles.badgePR : styles.badgeTemp]}>
-                  <Text style={styles.badgeText}>{journey.type}</Text>
+                <View style={[styles.badge, { backgroundColor: journey.type === 'Permanent' ? `${Colors.success}20` : `${Colors.warning}20` }]}>
+                  <Text style={[styles.badgeText, { color: journey.type === 'Permanent' ? Colors.success : Colors.warning }]}>
+                    {journey.type}
+                  </Text>
                 </View>
                 {journey.pointsTested && (
-                  <View style={styles.badgePoints}>
-                    <Text style={styles.badgeText}>{journey.minPoints}+ Points</Text>
+                  <View style={[styles.badge, { backgroundColor: `${Colors.accent}20` }]}>
+                    <Text style={[styles.badgeText, { color: Colors.accent }]}>{journey.minPoints}+ Points</Text>
                   </View>
                 )}
               </View>
             </View>
 
             {/* English Requirements Quick View */}
-            <View style={styles.englishCard}>
-              <Text style={styles.cardTitle}>
-                <Ionicons name="language" size={18} color="#4ade80" /> English Requirement: {journey.englishLevel}
-              </Text>
+            <View style={[styles.englishCard, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
+              <View style={styles.cardTitleRow}>
+                <Ionicons name="language" size={18} color={Colors.success} />
+                <Text style={[styles.cardTitle, { color: Colors.textPrimary }]}>
+                  English Requirement: {journey.englishLevel}
+                </Text>
+              </View>
               <View style={styles.englishGrid}>
                 {ENGLISH_TESTS.slice(0, 4).map(test => {
                   const level = journey.englishLevel.toLowerCase() as 'competent' | 'proficient' | 'superior';
                   const scores = test[level];
                   return (
                     <View key={test.code} style={styles.englishItem}>
-                      <Text style={styles.englishTestName}>{test.code}</Text>
-                      <Text style={styles.englishScore}>{scores.overall}</Text>
+                      <Text style={[styles.englishTestName, { color: Colors.textMuted }]}>{test.code}</Text>
+                      <Text style={[styles.englishScore, { color: Colors.success }]}>{scores.overall}</Text>
                     </View>
                   );
                 })}
               </View>
             </View>
 
+            {/* User's Authority Note */}
+            {userAuthority && typeof userAuthority === 'object' && (
+              <View style={[styles.authorityNote, { backgroundColor: `${Colors.accent}10`, borderColor: `${Colors.accent}30` }]}>
+                <Ionicons name="shield-checkmark" size={16} color={Colors.accent} />
+                <Text style={[styles.authorityNoteText, { color: Colors.textPrimary }]}>
+                  Your skills assessment: <Text style={{ fontWeight: FontWeight.bold, color: Colors.accent }}>{userAuthority.code}</Text>
+                  {' '}({userAuthority.name})
+                </Text>
+              </View>
+            )}
+
             {/* Journey Steps */}
-            <Text style={styles.sectionTitle}>Your Journey to Australia</Text>
+            <Text style={[styles.sectionTitle, { color: Colors.textPrimary }]}>Your Journey to Australia</Text>
             {journey.steps.map((step, index) => (
               <TouchableOpacity
                 key={step.id}
-                style={styles.stepCard}
+                style={[styles.stepCard, { backgroundColor: Colors.surface, borderColor: Colors.border }]}
                 onPress={() => {
                   hapticTap();
                   setExpandedStep(expandedStep === step.id ? null : step.id);
@@ -108,45 +135,50 @@ export default function VisaJourneyScreen() {
                 activeOpacity={0.8}
               >
                 <View style={styles.stepHeader}>
-                  <View style={styles.stepNumber}>
+                  <View style={[styles.stepNumber, { backgroundColor: Colors.accent }]}>
                     <Text style={styles.stepNumberText}>{index + 1}</Text>
                   </View>
                   <View style={styles.stepInfo}>
-                    <Text style={styles.stepTitle}>{step.title}</Text>
-                    <Text style={styles.stepDuration}>
-                      <Ionicons name="time-outline" size={12} color="#9ca3af" /> {step.duration}
-                      {step.cost && ` · ${step.cost}`}
-                    </Text>
+                    <Text style={[styles.stepTitle, { color: Colors.textPrimary }]}>{step.title}</Text>
+                    <View style={styles.stepMetaRow}>
+                      <Ionicons name="time-outline" size={12} color={Colors.textMuted} />
+                      <Text style={[styles.stepDuration, { color: Colors.textMuted }]}>
+                        {step.duration}
+                        {step.cost && ` · ${step.cost}`}
+                      </Text>
+                    </View>
                   </View>
                   <Ionicons
                     name={expandedStep === step.id ? 'chevron-up' : 'chevron-down'}
                     size={20}
-                    color="#9ca3af"
+                    color={Colors.textMuted}
                   />
                 </View>
 
                 {expandedStep === step.id && (
-                  <View style={styles.stepExpanded}>
-                    <Text style={styles.stepDescription}>{step.description}</Text>
+                  <View style={[styles.stepExpanded, { borderTopColor: Colors.border }]}>
+                    <Text style={[styles.stepDescription, { color: Colors.textSecondary }]}>{step.description}</Text>
 
                     {step.documents && step.documents.length > 0 && (
                       <View style={styles.docSection}>
-                        <Text style={styles.docTitle}>
-                          <Ionicons name="document-text" size={14} color="#60a5fa" /> Documents Required
-                        </Text>
+                        <View style={styles.docTitleRow}>
+                          <Ionicons name="document-text" size={14} color={Colors.accent} />
+                          <Text style={[styles.docTitle, { color: Colors.accent }]}>Documents Required</Text>
+                        </View>
                         {step.documents.map((doc, i) => (
-                          <Text key={i} style={styles.docItem}>• {doc}</Text>
+                          <Text key={i} style={[styles.docItem, { color: Colors.textSecondary }]}>• {doc}</Text>
                         ))}
                       </View>
                     )}
 
                     {step.tips && step.tips.length > 0 && (
-                      <View style={styles.tipsSection}>
-                        <Text style={styles.tipsTitle}>
-                          <Ionicons name="bulb" size={14} color="#fbbf24" /> Tips
-                        </Text>
+                      <View style={[styles.tipsSection, { backgroundColor: `${Colors.warning}10`, borderColor: `${Colors.warning}30` }]}>
+                        <View style={styles.tipsTitleRow}>
+                          <Ionicons name="bulb" size={14} color={Colors.warning} />
+                          <Text style={[styles.tipsTitle, { color: Colors.warning }]}>Tips</Text>
+                        </View>
                         {step.tips.map((tip, i) => (
-                          <Text key={i} style={styles.tipItem}>💡 {tip}</Text>
+                          <Text key={i} style={[styles.tipItem, { color: Colors.textSecondary }]}>💡 {tip}</Text>
                         ))}
                       </View>
                     )}
@@ -154,40 +186,6 @@ export default function VisaJourneyScreen() {
                 )}
               </TouchableOpacity>
             ))}
-
-            {/* Assessing Authorities */}
-            <Text style={styles.sectionTitle}>Assessing Authorities</Text>
-            {userAuthority && (
-              <Text style={styles.authorityHint}>
-                <Ionicons name="checkmark-circle" size={14} color="#4ade80" /> Your authority: {userAuthority}
-              </Text>
-            )}
-            <View style={styles.authoritiesGrid}>
-              {Object.values(ASSESSING_AUTHORITIES).slice(0, 6).map(auth => {
-                const isHighlighted = userAuthority === auth.code;
-                return (
-                  <TouchableOpacity
-                    key={auth.code}
-                    style={[
-                      styles.authorityCard,
-                      isHighlighted && styles.authorityCardHighlighted,
-                    ]}
-                    onPress={() => hapticTap()}
-                  >
-                    {isHighlighted && (
-                      <View style={styles.authorityHighlightBadge}>
-                        <Ionicons name="checkmark" size={10} color="#fff" />
-                      </View>
-                    )}
-                    <Text style={[styles.authorityCode, isHighlighted && styles.authorityCodeHighlighted]}>
-                      {auth.code}
-                    </Text>
-                    <Text style={styles.authorityName}>{auth.name}</Text>
-                    <Text style={styles.authorityTime}>{auth.processingTime}</Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
           </>
         )}
 
@@ -198,65 +196,60 @@ export default function VisaJourneyScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0f0f23' },
-  selectorContainer: { padding: 16, borderBottomWidth: 1, borderBottomColor: '#1f2937' },
-  selectorLabel: { color: '#9ca3af', fontSize: 12, marginBottom: 8 },
+  container: { flex: 1 },
+  selectorContainer: { padding: Spacing.md, borderBottomWidth: 1 },
+  selectorLabel: { fontSize: FontSize.xs, marginBottom: Spacing.xs },
   visaChip: {
-    paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20,
-    backgroundColor: '#1f2937', marginRight: 8,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: Radius.full,
+    marginRight: Spacing.xs,
+    borderWidth: 1,
   },
-  visaChipActive: { backgroundColor: '#3b82f6' },
-  visaChipText: { color: '#9ca3af', fontWeight: '600' },
-  visaChipTextActive: { color: '#fff' },
-  header: { padding: 16 },
-  visaTitle: { color: '#fff', fontSize: 24, fontWeight: 'bold', marginBottom: 8 },
-  badges: { flexDirection: 'row', gap: 8 },
-  badge: { paddingHorizontal: 12, paddingVertical: 4, borderRadius: 12 },
-  badgePR: { backgroundColor: '#166534' },
-  badgeTemp: { backgroundColor: '#854d0e' },
-  badgePoints: { backgroundColor: '#1e40af', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 12 },
-  badgeText: { color: '#fff', fontSize: 12, fontWeight: '600' },
-  englishCard: { margin: 16, padding: 16, backgroundColor: '#1a1a2e', borderRadius: 12 },
-  cardTitle: { color: '#fff', fontSize: 16, fontWeight: '600', marginBottom: 12 },
+  visaChipText: { fontWeight: FontWeight.semibold, fontSize: FontSize.sm },
+  header: { padding: Spacing.md },
+  visaTitle: { fontSize: FontSize.xl, fontWeight: FontWeight.bold, marginBottom: Spacing.xs },
+  badges: { flexDirection: 'row', gap: Spacing.xs },
+  badge: { paddingHorizontal: Spacing.sm, paddingVertical: 4, borderRadius: Radius.sm },
+  badgeText: { fontSize: FontSize.xs, fontWeight: FontWeight.semibold },
+  englishCard: { margin: Spacing.md, padding: Spacing.md, borderRadius: Radius.md, borderWidth: 1 },
+  cardTitleRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, marginBottom: Spacing.sm },
+  cardTitle: { fontSize: FontSize.md, fontWeight: FontWeight.semibold },
   englishGrid: { flexDirection: 'row', justifyContent: 'space-between' },
   englishItem: { alignItems: 'center' },
-  englishTestName: { color: '#9ca3af', fontSize: 12 },
-  englishScore: { color: '#4ade80', fontSize: 20, fontWeight: 'bold' },
-  sectionTitle: { color: '#fff', fontSize: 18, fontWeight: 'bold', paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8 },
-  stepCard: { marginHorizontal: 16, marginBottom: 8, backgroundColor: '#1a1a2e', borderRadius: 12, overflow: 'hidden' },
-  stepHeader: { flexDirection: 'row', alignItems: 'center', padding: 16 },
+  englishTestName: { fontSize: FontSize.xs },
+  englishScore: { fontSize: FontSize.xl, fontWeight: FontWeight.bold },
+  authorityNote: {
+    marginHorizontal: Spacing.md,
+    marginBottom: Spacing.sm,
+    padding: Spacing.sm,
+    borderRadius: Radius.sm,
+    borderWidth: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+  },
+  authorityNoteText: { fontSize: FontSize.sm, flex: 1 },
+  sectionTitle: { fontSize: FontSize.lg, fontWeight: FontWeight.bold, paddingHorizontal: Spacing.md, paddingTop: Spacing.md, paddingBottom: Spacing.sm },
+  stepCard: { marginHorizontal: Spacing.md, marginBottom: Spacing.sm, borderRadius: Radius.md, overflow: 'hidden', borderWidth: 1 },
+  stepHeader: { flexDirection: 'row', alignItems: 'center', padding: Spacing.md },
   stepNumber: {
-    width: 32, height: 32, borderRadius: 16, backgroundColor: '#3b82f6',
-    justifyContent: 'center', alignItems: 'center', marginRight: 12,
+    width: 32, height: 32, borderRadius: 16,
+    justifyContent: 'center', alignItems: 'center', marginRight: Spacing.sm,
   },
-  stepNumberText: { color: '#fff', fontWeight: 'bold' },
+  stepNumberText: { color: '#fff', fontWeight: FontWeight.bold },
   stepInfo: { flex: 1 },
-  stepTitle: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  stepDuration: { color: '#9ca3af', fontSize: 12, marginTop: 2 },
-  stepExpanded: { paddingHorizontal: 16, paddingBottom: 16, borderTopWidth: 1, borderTopColor: '#2d2d4a' },
-  stepDescription: { color: '#d1d5db', marginTop: 12, lineHeight: 20 },
-  docSection: { marginTop: 16 },
-  docTitle: { color: '#60a5fa', fontWeight: '600', marginBottom: 8 },
-  docItem: { color: '#9ca3af', marginLeft: 8, marginBottom: 4 },
-  tipsSection: { marginTop: 16, padding: 12, backgroundColor: '#1f2937', borderRadius: 8 },
-  tipsTitle: { color: '#fbbf24', fontWeight: '600', marginBottom: 8 },
-  tipItem: { color: '#d1d5db', marginBottom: 4, fontSize: 13 },
-  authorityHint: { color: '#4ade80', fontSize: 12, paddingHorizontal: 16, marginBottom: 8 },
-  authoritiesGrid: { flexDirection: 'row', flexWrap: 'wrap', padding: 12 },
-  authorityCard: {
-    width: '47%', margin: '1.5%', padding: 12, backgroundColor: '#1a1a2e',
-    borderRadius: 12, alignItems: 'center', borderWidth: 1, borderColor: 'transparent',
-  },
-  authorityCardHighlighted: {
-    borderColor: '#4ade80', backgroundColor: '#1a2e1a',
-  },
-  authorityHighlightBadge: {
-    position: 'absolute', top: 6, right: 6,
-    backgroundColor: '#4ade80', borderRadius: 8, width: 16, height: 16,
-    justifyContent: 'center', alignItems: 'center',
-  },
-  authorityCode: { color: '#3b82f6', fontSize: 18, fontWeight: 'bold' },
-  authorityCodeHighlighted: { color: '#4ade80' },
-  authorityName: { color: '#fff', fontSize: 12, textAlign: 'center', marginTop: 4 },
-  authorityTime: { color: '#9ca3af', fontSize: 11, marginTop: 4 },
+  stepTitle: { fontSize: FontSize.md, fontWeight: FontWeight.semibold },
+  stepMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
+  stepDuration: { fontSize: FontSize.xs },
+  stepExpanded: { paddingHorizontal: Spacing.md, paddingBottom: Spacing.md, borderTopWidth: 1 },
+  stepDescription: { marginTop: Spacing.sm, lineHeight: 20, fontSize: FontSize.sm },
+  docSection: { marginTop: Spacing.md },
+  docTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: Spacing.xs },
+  docTitle: { fontWeight: FontWeight.semibold, fontSize: FontSize.sm },
+  docItem: { marginLeft: Spacing.sm, marginBottom: 4, fontSize: FontSize.sm },
+  tipsSection: { marginTop: Spacing.md, padding: Spacing.sm, borderRadius: Radius.sm, borderWidth: 1 },
+  tipsTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: Spacing.xs },
+  tipsTitle: { fontWeight: FontWeight.semibold, fontSize: FontSize.sm },
+  tipItem: { marginBottom: 4, fontSize: FontSize.sm },
 });
