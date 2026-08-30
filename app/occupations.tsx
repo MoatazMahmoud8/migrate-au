@@ -1729,6 +1729,10 @@ export default function OccupationsScreen() {
                                   style={[styles.viewJourneyBtn, { backgroundColor: `${Colors.accent}15`, borderColor: `${Colors.accent}40` }]}
                                   onPress={() => {
                                     hapticTap();
+                                    if (profile?.isPremium !== true) {
+                                      setShowPaywall(true);
+                                      return;
+                                    }
                                     router.push({
                                       pathname: '/visa-journey',
                                       params: {
@@ -1742,6 +1746,9 @@ export default function OccupationsScreen() {
                                 >
                                   <Ionicons name="map-outline" size={14} color={Colors.accent} />
                                   <Text style={[styles.viewJourneyText, { color: Colors.accent }]}>View Journey</Text>
+                                  {profile?.isPremium !== true && (
+                                    <Ionicons name="lock-closed" size={12} color={Colors.accent} style={{ marginLeft: 2 }} />
+                                  )}
                                   <Ionicons name="chevron-forward" size={14} color={Colors.accent} />
                                 </TouchableOpacity>
                               )}
