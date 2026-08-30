@@ -44,6 +44,7 @@ import {
 } from '../utils/dailyUpdates';
 import { tap as hapticTap, success as hapticSuccess } from '../utils/haptics';
 import { recordEngagement } from '../utils/rateApp';
+import { getVisaJourney } from '../constants/visaJourney';
 import { getProfile, saveProfile } from '../utils/storage';
 import { hasExceededLimit, incrementUsage, getRemainingUses } from '../utils/paywall';
 import {
@@ -1722,7 +1723,30 @@ export default function OccupationsScreen() {
                                   </View>
                                 ))}
                               </View>
+                              {/* View Journey Button - only for visas with journey data */}
+                              {getVisaJourney(visa) && (
+                                <TouchableOpacity
+                                  style={[styles.viewJourneyBtn, { backgroundColor: `${Colors.accent}15`, borderColor: `${Colors.accent}40` }]}
+                                  onPress={() => {
+                                    hapticTap();
+                                    router.push({
+                                      pathname: '/visa-journey',
+                                      params: {
+                                        visa,
+                                        anzsco: selected.anzsco,
+                                        authority: selected.assessingAuthority,
+                                      },
+                                    });
+                                  }}
+                                  activeOpacity={0.7}
+                                >
+                                  <Ionicons name="map-outline" size={14} color={Colors.accent} />
+                                  <Text style={[styles.viewJourneyText, { color: Colors.accent }]}>View Journey</Text>
+                                  <Ionicons name="chevron-forward" size={14} color={Colors.accent} />
+                                </TouchableOpacity>
+                              )}
                             </View>
+
                           ))}
                         </View>
                         {/* Universal health & character note */}
@@ -3160,4 +3184,21 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   modalCtaText: { fontWeight: FontWeight.bold, fontSize: FontSize.sm },
+
+  // View Journey button
+  viewJourneyBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.xs,
+    marginTop: Spacing.md,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    borderRadius: Radius.md,
+    borderWidth: 1,
+  },
+  viewJourneyText: {
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.semibold,
+  },
 });

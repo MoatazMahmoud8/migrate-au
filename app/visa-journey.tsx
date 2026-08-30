@@ -1,16 +1,27 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 import { useLocalSearchParams, Stack, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { VISA_JOURNEYS, ENGLISH_TESTS, getVisaJourney } from '../constants/visaJourney';
 import { getAssessingAuthority, ASSESSING_AUTHORITIES } from '../constants/assessingAuthorities';
+import { tap as hapticTap } from '../utils/haptics';
 
 export default function VisaJourneyScreen() {
-  const { visa } = useLocalSearchParams<{ visa?: string }>();
+  const { visa, anzsco, authority } = useLocalSearchParams<{ visa?: string; anzsco?: string; authority?: string }>();
   const [expandedStep, setExpandedStep] = useState<string | null>('english');
   const [selectedVisa, setSelectedVisa] = useState(visa || '189');
 
   const journey = getVisaJourney(selectedVisa);
+
+  // Determine the user's assessing authority (from param or derived from ANZSCO)
+  const userAuthority = useMemo(() => {
+    if (authority) return authority;
+    if (anzsco) {
+      const derived = getAssessingAuthority(anzsco);
+      return derived?.code;
+    }
+    return undefined;
+  }, [authority, anzsco]);
 
   const visaOptions = VISA_JOURNEYS.map(v => ({
     code: v.visaCode,
@@ -35,7 +46,10 @@ export default function VisaJourneyScreen() {
               <TouchableOpacity
                 key={v.code}
                 style={[styles.visaChip, selectedVisa === v.code && styles.visaChipActive]}
-                onPress={() => setSelectedVisa(v.code)}
+                onPress={() => {
+                  hapticTap();
+                  setSelectedVisa(v.code);
+                }}
               >
                 <Text style={[styles.visaChipText, selectedVisa === v.code && styles.visaChipTextActive]}>
                   {v.code}
@@ -87,7 +101,10 @@ export default function VisaJourneyScreen() {
               <TouchableOpacity
                 key={step.id}
                 style={styles.stepCard}
-                onPress={() => setExpandedStep(expandedStep === step.id ? null : step.id)}
+                onPress={() => {
+                  hapticTap();
+                  setExpandedStep(expandedStep === step.id ? null : step.id);
+                }}
                 activeOpacity={0.8}
               >
                 <View style={styles.stepHeader}>
@@ -140,14 +157,36 @@ export default function VisaJourneyScreen() {
 
             {/* Assessing Authorities */}
             <Text style={styles.sectionTitle}>Assessing Authorities</Text>
+            {userAuthority && (
+              <Text style={styles.authorityHint}>
+                <Ionicons name="checkmark-circle" size={14} color="#4ade80" /> Your authority: {userAuthority}
+              </Text>
+            )}
             <View style={styles.authoritiesGrid}>
-              {Object.values(ASSESSING_AUTHORITIES).slice(0, 6).map(auth => (
-                <TouchableOpacity key={auth.code} style={styles.authorityCard}>
-                  <Text style={styles.authorityCode}>{auth.code}</Text>
-                  <Text style={styles.authorityName}>{auth.name}</Text>
-                  <Text style={styles.authorityTime}>{auth.processingTime}</Text>
-                </TouchableOpacity>
-              ))}
+              {Object.values(ASSESSING_AUTHORITIES).slice(0, 6).map(auth => {
+                const isHighlighted = userAuthority === auth.code;
+                return (
+                  <TouchableOpacity
+                    key={auth.code}
+                    style={[
+                      styles.authorityCard,
+                      isHighlighted && styles.authorityCardHighlighted,
+                    ]}
+                    onPress={() => hapticTap()}
+                  >
+                    {isHighlighted && (
+                      <View style={styles.authorityHighlightBadge}>
+                        <Ionicons name="checkmark" size={10} color="#fff" />
+                      </View>
+                    )}
+                    <Text style={[styles.authorityCode, isHighlighted && styles.authorityCodeHighlighted]}>
+                      {auth.code}
+                    </Text>
+                    <Text style={styles.authorityName}>{auth.name}</Text>
+                    <Text style={styles.authorityTime}>{auth.processingTime}</Text>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
           </>
         )}
@@ -202,12 +241,22 @@ const styles = StyleSheet.create({
   tipsSection: { marginTop: 16, padding: 12, backgroundColor: '#1f2937', borderRadius: 8 },
   tipsTitle: { color: '#fbbf24', fontWeight: '600', marginBottom: 8 },
   tipItem: { color: '#d1d5db', marginBottom: 4, fontSize: 13 },
+  authorityHint: { color: '#4ade80', fontSize: 12, paddingHorizontal: 16, marginBottom: 8 },
   authoritiesGrid: { flexDirection: 'row', flexWrap: 'wrap', padding: 12 },
   authorityCard: {
     width: '47%', margin: '1.5%', padding: 12, backgroundColor: '#1a1a2e',
-    borderRadius: 12, alignItems: 'center',
+    borderRadius: 12, alignItems: 'center', borderWidth: 1, borderColor: 'transparent',
+  },
+  authorityCardHighlighted: {
+    borderColor: '#4ade80', backgroundColor: '#1a2e1a',
+  },
+  authorityHighlightBadge: {
+    position: 'absolute', top: 6, right: 6,
+    backgroundColor: '#4ade80', borderRadius: 8, width: 16, height: 16,
+    justifyContent: 'center', alignItems: 'center',
   },
   authorityCode: { color: '#3b82f6', fontSize: 18, fontWeight: 'bold' },
+  authorityCodeHighlighted: { color: '#4ade80' },
   authorityName: { color: '#fff', fontSize: 12, textAlign: 'center', marginTop: 4 },
   authorityTime: { color: '#9ca3af', fontSize: 11, marginTop: 4 },
 });
