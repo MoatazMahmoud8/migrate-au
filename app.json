@@ -2,7 +2,7 @@
   "expo": {
     "name": "MigrateAU",
     "slug": "migrate-au",
-    "version": "2.4.0",
+    "version": "2.5.0",
     "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -37,7 +37,7 @@
         "backgroundColor": "#002D62"
       },
       "package": "com.jsmglobal.migration_au",
-      "versionCode": 100,
+      "versionCode": 101,
       "googleServicesFile": "./google-services.json",
       "jsEngine": "hermes",
       "permissions": [
