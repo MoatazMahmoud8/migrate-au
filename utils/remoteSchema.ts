@@ -108,6 +108,179 @@ export function validateOccupationsSnapshot(
   return { snapshotDate: obj.snapshotDate, items };
 }
 
+
+
+// --- Merged Occupations Database ------------------------------------------
+export interface ValidatedMergedOccupationsSnapshot {
+  snapshotDate: string;
+  items: SkilledOccupation[];
+}
+
+/**
+ * Validate the merged occupations-database.json format.
+ * This has a different top-level shape:
+ *   { generatedAt, counts, currentRound, sources, occupations[] }
+ * We normalize it into the standard OccupationsSnapshot shape (snapshotDate + items).
+ */
+export function validateMergedOccupationsSnapshot(
+  raw: unknown
+): ValidatedMergedOccupationsSnapshot {
+  if (!raw || typeof raw !== 'object') throw new Error('merged: not an object');
+  const obj = raw as Record<string, unknown>;
+
+  // Accept generatedAt as snapshotDate
+  const generatedAt = obj.generatedAt;
+  if (!isIsoDate(generatedAt)) throw new Error('merged: bad generatedAt');
+
+  const occupations = obj.occupations;
+  if (!Array.isArray(occupations)) throw new Error('merged: occupations not array');
+  if (occupations.length > MAX_ITEMS) throw new Error('merged: too many occupations');
+
+  const items: SkilledOccupation[] = [];
+  const seenKeys = new Set<string>();
+  for (const item of occupations) {
+    if (!item || typeof item !== 'object') continue;
+    const o = item as Record<string, unknown>;
+
+    if (!isStr(o.anzsco, 12)) continue;
+    if (!isStr(o.name)) continue;
+    if (!isStr(o.group)) continue;
+    // Lists/visas: allow empty arrays (non-migration-eligible occupations)
+    if (!Array.isArray(o.lists)) continue;
+    if (!Array.isArray(o.visas)) continue;
+
+    const lists = (o.lists as string[]).filter((l) =>
+      ALLOWED_LISTS.has(l as SkillList)
+    ) as SkillList[];
+
+    const visas = (o.visas as string[]).filter(
+      (v) => typeof v === 'string' && v.length > 0 && v.length <= 16
+    );
+
+    // States
+    let states: SkilledOccupation['states'] | undefined;
+    if (o.states !== undefined && o.states !== null) {
+      if (typeof o.states === 'object' && !Array.isArray(o.states)) {
+        const s = o.states as Record<string, unknown>;
+        const cleaned: Record<string, string[]> = {};
+        let ok = true;
+        for (const code of Object.keys(s)) {
+          if (!ALLOWED_STATES.has(code)) continue;
+          if (!isStrArray(s[code], MAX_STATE_VISAS, 16)) { ok = false; break; }
+          cleaned[code] = s[code] as string[];
+        }
+        if (!ok) continue;
+        states = cleaned as SkilledOccupation['states'];
+      }
+    }
+
+    if (seenKeys.has(o.anzsco as string)) continue;
+    seenKeys.add(o.anzsco as string);
+
+    // Build enriched occupation
+    const occ: SkilledOccupation = {
+      anzsco: o.anzsco as string,
+      name: o.name as string,
+      group: o.group as string,
+      lists,
+      visas,
+      assessingAuthority: isOptStr(o.assessingAuthorityRaw, MAX_DETAIL_STR)
+        ? (o.assessingAuthorityRaw as string | undefined)
+        : undefined,
+      states,
+    };
+
+    // Enrichment fields (optional, graceful if missing)
+    if (typeof o.description === 'string') occ.description = o.description;
+    if (typeof o.unitGroup === 'string') occ.unitGroup = o.unitGroup;
+    if (typeof o.skillLevel === 'string') occ.skillLevel = o.skillLevel;
+    if (typeof o.descriptionSource === 'string') occ.descriptionSource = o.descriptionSource;
+
+    // Authority info
+    if (o.assessingAuthority && typeof o.assessingAuthority === 'object') {
+      const a = o.assessingAuthority as Record<string, unknown>;
+      occ.authorityInfo = {
+        name: typeof a.name === 'string' ? a.name : null!,
+        fee: typeof a.fee === 'string' ? a.fee : null,
+        processingTime: typeof a.processingTime === 'string' ? a.processingTime : null,
+        website: typeof a.website === 'string' ? a.website : null,
+        assesses: typeof a.assesses === 'string' ? a.assesses : null,
+      };
+    }
+
+    // SkillSelect scores
+    if (o.skillSelect && typeof o.skillSelect === 'object') {
+      const ss = o.skillSelect as Record<string, unknown>;
+      occ.skillSelectScores = {
+        sc189: typeof ss.sc189 === 'number' ? ss.sc189 : null,
+        sc491Family: typeof ss.sc491Family === 'number' ? ss.sc491Family : null,
+      };
+    }
+
+    // SkillSelect cutoff history (array of { date, sc189, sc491Family })
+    if (Array.isArray(o.skillSelectHistory)) {
+      (occ as any).skillSelectHistory = o.skillSelectHistory;
+    }
+
+    // Per-visa fees
+    if (o.visaFees && typeof o.visaFees === 'object' && !Array.isArray(o.visaFees)) {
+      const vf = o.visaFees as Record<string, unknown>;
+      const fees: Record<string, { fee: string; note?: string | null }> = {};
+      for (const [code, val] of Object.entries(vf)) {
+        if (val && typeof val === 'object') {
+          const v = val as Record<string, unknown>;
+          if (typeof v.fee === 'string') {
+            fees[code] = { fee: v.fee, note: typeof v.note === 'string' ? v.note : null };
+          }
+        }
+      }
+      if (Object.keys(fees).length > 0) occ.visaFeeDetails = fees;
+    }
+
+    // Salary
+    if (o.salary && typeof o.salary === 'object') {
+      const sal = o.salary as Record<string, unknown>;
+      if (typeof sal.annualSalary === 'number') {
+        occ.salary = {
+          annualSalary: sal.annualSalary,
+          weeklyEarnings: typeof sal.weeklyEarnings === 'number' ? sal.weeklyEarnings : null,
+          currency: typeof sal.currency === 'string' ? sal.currency : 'AUD',
+          sourceLevel: typeof sal.sourceLevel === 'string' ? sal.sourceLevel as '6-digit' | '4-digit' : null,
+          sourceUrl: typeof sal.sourceUrl === 'string' ? sal.sourceUrl : null,
+        };
+      }
+    }
+
+    // Per-visa details (fees + processing times)
+    if (o.visaDetails && typeof o.visaDetails === 'object' && !Array.isArray(o.visaDetails)) {
+      occ.visaDetailsMerged = o.visaDetails as Record<string, unknown>;
+    }
+
+    items.push(occ);
+  }
+
+  if (items.length === 0) throw new Error('merged: no valid items');
+
+  // Extract global sections
+  const result: ValidatedMergedOccupationsSnapshot = {
+    snapshotDate: generatedAt as string,
+    items,
+  };
+
+  // Pass through global data (English tests, processing times, currentRound)
+  if (Array.isArray((obj as any).englishTests)) {
+    (result as any).englishTests = (obj as any).englishTests;
+  }
+  if (Array.isArray((obj as any).visaProcessingTimes)) {
+    (result as any).visaProcessingTimes = (obj as any).visaProcessingTimes;
+  }
+  if ((obj as any).currentRound) {
+    (result as any).currentRound = (obj as any).currentRound;
+  }
+
+  return result;
+}
+
 // --- Processing Times -----------------------------------------------------
 export interface ValidatedProcessingTimesSnapshot {
   schemaVersion: number;

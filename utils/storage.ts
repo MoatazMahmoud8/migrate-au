@@ -3,10 +3,13 @@ import { UserProfile } from '../constants/types';
 
 const PROFILE_KEY = '@migrate_au_profile';
 
+// DEV: Force premium for local testing
+const DEV_PREMIUM = __DEV__;
+
 const defaultProfile: UserProfile = {
   name: '',
   anzscoCode: '',
-  isPremium: false,
+  isPremium: DEV_PREMIUM,
   subscribedStates: [],
   subscribedOccupation: '',
   journeyStage: 0,
@@ -19,7 +22,10 @@ export async function getProfile(): Promise<UserProfile> {
   try {
     const json = await AsyncStorage.getItem(PROFILE_KEY);
     if (!json) return defaultProfile;
-    return { ...defaultProfile, ...JSON.parse(json) };
+    const stored = { ...defaultProfile, ...JSON.parse(json) };
+    // In dev mode, always grant premium access
+    if (DEV_PREMIUM) stored.isPremium = true;
+    return stored;
   } catch {
     return defaultProfile;
   }

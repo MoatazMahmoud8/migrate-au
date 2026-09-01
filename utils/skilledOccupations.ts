@@ -16,7 +16,7 @@ import {
   StateRequirement,
   occupationKey,
 } from '../constants/skilledOccupations';
-import { validateOccupationsSnapshot } from './remoteSchema';
+import { validateOccupationsSnapshot, validateMergedOccupationsSnapshot } from './remoteSchema';
 
 // Schema: { snapshotDate: string, items: SkilledOccupation[] }
 export const SKILL_OCCUPATIONS_REMOTE_URL =
@@ -31,8 +31,18 @@ export const ALL_ANZSCO_OCCUPATIONS_REMOTE_URL =
 export const STATE_REQUIREMENTS_REMOTE_URL =
   'https://swift-shore-238707.web.app/state-occupation-requirements.json';
 
+/** Merged occupations database — single source of truth with enrichments. */
+// Primary: Cloud Storage (updated by admin Publish button)
+export const MERGED_OCCUPATIONS_REMOTE_URL =
+  'https://storage.googleapis.com/swift-shore-238707.appspot.com/occupations-database.json';
+// Fallback: Firebase Hosting (updated by build script + deploy)
+export const MERGED_OCCUPATIONS_FALLBACK_URL =
+  'https://swift-shore-238707.web.app/occupations-database.json';
+
 const CACHE_KEY = '@migrate_au_skilled_occupations';
 const LAST_CHECK_KEY = '@migrate_au_skilled_occupations_last_check';
+const MERGED_CACHE_KEY = '@migrate_au_merged_occupations';
+const MERGED_LAST_CHECK_KEY = '@migrate_au_merged_occupations_last_check';
 const ALL_ANZSCO_CACHE_KEY = '@migrate_au_all_anzsco_occupations';
 const ALL_ANZSCO_LAST_CHECK_KEY = '@migrate_au_all_anzsco_last_check';
 const STATE_REQ_CACHE_KEY = '@migrate_au_state_requirements_v2';
@@ -58,23 +68,28 @@ export interface OccupationChange {
 
 /**
  * Read the current cached snapshot. Priority:
- *  1. Cached all-anzsco (comprehensive 1,236+) merged with federal list metadata
- *  2. Cached skilled-occupations (422, federal lists only)
- *  3. Bundled data (422, federal lists only)
+ *  1. Merged database (enriched: descriptions, authority info, visa fees, SkillSelect)
+ *  2. Cached all-anzsco (comprehensive 1,236+) merged with federal list metadata
+ *  3. Cached skilled-occupations (422, federal lists only)
+ *  4. Bundled data (422, federal lists only)
  */
 export async function getSkilledOccupations(): Promise<OccupationsSnapshot> {
-  // Try all-anzsco cache first
+  // Try merged database first (richest)
+  try {
+    const raw = await AsyncStorage.getItem(MERGED_CACHE_KEY);
+    if (raw) return JSON.parse(raw) as OccupationsSnapshot;
+  } catch {}
+
+  // Try all-anzsco cache
   try {
     const raw = await AsyncStorage.getItem(ALL_ANZSCO_CACHE_KEY);
     if (raw) {
       const allAnzsco = JSON.parse(raw) as OccupationsSnapshot;
-      // Also fetch skilled metadata to merge in federal list info
       const skilledRaw = await AsyncStorage.getItem(CACHE_KEY);
       if (skilledRaw) {
         const skilled = JSON.parse(skilledRaw) as OccupationsSnapshot;
         return mergeAllAnzscoWithSkilled(allAnzsco, skilled);
       }
-      // Return all-anzsco with bundled skilled metadata
       const bundledSkilled: OccupationsSnapshot = {
         snapshotDate: SKILL_OCCUPATIONS_SNAPSHOT_DATE,
         items: SKILLED_OCCUPATIONS,
@@ -332,6 +347,86 @@ async function getAllAnzscoLastCheckedAt(): Promise<string | null> {
     return await AsyncStorage.getItem(ALL_ANZSCO_LAST_CHECK_KEY);
   } catch {
     return null;
+  }
+}
+
+/**
+ * Refresh from the merged occupations database. This is the primary source —
+ * a single JSON with enrichments (descriptions, authority, fees, SkillSelect).
+ * Falls back to the legacy two-file refresh if the merged endpoint fails.
+ */
+export async function refreshMergedOccupations(
+  opts: { force?: boolean } = {}
+): Promise<{
+  updated: boolean;
+  snapshot: OccupationsSnapshot;
+  changes: OccupationChange[];
+}> {
+  const last = await AsyncStorage.getItem(MERGED_LAST_CHECK_KEY).catch(() => null);
+  if (last) {
+    const age = Date.now() - new Date(last).getTime();
+    if (!opts.force && age < ONE_DAY_MS) {
+      return { updated: false, snapshot: await getSkilledOccupations(), changes: [] };
+    }
+    if (opts.force && age < MIN_FORCE_INTERVAL_MS) {
+      return { updated: false, snapshot: await getSkilledOccupations(), changes: [] };
+    }
+  }
+
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
+    let res: Response;
+    try {
+      res = await fetch(MERGED_OCCUPATIONS_REMOTE_URL, { method: 'GET', signal: ctrl.signal });
+      // If Storage 404s (not yet published), try Hosting fallback
+      if (res.status === 404) {
+        clearTimeout(timer);
+        const ctrl2 = new AbortController();
+        const timer2 = setTimeout(() => ctrl2.abort(), FETCH_TIMEOUT_MS);
+        try {
+          res = await fetch(MERGED_OCCUPATIONS_FALLBACK_URL, { method: 'GET', signal: ctrl2.signal });
+        } finally { clearTimeout(timer2); }
+      }
+    } finally {
+      clearTimeout(timer);
+    }
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const contentLength = Number(res.headers.get('content-length') ?? 0);
+    if (contentLength && contentLength > 5 * 1024 * 1024) {
+      throw new Error('merged payload too large');
+    }
+    const json = await res.json();
+    const remote = validateMergedOccupationsSnapshot(json);
+
+    const current = await getSkilledOccupations();
+    await AsyncStorage.setItem(MERGED_LAST_CHECK_KEY, new Date().toISOString());
+
+    // Diff against current for change notifications
+    const currentMap = new Map(current.items.map((o) => [occupationKey(o), o] as const));
+    const remoteMap = new Map(remote.items.map((o) => [occupationKey(o), o] as const));
+    const changes: OccupationChange[] = [];
+
+    for (const [key, next] of remoteMap) {
+      if (!currentMap.has(key)) {
+        changes.push({ type: 'added', anzsco: next.anzsco, name: next.name, lists: next.lists });
+      }
+    }
+    for (const [key, prev] of currentMap) {
+      if (!remoteMap.has(key)) {
+        changes.push({ type: 'removed', anzsco: prev.anzsco, name: prev.name, lists: prev.lists });
+      }
+    }
+
+    if (remote.snapshotDate !== current.snapshotDate || changes.length > 0) {
+      await AsyncStorage.setItem(MERGED_CACHE_KEY, JSON.stringify(remote));
+      return { updated: true, snapshot: remote, changes };
+    }
+    return { updated: false, snapshot: current, changes: [] };
+  } catch (err) {
+    console.warn('[mergedOccupations] refresh failed, falling back to legacy:', err);
+    // Fall back to the two-file approach
+    return refreshSkilledOccupations(opts);
   }
 }
 

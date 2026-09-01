@@ -30,18 +30,12 @@ import {
 import {
   getSkilledOccupations,
   getOccupationsLastCheckedAt,
-  refreshSkilledOccupations,
-  refreshAllAnzscoOccupations,
+  refreshMergedOccupations,
   refreshStateRequirements,
   mergeStateRequirements,
   searchOccupations,
 } from '../utils/skilledOccupations';
-import {
-  getDailyUpdates,
-  buildVisaMetaMap,
-  DEFAULT_VISA_META,
-  DailyUpdates,
-} from '../utils/dailyUpdates';
+import { buildVisaMetaMap, DEFAULT_VISA_META, DailyUpdates } from '../utils/dailyUpdates';
 import { tap as hapticTap, success as hapticSuccess } from '../utils/haptics';
 import { recordEngagement } from '../utils/rateApp';
 import { getVisaJourney } from '../constants/visaJourney';
@@ -49,13 +43,10 @@ import { getProfile, saveProfile } from '../utils/storage';
 import { hasExceededLimit, incrementUsage, getRemainingUses } from '../utils/paywall';
 import {
   SalariesSnapshot,
-  getSalaries,
-  refreshSalaries,
   getSalaryFor,
   formatAnnualShort,
   formatAnnualFull,
 } from '../utils/salaries';
-import { getVisaFees, refreshVisaFees } from '../utils/visaFees';
 import type { VisaFeeEntry } from '../constants/visaFees';
 import { PaywallModal } from '../components/PaywallModal';
 
@@ -402,7 +393,7 @@ const AUTHORITY_INFO: Record<string, AuthorityInfo> = {
     assesses: 'ICT / Information Technology professionals',
     website: 'https://www.acs.org.au/msa',
     typicalTime: '4–8 weeks',
-    fee: 'AUD $530 (skills assessment)',
+    fee: 'AUD $625–$1,498 excl GST (General Skills / Post-Aus Study / RPL)',
     documents: [
       'Academic degree certificates and transcripts',
       'Employment reference letters (per role, on letterhead)',
@@ -421,7 +412,7 @@ const AUTHORITY_INFO: Record<string, AuthorityInfo> = {
     assesses: 'Engineering professionals (civil, mechanical, electrical, software, etc.)',
     website: 'https://www.engineersaustralia.org.au/msa',
     typicalTime: '10–16 weeks',
-    fee: 'AUD $700 – $800 (CDR pathway); AUD $300 (Washington/Dublin/Seoul Accord)',
+    fee: 'AUD $347–$1,815 incl GST (varies by pathway — CDR, Accord, Australian qual)',
     documents: [
       'CDR — Competency Demonstration Report (3 career episodes + summary statement)',
       'Academic transcripts and degree certificates',
@@ -439,7 +430,7 @@ const AUTHORITY_INFO: Record<string, AuthorityInfo> = {
     assesses: 'Registered nurses, enrolled nurses, and midwives',
     website: 'https://www.anmac.org.au',
     typicalTime: '6–8 weeks',
-    fee: 'AUD $395 – $595 (modified or full assessment)',
+    fee: 'AUD $395–$595 (modified $395 / full $595)',
     documents: [
       'Nursing/midwifery degree certificate and transcripts',
       'Current professional registration certificate',
@@ -472,7 +463,7 @@ const AUTHORITY_INFO: Record<string, AuthorityInfo> = {
     assesses: 'Trade occupations (electricians, plumbers, motor mechanics, etc.)',
     website: 'https://www.tra.gov.au',
     typicalTime: '3–6 months',
-    fee: 'AUD $330 (offshore assessment); additional costs for on-shore skills test',
+    fee: 'AUD $130 (application fee)',
     documents: [
       'Trade certificates or apprenticeship records',
       'Employment references detailing trade duties',
@@ -1153,6 +1144,61 @@ function conditionWithCurrentFee(condition: FederalVisaCondition, visa: string, 
   };
 }
 
+/**
+ * Populate salary, visa fee, and SkillSelect state from merged DB occupation items.
+ * This avoids separate fetches to salaries.json, visa-fees.json, invitation-rounds.json.
+ */
+function buildSalariesFromMerged(items: SkilledOccupation[]): SalariesSnapshot {
+  const salaries: Record<string, any> = {};
+  for (const o of items) {
+    if (o.salary) {
+      salaries[o.anzsco] = o.salary;
+    }
+  }
+  return { snapshotDate: new Date().toISOString(), salaries };
+}
+
+function buildVisaFeesFromMerged(items: SkilledOccupation[]): VisaFeeEntry[] {
+  const seen = new Set<string>();
+  const fees: VisaFeeEntry[] = [];
+  for (const o of items) {
+    const vd = o.visaDetailsMerged as Record<string, any> | undefined;
+    if (!vd) continue;
+    for (const [code, detail] of Object.entries(vd)) {
+      if (seen.has(code)) continue;
+      if (detail?.fees?.mainApplicant) {
+        seen.add(code);
+        fees.push({
+          subclass: code,
+          fee: detail.fees.mainApplicant,
+          note: detail.fees.note || undefined,
+        });
+      }
+    }
+  }
+  return fees;
+}
+
+function buildCutoffsFromMerged(items: SkilledOccupation[]): {
+  cutoffs: Map<string, { sc189: number | null; sc491Family: number | null }>;
+  history: Map<string, { date: string; sc189: number | null; sc491Family: number | null }[]>;
+} {
+  const cutoffs = new Map<string, { sc189: number | null; sc491Family: number | null }>();
+  const history = new Map<string, { date: string; sc189: number | null; sc491Family: number | null }[]>();
+  for (const o of items) {
+    const key = o.name.toLowerCase().trim();
+    if (o.skillSelectScores) {
+      cutoffs.set(key, o.skillSelectScores);
+    }
+    // skillSelectHistory comes through from the merged validator as an unknown field on visaDetailsMerged or directly
+    const hist = (o as any).skillSelectHistory;
+    if (Array.isArray(hist) && hist.length > 0) {
+      history.set(key, hist);
+    }
+  }
+  return { cutoffs, history };
+}
+
 export default function OccupationsScreen() {
   const Colors = useColors();
   const router = useRouter();
@@ -1186,6 +1232,14 @@ export default function OccupationsScreen() {
   });
   const [visaFees, setVisaFees] = useState<VisaFeeEntry[]>([]);
 
+  const populateFromMergedDB = (occupations: SkilledOccupation[]) => {
+    setSalaries(buildSalariesFromMerged(occupations));
+    setVisaFees(buildVisaFeesFromMerged(occupations));
+    const { cutoffs, history } = buildCutoffsFromMerged(occupations);
+    setOccupationCutoffs(cutoffs);
+    setOccupationHistory(history);
+  };
+
   useEffect(() => {
     (async () => {
       const snap = await getSkilledOccupations();
@@ -1197,58 +1251,17 @@ export default function OccupationsScreen() {
       const p = await getProfile();
       setProfile(p);
       setSavedAnzsco(p.anzscoCode ?? '');
-      // Salaries: show cache first, refresh in background.
-      setSalaries(await getSalaries());
-      refreshSalaries().then((s) => setSalaries(s)).catch(() => {});
-      setVisaFees((await getVisaFees()).items);
-      refreshVisaFees().then(({ snapshot }) => setVisaFees(snapshot.items)).catch(() => {});
-      // Daily-monitor data (cost, processing cutoff, next invitation round)
-      getDailyUpdates().then((u) => setDailyUpdates(u)).catch(() => {});
-      // SkillSelect invitation round cutoffs (shared cache with Rounds tab)
-      (async () => {
-        try {
-          const ROUNDS_CACHE = 'rounds_v10';
-          const ROUNDS_URL = 'https://swift-shore-238707.web.app/invitation-rounds.json';
-          const cached = await AsyncStorage.getItem(ROUNDS_CACHE);
-          let data = cached ? JSON.parse(cached) : null;
-          try {
-            const resp = await fetch(ROUNDS_URL);
-            if (resp.ok) {
-              data = await resp.json();
-              await AsyncStorage.setItem(ROUNDS_CACHE, JSON.stringify(data));
-            }
-          } catch { /* use cached data when offline */ }
-          if (data?.occupationScores) {
-            const map = new Map<string, { sc189: number | null; sc491Family: number | null }>();
-            for (const s of data.occupationScores) {
-              map.set((s.name as string).toLowerCase().trim(), { sc189: s.sc189 ?? null, sc491Family: s.sc491Family ?? null });
-            }
-            setOccupationCutoffs(map);
-            setLastRoundDate(data.currentRound?.date ?? data.rounds?.[0]?.date ?? null);
-          }
-          // Build per-occupation history from all rounds that have scores
-          if (Array.isArray(data?.rounds)) {
-            const histMap = new Map<string, { date: string; sc189: number | null; sc491Family: number | null }[]>();
-            const sortedRounds = [...data.rounds].sort((a: any, b: any) => b.date.localeCompare(a.date));
-            for (const round of sortedRounds) {
-              if (!Array.isArray(round.occupationScores)) continue;
-              for (const s of round.occupationScores) {
-                const k = (s.name as string).toLowerCase().trim();
-                if (!histMap.has(k)) histMap.set(k, []);
-                histMap.get(k)!.push({ date: round.date, sc189: s.sc189 ?? null, sc491Family: s.sc491Family ?? null });
-              }
-            }
-            setOccupationHistory(histMap);
-          }
-        } catch { /* silently fail */ }
-      })();
-      // Refresh comprehensive all-anzsco list in background
-      refreshAllAnzscoOccupations()
+      // Populate salary, visa fees, and SkillSelect data from merged DB items
+      populateFromMergedDB(merged);
+      // Background refresh from merged database
+      refreshMergedOccupations()
         .then((res) => {
           if (res.updated) {
             const merged2 = mergeStateRequirements(res.snapshot.items, reqSnap.snapshot);
-            setItems(normalizeOccupationAuthorities(deduplicateOccupations(merged2)));
+            const final2 = normalizeOccupationAuthorities(deduplicateOccupations(merged2));
+            setItems(final2);
             setSnapshotDate(res.snapshot.snapshotDate);
+            populateFromMergedDB(final2);
           }
         })
         .catch(() => {});
@@ -1280,17 +1293,15 @@ export default function OccupationsScreen() {
   const onRefresh = async () => {
     setRefreshing(true);
     hapticTap();
-    const [{ snapshot }, { updated: allAnzscoUpdated, snapshot: allAnzscoSnap }, reqResult, salarySnap] = await Promise.all([
-      refreshSkilledOccupations({ force: true }),
-      refreshAllAnzscoOccupations({ force: true }),
+    const [{ snapshot: mergedSnap }, reqResult] = await Promise.all([
+      refreshMergedOccupations({ force: true }),
       refreshStateRequirements({ force: true }),
-      refreshSalaries({ force: true }),
     ]);
-    const finalSnapshot = allAnzscoUpdated ? allAnzscoSnap : snapshot;
-    setItems(normalizeOccupationAuthorities(deduplicateOccupations(mergeStateRequirements(finalSnapshot.items, reqResult.snapshot))));
-    setSnapshotDate(finalSnapshot.snapshotDate);
+    const final = normalizeOccupationAuthorities(deduplicateOccupations(mergeStateRequirements(mergedSnap.items, reqResult.snapshot)));
+    setItems(final);
+    setSnapshotDate(mergedSnap.snapshotDate);
     setLastChecked(await getOccupationsLastCheckedAt());
-    setSalaries(salarySnap);
+    populateFromMergedDB(final);
     setRefreshing(false);
   };
 
@@ -1535,8 +1546,23 @@ export default function OccupationsScreen() {
                 <View style={[styles.modalHandle, { backgroundColor: Colors.border }]} />
                 <ScrollView showsVerticalScrollIndicator={false}>
                   <View style={styles.modalHead}>
-                    <View style={[styles.codePillLg, { backgroundColor: Colors.surfaceRaised, borderColor: Colors.border }]}>
-                      <Text style={[styles.codePillLgText, { color: Colors.textSecondary }]}>ANZSCO {selected.anzsco}</Text>
+                    <View style={styles.modalHeadBadges}>
+                      <View style={[styles.codePillLg, { backgroundColor: Colors.surfaceRaised, borderColor: Colors.border }]}>
+                        <Text style={[styles.codePillLgText, { color: Colors.textSecondary }]}>ANZSCO {selected.anzsco}</Text>
+                      </View>
+                      {selected.assessingAuthority && (
+                        <TouchableOpacity activeOpacity={0.7}
+                          onPress={() => {
+                            setSelected(null);
+                            router.push({ pathname: '/(tabs)/skill-assessment', params: { authority: selected.assessingAuthority! } });
+                          }}>
+                          <View style={[styles.authorityBadge, { backgroundColor: `${Colors.accent}15`, borderColor: `${Colors.accent}40` }]}>
+                            <Ionicons name="shield-checkmark" size={11} color={Colors.accent} />
+                            <Text style={[styles.authorityBadgeText, { color: Colors.accent }]}>{selected.assessingAuthority}</Text>
+                            <Ionicons name="chevron-forward" size={10} color={Colors.accent} style={{ marginLeft: 2 }} />
+                          </View>
+                        </TouchableOpacity>
+                      )}
                     </View>
                     <TouchableOpacity onPress={() => setSelected(null)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
                       <Ionicons name="close" size={22} color={Colors.textPrimary} />
@@ -1726,7 +1752,7 @@ export default function OccupationsScreen() {
                               {/* View Journey Button - only for visas with journey data */}
                               {getVisaJourney(visa) && (
                                 <TouchableOpacity
-                                  style={[styles.viewJourneyBtn, { backgroundColor: `${Colors.accent}15`, borderColor: `${Colors.accent}40` }]}
+                                  style={[styles.viewJourneyBtn, { backgroundColor: Colors.accent }]}
                                   onPress={() => {
                                     hapticTap();
                                     if (profile?.isPremium !== true) {
@@ -1742,14 +1768,16 @@ export default function OccupationsScreen() {
                                       },
                                     });
                                   }}
-                                  activeOpacity={0.7}
+                                  activeOpacity={0.8}
                                 >
-                                  <Ionicons name="map-outline" size={14} color={Colors.accent} />
-                                  <Text style={[styles.viewJourneyText, { color: Colors.accent }]}>View Journey</Text>
+                                  <Ionicons name="map-outline" size={14} color="#fff" />
+                                  <Text style={[styles.viewJourneyText, { color: '#fff' }]}>
+                                    View SC {visa} Pathway
+                                  </Text>
                                   {profile?.isPremium !== true && (
-                                    <Ionicons name="lock-closed" size={12} color={Colors.accent} style={{ marginLeft: 2 }} />
+                                    <Ionicons name="lock-closed" size={12} color="rgba(255,255,255,0.8)" />
                                   )}
-                                  <Ionicons name="chevron-forward" size={14} color={Colors.accent} />
+                                  <Ionicons name="chevron-forward" size={15} color="#fff" />
                                 </TouchableOpacity>
                               )}
                             </View>
@@ -1909,10 +1937,10 @@ export default function OccupationsScreen() {
                               style={[
                                 styles.stateCell,
                                 eligible
-                                  ? { backgroundColor: `${STATE_COLORS[s]}1A`, borderColor: isOpen ? STATE_COLORS[s] : `${STATE_COLORS[s]}88` }
+                                  ? { backgroundColor: `${STATE_COLORS[s]}18`, borderColor: STATE_COLORS[s], borderWidth: isOpen ? 2 : 1.5 }
                                   : tappable
-                                    ? { backgroundColor: `${Colors.warning}10`, borderColor: `${Colors.warning}55` }
-                                    : { opacity: 0.35 },
+                                    ? { backgroundColor: `${Colors.warning}08`, borderColor: `${Colors.warning}40`, opacity: 0.6 }
+                                    : { opacity: 0.4, backgroundColor: Colors.surfaceRaised },
                               ]}
                             >
                               <Text style={[styles.stateCellCode, { color: eligible ? STATE_COLORS[s] : tappable ? Colors.warning : Colors.textMuted }]}>
@@ -2238,29 +2266,24 @@ export default function OccupationsScreen() {
                               </View>
                             </View>
                             <Text style={[styles.engDesc, {color: Colors.textPrimary}]}>{req!.description}</Text>
-                            <View style={styles.engScores}>
-                              <View style={styles.engScore}>
-                                <Text style={[styles.engScoreLabel, {color: Colors.textPrimary}]}>IELTS</Text>
-                                <Text style={[styles.engScoreVal, {color: Colors.textPrimary}]}>{req!.ielts}</Text>
+                            <View style={styles.engScoresCompact}>
+                              <View style={[styles.engScoreBox, { backgroundColor: Colors.surfaceRaised, borderColor: Colors.border }]}>
+                                <Text style={[styles.engScoreBoxLabel, {color: Colors.textMuted}]}>IELTS</Text>
+                                <Text style={[styles.engScoreBoxVal, {color: Colors.textPrimary}]}>{req!.ielts}</Text>
                               </View>
-                              <View style={styles.engDivider} />
-                              <View style={styles.engScore}>
-                                <Text style={[styles.engScoreLabel, {color: Colors.textPrimary}]}>PTE Academic</Text>
-                                <Text style={[styles.engScoreVal, {color: Colors.textPrimary}]}>{req!.pte}</Text>
+                              <View style={[styles.engScoreBox, { backgroundColor: Colors.surfaceRaised, borderColor: Colors.border }]}>
+                                <Text style={[styles.engScoreBoxLabel, {color: Colors.textMuted}]}>PTE</Text>
+                                <Text style={[styles.engScoreBoxVal, {color: Colors.textPrimary}]}>{req!.pte}</Text>
                               </View>
-                              <View style={styles.engDivider} />
-                              <View style={styles.engScore}>
-                                <Text style={[styles.engScoreLabel, {color: Colors.textPrimary}]}>TOEFL iBT</Text>
-                                <Text style={[styles.engScoreVal, {color: Colors.textPrimary}]}>{req!.toefl}</Text>
+                              <View style={[styles.engScoreBox, { backgroundColor: Colors.surfaceRaised, borderColor: Colors.border }]}>
+                                <Text style={[styles.engScoreBoxLabel, {color: Colors.textMuted}]}>TOEFL</Text>
+                                <Text style={[styles.engScoreBoxVal, {color: Colors.textPrimary}]}>{req!.toefl}</Text>
                               </View>
                               {supportsOet(selected) && (
-                                <>
-                                  <View style={styles.engDivider} />
-                                  <View style={styles.engScore}>
-                                    <Text style={[styles.engScoreLabel, {color: Colors.textPrimary}]}>OET</Text>
-                                    <Text style={[styles.engScoreVal, {color: Colors.textPrimary}]}>{req!.oet}</Text>
-                                  </View>
-                                </>
+                                <View style={[styles.engScoreBox, { backgroundColor: Colors.surfaceRaised, borderColor: Colors.border }]}>
+                                  <Text style={[styles.engScoreBoxLabel, {color: Colors.textMuted}]}>OET</Text>
+                                  <Text style={[styles.engScoreBoxVal, {color: Colors.textPrimary}]}>{req!.oet}</Text>
+                                </View>
                               )}
                             </View>
                             {supportsOet(selected) && (
@@ -2274,27 +2297,38 @@ export default function OccupationsScreen() {
 
                   {/* ─── Skills Assessment ────────────────────────────── */}
                   {selected.assessingAuthority && (() => {
-                    // Aliases: maps fragments in assessingAuthority strings → AUTHORITY_INFO key
-                    const ALIASES: Record<string, string> = {
-                      'CPA Australia': 'CPAA',
-                      'CA ANZ': 'CAANZ',
-                      'Medical Board': 'Medical Board',
-                      'Dietitians Australia': 'Dietitians Australia',
-                      'Community Work': 'Community Work Australia',
-                    };
-                    const raw = selected.assessingAuthority!;
-                    const rawLower = raw.toLowerCase();
-                    // 1. Try exact AUTHORITY_INFO key match
-                    // 2. Try alias fragments
-                    // 3. Try partial include of key in authority string
-                    const authorityKey =
-                      selected.assessingAuthority === 'APharmC'
-                        ? 'APharmC'
-                        : AUTHORITY_INFO[raw]
-                        ? raw
-                        : Object.entries(ALIASES).find(([frag]) => rawLower.includes(frag.toLowerCase()))?.[1] ??
-                          Object.keys(AUTHORITY_INFO).find(k => rawLower.includes(k.toLowerCase()));
-                    const info = authorityKey ? AUTHORITY_INFO[authorityKey] : null;
+                    // Prefer enriched authorityInfo from merged database, fall back to bundled constant
+                    const enriched = selected.authorityInfo;
+                    const info = enriched
+                      ? {
+                          name: enriched.name || selected.assessingAuthority!,
+                          assesses: enriched.assesses || '',
+                          website: enriched.website || '',
+                          typicalTime: enriched.processingTime || '',
+                          fee: enriched.fee || '',
+                          documents: [] as string[],
+                          notes: [] as string[],
+                        }
+                      : (() => {
+                          // Fallback: resolve from bundled AUTHORITY_INFO constant
+                          const ALIASES: Record<string, string> = {
+                            'CPA Australia': 'CPAA',
+                            'CA ANZ': 'CAANZ',
+                            'Medical Board': 'Medical Board',
+                            'Dietitians Australia': 'Dietitians Australia',
+                            'Community Work': 'Community Work Australia',
+                          };
+                          const raw = selected.assessingAuthority!;
+                          const rawLower = raw.toLowerCase();
+                          const authorityKey =
+                            selected.assessingAuthority === 'APharmC'
+                              ? 'APharmC'
+                              : AUTHORITY_INFO[raw]
+                              ? raw
+                              : Object.entries(ALIASES).find(([frag]) => rawLower.includes(frag.toLowerCase()))?.[1] ??
+                                Object.keys(AUTHORITY_INFO).find(k => rawLower.includes(k.toLowerCase()));
+                          return authorityKey ? AUTHORITY_INFO[authorityKey] : null;
+                        })();
                     return (
                       <>
                         <Text style={[styles.sectionLabel, {color: Colors.textPrimary}]}>Skills assessment</Text>
@@ -2303,10 +2337,17 @@ export default function OccupationsScreen() {
                             <View style={styles.authIcon}>
                               <Ionicons name="shield-checkmark-outline" size={16} color={Colors.accent} />
                             </View>
-                            <View style={{ flex: 1 }}>
-                              <Text style={[styles.authName, {color: Colors.textPrimary}]}>{info ? info.name : selected.assessingAuthority}</Text>
+                            <TouchableOpacity style={{ flex: 1 }} activeOpacity={0.7}
+                              onPress={() => {
+                                setSelected(null);
+                                router.push({ pathname: '/(tabs)/skill-assessment', params: { authority: selected.assessingAuthority! } });
+                              }}>
+                              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                                <Text style={[styles.authName, {color: Colors.textPrimary}]}>{info ? info.name : selected.assessingAuthority}</Text>
+                                <Ionicons name="chevron-forward" size={11} color={Colors.accent} />
+                              </View>
                               {info && <Text style={[styles.authAssesses, {color: Colors.textPrimary}]}>{info.assesses}</Text>}
-                            </View>
+                            </TouchableOpacity>
                           </View>
 
                           {info && (
@@ -3206,6 +3247,52 @@ const styles = StyleSheet.create({
   },
   viewJourneyText: {
     fontSize: FontSize.sm,
-    fontWeight: FontWeight.semibold,
+    fontWeight: FontWeight.semiBold,
+  },
+  // Authority badge in header
+  modalHeadBadges: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+    flexWrap: 'wrap',
+    flex: 1,
+  },
+  authorityBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: Radius.sm,
+    borderWidth: 1,
+  },
+  authorityBadgeText: {
+    fontSize: FontSize.xs,
+    fontWeight: FontWeight.medium,
+  },
+  // Compact English scores
+  engScoresCompact: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.xs,
+    marginTop: Spacing.sm,
+  },
+  engScoreBox: {
+    flex: 1,
+    minWidth: 70,
+    alignItems: 'center',
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.xs,
+    borderRadius: Radius.sm,
+    borderWidth: 1,
+  },
+  engScoreBoxLabel: {
+    fontSize: FontSize.xs,
+    fontWeight: FontWeight.medium,
+    marginBottom: 2,
+  },
+  engScoreBoxVal: {
+    fontSize: FontSize.md,
+    fontWeight: FontWeight.bold,
   },
 });

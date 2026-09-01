@@ -16,7 +16,7 @@ import { selection } from '../utils/haptics';
 import { getProfile, saveProfile } from '../utils/storage';
 import OnboardingModal from '../components/OnboardingModal';
 import { refreshProcessingTimes } from '../utils/processingTimes';
-import { refreshSkilledOccupations } from '../utils/skilledOccupations';
+import { refreshMergedOccupations } from '../utils/skilledOccupations';
 import { initSentry, Sentry } from '../utils/sentry';
 import { initializeFirebaseWeb, subscribeToNotificationsWeb } from '../utils/firebaseWeb';
 
@@ -266,7 +266,7 @@ function RootLayout() {
       .catch(() => {});
 
     // Once-per-day skilled occupations refresh (CSOL / MLTSSL / STSOL / ROL)
-    refreshSkilledOccupations()
+    refreshMergedOccupations()
       .then(async ({ changes }) => {
         if (!changes.length) return;
         try {

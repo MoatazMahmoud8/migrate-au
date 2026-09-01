@@ -1,10 +1,11 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Platform, Linking } from 'react-native';
 import { useLocalSearchParams, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { VISA_JOURNEYS, ENGLISH_TESTS, getVisaJourney } from '../constants/visaJourney';
 import { getAssessingAuthority } from '../constants/assessingAuthorities';
 import { tap as hapticTap } from '../utils/haptics';
+import { openExternalUrl } from '../utils/openExternalUrl';
 import { useColors } from '../constants/ThemeContext';
 import { Spacing, Radius, FontSize, FontWeight } from '../constants/theme';
 
@@ -124,10 +125,24 @@ export default function VisaJourneyScreen() {
 
             {/* Journey Steps */}
             <Text style={[styles.sectionTitle, { color: Colors.textPrimary }]}>Your Journey to Australia</Text>
-            {journey.steps.map((step, index) => (
+            {journey.steps.map((step, index) => {
+              // Customise the skills-assessment step when we know the authority
+              const isAssessmentStep = step.id === 'skills-assessment';
+              const auth = isAssessmentStep && userAuthority && typeof userAuthority === 'object' ? userAuthority : null;
+              const customTitle = auth ? `Skills Assessment — ${auth.name}` : step.title;
+              const customDesc = auth
+                ? `Get your qualifications and experience assessed by ${auth.fullName}. They assess occupations starting with ANZSCO prefixes ${auth.occupationPrefixes.slice(0, 3).join(', ')}${auth.occupationPrefixes.length > 3 ? '…' : ''}.`
+                : step.description;
+              const customDuration = auth ? auth.processingTime : step.duration;
+              const customCost = auth ? auth.fee : step.cost;
+              const customDocs = auth ? auth.requiredDocuments : step.documents;
+
+              return (
               <TouchableOpacity
                 key={step.id}
-                style={[styles.stepCard, { backgroundColor: Colors.surface, borderColor: Colors.border }]}
+                style={[styles.stepCard, { backgroundColor: Colors.surface, borderColor: Colors.border },
+                  auth ? { borderColor: `${Colors.accent}50`, borderWidth: 1.5 } : {}
+                ]}
                 onPress={() => {
                   hapticTap();
                   setExpandedStep(expandedStep === step.id ? null : step.id);
@@ -135,18 +150,24 @@ export default function VisaJourneyScreen() {
                 activeOpacity={0.8}
               >
                 <View style={styles.stepHeader}>
-                  <View style={[styles.stepNumber, { backgroundColor: Colors.accent }]}>
+                  <View style={[styles.stepNumber, { backgroundColor: auth ? Colors.success : Colors.accent }]}>
                     <Text style={styles.stepNumberText}>{index + 1}</Text>
                   </View>
                   <View style={styles.stepInfo}>
-                    <Text style={[styles.stepTitle, { color: Colors.textPrimary }]}>{step.title}</Text>
+                    <Text style={[styles.stepTitle, { color: Colors.textPrimary }]}>{customTitle}</Text>
                     <View style={styles.stepMetaRow}>
                       <Ionicons name="time-outline" size={12} color={Colors.textMuted} />
                       <Text style={[styles.stepDuration, { color: Colors.textMuted }]}>
-                        {step.duration}
-                        {step.cost && ` · ${step.cost}`}
+                        {customDuration}
+                        {customCost && ` · ${customCost}`}
                       </Text>
                     </View>
+                    {auth && (
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 }}>
+                        <Ionicons name="shield-checkmark" size={10} color={Colors.success} />
+                        <Text style={{ fontSize: 10, color: Colors.success, fontWeight: FontWeight.semiBold }}>Customised for your occupation</Text>
+                      </View>
+                    )}
                   </View>
                   <Ionicons
                     name={expandedStep === step.id ? 'chevron-up' : 'chevron-down'}
@@ -157,15 +178,31 @@ export default function VisaJourneyScreen() {
 
                 {expandedStep === step.id && (
                   <View style={[styles.stepExpanded, { borderTopColor: Colors.border }]}>
-                    <Text style={[styles.stepDescription, { color: Colors.textSecondary }]}>{step.description}</Text>
+                    <Text style={[styles.stepDescription, { color: Colors.textSecondary }]}>{customDesc}</Text>
 
-                    {step.documents && step.documents.length > 0 && (
+                    {auth && (
+                      <TouchableOpacity
+                        style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8, paddingVertical: 8, paddingHorizontal: 12,
+                          backgroundColor: `${Colors.accent}10`, borderRadius: 8, borderWidth: 1, borderColor: `${Colors.accent}30` }}
+                        activeOpacity={0.7}
+                        onPress={() => void openExternalUrl(auth.website)}>
+                        <Ionicons name="globe-outline" size={14} color={Colors.accent} />
+                        <Text style={{ fontSize: 13, color: Colors.accent, fontWeight: FontWeight.semiBold, flex: 1 }}>
+                          Visit {auth.name} — Official Website
+                        </Text>
+                        <Ionicons name="open-outline" size={12} color={Colors.accent} />
+                      </TouchableOpacity>
+                    )}
+
+                    {customDocs && customDocs.length > 0 && (
                       <View style={styles.docSection}>
                         <View style={styles.docTitleRow}>
                           <Ionicons name="document-text" size={14} color={Colors.accent} />
-                          <Text style={[styles.docTitle, { color: Colors.accent }]}>Documents Required</Text>
+                          <Text style={[styles.docTitle, { color: Colors.accent }]}>
+                            {auth ? `Documents for ${auth.code}` : 'Documents Required'}
+                          </Text>
                         </View>
-                        {step.documents.map((doc, i) => (
+                        {customDocs.map((doc, i) => (
                           <Text key={i} style={[styles.docItem, { color: Colors.textSecondary }]}>• {doc}</Text>
                         ))}
                       </View>
@@ -182,10 +219,64 @@ export default function VisaJourneyScreen() {
                         ))}
                       </View>
                     )}
+
+                    {/* Ace Aus Citizenship promo on citizenship step */}
+                    {step.id === 'citizenship' && (
+                      <TouchableOpacity
+                        activeOpacity={0.85}
+                        onPress={() => {
+                          const url = Platform.OS === 'ios'
+                            ? 'https://apps.apple.com/au/app/ace-aus-citizenship/id6767216706'
+                            : 'https://play.google.com/store/apps/details?id=xyz.jsmglobal.ace&hl=en_AU';
+                          Linking.openURL(url);
+                        }}
+                        style={{
+                          marginTop: 12,
+                          borderRadius: 12,
+                          overflow: 'hidden',
+                          borderWidth: 1.5,
+                          borderColor: '#FFD70060',
+                          backgroundColor: '#FFFDF5',
+                        }}
+                      >
+                        <View style={{
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          padding: 14,
+                          gap: 12,
+                        }}>
+                          <View style={{
+                            width: 44,
+                            height: 44,
+                            borderRadius: 10,
+                            backgroundColor: '#001A3D',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}>
+                            <Text style={{ fontSize: 20 }}>🇦🇺</Text>
+                          </View>
+                          <View style={{ flex: 1 }}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                              <Text style={{ fontSize: 14, fontWeight: FontWeight.bold, color: '#1A1A2E' }}>
+                                Ace Aus Citizenship
+                              </Text>
+                              <View style={{ backgroundColor: '#FFD700', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
+                                <Text style={{ fontSize: 9, fontWeight: FontWeight.bold, color: '#1A1A2E' }}>OUR APP</Text>
+                              </View>
+                            </View>
+                            <Text style={{ fontSize: 12, color: '#666', marginTop: 2, lineHeight: 16 }}>
+                              Practice for the Australian Citizenship Test with 500+ real questions, mock exams & study guides.
+                            </Text>
+                          </View>
+                          <Ionicons name="chevron-forward" size={18} color="#999" />
+                        </View>
+                      </TouchableOpacity>
+                    )}
                   </View>
                 )}
               </TouchableOpacity>
-            ))}
+              );
+            })}
           </>
         )}
 
@@ -206,15 +297,15 @@ const styles = StyleSheet.create({
     marginRight: Spacing.xs,
     borderWidth: 1,
   },
-  visaChipText: { fontWeight: FontWeight.semibold, fontSize: FontSize.sm },
+  visaChipText: { fontWeight: FontWeight.semiBold, fontSize: FontSize.sm },
   header: { padding: Spacing.md },
   visaTitle: { fontSize: FontSize.xl, fontWeight: FontWeight.bold, marginBottom: Spacing.xs },
   badges: { flexDirection: 'row', gap: Spacing.xs },
   badge: { paddingHorizontal: Spacing.sm, paddingVertical: 4, borderRadius: Radius.sm },
-  badgeText: { fontSize: FontSize.xs, fontWeight: FontWeight.semibold },
+  badgeText: { fontSize: FontSize.xs, fontWeight: FontWeight.semiBold },
   englishCard: { margin: Spacing.md, padding: Spacing.md, borderRadius: Radius.md, borderWidth: 1 },
   cardTitleRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, marginBottom: Spacing.sm },
-  cardTitle: { fontSize: FontSize.md, fontWeight: FontWeight.semibold },
+  cardTitle: { fontSize: FontSize.md, fontWeight: FontWeight.semiBold },
   englishGrid: { flexDirection: 'row', justifyContent: 'space-between' },
   englishItem: { alignItems: 'center' },
   englishTestName: { fontSize: FontSize.xs },
@@ -239,17 +330,17 @@ const styles = StyleSheet.create({
   },
   stepNumberText: { color: '#fff', fontWeight: FontWeight.bold },
   stepInfo: { flex: 1 },
-  stepTitle: { fontSize: FontSize.md, fontWeight: FontWeight.semibold },
+  stepTitle: { fontSize: FontSize.md, fontWeight: FontWeight.semiBold },
   stepMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
   stepDuration: { fontSize: FontSize.xs },
   stepExpanded: { paddingHorizontal: Spacing.md, paddingBottom: Spacing.md, borderTopWidth: 1 },
   stepDescription: { marginTop: Spacing.sm, lineHeight: 20, fontSize: FontSize.sm },
   docSection: { marginTop: Spacing.md },
   docTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: Spacing.xs },
-  docTitle: { fontWeight: FontWeight.semibold, fontSize: FontSize.sm },
+  docTitle: { fontWeight: FontWeight.semiBold, fontSize: FontSize.sm },
   docItem: { marginLeft: Spacing.sm, marginBottom: 4, fontSize: FontSize.sm },
   tipsSection: { marginTop: Spacing.md, padding: Spacing.sm, borderRadius: Radius.sm, borderWidth: 1 },
   tipsTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: Spacing.xs },
-  tipsTitle: { fontWeight: FontWeight.semibold, fontSize: FontSize.sm },
+  tipsTitle: { fontWeight: FontWeight.semiBold, fontSize: FontSize.sm },
   tipItem: { marginBottom: 4, fontSize: FontSize.sm },
 });

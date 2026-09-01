@@ -27,6 +27,7 @@ import { UsageMeter } from '../../components/UsageMeter';
 import { sendAriaMessage, AriaHistoryMessage } from '../../utils/aria';
 import { recordEngagement } from '../../utils/rateApp';
 import Markdown from 'react-native-markdown-display';
+import { useLocalSearchParams } from 'expo-router';
 
 // System prompt and Gemini key live on the server (functions/index.js).
 // The client only forwards the conversation history.
@@ -75,6 +76,17 @@ export default function AiScreen() {
       setRemaining(rem);
     })();
   }, []);
+
+  // Auto-trigger a prompt when navigated to with a `prompt` param (e.g. from Home chips)
+  const params = useLocalSearchParams<{ prompt?: string }>();
+  const autoSentRef = useRef(false);
+  useEffect(() => {
+    const q = typeof params.prompt === 'string' ? params.prompt.trim() : '';
+    if (q && profile && !autoSentRef.current) {
+      autoSentRef.current = true;
+      void send(q);
+    }
+  }, [params.prompt, profile]);
 
   const send = async (text: string) => {
     const trimmed = text.trim();

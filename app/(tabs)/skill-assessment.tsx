@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import {
   ScrollView,
   View,
@@ -12,6 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing, Radius, FontSize, FontWeight } from '../../constants/theme';
 import { useColors } from '../../constants/ThemeContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useLocalSearchParams } from 'expo-router';
 import { tap as hapticTap } from '../../utils/haptics';
 import { openExternalUrl } from '../../utils/openExternalUrl';
 
@@ -544,6 +545,24 @@ export default function SkillAssessmentScreen() {
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<AuthCategory>('All');
   const [expanded, setExpanded] = useState<string | null>(null);
+  const params = useLocalSearchParams<{ authority?: string }>();
+  const autoExpandedRef = useRef(false);
+
+  // Auto-expand authority when navigated from occupation detail
+  useEffect(() => {
+    if (params.authority && !autoExpandedRef.current) {
+      autoExpandedRef.current = true;
+      const match = AUTHORITIES.find(
+        (a) => a.abbr.toLowerCase() === params.authority!.toLowerCase()
+          || a.name.toLowerCase().includes(params.authority!.toLowerCase())
+          || a.id.toLowerCase() === params.authority!.toLowerCase()
+      );
+      if (match) {
+        setExpanded(match.id);
+        setQuery(match.abbr);
+      }
+    }
+  }, [params.authority]);
 
   const filtered = useMemo(() => {
     const q = query.toLowerCase().trim();

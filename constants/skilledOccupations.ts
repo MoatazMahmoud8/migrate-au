@@ -48,6 +48,38 @@ export interface SkilledOccupation {
    * Fetched daily from the state requirements endpoint and merged at runtime.
    */
   stateRequirements?: Partial<Record<StateCode, Record<string, StateRequirement>>>;
+
+  // ── Enrichment fields from merged database ─────────────────────────────
+  /** Official ABS ANZSCO occupation description. */
+  description?: string;
+  /** Unit group label (e.g. "2611 ICT Business and Systems Analysts"). */
+  unitGroup?: string;
+  /** ABS skill level descriptor. */
+  skillLevel?: string;
+  /** URL to the ABS source page. */
+  descriptionSource?: string;
+  /** Resolved assessing authority details (fee, processing time, website). */
+  authorityInfo?: {
+    name: string;
+    fee: string | null;
+    processingTime: string | null;
+    website: string | null;
+    assesses: string | null;
+  };
+  /** SkillSelect invitation round cutoff scores. */
+  skillSelectScores?: { sc189: number | null; sc491Family: number | null };
+  /** Per-visa application fees. */
+  visaFeeDetails?: Record<string, { fee: string; note?: string | null }>;
+  /** Official median salary from Jobs and Skills Australia. */
+  salary?: {
+    annualSalary: number;
+    weeklyEarnings: number | null;
+    currency: string;
+    sourceLevel: '6-digit' | '4-digit' | null;
+    sourceUrl: string | null;
+  };
+  /** Per-visa merged details (fees + processing times + name). */
+  visaDetailsMerged?: Record<string, unknown>;
 }
 
 /**

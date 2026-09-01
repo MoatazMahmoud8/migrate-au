@@ -61,6 +61,7 @@ const VISA_PURPOSES = [
     hint: 'Points-tested PR',
     color: Colors.accent,
     bg: 'rgba(0,194,255,0.12)',
+    highlight: true,
     visas: [
       { code: '189', name: 'Skilled Independent',  why: 'Points-tested permanent visa — no employer or state sponsor needed.' },
       { code: '190', name: 'State Nominated',       why: 'Earn 5 extra points with a state nomination. Popular choice.' },
@@ -138,6 +139,7 @@ const VISA_PURPOSES = [
     hint: 'Your employer sponsors',
     color: '#A78BFA',
     bg: 'rgba(167,139,250,0.12)',
+    highlight: true,
     visas: [
       { code: '482', name: 'TSS / Skills in Demand', why: 'Temporary 2–4 year work visa sponsored by an approved Australian employer.' },
       { code: '186', name: 'ENS Visa',               why: 'Permanent residency sponsored directly by your Australian employer.' },
@@ -232,17 +234,25 @@ function VisaFinder() {
       <View style={styles.purposeGrid}>
         {VISA_PURPOSES.map((p) => {
           const active = selected === p.id;
+          const highlight = 'highlight' in p && (p as any).highlight === true;
           return (
             <TouchableOpacity
               key={p.id}
               style={[
                 styles.purposeBtn,
                 { backgroundColor: active ? p.bg : Colors.surfaceRaised, borderColor: Colors.border },
+                highlight && !active && { borderColor: p.color + '55', borderWidth: 1.5, backgroundColor: p.color + '0C' },
                 active && { borderColor: p.color + '70' },
               ]}
               onPress={() => handleSelect(p.id)}
               activeOpacity={0.75}
             >
+              {highlight && (
+                <View style={[styles.purposeBadge, { backgroundColor: p.color }]}>
+                  <Ionicons name="star" size={8} color="#fff" />
+                  <Text style={styles.purposeBadgeText}>Popular</Text>
+                </View>
+              )}
               <View style={[styles.purposeIconWrap, { backgroundColor: p.bg }]}>
                 <Ionicons name={p.icon} size={18} color={p.color} />
               </View>
@@ -564,7 +574,7 @@ function GlanceRow({ input }: { input: PointsInput | null }) {
           bg: 'rgba(0,194,255,0.10)',
           label: 'Your Score',
           value: '—',
-          sub: 'Not calculated yet',
+          sub: 'Tap to calculate →',
           route: '/(tabs)/calculator',
         },
     {
@@ -573,7 +583,7 @@ function GlanceRow({ input }: { input: PointsInput | null }) {
       bg: 'rgba(167,139,250,0.10)',
       label: 'States Open',
       value: '8',
-      sub: 'Nominations active',
+      sub: 'Check eligibility →',
       route: '/(tabs)/states',
     },
   ];
@@ -685,9 +695,14 @@ export default function HomeScreen() {
           </View>
           <View style={styles.ariaChips}>
             {['Am I eligible for PR?', 'Best visa for my job?', 'Which state to nominate?'].map((q) => (
-              <View key={q} style={styles.ariaChip}>
+              <TouchableOpacity
+                key={q}
+                style={styles.ariaChip}
+                activeOpacity={0.7}
+                onPress={() => router.push({ pathname: '/(tabs)/ai', params: { prompt: q } } as any)}
+              >
                 <Text style={[styles.ariaChipText, {color: Colors.textPrimary}]}>{q}</Text>
-              </View>
+              </TouchableOpacity>
             ))}
           </View>
         </TouchableOpacity>
@@ -774,6 +789,26 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.07)',
     gap: 4,
+    position: 'relative',
+    overflow: 'visible',
+  },
+  purposeBadge: {
+    position: 'absolute',
+    top: -7,
+    right: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+    borderRadius: 8,
+    zIndex: 2,
+  },
+  purposeBadgeText: {
+    fontSize: 8,
+    fontWeight: FontWeight.bold,
+    color: '#fff',
+    letterSpacing: 0.2,
   },
   purposeIconWrap: {
     width: 36, height: 36, borderRadius: 18,
