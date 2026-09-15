@@ -34,22 +34,29 @@ export const STATE_REQUIREMENTS_REMOTE_URL =
 /** Merged occupations database — single source of truth with enrichments. */
 // Primary: Cloud Storage (updated by admin Publish button)
 export const MERGED_OCCUPATIONS_REMOTE_URL =
-  'https://storage.googleapis.com/swift-shore-238707.appspot.com/occupations-database.json';
-// Fallback: Firebase Hosting (updated by build script + deploy)
-export const MERGED_OCCUPATIONS_FALLBACK_URL =
-  'https://swift-shore-238707.web.app/occupations-database.json';
+  'https://storage.googleapis.com/swift-shore-238707-occupations-db/occupations-database.json';
+export const MERGED_OCCUPATIONS_FALLBACK_URLS = [
+  'https://swift-shore-238707.web.app/occupations-database.json',
+  'https://migrateau-admin-205705.web.app/occupations-database.json',
+] as const;
 
 const CACHE_KEY = '@migrate_au_skilled_occupations';
 const LAST_CHECK_KEY = '@migrate_au_skilled_occupations_last_check';
 const MERGED_CACHE_KEY = '@migrate_au_merged_occupations';
+const MERGED_CACHE_META_KEY = '@migrate_au_merged_occupations_meta';
+const MERGED_CACHE_CHUNK_PREFIX = '@migrate_au_merged_occupations_chunk_';
 const MERGED_LAST_CHECK_KEY = '@migrate_au_merged_occupations_last_check';
 const ALL_ANZSCO_CACHE_KEY = '@migrate_au_all_anzsco_occupations';
 const ALL_ANZSCO_LAST_CHECK_KEY = '@migrate_au_all_anzsco_last_check';
 const STATE_REQ_CACHE_KEY = '@migrate_au_state_requirements_v2';
 const STATE_REQ_LAST_CHECK_KEY = '@migrate_au_state_requirements_last_check_v2';
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+const MERGED_REFRESH_INTERVAL_MS = 5 * 60 * 1000;
+const MERGED_CACHE_CHUNK_SIZE = 500 * 1024;
 const MIN_FORCE_INTERVAL_MS = 30 * 1000; // throttle pull-to-refresh
 const FETCH_TIMEOUT_MS = 15 * 1000;
+
+let mergedOccupationsMemoryCache: OccupationsSnapshot | null = null;
 
 export interface OccupationsSnapshot {
   snapshotDate: string;
@@ -66,6 +73,136 @@ export interface OccupationChange {
   detail?: string;
 }
 
+function normalizeTelecomAuthority<T extends SkilledOccupation>(occupation: T): T {
+  if (!['263311', '263312'].includes(occupation.anzsco)) return occupation;
+  const authority = (occupation.assessingAuthority ?? '').trim();
+  if (
+    authority !== 'ACS'
+    && authority !== 'ACS (Australian Computer Society)'
+    && authority !== 'Australian Computer Society'
+  ) {
+    return occupation;
+  }
+  return {
+    ...occupation,
+    assessingAuthority: 'Engineers Australia',
+    authorityInfo: {
+      name: 'Engineers Australia',
+      fee: occupation.authorityInfo?.fee ?? 'AUD $347–$1,815 incl GST (varies by pathway — CDR, Accord, Australian qual)',
+      processingTime: occupation.authorityInfo?.processingTime ?? '10–16 weeks',
+      website: occupation.authorityInfo?.website ?? 'https://www.engineersaustralia.org.au/msa',
+      assesses: occupation.authorityInfo?.assesses ?? 'Engineering professionals (civil, mechanical, electrical, software, etc.)',
+    },
+  };
+}
+
+function normalizeOccupationsSnapshot(snapshot: OccupationsSnapshot): OccupationsSnapshot {
+  return {
+    ...snapshot,
+    items: snapshot.items.map((item) => normalizeTelecomAuthority(item)),
+  };
+}
+
+function occupationSnapshotsEqual(a: OccupationsSnapshot, b: OccupationsSnapshot): boolean {
+  if (a.snapshotDate !== b.snapshotDate) return false;
+  if (a.items.length !== b.items.length) return false;
+  return JSON.stringify(a.items) === JSON.stringify(b.items);
+}
+
+function isLikelyStaleSnapshot(snapshot: OccupationsSnapshot): boolean {
+  const required = new Set(['233311', '263311', '263312']);
+  const codes = new Set(snapshot.items.map((item) => item.anzsco));
+  return snapshot.items.length < 1000 || ![...required].every((code) => codes.has(code));
+}
+
+async function clearMergedOccupationsCacheChunks(): Promise<void> {
+  try {
+    const metaRaw = await AsyncStorage.getItem(MERGED_CACHE_META_KEY);
+    if (!metaRaw) return;
+    const meta = JSON.parse(metaRaw) as { chunkCount?: number };
+    const chunkCount = Number(meta.chunkCount ?? 0);
+    if (chunkCount > 0) {
+      await AsyncStorage.multiRemove(
+        Array.from({ length: chunkCount }, (_, index) => `${MERGED_CACHE_CHUNK_PREFIX}${index}`)
+      );
+    }
+    await AsyncStorage.removeItem(MERGED_CACHE_META_KEY);
+  } catch (err) {
+    console.warn('[mergedOccupations] failed to clear cache chunks:', err);
+  }
+}
+
+async function readMergedOccupationsCache(): Promise<OccupationsSnapshot | null> {
+  if (mergedOccupationsMemoryCache && !isLikelyStaleSnapshot(mergedOccupationsMemoryCache)) {
+    return mergedOccupationsMemoryCache;
+  }
+
+  try {
+    const metaRaw = await AsyncStorage.getItem(MERGED_CACHE_META_KEY);
+    if (metaRaw) {
+      const meta = JSON.parse(metaRaw) as { chunkCount?: number };
+      const chunkCount = Number(meta.chunkCount ?? 0);
+      if (chunkCount > 0) {
+        const chunkKeys = Array.from(
+          { length: chunkCount },
+          (_, index) => `${MERGED_CACHE_CHUNK_PREFIX}${index}`
+        );
+        const entries = await AsyncStorage.multiGet(chunkKeys);
+        const missingChunk = entries.find(([, value]) => typeof value !== 'string');
+        if (missingChunk) {
+          throw new Error(`missing chunk ${missingChunk[0]}`);
+        }
+        const raw = entries.map(([, value]) => value ?? '').join('');
+        const cached = normalizeOccupationsSnapshot(JSON.parse(raw) as OccupationsSnapshot);
+        mergedOccupationsMemoryCache = cached;
+        return cached;
+      }
+    }
+  } catch (err) {
+    console.warn('[mergedOccupations] failed to read chunked cache:', err);
+  }
+
+  try {
+    const raw = await AsyncStorage.getItem(MERGED_CACHE_KEY);
+    if (raw) {
+      const cached = normalizeOccupationsSnapshot(JSON.parse(raw) as OccupationsSnapshot);
+      mergedOccupationsMemoryCache = cached;
+      return cached;
+    }
+  } catch (err) {
+    console.warn('[mergedOccupations] failed to read legacy cache:', err);
+  }
+
+  return null;
+}
+
+async function writeMergedOccupationsCache(snapshot: OccupationsSnapshot): Promise<boolean> {
+  const normalized = normalizeOccupationsSnapshot(snapshot);
+  const raw = JSON.stringify(normalized);
+  mergedOccupationsMemoryCache = normalized;
+
+  try {
+    await AsyncStorage.removeItem(MERGED_CACHE_KEY).catch(() => {});
+    await clearMergedOccupationsCacheChunks();
+
+    const entries: [string, string][] = [];
+    for (let index = 0; index < raw.length; index += MERGED_CACHE_CHUNK_SIZE) {
+      const chunk = raw.slice(index, index + MERGED_CACHE_CHUNK_SIZE);
+      entries.push([`${MERGED_CACHE_CHUNK_PREFIX}${entries.length}`, chunk]);
+    }
+
+    await AsyncStorage.multiSet(entries);
+    await AsyncStorage.setItem(
+      MERGED_CACHE_META_KEY,
+      JSON.stringify({ chunkCount: entries.length })
+    );
+    return true;
+  } catch (err) {
+    console.warn('[mergedOccupations] cache write failed:', err);
+    return false;
+  }
+}
+
 /**
  * Read the current cached snapshot. Priority:
  *  1. Merged database (enriched: descriptions, authority info, visa fees, SkillSelect)
@@ -73,12 +210,10 @@ export interface OccupationChange {
  *  3. Cached skilled-occupations (422, federal lists only)
  *  4. Bundled data (422, federal lists only)
  */
-export async function getSkilledOccupations(): Promise<OccupationsSnapshot> {
+async function getCachedSkilledOccupations(): Promise<OccupationsSnapshot> {
   // Try merged database first (richest)
-  try {
-    const raw = await AsyncStorage.getItem(MERGED_CACHE_KEY);
-    if (raw) return JSON.parse(raw) as OccupationsSnapshot;
-  } catch {}
+  const mergedCached = await readMergedOccupationsCache();
+  if (mergedCached && !isLikelyStaleSnapshot(mergedCached)) return mergedCached;
 
   // Try all-anzsco cache
   try {
@@ -88,26 +223,45 @@ export async function getSkilledOccupations(): Promise<OccupationsSnapshot> {
       const skilledRaw = await AsyncStorage.getItem(CACHE_KEY);
       if (skilledRaw) {
         const skilled = JSON.parse(skilledRaw) as OccupationsSnapshot;
-        return mergeAllAnzscoWithSkilled(allAnzsco, skilled);
+        return normalizeOccupationsSnapshot(mergeAllAnzscoWithSkilled(allAnzsco, skilled));
       }
       const bundledSkilled: OccupationsSnapshot = {
         snapshotDate: SKILL_OCCUPATIONS_SNAPSHOT_DATE,
         items: SKILLED_OCCUPATIONS,
       };
-      return mergeAllAnzscoWithSkilled(allAnzsco, bundledSkilled);
+      return normalizeOccupationsSnapshot(mergeAllAnzscoWithSkilled(allAnzsco, bundledSkilled));
     }
   } catch {}
 
   // Fall back to skilled-occupations cache or bundled data
   try {
     const raw = await AsyncStorage.getItem(CACHE_KEY);
-    if (raw) return JSON.parse(raw) as OccupationsSnapshot;
+    if (raw) return normalizeOccupationsSnapshot(JSON.parse(raw) as OccupationsSnapshot);
   } catch {}
 
-  return {
+  return normalizeOccupationsSnapshot({
     snapshotDate: SKILL_OCCUPATIONS_SNAPSHOT_DATE,
     items: SKILLED_OCCUPATIONS,
-  };
+  });
+}
+
+export async function getSkilledOccupations(): Promise<OccupationsSnapshot> {
+  const cached = await getCachedSkilledOccupations();
+  const lastMergedCheck = await AsyncStorage.getItem(MERGED_LAST_CHECK_KEY).catch(() => null);
+  const mergedAge = lastMergedCheck
+    ? Date.now() - new Date(lastMergedCheck).getTime()
+    : Number.POSITIVE_INFINITY;
+
+  if (isLikelyStaleSnapshot(cached) || mergedAge >= MERGED_REFRESH_INTERVAL_MS) {
+    try {
+      const refreshed = await refreshMergedOccupations({ force: isLikelyStaleSnapshot(cached) });
+      return refreshed.snapshot;
+    } catch (err) {
+      console.warn('[skilledOccupations] getSkilledOccupations refresh failed:', err);
+    }
+  }
+
+  return cached;
 }
 
 /**
@@ -132,7 +286,10 @@ function mergeAllAnzscoWithSkilled(
 /** Returns ISO timestamp of when we last successfully checked for updates. */
 export async function getOccupationsLastCheckedAt(): Promise<string | null> {
   try {
-    return await AsyncStorage.getItem(LAST_CHECK_KEY);
+    return (
+      await AsyncStorage.getItem(MERGED_LAST_CHECK_KEY)
+      ?? await AsyncStorage.getItem(LAST_CHECK_KEY)
+    );
   } catch {
     return null;
   }
@@ -156,7 +313,7 @@ export async function refreshSkilledOccupations(
     if (!opts.force && age < ONE_DAY_MS) {
       return {
         updated: false,
-        snapshot: await getSkilledOccupations(),
+        snapshot: await getCachedSkilledOccupations(),
         changes: [],
       };
     }
@@ -164,7 +321,7 @@ export async function refreshSkilledOccupations(
     if (opts.force && age < MIN_FORCE_INTERVAL_MS) {
       return {
         updated: false,
-        snapshot: await getSkilledOccupations(),
+        snapshot: await getCachedSkilledOccupations(),
         changes: [],
       };
     }
@@ -186,9 +343,9 @@ export async function refreshSkilledOccupations(
       throw new Error('payload too large');
     }
     const json = await res.json();
-    const remote = validateOccupationsSnapshot(json);
+    const remote = normalizeOccupationsSnapshot(validateOccupationsSnapshot(json));
 
-    const current = await getSkilledOccupations();
+    const current = await getCachedSkilledOccupations();
     await AsyncStorage.setItem(LAST_CHECK_KEY, new Date().toISOString());
 
     const currentMap = new Map(current.items.map((o) => [occupationKey(o), o] as const));
@@ -269,7 +426,7 @@ export async function refreshSkilledOccupations(
       }
     }
 
-    if (remote.snapshotDate !== current.snapshotDate || changes.length > 0) {
+    if (!occupationSnapshotsEqual(remote, current)) {
       await AsyncStorage.setItem(CACHE_KEY, JSON.stringify(remote));
       return { updated: true, snapshot: remote, changes };
     }
@@ -279,7 +436,7 @@ export async function refreshSkilledOccupations(
     console.warn('[skilledOccupations] refresh failed:', err);
     return {
       updated: false,
-      snapshot: await getSkilledOccupations(),
+      snapshot: await getCachedSkilledOccupations(),
       changes: [],
     };
   }
@@ -299,13 +456,13 @@ export async function refreshAllAnzscoOccupations(
     if (!opts.force && age < ONE_DAY_MS) {
       return {
         updated: false,
-        snapshot: await getSkilledOccupations(),
+        snapshot: await getCachedSkilledOccupations(),
       };
     }
     if (opts.force && age < MIN_FORCE_INTERVAL_MS) {
       return {
         updated: false,
-        snapshot: await getSkilledOccupations(),
+        snapshot: await getCachedSkilledOccupations(),
       };
     }
   }
@@ -336,7 +493,7 @@ export async function refreshAllAnzscoOccupations(
     console.warn('[allAnzsco] refresh failed:', err);
     return {
       updated: false,
-      snapshot: await getSkilledOccupations(),
+      snapshot: await getCachedSkilledOccupations(),
     };
   }
 }
@@ -362,45 +519,56 @@ export async function refreshMergedOccupations(
   snapshot: OccupationsSnapshot;
   changes: OccupationChange[];
 }> {
+  const current = await getCachedSkilledOccupations();
   const last = await AsyncStorage.getItem(MERGED_LAST_CHECK_KEY).catch(() => null);
-  if (last) {
-    const age = Date.now() - new Date(last).getTime();
-    if (!opts.force && age < ONE_DAY_MS) {
-      return { updated: false, snapshot: await getSkilledOccupations(), changes: [] };
-    }
-    if (opts.force && age < MIN_FORCE_INTERVAL_MS) {
-      return { updated: false, snapshot: await getSkilledOccupations(), changes: [] };
-    }
-  }
+  const age = last ? Date.now() - new Date(last).getTime() : Number.POSITIVE_INFINITY;
+  const shouldBypassThrottle = isLikelyStaleSnapshot(current) || !!opts.force;
 
+  if (!shouldBypassThrottle && age < MERGED_REFRESH_INTERVAL_MS) {
+    return { updated: false, snapshot: current, changes: [] };
+  }
   try {
-    const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
-    let res: Response;
-    try {
-      res = await fetch(MERGED_OCCUPATIONS_REMOTE_URL, { method: 'GET', signal: ctrl.signal });
-      // If Storage 404s (not yet published), try Hosting fallback
-      if (res.status === 404) {
+    const urls = [MERGED_OCCUPATIONS_REMOTE_URL, ...MERGED_OCCUPATIONS_FALLBACK_URLS];
+    const errors: string[] = [];
+    let res: Response | null = null;
+    const requestStamp = Date.now();
+
+    for (const url of urls) {
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
+      try {
+        const requestUrl = `${url}${url.includes('?') ? '&' : '?'}t=${requestStamp}`;
+        const candidate = await fetch(requestUrl, {
+          method: 'GET',
+          signal: ctrl.signal,
+          cache: 'no-store',
+        });
+        if (!candidate.ok) {
+          errors.push(`${url}: HTTP ${candidate.status}`);
+          continue;
+        }
+        res = candidate;
+        break;
+      } catch (err) {
+        errors.push(`${url}: ${(err as Error).message}`);
+      } finally {
         clearTimeout(timer);
-        const ctrl2 = new AbortController();
-        const timer2 = setTimeout(() => ctrl2.abort(), FETCH_TIMEOUT_MS);
-        try {
-          res = await fetch(MERGED_OCCUPATIONS_FALLBACK_URL, { method: 'GET', signal: ctrl2.signal });
-        } finally { clearTimeout(timer2); }
       }
-    } finally {
-      clearTimeout(timer);
     }
+
+    if (!res) throw new Error(errors.join(' | ') || 'Failed to fetch merged occupations');
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const contentLength = Number(res.headers.get('content-length') ?? 0);
     if (contentLength && contentLength > 5 * 1024 * 1024) {
       throw new Error('merged payload too large');
     }
     const json = await res.json();
-    const remote = validateMergedOccupationsSnapshot(json);
+    const remote = normalizeOccupationsSnapshot(validateMergedOccupationsSnapshot(json));
+    if (isLikelyStaleSnapshot(remote)) {
+      throw new Error('merged snapshot missing core occupations');
+    }
 
-    const current = await getSkilledOccupations();
-    await AsyncStorage.setItem(MERGED_LAST_CHECK_KEY, new Date().toISOString());
+    const current = await getCachedSkilledOccupations();
 
     // Diff against current for change notifications
     const currentMap = new Map(current.items.map((o) => [occupationKey(o), o] as const));
@@ -418,10 +586,24 @@ export async function refreshMergedOccupations(
       }
     }
 
-    if (remote.snapshotDate !== current.snapshotDate || changes.length > 0) {
-      await AsyncStorage.setItem(MERGED_CACHE_KEY, JSON.stringify(remote));
+    const shouldPersist =
+      isLikelyStaleSnapshot(current) ||
+      isLikelyStaleSnapshot(remote) ||
+      remote.snapshotDate !== current.snapshotDate ||
+      !occupationSnapshotsEqual(remote, current) ||
+      changes.length > 0;
+
+    if (shouldPersist) {
+      const cached = await writeMergedOccupationsCache(remote);
+      if (cached) {
+        await AsyncStorage.setItem(MERGED_LAST_CHECK_KEY, new Date().toISOString());
+      } else {
+        await AsyncStorage.removeItem(MERGED_LAST_CHECK_KEY).catch(() => {});
+      }
       return { updated: true, snapshot: remote, changes };
     }
+
+    await AsyncStorage.setItem(MERGED_LAST_CHECK_KEY, new Date().toISOString());
     return { updated: false, snapshot: current, changes: [] };
   } catch (err) {
     console.warn('[mergedOccupations] refresh failed, falling back to legacy:', err);
@@ -431,8 +613,9 @@ export async function refreshMergedOccupations(
 }
 
 /**
- * Search occupations by free text. Matches against ANZSCO code, name, visa
- * subclass, list code, or assessing authority. Returns up to `limit` results.
+ * Search occupations by free text. Matches against ANZSCO code, name, job
+ * description, unit group, visa subclass, list code, or assessing authority.
+ * Returns up to `limit` results.
  */
 export function searchOccupations(
   items: SkilledOccupation[],
@@ -446,6 +629,8 @@ export function searchOccupations(
     const haystack = [
       o.anzsco,
       o.name.toLowerCase(),
+      (o.description ?? '').toLowerCase(),
+      (o.unitGroup ?? '').toLowerCase(),
       o.group.toLowerCase(),
       o.lists.join(' ').toLowerCase(),
       o.visas.join(' '),

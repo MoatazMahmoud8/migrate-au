@@ -103,6 +103,15 @@
       },
       "router": {}
     },
-    "owner": "moataz.alsbak"
+    "owner": "moataz.alsbak",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "enabled": true,
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0,
+      "url": "https://u.expo.dev/d89609e7-a74f-4146-9eb2-0e8387e71fd2"
+    }
   }
 }

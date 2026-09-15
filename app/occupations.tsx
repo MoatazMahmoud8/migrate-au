@@ -71,7 +71,7 @@ const LIST_COLORS: Record<SkillList, string> = {
 };
 
 const LIST_DESCRIPTIONS: Record<'All' | SkillList, string> = {
-  All:   'All federal lists',
+  All:   'All ANZSCO occupations',
   CSOL:  'SC 482 Core Skills stream',
   MLTSSL:'SC 189 · 190 · 491 · 485',
   STSOL: 'SC 482 Short-term (legacy)',
@@ -1242,25 +1242,28 @@ export default function OccupationsScreen() {
 
   useEffect(() => {
     (async () => {
-      const snap = await getSkilledOccupations();
-      const reqSnap = await refreshStateRequirements();
-      const merged = mergeStateRequirements(snap.items, reqSnap.snapshot);
-      setItems(normalizeOccupationAuthorities(deduplicateOccupations(merged)));
-      setSnapshotDate(snap.snapshotDate);
+      const [mergedResult, reqSnap, p] = await Promise.all([
+        refreshMergedOccupations({ force: true }),
+        refreshStateRequirements(),
+        getProfile(),
+      ]);
+      const merged = mergeStateRequirements(mergedResult.snapshot.items, reqSnap.snapshot);
+      const final = normalizeOccupationAuthorities(deduplicateOccupations(merged));
+      setItems(final);
+      setSnapshotDate(mergedResult.snapshot.snapshotDate);
       setLastChecked(await getOccupationsLastCheckedAt());
-      const p = await getProfile();
       setProfile(p);
       setSavedAnzsco(p.anzscoCode ?? '');
-      // Populate salary, visa fees, and SkillSelect data from merged DB items
-      populateFromMergedDB(merged);
-      // Background refresh from merged database
+      populateFromMergedDB(final);
+
       refreshMergedOccupations()
-        .then((res) => {
+        .then(async (res) => {
           if (res.updated) {
             const merged2 = mergeStateRequirements(res.snapshot.items, reqSnap.snapshot);
             const final2 = normalizeOccupationAuthorities(deduplicateOccupations(merged2));
             setItems(final2);
             setSnapshotDate(res.snapshot.snapshotDate);
+            setLastChecked(await getOccupationsLastCheckedAt());
             populateFromMergedDB(final2);
           }
         })
@@ -1309,9 +1312,7 @@ export default function OccupationsScreen() {
     let base = items;
     // Jurisdiction filter
     if (jurisdiction !== 'All') {
-      if (jurisdiction === 'Federal') {
-        base = base.filter((o) => o.lists.length > 0);
-      } else {
+      if (jurisdiction !== 'Federal') {
         base = base.filter((o) => o.states && (o.states as any)[jurisdiction]);
       }
     }
@@ -1319,7 +1320,7 @@ export default function OccupationsScreen() {
     if (filter !== 'All') {
       base = base.filter((o) => o.lists.includes(filter));
     }
-    return searchOccupations(base, query, 300);
+    return searchOccupations(base, query, base.length);
   }, [items, filter, jurisdiction, query]);
 
   const FILTERS: ListFilter[] = ['All', ...SKILL_LISTS];

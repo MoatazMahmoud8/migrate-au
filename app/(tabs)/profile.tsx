@@ -27,7 +27,8 @@ import { restorePurchases, getRevenueCatUserId, syncSubscriptionStatus, manageSu
 import PaywallModal from '../../components/PaywallModal';
 import { tap as hapticTap, success as hapticSuccess } from '../../utils/haptics';
 import { openExternalUrl } from '../../utils/openExternalUrl';
-import { SKILLED_OCCUPATIONS } from '../../constants/skilledOccupations';
+import type { SkilledOccupation } from '../../constants/skilledOccupations';
+import { getSkilledOccupations } from '../../utils/skilledOccupations';
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import { canAddJourneyEntry, canAddStateSubscription } from '../../utils/paywall';
 import { askToRate } from '../../utils/rateApp';
@@ -35,6 +36,8 @@ import { Sentry } from '../../utils/sentry';
 import { generateJourneyPDF, sharePDF } from '../../utils/pdfExport';
 import Constants from 'expo-constants';
 import * as Clipboard from 'expo-clipboard';
+
+const SUPPORT_EMAIL = 'support@jsmglobal.xyz';
 
 const JOURNEY_STAGES: Array<{ key: JourneyStageKey; label: string; desc: string }> = [
   { key: 'assess', label: 'Skills Assessment', desc: 'Skills assessment & English test preparation' },
@@ -173,6 +176,7 @@ export default function ProfileScreen() {
   const [showFeedback, setShowFeedback] = useState(false);
   // Journey
   const [journeyEntries, setJourneyEntries] = useState<JourneyEntry[]>([]);
+  const [allOccupations, setAllOccupations] = useState<SkilledOccupation[]>([]);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [showAddJourney, setShowAddJourney] = useState(false);
   const [newVisa, setNewVisa] = useState<JourneyVisaType>('189');
@@ -215,9 +219,15 @@ export default function ProfileScreen() {
       }
     }).catch(() => {});
     getRevenueCatUserId().then(setRcUserId).catch(() => {});
+    getSkilledOccupations()
+      .then((snapshot) => setAllOccupations(snapshot.items))
+      .catch((err) => console.warn('[profile] Occupations refresh failed:', err));
 
     const appStateSubscription = AppState.addEventListener('change', (state) => {
       if (state !== 'active') return;
+      void getSkilledOccupations()
+        .then((snapshot) => setAllOccupations(snapshot.items))
+        .catch((err) => console.warn('[profile] Occupations refresh failed:', err));
       void syncSubscriptionStatus()
         .then(() => getProfile())
         .then(setProfile)
@@ -253,6 +263,29 @@ export default function ProfileScreen() {
     setShowPaywall(true);
   };
 
+  const handleReportBug = async () => {
+    hapticTap();
+    const subject = encodeURIComponent(`MigrateAU bug report (${getAppVersionLabel()})`);
+    const body = encodeURIComponent([
+      'Hi MigrateAU team,',
+      '',
+      'I found an issue or bug in the app.',
+      '',
+      `App version: ${getAppVersionLabel()}`,
+      `Account ID: ${rcUserId || 'unknown'}`,
+      `Platform: ${Platform.OS}`,
+      '',
+      'What happened:',
+      '',
+      'Steps to reproduce:',
+      '',
+    ].join('\n'));
+    const opened = await openExternalUrl(`mailto:${SUPPORT_EMAIL}?subject=${subject}&body=${body}`);
+    if (!opened) {
+      Alert.alert('Report issue or bug', `Please email ${SUPPORT_EMAIL} with the details above.`);
+    }
+  };
+
   // Journey helpers
   const addJourneyEntry = async () => {
     // Check if user has exceeded journey entry limit
@@ -263,7 +296,7 @@ export default function ProfileScreen() {
 
     const trimmed = newAnzsco.trim();
     const occ = trimmed
-      ? SKILLED_OCCUPATIONS.find(
+      ? allOccupations.find(
           (o) => o.anzsco === trimmed ||
             o.name.toLowerCase().includes(trimmed.toLowerCase())
         )
@@ -898,9 +931,16 @@ export default function ProfileScreen() {
         <View style={[styles.card, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
           <SettingRow
             icon="star-outline"
-            label="Rate MigrateAU"
-            value="Help others find the app"
+            label="Ask for a rating"
+            value="Show the review popup"
             onPress={() => { hapticTap(); askToRate(true); }}
+            showArrow
+          />
+          <SettingRow
+            icon="bug-outline"
+            label="Report issue or bug"
+            value="Send a quick support email"
+            onPress={handleReportBug}
             showArrow
           />
           <SettingRow

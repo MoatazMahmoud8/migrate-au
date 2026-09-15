@@ -17,6 +17,7 @@ import { getProfile, saveProfile } from '../utils/storage';
 import OnboardingModal from '../components/OnboardingModal';
 import { refreshProcessingTimes } from '../utils/processingTimes';
 import { refreshMergedOccupations } from '../utils/skilledOccupations';
+import { maybePromptForRating } from '../utils/rateApp';
 import { initSentry, Sentry } from '../utils/sentry';
 import { initializeFirebaseWeb, subscribeToNotificationsWeb } from '../utils/firebaseWeb';
 
@@ -134,6 +135,8 @@ function RootLayout() {
     const appStateSubscription = AppState.addEventListener('change', (state) => {
       if (state === 'active') {
         void syncSubscriptionStatus();
+        void maybePromptForRating();
+        void refreshMergedOccupations().catch(() => {});
       }
     });
 
