@@ -1,6 +1,6 @@
 """
 Main orchestrator — runs all scrapers and queues updates for admin approval.
-Designed to run as a GitHub Actions cron job every 30 minutes.
+Designed to run as a GitHub Actions cron job during AU working hours (3 times on weekdays).
 
 Environment variables required:
   FIREBASE_SERVICE_ACCOUNT  — JSON string of Firebase service account key
@@ -15,7 +15,9 @@ import firebase_admin
 from firebase_admin import credentials, firestore
 
 from scrapers import home_affairs, anzsco, state_nominations, news_rss, processing_times, admin_intel
-from notify import queue_batch
+from scrapers.assessing_authority_fees import scrape as scrape_assessing_fees
+from scrapers.daily_briefing import queue_daily_briefing
+from notify import queue_batch, queue_news_batch
 
 
 def get_db():
@@ -63,11 +65,24 @@ def run():
     all_notifications.extend(fee_notifications)
     print(f"      → {len(fee_notifications)} fee change(s) detected")
 
+    # ── 4b. Assessing authority fee pages (VETASSESS etc.)
+    print("\n[4b/7] Monitoring assessing authority fee pages...")
+    assessment_fee_notifications = scrape_assessing_fees(db)
+    all_notifications.extend(assessment_fee_notifications)
+    print(f"      → {len(assessment_fee_notifications)} assessment fee change(s) detected")
+
     # ── 5. RSS news (migration-relevant media articles)
     print("\n[5/7] Checking RSS news feeds...")
     news_notifications = news_rss.scrape(db)
-    all_notifications.extend(news_notifications)
     print(f"      → {len(news_notifications)} new article(s)")
+
+    # News goes into news_items (admin curates in /admin/news) — NOT into the
+    # laws-and-directions approval queue. Keeps compliance clean while still
+    # giving users a migration news feed.
+    if news_notifications:
+        news_stats = queue_news_batch(db, news_notifications)
+        print(f"      → queued {news_stats['queued']} news item(s) for admin review")
+        queue_daily_briefing(db, news_notifications)
 
     # ── 6. Processing times (cloudscraper-based)
     print("\n[6/7] Scraping processing times...")
@@ -105,6 +120,7 @@ def run():
             "anzsco": len(anzsco_notifications),
             "states": len(state_notifications),
             "visa_fees": len(fee_notifications),
+            "assessment_fees": len(assessment_fee_notifications),
             "news_rss": len(news_notifications),
             "processing_times": len(pt_notifications),
             "admin_intel": len(intel_items),

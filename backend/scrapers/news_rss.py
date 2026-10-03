@@ -16,6 +16,7 @@ import hashlib
 import re
 import requests
 import xml.etree.ElementTree as ET
+from bs4 import BeautifulSoup
 from datetime import datetime, timezone, timedelta
 from email.utils import parsedate_to_datetime
 from scrapers.article_enricher import enrich as enrich_article
@@ -26,6 +27,8 @@ RSS_FEEDS = [
     "https://pathwaytoaus.com/feed/",
     "https://www.seekvisa.com.au/feed/",  # Active AU migration law firm blog
     "https://www.iscah.com/feed/",  # Iscah migration newsletter
+    "https://smartvisaguide.com/feed/",  # Smart Visa Guide
+    "https://www.australiavisa.com/feed/",  # Migration law updates
     # Mainstream media — migration sections (filtered by HIGH_INTENT_KEYWORDS)
     "https://www.theguardian.com/australia-news/australian-immigration-and-asylum/rss",
     "https://www.sbs.com.au/news/feed",
@@ -236,6 +239,10 @@ NEWS_INDICATORS = [
 BLOG_FEEDS = [
     "pathwaytoaus.com",
     "visaenvoy.com",
+    "smartvisaguide.com",
+    "australiavisa.com",
+    "seekvisa.com.au",
+    "iscah.com",
 ]
 
 
@@ -306,7 +313,8 @@ def scrape(db) -> list[dict]:
             root = ET.fromstring(r.content)
             for item in root.findall(".//item"):
                 title = (item.findtext("title") or "").strip()
-                desc = re.sub(r"<[^>]+>", "", item.findtext("description") or "").strip()[:700]
+                raw_desc = item.findtext("description") or ""
+                desc = BeautifulSoup(raw_desc, "html.parser").get_text(" ", strip=True)[:900]
                 link = (item.findtext("link") or "").strip()
                 pub_date = (item.findtext("pubDate") or "").strip()
 
