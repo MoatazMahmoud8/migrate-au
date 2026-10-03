@@ -2,8 +2,9 @@ name: MigrateAU Notification Scraper
 
 on:
   schedule:
-    # Every 3 hours — keeps within GitHub Actions free tier (2000 min/month)
-    - cron: '0 */3 * * *'
+    # Three checks during Australian working hours (Mon-Fri).
+    # UTC cron maps roughly to AU daytime across DST transitions.
+    - cron: '0 23,2,5 * * 1-5'
   workflow_dispatch:   # manual trigger for testing
 
 jobs:

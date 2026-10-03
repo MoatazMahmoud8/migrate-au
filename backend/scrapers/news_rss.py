@@ -4,16 +4,19 @@ Sends notifications for articles that match migration/visa/citizenship keywords.
 Uses Firestore to track already-sent article URLs (deduplication).
 
 Only sends articles that are:
-  1. Published within the last 72 hours (MAX_AGE_HOURS)
-  2. Migration-relevant (MUST_MATCH terms present)
+  1. Published within the last 48 hours (MAX_AGE_HOURS)
+  2. HIGH-INTENT migration-relevant (HIGH_INTENT_KEYWORDS present)
   3. Australian-focused (AUSTRALIA_MARKERS present)
   4. Not excluded by EXCLUDE_TERMS
   5. Score >= 2 from keyword matching
+  6. Hash-deduplicated by title + URL
 """
 
+import hashlib
 import re
 import requests
 import xml.etree.ElementTree as ET
+from bs4 import BeautifulSoup
 from datetime import datetime, timezone, timedelta
 from email.utils import parsedate_to_datetime
 from scrapers.article_enricher import enrich as enrich_article
@@ -22,100 +25,75 @@ RSS_FEEDS = [
     # Migration-specific blogs — high quality, low noise
     "https://www.visaenvoy.com/feed/",
     "https://pathwaytoaus.com/feed/",
-    # Mainstream media — migration sections (filtered by MUST_MATCH)
+    "https://www.seekvisa.com.au/feed/",  # Active AU migration law firm blog
+    "https://www.iscah.com/feed/",  # Iscah migration newsletter
+    "https://smartvisaguide.com/feed/",  # Smart Visa Guide
+    "https://www.australiavisa.com/feed/",  # Migration law updates
+    # Mainstream media — migration sections (filtered by HIGH_INTENT_KEYWORDS)
     "https://www.theguardian.com/australia-news/australian-immigration-and-asylum/rss",
     "https://www.sbs.com.au/news/feed",
     # Broad news — covers political statements on migration policy
     "https://www.abc.net.au/news/feed/51120/rss.xml",
-    "https://www.skynews.com.au/feeds/rssfeed/news/top.xml",
-    "https://www.9news.com.au/rss",
-    "https://www.news.com.au/content-feeds/latest-news-national/",
 ]
 
 # Only articles published within this window are considered.
-# Prevents old articles re-surfacing from feed pagination.
-# Set to 7 days — migration blogs post infrequently; deduplication
-# prevents re-sending the same article twice.
 MAX_AGE_HOURS = 48
 
-# Articles MUST contain at least one of these to be considered migration-relevant.
-# This prevents "visa" matching sports stories or "migration" matching political commentary.
-MUST_MATCH = [
-    # Visa applications & processing
-    "visa application", "visa grant", "visa refusal", "visa cancel", "visa processing",
-    "visa fee", "visa charge", "visa change", "visa condition", "visa holder",
-    "visa expir", "visa extension", "visa renewal",
-    # Specific visa types
-    "skilled visa", "student visa", "partner visa", "work visa", "temporary visa",
-    "bridging visa", "protection visa", "graduate visa", "employer sponsored",
-    "subclass 189", "subclass 190", "subclass 491", "subclass 500", "subclass 482",
-    "subclass 186", "subclass 485", "subclass 820", "subclass 801", "subclass 600",
-    "subclass 417", "subclass 462", "subclass 407", "subclass 494",
-    "189 visa", "190 visa", "491 visa", "482 visa", "500 visa",
-    # SkillSelect & points
-    "points test", "skillselect", "skill select", "invitation round",
-    "expression of interest",
-    # Occupations & skills
-    "anzsco", "occupation list", "skilled occupation", "mltssl", "stsol",
-    "skills assessment", "skill assessment", "core skills",
+# ─── HIGH-INTENT KEYWORDS ────────────────────────────────────────────────────
+# Articles MUST contain at least one of these to be queued.
+# These are specific, actionable migration terms — not general political commentary.
+HIGH_INTENT_KEYWORDS = [
+    # SkillSelect & invitation rounds (primary interest)
+    "skillselect", "skill select", "invitation round", "eoi round",
+    "expression of interest", "points threshold", "cutoff score",
+    # Specific visa subclasses
+    "subclass 189", "subclass 190", "subclass 491", "subclass 485",
+    "subclass 482", "subclass 186", "subclass 494", "subclass 500",
+    "189 visa", "190 visa", "491 visa", "482 visa",
     # State nominations
-    "state nomination", "state sponsorship",
-    # Official systems
-    "home affairs", "immi.homeaffairs", "immiaccount",
-    "migration program", "migration strategy", "migration review",
-    "immigration change", "immigration policy", "immigration reform",
-    "migration level", "migration cap", "intake",
-    # Specific migration concepts
-    "permanent residency", "permanent resident", "pr pathway", "pr visa",
-    "migration agent", "registered migration", "mara",
-    "labour agreement", "dama",
-    "english requirement", "ielts requirement", "pte requirement",
-    # Citizenship & settlement (for people settling in Australia)
-    "australian citizenship", "citizenship test", "citizenship ceremony",
-    "citizenship application", "citizenship by conferral", "pledge of commitment",
-    "citizenship waiting", "citizenship processing",
-    "settled in australia", "settling in australia", "new migrant",
-    "medicare enrol", "centrelink", "tax file number",
-    # Cost-of-living for migrants
-    "visa price", "visa cost increase", "migration cost",
-    # Political statements on migration (capture debates & policy announcements)
-    "migration debate", "immigration debate", "migration cut", "cut migration",
-    "reduce immigration", "immigration intake", "migration intake",
-    "too many migrant", "migration number", "net migration",
-    "border protection", "border force", "asylum seeker", "refugee",
-    "one nation", "pauline hanson", "peter dutton", "clare o'neil", "andrew giles",
-    "migration minister", "immigration minister", "home affairs minister",
-    "liberal immigration", "labor migration", "coalition migration",
-    "skilled migrant", "overseas worker", "foreign worker", "temporary worker",
-    "population growth", "housing crisis migrant", "rental crisis migrant",
+    "state nomination", "state sponsored", "nomination allocation",
+    "nomination quota", "nomination open", "nomination closed",
+    # Skills assessment
+    "skills assessment", "skill assessment", "anzsco",
+    "occupation list", "mltssl", "stsol", "rol",
+    # GSM program
+    "general skilled migration", "gsm program", "gsm intake",
+    "skilled migration program", "migration program planning",
+    # Processing & official changes
+    "processing time", "visa processing", "visa grant",
+    "visa fee increase", "visa fee change",
+    "home affairs announce", "department announce",
+    "migration review", "migration strategy",
+    # Points test changes
+    "points test change", "points requirement", "points update",
+    # Humanitarian & refugee (policy changes affect many migrants)
+    "refugee visa", "refugee intake", "refugee program",
+    "humanitarian visa", "humanitarian intake", "humanitarian program",
+    "protection visa", "asylum seeker", "refugee quota",
+    # Migration intake & caps
+    "migration intake", "immigration intake", "visa cap",
+    "migration cap", "permanent migration", "migration level",
+    "net migration", "migration cut", "migration slash",
 ]
 
+# Secondary keywords for scoring (but not required)
 KEYWORDS_HIGH = [
-    # Visa types & applications
     "visa", "visa application", "visa grant", "visa refusal", "visa cancel",
     "visa condition", "visa change", "visa fee", "visa charge", "visa processing",
     "skilled visa", "partner visa", "student visa", "work visa", "temporary visa",
     "bridging visa", "tourist visa", "visitor visa", "protection visa",
     "subclass 189", "subclass 190", "subclass 491", "subclass 500", "subclass 482",
     "subclass 186", "subclass 485", "subclass 820", "subclass 801",
-    "189 visa", "190 visa", "491 visa", "482 visa", "500 visa",
-    # Migration & how to migrate
     "migration", "migrate to australia", "immigration", "permanent resident",
-    "citizenship", "how to apply", "application process",
-    "points test", "skillselect", "skill select", "invitation round",
+    "citizenship", "points test", "skillselect", "skill select", "invitation round",
     "expression of interest", "eoi",
-    # ANZSCO & occupations
     "anzsco", "occupation list", "skilled occupation", "mltssl", "stsol",
-    # State nominations
     "state nomination", "state sponsorship", "state sponsor",
-    "visa nomination", "priority processing",
-    # Conditions & changes
-    "condition 8105", "condition 8501", "condition 8202",
-    "work rights", "work limitation", "visa condition change",
-    # Home Affairs & official
     "home affairs", "immi.homeaffairs", "immiaccount",
-    "planned maintenance", "system maintenance", "system outage", "downtime",
     "skills assessment", "migration agent",
+    # Humanitarian & refugee
+    "refugee", "refugee intake", "humanitarian", "asylum", "protection visa",
+    "migration intake", "migration cap", "migration cut", "migration level",
 ]
 
 KEYWORDS_MED = [
@@ -127,7 +105,7 @@ KEYWORDS_MED = [
     "labour agreement", "dama", "regional",
 ]
 
-MAX_NOTIFICATIONS_PER_RUN = 3
+MAX_NOTIFICATIONS_PER_RUN = 10
 
 
 AUSTRALIA_MARKERS = [
@@ -184,11 +162,16 @@ EXCLUDE_TERMS = [
 ]
 
 
+def _hash_article(title: str, url: str) -> str:
+    """Generate a unique hash for deduplication based on normalized title + URL."""
+    normalized = (title.strip().lower() + "|" + url.strip().lower()).encode("utf-8")
+    return hashlib.sha256(normalized).hexdigest()[:24]
+
+
 def _is_australian(title: str, desc: str) -> bool:
     """Return True only if the article is clearly about Australia."""
     text = (title + " " + desc).lower()
-    # Reject if it contains exclusion terms (word-boundary match to avoid
-    # "killed" matching inside "skilled", etc.)
+    # Reject if it contains exclusion terms
     for term in EXCLUDE_TERMS:
         pattern = r'(?<!\w)' + re.escape(term) + r'(?!\w)'
         if re.search(pattern, text):
@@ -205,88 +188,61 @@ def _is_recent(pub_date_str: str) -> bool:
         return False
     try:
         pub_date = parsedate_to_datetime(pub_date_str)
-        # Ensure timezone-aware comparison
         if pub_date.tzinfo is None:
             pub_date = pub_date.replace(tzinfo=timezone.utc)
         age = datetime.now(timezone.utc) - pub_date
         return age <= timedelta(hours=MAX_AGE_HOURS)
     except Exception:
-        # If we can't parse the date, reject the article
         return False
 
 
 # ─── Guide/evergreen content detection ────────────────────────────────────────
 
-# These patterns in the TITLE indicate a how-to/guide/advice article,
-# NOT a news update. Reject them — users want actual news, not blog content.
 GUIDE_TITLE_PATTERNS = [
-    # "How to" / instructional
     r"^how to ", r"how to .* in australia", r"step.by.step",
-    r"\bvs\b.*visa", r"vs\s+\d{3}\s+visa",  # comparison guides
+    r"\bvs\b.*visa", r"vs\s+\d{3}\s+visa",
     r"complete guide", r"ultimate guide", r"beginner.?s guide",
     r"your guide to", r"a guide to", r"tips for",
-    # "What to do if" / contingency advice
     r"what to do", r"what happens if", r"what you need to know",
     r"next (?:pr )?steps", r"your options", r"explore your",
-    # "Missed X? Do Y" pattern — clickbait advice
     r"missed (?:an?|your|the) .* \?", r"didn.t get .* \?",
     r"not invited\?", r"missed .* invite",
-    # Generic evergreen / listicle
     r"top \d+ ", r"\d+ ways to", r"\d+ things you",
     r"everything you need to know",
     r"checklist", r"cheat sheet",
-    # Study / career guidance (not news)
     r"best (?:courses?|universities|tafe)",
     r"study options", r"pr pathway.? (?:in|for|to)",
     r"how .* can (?:get|apply|migrate)",
-    # Success stories (not news)
     r"success story", r"case study", r"client story",
     r"visa granted", r"visa success",
 ]
 
-# NEWS indicators — at least one must appear to confirm it's actual news.
-# Articles from migration-specific blogs (VisaEnvoy, PathwayToAus) MUST
-# contain a news indicator to pass; otherwise they're just guides.
 NEWS_INDICATORS = [
-    # Official actions / changes
     "announced", "announcement", "effective from", "effective date",
     "from 1 july", "from 1 january", "introduced", "abolished",
     "new policy", "policy change", "policy update",
     "updated", "update:", "changes to", "changed",
     "increase", "decreased", "reduced", "raised",
     "new requirement", "removed requirement",
-    # Dates / rounds / concrete events
     "invitation round", "round result", "round issued",
     "processing time", "processing update",
     "quota", "allocation", "cap reached",
     "fee increase", "new fee", "fee change",
     "threshold", "income requirement",
-    # Government / departmental
     "minister", "department", "legislation",
     "regulation", "gazette", "budget",
     "migration program", "planning level",
-    # System events
     "system outage", "maintenance", "downtime",
     "immiaccount", "online system",
-    # Visa-specific news terms not previously covered
-    "humanitarian", "temporary stay", "stay arrangement",
-    "subclass", "sc 4", "sc 5", "sc 8",  # sc 4xx, 5xx, 8xx visa numbers
-    "visa class", "visa category",
-    "pathway announced", "pathway introduced",
-    "new arrangement", "new measure", "new rule",
-    "takes effect", "come into effect", "in effect",
-    "suspended", "paused", "reinstated", "reopen", "reopening",
-    "extended", "extension announced",
-    "approved", "granted to", "eligible for",
-    "july 2026", "august 2026", "september 2026", "october 2026",
-    "november 2026", "december 2026", "january 2027",
-    # Note: bare "2026"/"2027" intentionally excluded — too broad
 ]
 
-# Feeds known to publish mostly blog/guide content (need NEWS_INDICATORS)
 BLOG_FEEDS = [
     "pathwaytoaus.com",
     "visaenvoy.com",
+    "smartvisaguide.com",
+    "australiavisa.com",
+    "seekvisa.com.au",
+    "iscah.com",
 ]
 
 
@@ -305,10 +261,10 @@ def _has_news_indicator(title: str, desc: str) -> bool:
     return any(ind in text for ind in NEWS_INDICATORS)
 
 
-def _is_migration_relevant(title: str, desc: str) -> bool:
-    """Return True only if article is specifically about migration/visa topics."""
+def _has_high_intent_keyword(title: str, desc: str) -> bool:
+    """Return True only if article contains HIGH-INTENT migration keywords."""
     text = (title + " " + desc).lower()
-    return any(term in text for term in MUST_MATCH)
+    return any(kw in text for kw in HIGH_INTENT_KEYWORDS)
 
 
 def _relevance_score(title: str, desc: str) -> int:
@@ -351,14 +307,14 @@ def scrape(db) -> list[dict]:
     notifications = []
     candidates = []
 
-    # Fetch all RSS feeds
     for url in RSS_FEEDS:
         try:
             r = requests.get(url, timeout=10, headers={"User-Agent": "Mozilla/5.0"})
             root = ET.fromstring(r.content)
             for item in root.findall(".//item"):
                 title = (item.findtext("title") or "").strip()
-                desc = re.sub(r"<[^>]+>", "", item.findtext("description") or "").strip()[:400]
+                raw_desc = item.findtext("description") or ""
+                desc = BeautifulSoup(raw_desc, "html.parser").get_text(" ", strip=True)[:900]
                 link = (item.findtext("link") or "").strip()
                 pub_date = (item.findtext("pubDate") or "").strip()
 
@@ -366,89 +322,99 @@ def scrape(db) -> list[dict]:
                 if not _is_recent(pub_date):
                     continue
 
+                # STRICT FILTER: Must have HIGH-INTENT keyword
+                if not _has_high_intent_keyword(title, desc):
+                    print(f"  [news_rss] ❌ LOW-INTENT rejected: {title[:60]}...")
+                    continue
+
                 score = _relevance_score(title, desc)
-                if title and link and score >= 2 and _is_migration_relevant(title, desc) and _is_australian(title, desc):
+                if title and link and score >= 2 and _is_australian(title, desc):
                     # Reject guide/evergreen blog content
                     if _is_guide_content(title):
-                        print(f"  [news_rss] ❌ GUIDE rejected: {title[:80]}")
+                        print(f"  [news_rss] ❌ GUIDE rejected: {title[:60]}...")
                         continue
-                    # Blog feeds must contain a news indicator OR a visa subclass
-                    # reference / year (strong news signal — e.g. "Sc 449", "2026")
+                    # Blog feeds must contain a news indicator
                     is_blog_feed = any(bf in url for bf in BLOG_FEEDS)
                     if is_blog_feed and not _has_news_indicator(title, desc):
-                        import re as _re
                         t_lower = title.lower()
                         has_strong_signal = (
-                            bool(_re.search(r'sc\s*\d{3}|subclass\s*\d{3}|202[5-9]|203\d', t_lower))
-                            and b' vs ' not in t_lower.encode()
+                            bool(re.search(r'sc\s*\d{3}|subclass\s*\d{3}|202[5-9]|203\d', t_lower))
+                            and ' vs ' not in t_lower
                             and 'courses' not in t_lower
                             and 'how to' not in t_lower
                         )
                         if not has_strong_signal:
-                            print(f"  [news_rss] ❌ NO NEWS indicator (blog feed): {title[:80]}")
+                            print(f"  [news_rss] ❌ NO NEWS indicator (blog): {title[:60]}...")
                             continue
+                    
+                    article_hash = _hash_article(title, link)
                     candidates.append({
                         "title": title,
                         "desc": desc,
                         "link": link,
                         "score": score,
                         "pub_date": pub_date,
+                        "hash": article_hash,
                     })
+                    print(f"  [news_rss] ✅ ACCEPTED: {title[:60]}...")
         except Exception as e:
-            print(f"  [news_rss] ⚠️  RSS error ({url}): {e}")
+            print(f"  [news_rss] ⚠️ RSS error ({url}): {e}")
 
     if not candidates:
         return []
 
-    # Sort by relevance, dedup by title prefix
+    # Sort by relevance, dedup by hash
     candidates.sort(key=lambda x: x["score"], reverse=True)
-    seen_titles = set()
+    seen_hashes = set()
     unique = []
     for c in candidates:
-        key = c["title"][:50].lower()
-        if key not in seen_titles:
-            seen_titles.add(key)
+        if c["hash"] not in seen_hashes:
+            seen_hashes.add(c["hash"])
             unique.append(c)
 
-    # Check Firestore for already-sent URLs
+    # Check Firestore for already-sent hashes
     sent_ref = db.collection("_scraper_meta").document("news_rss_sent")
     sent_doc = sent_ref.get()
     sent_data = sent_doc.to_dict() if sent_doc.exists else {}
-    has_baseline = sent_doc.exists and "urls" in sent_data
-    sent_urls = set(sent_data.get("urls", []))
+    has_baseline = sent_doc.exists and ("urls" in sent_data or "hashes" in sent_data)
+    sent_hashes = set(sent_data.get("hashes", []))
+    sent_urls = set(sent_data.get("urls", []))  # Backward compat
 
     if not has_baseline:
-        # First run: snapshot all current articles so they aren't queued as news
+        # First run: snapshot all current articles
         sent_ref.set({
+            "hashes": [a["hash"] for a in unique[:200]],
             "urls": [a["link"] for a in unique[:200]],
             "last_updated": datetime.now(timezone.utc).isoformat(),
         })
         print("  [news_rss] 📌 baseline stored — skipping current feed")
         return []
 
-    new_articles = [a for a in unique if a["link"] not in sent_urls]
+    # Filter out already-sent articles (by hash or URL for backward compat)
+    new_articles = [a for a in unique if a["hash"] not in sent_hashes and a["link"] not in sent_urls]
 
-    # Take top N new articles
     for article in new_articles[:MAX_NOTIFICATIONS_PER_RUN]:
         category = _categorize(article["title"], article["desc"])
-        
-        # Nabad-style: enriched 2-3 sentence summary
         body = enrich_article(article["title"], article["desc"], article["link"])
 
         notifications.append({
             "source_id": "news_rss",
             "topic": "au_migration",
             "category": category,
-            "title": article["title"][:100],
+            "title": article["title"][:150],
             "body": body,
             "url": article["link"],
             "timestamp": datetime.now(timezone.utc).isoformat(),
         })
 
-    # Update sent URLs (keep last 200 to avoid unbounded growth)
+    # Update sent hashes
     if notifications:
-        new_sent = list(sent_urls | {a["link"] for a in new_articles[:MAX_NOTIFICATIONS_PER_RUN]})
-        # Keep only the most recent 200 URLs
-        sent_ref.set({"urls": new_sent[-200:], "last_updated": datetime.now(timezone.utc).isoformat()})
+        new_hashes = list(sent_hashes | {a["hash"] for a in new_articles[:MAX_NOTIFICATIONS_PER_RUN]})
+        new_urls = list(sent_urls | {a["link"] for a in new_articles[:MAX_NOTIFICATIONS_PER_RUN]})
+        sent_ref.set({
+            "hashes": new_hashes[-200:],
+            "urls": new_urls[-200:],
+            "last_updated": datetime.now(timezone.utc).isoformat(),
+        })
 
     return notifications
