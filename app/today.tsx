@@ -42,6 +42,7 @@ import { subscribeToFeedPoll } from '../utils/notifications-poll';
 import { openExternalUrl } from '../utils/openExternalUrl';
 import { shareReferral, sharePointsCard } from '../utils/growth';
 import { getApprovedNews, NewsItem } from '../utils/newsFeed';
+import { getNewsHeadline, getNewsSourceLabel, getNewsSummaryBullets, getNewsVisaPills, getNewsUrl, requiresVerification } from '../utils/newsDisplay';
 
 const CALC_STORAGE_KEY = 'calc_input_v1';
 
@@ -336,6 +337,56 @@ export default function TodayScreen() {
   const latestUnread = useMemo<FeedItem | null>(() => feed.find((f) => !f.read) ?? null, [feed]);
   const action = useMemo(() => deriveNextAction(profile, pointsRing.hasScore, latestUnread, pointsRing.total), [profile, pointsRing.hasScore, pointsRing.total, latestUnread]);
 
+  // Unified Home feed: merges official laws/directions (`feed`, native-only
+  // `notifications` collection) with approved media news (`news`, `news_items`
+  // collection) into one sorted, safely-rendered list. This keeps Home and
+  // the Updates tab showing the same underlying data instead of two
+  // disconnected sources.
+  interface UnifiedUpdate {
+    id: string;
+    headline: string;
+    badge: string;
+    sourceLabel: string;
+    body?: string;
+    bullets: { label: string; text: string }[];
+    visaPills: string[];
+    timestamp?: string;
+    url?: string;
+    needsVerification: boolean;
+  }
+
+  const unifiedUpdates = useMemo<UnifiedUpdate[]>(() => {
+    const officialCards: UnifiedUpdate[] = feed.map((item) => ({
+      id: `official-${item.id}`,
+      headline: item.title || 'Official migration update',
+      badge: item.category || 'Update',
+      sourceLabel: 'Official Government Update',
+      body: item.body,
+      bullets: [],
+      visaPills: [],
+      timestamp: item.timestamp,
+      url: item.url || item.sourceUrl,
+      needsVerification: false,
+    }));
+
+    const newsCards: UnifiedUpdate[] = news.map((item) => ({
+      id: `news-${item.id}`,
+      headline: getNewsHeadline(item),
+      badge: item.category || 'News',
+      sourceLabel: getNewsSourceLabel(item),
+      body: item.body,
+      bullets: getNewsSummaryBullets(item),
+      visaPills: getNewsVisaPills(item),
+      timestamp: item.createdAt || item.timestamp,
+      url: getNewsUrl(item),
+      needsVerification: requiresVerification(item),
+    }));
+
+    return [...officialCards, ...newsCards]
+      .sort((a, b) => (b.timestamp || '').localeCompare(a.timestamp || ''))
+      .slice(0, 3);
+  }, [feed, news]);
+
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <Stack.Screen options={{ headerShown: false }} />
@@ -442,7 +493,7 @@ export default function TodayScreen() {
               <ActivityIndicator color={Colors.accent} />
               <Text style={styles.skeletonText}>Loading updates…</Text>
             </View>
-          ) : feed.length === 0 && news.length === 0 ? (
+          ) : unifiedUpdates.length === 0 ? (
             <View style={styles.emptyCard}>
               <Ionicons name="notifications-off-outline" size={22} color={Colors.textMuted} />
               <Text style={styles.emptyTitle}>Nothing yet</Text>
@@ -453,53 +504,56 @@ export default function TodayScreen() {
                 <Text style={styles.link}>See our sources →</Text>
               </Pressable>
             </View>
-          ) : feed.length === 0 ? (
-            <>
-              <View style={{ marginBottom: Spacing.sm }}>
-                <Text style={styles.newsBadgeLabel}>MIGRATION NEWS · FROM MEDIA SOURCES</Text>
-              </View>
-              {news.map((item) => (
-                <TouchableOpacity
-                  key={item.id}
-                  style={styles.feedCard}
-                  onPress={() => {
-                    const url = item.url || item.sourceUrl;
-                    if (url) void openExternalUrl(url);
-                  }}
-                  activeOpacity={0.85}
-                >
-                  <View style={styles.feedBadge}>
-                    <Text style={styles.feedBadgeText}>News</Text>
-                  </View>
-                  <Text style={styles.feedTitle} numberOfLines={2}>{item.title}</Text>
-                  {item.body ? (
-                    <Text style={styles.feedBody} numberOfLines={2}>{item.body}</Text>
-                  ) : null}
-                  <Text style={styles.feedMeta}>{timeAgo(item.createdAt || item.timestamp)}</Text>
-                </TouchableOpacity>
-              ))}
-            </>
           ) : (
-            feed.map((item) => (
-              <TouchableOpacity
-                key={item.id}
-                style={styles.feedCard}
-                onPress={() => {
-                  const url = item.url || item.sourceUrl;
-                  if (url) void openExternalUrl(url);
-                  else router.push('/(tabs)/notifications' as any);
-                }}
-                activeOpacity={0.85}
-              >
-                <View style={styles.feedBadge}>
-                  <Text style={styles.feedBadgeText}>{item.category || 'Update'}</Text>
+            unifiedUpdates.map((item) => (
+              <View key={item.id} style={styles.feedCard}>
+                <View style={styles.feedBadgeRow}>
+                  <View style={styles.feedBadge}>
+                    <Text style={styles.feedBadgeText}>{item.badge}</Text>
+                  </View>
+                  {item.needsVerification ? (
+                    <View style={styles.verifyBadge}>
+                      <Text style={styles.verifyBadgeText}>⚠ Unverified source</Text>
+                    </View>
+                  ) : null}
                 </View>
-                <Text style={styles.feedTitle} numberOfLines={2}>{item.title}</Text>
-                {item.body ? (
+                <Text style={styles.feedTitle} numberOfLines={3}>{item.headline}</Text>
+                <Text style={styles.feedSource}>{item.sourceLabel}</Text>
+
+                {item.bullets.length > 0 ? (
+                  item.bullets.map((b) => (
+                    <View key={b.label} style={styles.bulletRow}>
+                      <Text style={styles.bulletLabel}>{b.label}: </Text>
+                      <Text style={styles.feedBody}>{b.text}</Text>
+                    </View>
+                  ))
+                ) : item.body ? (
                   <Text style={styles.feedBody} numberOfLines={2}>{item.body}</Text>
                 ) : null}
-                <Text style={styles.feedMeta}>{timeAgo(item.timestamp)}</Text>
-              </TouchableOpacity>
+
+                {item.visaPills.length > 0 ? (
+                  <View style={styles.pillRow}>
+                    {item.visaPills.map((v) => (
+                      <View key={v} style={styles.visaPill}>
+                        <Text style={styles.visaPillText}>{v}</Text>
+                      </View>
+                    ))}
+                  </View>
+                ) : null}
+
+                <View style={styles.feedFooterRow}>
+                  <Text style={styles.feedMeta}>{timeAgo(item.timestamp)}</Text>
+                  {item.url ? (
+                    <Pressable onPress={() => void openExternalUrl(item.url!)}>
+                      <Text style={styles.readMoreLink}>Read full article ↗</Text>
+                    </Pressable>
+                  ) : (
+                    <Pressable onPress={() => router.push('/(tabs)/notifications' as any)}>
+                      <Text style={styles.readMoreLink}>View details ↗</Text>
+                    </Pressable>
+                  )}
+                </View>
+              </View>
             ))
           )}
         </View>
@@ -707,6 +761,36 @@ function makeStyles(Colors: ReturnType<typeof useColors>) {
     feedTitle: { color: Colors.textPrimary, fontSize: FontSize.md, fontWeight: FontWeight.semiBold },
     feedBody: { color: Colors.textSecondary, fontSize: FontSize.sm, marginTop: 4 },
     feedMeta: { color: Colors.textMuted, fontSize: FontSize.xs, marginTop: 6 },
+    feedBadgeRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+    verifyBadge: {
+      alignSelf: 'flex-start',
+      backgroundColor: '#FEF3C7',
+      paddingHorizontal: Spacing.sm,
+      paddingVertical: 2,
+      borderRadius: Radius.full,
+      marginBottom: 6,
+    },
+    verifyBadgeText: { color: '#92400E', fontSize: FontSize.xs, fontWeight: FontWeight.semiBold },
+    feedSource: { color: Colors.textMuted, fontSize: FontSize.xs, marginTop: 2, marginBottom: 4 },
+    bulletRow: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 4 },
+    bulletLabel: { color: Colors.textPrimary, fontSize: FontSize.sm, fontWeight: FontWeight.semiBold },
+    pillRow: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 8, gap: 6 },
+    visaPill: {
+      backgroundColor: Colors.surfaceRaised,
+      borderColor: Colors.border,
+      borderWidth: 1,
+      paddingHorizontal: Spacing.sm,
+      paddingVertical: 2,
+      borderRadius: Radius.full,
+    },
+    visaPillText: { color: Colors.textPrimary, fontSize: FontSize.xs, fontWeight: FontWeight.semiBold },
+    feedFooterRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginTop: 8,
+    },
+    readMoreLink: { color: Colors.accent, fontSize: FontSize.xs, fontWeight: FontWeight.semiBold },
     quickGrid: {
       flexDirection: 'row',
       flexWrap: 'wrap',

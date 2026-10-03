@@ -36,6 +36,11 @@ const APPROVED_SOURCES = {
   ADMIN: 'Admin',
   ADMIN_DASHBOARD: 'Admin Dashboard',
   ADMIN_DASHBOARD_TEST: 'Admin Dashboard Test',
+
+  // Generic, non-branded labels for the unified news_items feed — intentionally
+  // anonymized so third-party migration-agency blogs are never named/credited.
+  OFFICIAL_GOVERNMENT_UPDATE: 'Official Government Update',
+  MEDIA_REPORT: 'Media Report',
 };
 
 // ─── Blocked Competitors & Agents ────────────────────────────────────────────

@@ -209,7 +209,10 @@ def run_live(limit: int, single_url, count: int = 1):
             "references_official_instrument": enriched["references_official_instrument"],
             "source_tier": enriched["source_tier"],
             "needs_manual_review": enriched["needs_manual_review"],
-            "title": c["title"][:150],
+            # Never store the raw URL as the title - when --url is used there is
+            # no real RSS title, so prefer the enriched headline (falls back to
+            # the raw candidate title only if enrichment produced nothing).
+            "title": (enriched["headline"] or c["title"])[:150],
             "body": enriched["body"],
             "url": c["link"],
         }

@@ -27,6 +27,8 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import { subscribeToFeedPoll } from '../../utils/notifications-poll';
 import { subscribeToNotificationsWeb, initializeFirebaseWeb } from '../../utils/firebaseWeb';
+import { subscribeToApprovedNews, NewsItem } from '../../utils/newsFeed';
+import { getNewsHeadline, getNewsSourceLabel, getNewsUrl } from '../../utils/newsDisplay';
 import { getRevenueCatUserId } from '../../utils/iap';
 import { SourceValidator } from '../../utils/sourceValidator';
 import NotificationDetail from '../../components/NotificationDetail';
@@ -133,6 +135,7 @@ export default function NotificationsScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
   const [feed, setFeed]           = useState<AppNotification[]>([]);
+  const [newsItems, setNewsItems] = useState<NewsItem[]>([]);
   const [loading, setLoading]     = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [stateFilter, setStateFilter] = useState<string>('all');
@@ -238,6 +241,14 @@ export default function NotificationsScreen() {
     };
   }, []);
 
+  // Live-subscribe to approved media news (`news_items`) so items approved
+  // via the Admin Action Center's "Approve & Send" appear here immediately,
+  // using the SAME dataset the Home screen reads from.
+  useEffect(() => {
+    const unsub = subscribeToApprovedNews((items) => setNewsItems(items), 50);
+    return () => { try { unsub(); } catch {} };
+  }, []);
+
   useEffect(() => onReadChange(() => {
     getReadIds().then(readIds => {
       setFeed(prev => prev.map(item => ({
@@ -291,13 +302,32 @@ export default function NotificationsScreen() {
     setTimeout(() => setRefreshing(false), 5000);
   }, []);
 
+  // Map approved news_items into the same AppNotification shape so the
+  // Updates tab renders one unified, sorted list — never a raw competitor URL.
+  const mappedNews = useMemo<AppNotification[]>(() => newsItems.map((item) => ({
+    id: `news-${item.id}`,
+    title: getNewsHeadline(item),
+    body: (typeof item.summary === 'object' && item.summary?.whatChanged) || item.body || '',
+    url: getNewsUrl(item) || '',
+    category: item.category || 'News',
+    topic: 'news',
+    timestamp: item.createdAt || item.timestamp || '',
+    read: true,
+    source: getNewsSourceLabel(item),
+    sourceUrl: getNewsUrl(item),
+  })), [newsItems]);
+
+  const unifiedFeed = useMemo<AppNotification[]>(() => {
+    return [...feed, ...mappedNews].sort((a, b) => (b.timestamp || '').localeCompare(a.timestamp || ''));
+  }, [feed, mappedNews]);
+
   const filteredFeed = useMemo(() => {
-    let items = feed;
+    let items = unifiedFeed;
     if (stateFilter === 'unread') return items.filter(n => !n.read);
     if (stateFilter === 'FED') items = items.filter(n => !n.state || n.state === 'FED' || n.state === 'Federal');
     else if (stateFilter !== 'all') items = items.filter(n => (n.state ?? '').toUpperCase() === stateFilter);
     return items;
-  }, [feed, stateFilter]);
+  }, [unifiedFeed, stateFilter]);
 
   const unreadCount = feed.filter(n => !n.read).length;
 
