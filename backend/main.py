@@ -14,10 +14,15 @@ from datetime import datetime, timezone
 import firebase_admin
 from firebase_admin import credentials, firestore
 
-from scrapers import home_affairs, anzsco, state_nominations, news_rss, processing_times, admin_intel
+from scrapers import home_affairs, anzsco, state_nominations, news_rss, processing_times
 from scrapers.assessing_authority_fees import scrape as scrape_assessing_fees
 from scrapers.daily_briefing import queue_daily_briefing
 from notify import queue_batch, queue_news_batch
+
+try:
+    from scrapers import admin_intel
+except ImportError:  # Optional module in some branches/deploys
+    admin_intel = None
 
 
 def get_db():
@@ -92,8 +97,12 @@ def run():
 
     # ── 7. Admin intel (competitor sites - admin-only, no user notifications)
     print("\n[7/7] Scraping admin intel sources...")
-    intel_items = admin_intel.scrape_intel(db)
-    print(f"      → {len(intel_items)} intel change(s) detected (admin-only)")
+    if admin_intel is not None:
+        intel_items = admin_intel.scrape_intel(db)
+        print(f"      → {len(intel_items)} intel change(s) detected (admin-only)")
+    else:
+        intel_items = []
+        print("      → admin intel scraper not available in this branch")
 
     # ── Queue all detected changes for administrator review
     print(f"\n{'─'*55}")
