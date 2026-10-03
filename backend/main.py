@@ -15,9 +15,17 @@ import firebase_admin
 from firebase_admin import credentials, firestore
 
 from scrapers import home_affairs, anzsco, state_nominations, news_rss, processing_times
-from scrapers.assessing_authority_fees import scrape as scrape_assessing_fees
-from scrapers.daily_briefing import queue_daily_briefing
 from notify import queue_batch, queue_news_batch
+
+try:
+    from scrapers.assessing_authority_fees import scrape as scrape_assessing_fees
+except ImportError:  # Optional module in some branches/deploys
+    scrape_assessing_fees = None
+
+try:
+    from scrapers.daily_briefing import queue_daily_briefing
+except ImportError:  # Optional module in some branches/deploys
+    queue_daily_briefing = None
 
 try:
     from scrapers import admin_intel
@@ -72,9 +80,12 @@ def run():
 
     # ── 4b. Assessing authority fee pages (VETASSESS etc.)
     print("\n[4b/7] Monitoring assessing authority fee pages...")
-    assessment_fee_notifications = scrape_assessing_fees(db)
+    assessment_fee_notifications = scrape_assessing_fees(db) if scrape_assessing_fees is not None else []
     all_notifications.extend(assessment_fee_notifications)
-    print(f"      → {len(assessment_fee_notifications)} assessment fee change(s) detected")
+    if scrape_assessing_fees is not None:
+        print(f"      → {len(assessment_fee_notifications)} assessment fee change(s) detected")
+    else:
+        print("      → assessing authority fee scraper not available in this branch")
 
     # ── 5. RSS news (migration-relevant media articles)
     print("\n[5/7] Checking RSS news feeds...")
@@ -87,7 +98,8 @@ def run():
     if news_notifications:
         news_stats = queue_news_batch(db, news_notifications)
         print(f"      → queued {news_stats['queued']} news item(s) for admin review")
-        queue_daily_briefing(db, news_notifications)
+        if queue_daily_briefing is not None:
+            queue_daily_briefing(db, news_notifications)
 
     # ── 6. Processing times (cloudscraper-based)
     print("\n[6/7] Scraping processing times...")
