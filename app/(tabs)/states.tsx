@@ -14,6 +14,8 @@ import { useColors } from '../../constants/ThemeContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { getProfile, saveProfile } from '../../utils/storage';
+import { canAddStateSubscription } from '../../utils/paywall';
+import { subscribeStateTopics, unsubscribeStateTopics } from '../../utils/notifications';
 import { tap as hapticTap } from '../../utils/haptics';
 import PaywallModal from '../../components/PaywallModal';
 import { openExternalUrl } from '../../utils/openExternalUrl';
@@ -166,8 +168,8 @@ const STATES: StateEntry[] = [
   },
   {
     code: 'ACT', name: 'Australian Capital Territory', color: '#A78BFA',
-    portalUrl: 'https://www.act.gov.au/migration',
-    occupationUrl: 'https://www.act.gov.au/migration/skilled-migrants',
+    portalUrl: 'https://www.canberrayourfuture.com.au/',
+    occupationUrl: 'https://www.canberrayourfuture.com.au/live-work-invest/migration-canberra-matrix',
     visas: ['190', '491'],
     desc: 'ACT Canberra Matrix — Skilled Nomination',
     visaGroups: [
@@ -187,8 +189,8 @@ const STATES: StateEntry[] = [
   },
   {
     code: 'NT', name: 'Northern Territory', color: '#FFB800',
-    portalUrl: 'https://australiasnorthernterritory.com.au/move',
-    occupationUrl: 'https://australiasnorthernterritory.com.au/move/work/migrate-to-the-nt',
+    portalUrl: 'https://theterritory.com.au/migrate',
+    occupationUrl: 'https://theterritory.com.au/migrate/migrate-to-work/northern-territory-government-visa-nomination',
     visas: ['190', '491'],
     desc: 'NT Skilled & Business migration',
     visaGroups: [
@@ -228,17 +230,40 @@ export default function StatesScreen() {
   const togglePin = async (code: string) => {
     hapticTap();
 
-    // Premium feature: State intelligence/pinning
-    if (!isPremium && !pinned.includes(code)) {
-      setShowPaywall(true);
-      return;
+    const isRemoving = pinned.includes(code);
+
+    // Free tier can follow up to PAYWALL_LIMITS.stateSubscriptions states.
+    // Premium is unlimited. If adding would exceed the free limit, show paywall.
+    if (!isRemoving) {
+      try {
+        const p = await getProfile();
+        if (!canAddStateSubscription(p)) {
+          setShowPaywall(true);
+          return;
+        }
+      } catch {}
     }
 
-    const next = pinned.includes(code)
+    const next = isRemoving
       ? pinned.filter((c) => c !== code)
       : [...pinned, code];
     setPinned(next);
-    await saveProfile({ pinnedStates: next });
+
+    // Persist BOTH pinnedStates (legacy) and subscribedStates (used by Today,
+    // Journey, and the FCM topic subscription pipeline) so every downstream
+    // consumer sees the same source of truth.
+    await saveProfile({ pinnedStates: next, subscribedStates: next });
+
+    // Update FCM topic subscriptions on native platforms; noop on web.
+    try {
+      if (isRemoving) {
+        await unsubscribeStateTopics([code]);
+      } else {
+        await subscribeStateTopics([code]);
+      }
+    } catch (err) {
+      console.warn('[states] topic subscription change failed:', err);
+    }
   };
 
   const orderedStates = useMemo(() => {
@@ -304,17 +329,26 @@ export default function StatesScreen() {
                       </Text>
                     </View>
 
-                    {/* Pin toggle */}
+                    {/* Follow toggle — subscribes to state_{code} FCM topic and
+                        auto-completes the "State program" step in the Journey. */}
                     <TouchableOpacity
                       onPress={(e) => { e.stopPropagation?.(); togglePin(state.code); }}
                       hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                      style={styles.pinBtn}
+                      accessibilityRole="button"
+                      accessibilityLabel={isPinned ? `Unfollow ${state.name}` : `Follow ${state.name} for updates`}
+                      style={[
+                        styles.followPill,
+                        isPinned && { backgroundColor: Colors.secondary + '22', borderColor: Colors.secondary },
+                      ]}
                     >
                       <Ionicons
                         name={isPinned ? 'star' : 'star-outline'}
-                        size={18}
+                        size={14}
                         color={isPinned ? Colors.secondary : Colors.textMuted}
                       />
+                      <Text style={[styles.followPillText, { color: isPinned ? Colors.secondary : Colors.textSecondary }]}>
+                        {isPinned ? 'Following' : 'Follow'}
+                      </Text>
                     </TouchableOpacity>
 
                     <View style={[styles.chevron, isOpen && styles.chevronOpen]}>
@@ -496,6 +530,13 @@ const styles = StyleSheet.create({
 
   chevron: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   chevronOpen: { transform: [{ rotate: '180deg' }] },
+  followPill: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    paddingHorizontal: 10, paddingVertical: 6,
+    borderRadius: 999,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.10)',
+  },
+  followPillText: { fontSize: 11, fontWeight: '600', letterSpacing: 0.3 },
   pinBtn: {
     width: 32,
     height: 32,

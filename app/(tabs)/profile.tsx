@@ -27,6 +27,8 @@ import { restorePurchases, getRevenueCatUserId, syncSubscriptionStatus, manageSu
 import PaywallModal from '../../components/PaywallModal';
 import { tap as hapticTap, success as hapticSuccess } from '../../utils/haptics';
 import { openExternalUrl } from '../../utils/openExternalUrl';
+import { shareReferral } from '../../utils/growth';
+import { setWeeklyDigestSubscription } from '../../utils/notifications';
 import type { SkilledOccupation } from '../../constants/skilledOccupations';
 import { getSkilledOccupations } from '../../utils/skilledOccupations';
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
@@ -921,6 +923,13 @@ export default function ProfileScreen() {
             value="portal.mara.gov.au"
             onPress={() => void openExternalUrl('https://portal.mara.gov.au')}
             showArrow
+          />
+          <SettingRow
+            icon="library-outline"
+            label="Sources & disclaimer"
+            value="Official gov sources we use"
+            onPress={() => { hapticTap(); router.push('/sources' as any); }}
+            showArrow
             last
           />
         </View>
@@ -941,6 +950,26 @@ export default function ProfileScreen() {
             label="Report issue or bug"
             value="Send a quick support email"
             onPress={handleReportBug}
+            showArrow
+          />
+          <SettingRow
+            icon="gift-outline"
+            label="Refer a friend"
+            value="Share MigrateAU with a friend"
+            onPress={() => { hapticTap(); void shareReferral(); }}
+            showArrow
+          />
+          <SettingRow
+            icon="mail-outline"
+            label="Weekly digest"
+            value={profile.weeklyDigest ? 'On — one summary per week' : 'Off'}
+            onPress={async () => {
+              hapticTap();
+              const next = !profile.weeklyDigest;
+              setProfile({ ...profile, weeklyDigest: next });
+              try { await saveProfile({ weeklyDigest: next }); } catch {}
+              try { await setWeeklyDigestSubscription(next); } catch {}
+            }}
             showArrow
           />
           <SettingRow
@@ -1009,7 +1038,16 @@ export default function ProfileScreen() {
       <View style={[styles.disclaimer, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
         <Ionicons name="alert-circle-outline" size={14} color={Colors.textMuted} />
         <Text style={[styles.disclaimerText, {color: Colors.textPrimary}]}>
-          Information is general in nature. Always consult a{' '}
+          MigrateAU is an independent app and is not affiliated with, endorsed by,
+          or authorised to facilitate services on behalf of the Australian Government.
+          Information is general in nature and drawn from{' '}
+          <Text
+            style={styles.disclaimerLink}
+            onPress={() => router.push('/sources' as any)}
+          >
+            official sources
+          </Text>
+          . Always consult a{' '}
           <Text
             style={styles.disclaimerLink}
             onPress={() => void openExternalUrl('https://portal.mara.gov.au')}

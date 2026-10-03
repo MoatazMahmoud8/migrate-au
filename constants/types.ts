@@ -88,4 +88,6 @@ export interface UserProfile {
   darkModeEnabled?: boolean; // Premium feature only
   birthDate?: string; // ISO date string, stored locally only (NOT synced to Firebase v1.0)
   usageLimits?: UsageLimits;
+  weeklyDigest?: boolean;
+  journeyManualComplete?: Record<string, boolean>;
 }

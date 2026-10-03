@@ -34,6 +34,17 @@ export default function NotificationDetail({ notification, onClose, onReadSource
   const categoryBg = categoryColorObj.bg;
   const timeAgo = formatTimeAgo(notification.timestamp);
 
+  const detailText = (() => {
+    const raw = notification.fullBody || notification.body || '';
+    return raw
+      .replace(/\r\n/g, '\n')
+      .replace(/^###\s*/gm, '')
+      .replace(/^##\s*/gm, '')
+      .replace(/^\s*[-*]\s*/gm, '• ')
+      .replace(/^\s*\d+\.\s*/gm, '')
+      .trim();
+  })();
+
   const handleReadSource = () => {
     if (notification.sourceUrl && onReadSource) {
       onReadSource(notification.sourceUrl);
@@ -79,7 +90,7 @@ export default function NotificationDetail({ notification, onClose, onReadSource
 
         {/* Body/Summary */}
         <View style={styles.bodySection}>
-          <Text style={[styles.bodyText, { color: Colors.textPrimary }]}>{notification.body}</Text>
+          <Text style={[styles.bodyText, { color: Colors.textPrimary }]}>{detailText}</Text>
         </View>
 
         {/* Metadata section */}

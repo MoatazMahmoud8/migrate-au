@@ -42,10 +42,23 @@ interface CallableResult {
   notificationId?: string;
   alreadyPublished?: boolean;
   notification?: Record<string, unknown>;
+  changeId?: string;
+  draftCreated?: boolean;
+  draftId?: string | null;
+  alreadyApproved?: boolean;
+  alreadyRejected?: boolean;
+  appliedFeesCount?: number;
 }
 
+type AdminCallableName =
+  | 'approveNotification'
+  | 'rejectNotification'
+  | 'editDraftNotification'
+  | 'approveContentChange'
+  | 'rejectContentChange';
+
 async function callAdminFunction(
-  name: 'approveNotification' | 'rejectNotification' | 'editDraftNotification',
+  name: AdminCallableName,
   payload: Record<string, unknown>,
 ): Promise<CallableResult> {
   if (Platform.OS === 'web') {
@@ -211,6 +224,52 @@ export async function getDrafts(): Promise<any[]> {
 }
 
 /**
+ * Get pending content changes (source items awaiting admin approval before
+ * their linked notification draft can be published).
+ */
+export async function getPendingContentChanges(): Promise<any[]> {
+  if (Platform.OS === 'web') {
+    initializeFirebaseWeb();
+    const webDb = getWebFirestore();
+    const { getDocs: webGetDocs, query: webQuery, orderBy: webOrderBy } = await import('firebase/firestore');
+    const q = webQuery(webCollection(webDb, 'pending_content_changes'), webOrderBy('createdAt', 'desc'));
+    const snap = await webGetDocs(q);
+    return snap.docs
+      .map(doc => ({ id: doc.id, ...(doc.data() as Record<string, unknown>) }))
+      .filter((change: any) => change.status === 'pending' || !change.status);
+  } else {
+    const db = firestore();
+    const snap = await db.collection('pending_content_changes').orderBy('createdAt', 'desc').get();
+    return snap.docs
+      .map(doc => ({ id: doc.id, ...(doc.data() as Record<string, unknown>) }))
+      .filter((change: any) => change.status === 'pending' || !change.status);
+  }
+}
+
+/**
+ * Approve a pending content change through the backend. This flips the change
+ * status to `approved` and, for non fee changes, creates or unlocks the linked
+ * notification draft so it can be published from the drafts queue.
+ */
+export async function approvePendingContentChange(changeId: string, notes?: string): Promise<CallableResult> {
+  const result = await callAdminFunction('approveContentChange', {
+    changeId,
+    ...(notes && notes.trim() ? { notes: notes.trim() } : {}),
+  });
+  if (!result.success) throw new Error(result.message || 'Content change approval failed');
+  return result;
+}
+
+export async function rejectPendingContentChange(changeId: string, reason?: string): Promise<CallableResult> {
+  const result = await callAdminFunction('rejectContentChange', {
+    changeId,
+    ...(reason && reason.trim() ? { reason: reason.trim() } : {}),
+  });
+  if (!result.success) throw new Error(result.message || 'Content change rejection failed');
+  return result;
+}
+
+/**
  * Get published notifications (for admin management)
  */
 export async function getPublishedNotifications(): Promise<any[]> {
@@ -333,8 +392,8 @@ export async function getProcessingTimesStatus(): Promise<{
         db.collection('_scraper_meta').doc('intel_smartvisa_processing').get(),
       ]);
       
-      const haData = haSnap.exists ? haSnap.data() : {};
-      const svData = svSnap.exists ? svSnap.data() : {};
+      const haData = haSnap.exists() ? haSnap.data() : {};
+      const svData = svSnap.exists() ? svSnap.data() : {};
       
       return {
         homeAffairs: {

@@ -591,19 +591,45 @@ def queue_news_item(db, notification: dict) -> bool:
         if ref.get().exists:
             return False
         created_at = notification.get("timestamp") or datetime.now(timezone.utc).isoformat()
+
+        # Structured summary (whatChanged/whoIsAffected/actionRequired). Falls
+        # back to a plain object built from the legacy flat body so older
+        # notifications queued before this schema still render sensibly.
+        structured_summary = notification.get("summary")
+        if not isinstance(structured_summary, dict):
+            structured_summary = {
+                "whatChanged": notification.get("body", "") or str(structured_summary or ""),
+                "whoIsAffected": "",
+                "actionRequired": "",
+            }
+
+        body_text = notification.get("body") or structured_summary.get("whatChanged") or ""
+
         ref.create({
             "id": news_id,
-            "title": notification.get("title", "")[:200],
-            "body": notification.get("body") or notification.get("summary") or "",
-            "summary": notification.get("summary") or notification.get("body") or "",
+            # Legacy flat fields — kept for backward compatibility with older UI.
+            "title": notification.get("title", notification.get("headline", ""))[:200],
+            "body": body_text,
             "sourceUrl": notification.get("url", ""),
             "url": notification.get("url", ""),
             "source": notification.get("source_id", "news_rss"),
             "dedupKey": dedup_raw,
-            "category": notification.get("category", "News"),
             "status": "pending",
             "createdAt": created_at,
             "timestamp": created_at,
+            # Agent-grade structured fields used by the Action Center.
+            "headline": notification.get("headline") or notification.get("title", "")[:200],
+            "category": notification.get("category", "News"),
+            "impactedVisas": notification.get("impactedVisas", []),
+            "effectiveDate": notification.get("effectiveDate", "Immediate"),
+            "summary": structured_summary,
+            "is_agent_relevant": notification.get("is_agent_relevant", True),
+            # Source hierarchy / official verification gate.
+            "is_official": notification.get("is_official", False),
+            "requires_verification": notification.get("requires_verification", True),
+            "references_official_instrument": notification.get("references_official_instrument", False),
+            "source_tier": notification.get("source_tier", "tier2"),
+            "needs_manual_review": notification.get("needs_manual_review", False),
         })
         print(f"  [news] Queued news item: {news_id}")
         return True

@@ -243,6 +243,22 @@ export async function subscribeStateTopics(stateCodes: string[]) {
   }
 }
 
+export const WEEKLY_DIGEST_TOPIC = 'weekly_digest';
+
+export async function setWeeklyDigestSubscription(enabled: boolean): Promise<void> {
+  try {
+    if (enabled) {
+      await messaging().subscribeToTopic(WEEKLY_DIGEST_TOPIC);
+      console.log('[notifications] ✅ Subscribed to weekly_digest');
+    } else {
+      await messaging().unsubscribeFromTopic(WEEKLY_DIGEST_TOPIC);
+      console.log('[notifications] ✅ Unsubscribed from weekly_digest');
+    }
+  } catch (err) {
+    console.warn('[notifications] weekly_digest subscription change failed:', err);
+  }
+}
+
 export async function unsubscribeStateTopics(stateCodes: string[]) {
   const topics = stateCodes
     .map(code => STATE_TOPICS[code])
@@ -356,6 +372,10 @@ export interface AppNotification {
   id: string;
   title: string;
   body: string;
+  /** Rich daily briefing or full-detail text for in-app detail screens. */
+  fullBody?: string;
+  /** Optional subject line used by daily migration intelligence briefings. */
+  subject?: string;
   url: string;
   category: string;
   topic: string;
@@ -371,6 +391,8 @@ export interface AppNotification {
   source?: string;
   /** Source URL - only official sources, no competitor links */
   sourceUrl?: string;
+  /** True for the app's curated daily migration briefing alert. */
+  isDailyBriefing?: boolean;
 }
 
 function notificationTimestamp(value: unknown): string {

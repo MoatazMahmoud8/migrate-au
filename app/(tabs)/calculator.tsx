@@ -13,6 +13,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { calculatePoints } from '../../utils/pointsCalculator';
+import { sharePointsCard } from '../../utils/growth';
 import { hasExceededLimit, getRemainingUses, incrementUsage } from '../../utils/paywall';
 import { getProfile, saveProfile } from '../../utils/storage';
 import { PaywallModal } from '../../components/PaywallModal';
@@ -173,6 +174,9 @@ export default function CalculatorScreen() {
     AsyncStorage.getItem(CALC_STORAGE_KEY).then((json) => {
       if (json) {
         try { setInput((p) => ({ ...p, ...JSON.parse(json) })); } catch {}
+      } else {
+        // No stored input yet — persist defaults so Today can render a first score.
+        AsyncStorage.setItem(CALC_STORAGE_KEY, JSON.stringify(defaultInput)).catch(() => {});
       }
     });
   }, []);
@@ -398,6 +402,29 @@ export default function CalculatorScreen() {
             {breakdown.total} pts
           </Text>
         </View>
+        <TouchableOpacity
+          onPress={() => sharePointsCard({ total: breakdown.total, eligibleThreshold: 65 })}
+          activeOpacity={0.85}
+          accessibilityRole="button"
+          accessibilityLabel="Share your points score"
+          style={{
+            marginTop: 12,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 8,
+            paddingVertical: 12,
+            borderRadius: Radius.md,
+            backgroundColor: Colors.accent + '22',
+            borderWidth: 1,
+            borderColor: Colors.accent,
+          }}
+        >
+          <Ionicons name="share-outline" size={18} color={Colors.accent} />
+          <Text style={{ color: Colors.accent, fontWeight: FontWeight.semiBold, fontSize: FontSize.sm }}>
+            Share your score
+          </Text>
+        </TouchableOpacity>
       </View>
 
       {/* Gap Filler — Points Improvement Tips */}

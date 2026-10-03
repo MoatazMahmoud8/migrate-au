@@ -58,6 +58,10 @@ export interface SkilledOccupation {
   skillLevel?: string;
   /** URL to the ABS source page. */
   descriptionSource?: string;
+  /** ANZSCO tasks (responsibilities) — array of task bullets from ABS. */
+  tasks?: string[];
+  /** Alias of tasks for convenience. */
+  responsibilities?: string[];
   /** Resolved assessing authority details (fee, processing time, website). */
   authorityInfo?: {
     name: string;

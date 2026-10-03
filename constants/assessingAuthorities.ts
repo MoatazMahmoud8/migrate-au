@@ -122,9 +122,9 @@ export const ASSESSING_AUTHORITIES: Record<string, AssessingAuthority> = {
     code: 'VETASSESS',
     name: 'VETASSESS',
     fullName: 'Vocational Education and Training Assessment Services',
-    website: 'https://www.vetassess.com.au/',
+    website: 'https://www.vetassess.com.au/skills-assessment-for-migration/professional-occupations/skills-assessment-fees-for-professional-occupations',
     processingTime: '10-16 weeks',
-    fee: 'AUD $630-$1,200',
+    fee: 'AUD $1,260.60 standard professional assessment (includes GST); AUD $949.30 priority processing; appeals vary',
     occupationPrefixes: [],
     requiredDocuments: [
       'Certified passport copy',

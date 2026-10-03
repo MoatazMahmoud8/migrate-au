@@ -9,7 +9,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Colors } from '../constants/theme';
 import { ThemeProvider as AppThemeProvider, useColors, useTheme } from '../constants/ThemeContext';
 import { useEffect, useState } from 'react';
-import { initNotifications, subscribeToFeed, onReadChange, getReadIds } from '../utils/notifications';
+import { initNotifications, onReadChange, getReadIds } from '../utils/notifications';
 import { refreshLatestRound } from '../utils/latestRound';
 import { initRevenueCat, syncSubscriptionStatus, getRevenueCatUserId } from '../utils/iap';
 import { selection } from '../utils/haptics';
@@ -20,6 +20,9 @@ import { refreshMergedOccupations } from '../utils/skilledOccupations';
 import { maybePromptForRating } from '../utils/rateApp';
 import { initSentry, Sentry } from '../utils/sentry';
 import { initializeFirebaseWeb, subscribeToNotificationsWeb } from '../utils/firebaseWeb';
+import { subscribeToFeedPoll } from '../utils/notifications-poll';
+import { initFeatureFlags, refreshFeatureFlags, isEnabled } from '../utils/featureFlags';
+import { getAppDataManifest } from '../utils/appDataManifest';
 
 // Initialize Firebase for native platforms
 // @react-native-firebase auto-initializes on app startup, but we explicitly
@@ -124,6 +127,14 @@ function AriaFab({ focused }: { focused: boolean }) {
 function RootLayout() {
   const [unread, setUnread] = useState(0);
   const [onboardingVisible, setOnboardingVisible] = useState(false);
+  const [newNavEnabled, setNewNavEnabled] = useState(false);
+  useEffect(() => {
+    // Pick up the flag once init has primed the in-memory snapshot.
+    const t = setTimeout(() => {
+      setNewNavEnabled(isEnabled('newNavigation') || isEnabled('todayScreen'));
+    }, 300);
+    return () => clearTimeout(t);
+  }, []);
 
   useEffect(() => {
     // Initialise RevenueCat for IAP
@@ -137,6 +148,8 @@ function RootLayout() {
         void syncSubscriptionStatus();
         void maybePromptForRating();
         void refreshMergedOccupations().catch(() => {});
+        void refreshFeatureFlags().catch(() => {});
+        void getAppDataManifest({ force: true }).catch(() => {});
       }
     });
 
@@ -181,10 +194,11 @@ function RootLayout() {
           if (unsub) unsubFeed = () => { unsub(); unsubReadChange(); };
           else unsubFeed = unsubReadChange;
         } else {
-          const unsubNative = subscribeToFeed(
+          const unsubNative = subscribeToFeedPoll(
             items => { latestFeedItems = items; recount(); },
             30,
             userId ?? undefined,
+            5000,
           );
           unsubFeed = () => { unsubNative(); unsubReadChange(); };
         }
@@ -269,6 +283,8 @@ function RootLayout() {
       .catch(() => {});
 
     // Once-per-day skilled occupations refresh (CSOL / MLTSSL / STSOL / ROL)
+    void initFeatureFlags().catch(() => {});
+    void getAppDataManifest().catch(() => {});
     refreshMergedOccupations()
       .then(async ({ changes }) => {
         if (!changes.length) return;
@@ -393,15 +409,16 @@ function RootLayout() {
 
   return (
     <AppThemeProvider>
-      <RootLayoutContent unread={unread} onboardingVisible={onboardingVisible} closeOnboarding={closeOnboarding} />
+      <RootLayoutContent unread={unread} onboardingVisible={onboardingVisible} closeOnboarding={closeOnboarding} newNavEnabled={newNavEnabled} />
     </AppThemeProvider>
   );
 }
 
-function RootLayoutContent({ unread, onboardingVisible, closeOnboarding }: {
+function RootLayoutContent({ unread, onboardingVisible, closeOnboarding, newNavEnabled }: {
   unread: number;
   onboardingVisible: boolean;
   closeOnboarding: () => void;
+  newNavEnabled: boolean;
 }) {
   const C = useColors();
   const { isDark } = useTheme();
@@ -461,10 +478,22 @@ function RootLayoutContent({ unread, onboardingVisible, closeOnboarding }: {
         <Tabs.Screen
           name="(tabs)/index"
           options={{
-            title: 'Home',
+            title: newNavEnabled ? 'Legacy Home' : 'Home',
+            href: (newNavEnabled ? null : undefined) as any,
             headerShown: false,
             tabBarIcon: ({ color, focused }) => (
               <TabIcon name={focused ? 'home' : 'home-outline'} color={color} focused={focused} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="today"
+          options={{
+            title: 'Today',
+            href: (newNavEnabled ? '/today' : null) as any,
+            headerShown: false,
+            tabBarIcon: ({ color, focused }) => (
+              <TabIcon name={focused ? 'sparkles' : 'sparkles-outline'} color={color} focused={focused} />
             ),
           }}
         />
@@ -524,6 +553,9 @@ function RootLayoutContent({ unread, onboardingVisible, closeOnboarding }: {
         <Tabs.Screen name="watchlist"              options={{ title: 'Watchlist',         href: null, headerShown: false }} />
         <Tabs.Screen name="visa-journey"           options={{ title: 'Visa Journey',      href: null, headerShown: false }} />
         <Tabs.Screen name="admin"                  options={{ href: null, headerShown: false }} />
+        <Tabs.Screen name="sources"                options={{ href: null, headerShown: false }} />
+        <Tabs.Screen name="journey"                options={{ href: null, headerShown: false }} />
+        <Tabs.Screen name="legacy-home"            options={{ href: null, headerShown: false }} />
       </Tabs>
       <OnboardingModal visible={onboardingVisible} onClose={closeOnboarding} />
     </NavigationThemeProvider>

@@ -617,28 +617,49 @@ export async function refreshMergedOccupations(
  * description, unit group, visa subclass, list code, or assessing authority.
  * Returns up to `limit` results.
  */
+// WeakMap caches each occupation's lowercase haystack so repeated searches
+// don't rebuild + relowercase 1k+ strings per keystroke.
+const searchHaystackCache = new WeakMap<SkilledOccupation, string>();
+
+function buildHaystack(o: SkilledOccupation): string {
+  const cached = searchHaystackCache.get(o);
+  if (cached !== undefined) return cached;
+  const haystack = (
+    o.anzsco + ' ' +
+    o.name + ' ' +
+    (o.description ?? '') + ' ' +
+    (o.unitGroup ?? '') + ' ' +
+    o.group + ' ' +
+    o.lists.join(' ') + ' ' +
+    o.visas.join(' ') + ' ' +
+    (o.assessingAuthority ?? '') + ' ' +
+    (((o as any).tasks as string[]) ?? []).join(' ')
+  ).toLowerCase();
+  searchHaystackCache.set(o, haystack);
+  return haystack;
+}
+
 export function searchOccupations(
   items: SkilledOccupation[],
   query: string,
   limit = 200
 ): SkilledOccupation[] {
   const q = query.trim().toLowerCase();
-  if (!q) return items;  // Return all items without limit when no query
+  if (!q) return items;
   const tokens = q.split(/\s+/).filter(Boolean);
-  const matches = items.filter((o) => {
-    const haystack = [
-      o.anzsco,
-      o.name.toLowerCase(),
-      (o.description ?? '').toLowerCase(),
-      (o.unitGroup ?? '').toLowerCase(),
-      o.group.toLowerCase(),
-      o.lists.join(' ').toLowerCase(),
-      o.visas.join(' '),
-      (o.assessingAuthority ?? '').toLowerCase(),
-    ].join(' ');
-    return tokens.every((t) => haystack.includes(t));
-  });
-  return matches.slice(0, limit);
+  const matches: SkilledOccupation[] = [];
+  for (const o of items) {
+    const h = buildHaystack(o);
+    let ok = true;
+    for (const t of tokens) {
+      if (h.indexOf(t) === -1) { ok = false; break; }
+    }
+    if (ok) {
+      matches.push(o);
+      if (matches.length >= limit) break;
+    }
+  }
+  return matches;
 }
 
 // ─── State Requirements ───────────────────────────────────────────────────

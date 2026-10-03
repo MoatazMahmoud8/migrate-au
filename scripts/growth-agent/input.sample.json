@@ -1,0 +1,17 @@
+{
+  "metrics": {
+    "storeVisitors": 1000,
+    "installs": 200,
+    "mau": 180,
+    "dau": 25,
+    "paidUsers": 3,
+    "refunds": 0,
+    "revenueAud": 44.85,
+    "publishedNotifications7d": 4,
+    "weeklyDigestOptIn": 12
+  },
+  "feedback": [
+    { "topic": "points calculator", "note": "would love a bookmark for my score" },
+    { "topic": "occupations", "note": "add search by 4-digit anzsco" }
+  ]
+}

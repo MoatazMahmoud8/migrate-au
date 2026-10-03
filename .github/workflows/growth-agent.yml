@@ -1,0 +1,40 @@
+name: MigrateAU Growth Agent
+
+on:
+  # Weekly on Mondays 01:00 UTC (~11 AM Sydney).
+  schedule:
+    - cron: '0 1 * * 1'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  generate-review-bundle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install firebase-admin
+        run: npm install --no-save firebase-admin@^13
+
+      - name: Test growth agent
+        run: node --test scripts/growth-agent/tests/analyze.test.js
+
+      - name: Run growth agent (Firestore mode)
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+        run: node scripts/growth-agent/run.js
+
+      - name: Upload review bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: migrateau-growth-review-${{ github.run_number }}
+          path: scripts/growth-agent/output/
+          retention-days: 30

@@ -1210,6 +1210,11 @@ export default function OccupationsScreen() {
   const [lastChecked, setLastChecked] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [query, setQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQuery(query), 150);
+    return () => clearTimeout(t);
+  }, [query]);
   const [filter, setFilter] = useState<ListFilter>('All');
   const [jurisdiction, setJurisdiction] = useState<JurisdictionFilter>(() => {
     const p = (params.state ?? '').toString().toUpperCase();
@@ -1281,13 +1286,13 @@ export default function OccupationsScreen() {
     }
 
     const code = savedAnzsco === o.anzsco ? '' : o.anzsco;
-    await saveProfile({ anzscoCode: code });
+    // Merge the new anzsco code with the incremented usage in a single object
+    // so the persisted save doesn't lose either write.
+    const incremented = incrementUsage('anzscoSearches', profile);
+    const nextProfile = { ...incremented, anzscoCode: code };
+    setProfile(nextProfile);
     setSavedAnzsco(code);
-
-    // Increment usage after successful save
-    const updated = incrementUsage('anzscoSearches', profile);
-    setProfile(updated);
-    await saveProfile(updated);
+    await saveProfile({ anzscoCode: code, usageLimits: incremented.usageLimits });
 
     hapticSuccess();
     if (code) { recordEngagement('saved_anzsco'); }
@@ -1320,8 +1325,8 @@ export default function OccupationsScreen() {
     if (filter !== 'All') {
       base = base.filter((o) => o.lists.includes(filter));
     }
-    return searchOccupations(base, query, base.length);
-  }, [items, filter, jurisdiction, query]);
+    return searchOccupations(base, debouncedQuery, base.length);
+  }, [items, filter, jurisdiction, debouncedQuery]);
 
   const FILTERS: ListFilter[] = ['All', ...SKILL_LISTS];
   const JURISDICTIONS: JurisdictionFilter[] = ['All', 'Federal', ...STATE_CODES];
@@ -1472,6 +1477,10 @@ export default function OccupationsScreen() {
             />
           }
           keyboardShouldPersistTaps="handled"
+          initialNumToRender={12}
+          maxToRenderPerBatch={10}
+          windowSize={8}
+          removeClippedSubviews
           renderItem={({ item }) => {
             const salary = getSalaryFor(salaries, item.anzsco);
             return (
@@ -1604,6 +1613,20 @@ export default function OccupationsScreen() {
                       </View>
                     );
                   })()}
+
+                  {Array.isArray((selected as any).tasks) && (selected as any).tasks.length > 0 && (
+                    <>
+                      <Text style={[styles.sectionLabel, {color: Colors.textPrimary}]}>Responsibilities (ANZSCO tasks)</Text>
+                      <View style={{ marginBottom: Spacing.sm }}>
+                        {((selected as any).tasks as string[]).map((t, i) => (
+                          <View key={i} style={{ flexDirection: 'row', paddingVertical: 4 }}>
+                            <Text style={{ color: Colors.textMuted, marginRight: 6 }}>•</Text>
+                            <Text style={{ flex: 1, color: Colors.textPrimary, fontSize: FontSize.sm, lineHeight: 20 }}>{t}</Text>
+                          </View>
+                        ))}
+                      </View>
+                    </>
+                  )}
 
                   <Text style={[styles.sectionLabel, {color: Colors.textPrimary}]}>Appears on</Text>
                   <View style={styles.chipRow}>
@@ -2418,24 +2441,7 @@ export default function OccupationsScreen() {
                     );
                   })()}
 
-                  {/* Set as my occupation */}
-                  <TouchableOpacity
-                    style={[
-                      styles.modalCta,
-                      savedAnzsco === selected.anzsco && styles.modalCtaSaved,
-                    ]}
-                    activeOpacity={0.85}
-                    onPress={() => handleSetOccupation(selected)}
-                  >
-                    <Ionicons
-                      name={savedAnzsco === selected.anzsco ? 'checkmark-circle' : 'bookmark-outline'}
-                      size={14}
-                      color={savedAnzsco === selected.anzsco ? Colors.primaryDark : Colors.primaryDark}
-                    />
-                    <Text style={[styles.modalCtaText, {color: Colors.textPrimary}]}>
-                      {savedAnzsco === selected.anzsco ? 'My occupation ✓' : 'Set as my occupation'}
-                    </Text>
-                  </TouchableOpacity>
+                  {/* Set as my occupation lives in the sticky footer below */}
 
                   <TouchableOpacity
                     style={[styles.modalCta, styles.modalCtaSecondary]}
@@ -2450,6 +2456,26 @@ export default function OccupationsScreen() {
                     <Text style={[styles.modalCtaText, { color: Colors.textSecondary }]}>View on DHA</Text>
                   </TouchableOpacity>
                 </ScrollView>
+                <View style={styles.modalStickyFooter}>
+                  <TouchableOpacity
+                    style={[
+                      styles.modalCta,
+                      savedAnzsco === selected.anzsco && styles.modalCtaSaved,
+                      { flex: 1 },
+                    ]}
+                    activeOpacity={0.85}
+                    onPress={() => handleSetOccupation(selected)}
+                  >
+                    <Ionicons
+                      name={savedAnzsco === selected.anzsco ? 'checkmark-circle' : 'bookmark-outline'}
+                      size={16}
+                      color={Colors.primaryDark}
+                    />
+                    <Text style={[styles.modalCtaText, {color: Colors.textPrimary}]}>
+                      {savedAnzsco === selected.anzsco ? 'My occupation ✓' : 'Set as my occupation'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
               </>
             )}
           </View>
@@ -3217,6 +3243,13 @@ const styles = StyleSheet.create({
     lineHeight: 16,
   },
 
+  modalStickyFooter: {
+    paddingTop: Spacing.sm,
+    paddingHorizontal: 0,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: 'rgba(255,255,255,0.06)',
+    flexDirection: 'row',
+  },
   modalCta: {
     marginTop: Spacing.xl,
     flexDirection: 'row',

@@ -19,7 +19,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, Spacing, Radius, FontSize, FontWeight } from '../../constants/theme';
 import { useColors } from '../../constants/ThemeContext';
-import { saveDraft, approveDraft, rejectDraft, editDraft, deleteNotification, deleteDraft, getDrafts, getPublishedNotifications, NOTIFICATION_CATEGORIES, validateNotification } from '../../utils/admin';
+import { saveDraft, approveDraft, rejectDraft, editDraft, deleteNotification, deleteDraft, getDrafts, getPublishedNotifications, getPendingContentChanges, approvePendingContentChange, rejectPendingContentChange, NOTIFICATION_CATEGORIES, validateNotification } from '../../utils/admin';
 import { tap as hapticTap, success as hapticSuccess } from '../../utils/haptics';
 
 interface NotificationDraft {
@@ -42,8 +42,10 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<'compose' | 'manage' | 'security'>('compose');
   const [drafts, setDrafts] = useState<any[]>([]);
   const [published, setPublished] = useState<any[]>([]);
+  const [pendingChanges, setPendingChanges] = useState<any[]>([]);
   const [loadingManage, setLoadingManage] = useState(false);
   const [busyDraftId, setBusyDraftId] = useState<string | null>(null);
+  const [busyChangeId, setBusyChangeId] = useState<string | null>(null);
   const [editingDraft, setEditingDraft] = useState<any | null>(null);
   const [editTitle, setEditTitle] = useState('');
   const [editBody, setEditBody] = useState('');
@@ -105,14 +107,62 @@ export default function AdminDashboard() {
   const loadManageData = async () => {
     setLoadingManage(true);
     try {
-      const [d, p] = await Promise.all([getDrafts(), getPublishedNotifications()]);
+      const [d, p, c] = await Promise.all([
+        getDrafts(),
+        getPublishedNotifications(),
+        getPendingContentChanges().catch(err => { console.warn('[admin] pending content changes fetch failed:', err); return []; }),
+      ]);
       setDrafts(d);
       setPublished(p);
+      setPendingChanges(c);
     } catch (err) {
       console.error('[admin] Failed to load manage data:', err);
     } finally {
       setLoadingManage(false);
     }
+  };
+
+  const handleApproveChange = async (changeId: string, title: string) => {
+    Alert.alert('Approve Content Change', `Approve "${title}"? This unlocks the linked notification draft so it can be published.`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Approve',
+        style: 'default',
+        onPress: async () => {
+          setBusyChangeId(changeId);
+          try {
+            await approvePendingContentChange(changeId);
+            try { hapticSuccess(); } catch (e) {}
+            await loadManageData();
+          } catch (err: any) {
+            Alert.alert('Error', err?.message || 'Failed to approve content change');
+          } finally {
+            setBusyChangeId(null);
+          }
+        },
+      },
+    ]);
+  };
+
+  const handleRejectChange = async (changeId: string, title: string) => {
+    Alert.alert('Reject Content Change', `Reject "${title}"? The linked notification draft will be removed.`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Reject',
+        style: 'destructive',
+        onPress: async () => {
+          setBusyChangeId(changeId);
+          try {
+            await rejectPendingContentChange(changeId, 'Rejected from admin dashboard');
+            await loadManageData();
+          } catch (err: any) {
+            Alert.alert('Error', err?.message || 'Failed to reject content change');
+          } finally {
+            setBusyChangeId(null);
+          }
+        },
+      },
+    ]);
   };
 
   const handleSaveDraft = async () => {
@@ -368,7 +418,7 @@ export default function AdminDashboard() {
           onPress={() => setActiveTab('manage')}
         >
           <Text style={[styles.tabText, activeTab === 'manage' && styles.tabTextActive]}>
-            Manage {drafts.length > 0 ? `(${drafts.length})` : ''}
+            Manage {drafts.length + pendingChanges.length > 0 ? `(${drafts.length + pendingChanges.length})` : ''}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -485,8 +535,33 @@ export default function AdminDashboard() {
           <ActivityIndicator size="large" color={Colors.secondary} style={{ marginTop: 40 }} />
         ) : (
           <>
-            {/* Drafts Section */}
+            {/* Pending Content Changes Section */}
             <View style={styles.section}>
+              <Text style={[styles.label, {color: Colors.textPrimary}]}>🕵️ Pending Content Changes ({pendingChanges.length})</Text>
+              {pendingChanges.length === 0 && (
+                <Text style={{ color: Colors.textMuted, fontSize: FontSize.sm, marginTop: 8 }}>No pending source changes. Scraper items land here for approval before their linked notification draft can publish.</Text>
+              )}
+              {pendingChanges.map(c => (
+                <View key={c.id} style={styles.manageCard}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.manageTitle, {color: Colors.textPrimary}]}>{c.title || c.id}</Text>
+                    <Text style={[styles.manageBody, {color: Colors.textPrimary}]} numberOfLines={3}>{c.summary || c.body || c.detectedValue || 'No summary'}</Text>
+                    <Text style={[styles.manageMeta, {color: Colors.textPrimary}]}>{(c.contentType || c.category || 'change')} · {c.createdAt?.substring?.(0, 16) || ''}</Text>
+                  </View>
+                  <View style={styles.manageActions}>
+                    <TouchableOpacity style={styles.manageIconBtn} onPress={() => handleApproveChange(c.id, c.title || c.id)} disabled={!!busyChangeId} accessibilityLabel={`Approve ${c.title || c.id}`}>
+                      {busyChangeId === c.id ? <ActivityIndicator size="small" color={Colors.success} /> : <Ionicons name="checkmark-circle" size={22} color={Colors.success} />}
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.manageIconBtn} onPress={() => handleRejectChange(c.id, c.title || c.id)} disabled={!!busyChangeId} accessibilityLabel={`Reject ${c.title || c.id}`}>
+                      <Ionicons name="close-circle" size={22} color={Colors.error} />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ))}
+            </View>
+
+            {/* Drafts Section */}
+            <View style={[styles.section, { marginTop: Spacing.xl }]}>
               <Text style={[styles.label, {color: Colors.textPrimary}]}>📝 Pending Drafts ({drafts.length})</Text>
               {drafts.length === 0 && (
                 <Text style={{ color: Colors.textMuted, fontSize: FontSize.sm, marginTop: 8 }}>No drafts. Compose a notification first.</Text>

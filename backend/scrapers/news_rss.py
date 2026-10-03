@@ -19,7 +19,7 @@ import xml.etree.ElementTree as ET
 from bs4 import BeautifulSoup
 from datetime import datetime, timezone, timedelta
 from email.utils import parsedate_to_datetime
-from scrapers.article_enricher import enrich as enrich_article
+from scrapers.article_enricher import enrich_structured
 
 RSS_FEEDS = [
     # Migration-specific blogs — high quality, low noise
@@ -394,15 +394,27 @@ def scrape(db) -> list[dict]:
     new_articles = [a for a in unique if a["hash"] not in sent_hashes and a["link"] not in sent_urls]
 
     for article in new_articles[:MAX_NOTIFICATIONS_PER_RUN]:
-        category = _categorize(article["title"], article["desc"])
-        body = enrich_article(article["title"], article["desc"], article["link"])
+        fallback_category = _categorize(article["title"], article["desc"])
+        enriched = enrich_structured(article["title"], article["desc"], article["link"])
 
         notifications.append({
             "source_id": "news_rss",
             "topic": "au_migration",
-            "category": category,
+            # Structured, agent-grade fields (see article_enricher.enrich_structured)
+            "headline": enriched["headline"] or article["title"][:150],
+            "category": enriched.get("category") or fallback_category,
+            "impactedVisas": enriched.get("impactedVisas", []),
+            "effectiveDate": enriched.get("effectiveDate", "Immediate"),
+            "summary": enriched["summary"],
+            "is_agent_relevant": enriched.get("is_agent_relevant", True),
+            "is_official": enriched["is_official"],
+            "requires_verification": enriched["requires_verification"],
+            "references_official_instrument": enriched["references_official_instrument"],
+            "source_tier": enriched["source_tier"],
+            "needs_manual_review": enriched.get("needs_manual_review", False),
+            # Legacy flat fields (for backward compatibility with older UI)
             "title": article["title"][:150],
-            "body": body,
+            "body": enriched["body"],
             "url": article["link"],
             "timestamp": datetime.now(timezone.utc).isoformat(),
         })

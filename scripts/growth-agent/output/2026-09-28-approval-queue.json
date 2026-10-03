@@ -1,0 +1,37 @@
+{
+  "generatedAt": "2026-09-28",
+  "metrics": {
+    "storeVisitors": 1000,
+    "installs": 200,
+    "mau": 180,
+    "dau": 25,
+    "paidUsers": 3,
+    "refunds": 0,
+    "revenueAud": 44.85,
+    "publishedNotifications7d": 4,
+    "weeklyDigestOptIn": 12
+  },
+  "drafts": [
+    {
+      "channel": "social",
+      "status": "pending_approval",
+      "title": "Points-check challenge (points calculator)",
+      "body": "Quick 2-minute points check for Australian PR: age, English, work, state bonuses — all in one screen. Free in MigrateAU.",
+      "successMetric": "Store visitor → install conversion"
+    },
+    {
+      "channel": "store-experiment",
+      "status": "pending_approval",
+      "title": "Benefit-led promotional text",
+      "body": "Track every official Australian migration update: SkillSelect rounds, state nominations, visa fees and processing times. Curated from Home Affairs and 8 state programs.",
+      "successMetric": "Store visitor → install conversion"
+    },
+    {
+      "channel": "in-app-message",
+      "status": "pending_approval",
+      "title": "Weekly digest invitation",
+      "body": "Get one summary push per week with the top official migration changes. Tap Profile → Weekly digest to opt in.",
+      "successMetric": "Weekly digest opt-in rate"
+    }
+  ]
+}
