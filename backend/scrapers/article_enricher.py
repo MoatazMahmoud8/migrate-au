@@ -198,7 +198,9 @@ def _generate_structured_summary(title: str, content: str, is_official: bool) ->
 
     try:
         genai.configure(api_key=api_key)
-        model = genai.GenerativeModel("gemini-1.5-pro")
+        # gemini-1.5-pro was retired by Google; gemini-2.5-flash is the
+        # current fast/cheap model suited to this short structured-JSON task.
+        model = genai.GenerativeModel("gemini-2.5-flash")
 
         prompt = STRUCTURED_SCHEMA_PROMPT.format(
             tier_note=tier_note,
@@ -209,7 +211,7 @@ def _generate_structured_summary(title: str, content: str, is_official: bool) ->
         response = model.generate_content(
             prompt,
             generation_config=genai.types.GenerationConfig(
-                max_output_tokens=500,
+                max_output_tokens=2048,
                 temperature=0.1,
             ),
         )

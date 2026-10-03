@@ -171,53 +171,71 @@ def run_dry(limit: int, single_url):
     print(f"\nDry-run complete - {len(candidates)} item(s) processed, nothing written to Firestore.")
 
 
-def run_live(limit: int, single_url):
-    from notify import queue_news_item
+def run_live(limit: int, single_url, count: int = 1):
+    import hashlib
+    from notify import queue_news_item, _normalize_title, _canonicalize_url
 
     db = _load_firestore_client()
 
     if single_url:
         candidates = [{"title": single_url, "desc": "", "link": single_url}]
     else:
-        candidates = _fetch_feed_candidates(limit) or []
+        # Fetch more candidates than requested so skipped duplicates/filtered
+        # items don't shrink the final written count below what was asked for.
+        candidates = _fetch_feed_candidates(max(limit, count * 3)) or []
 
     if not candidates:
         print("No candidates matched the filters right now (try again later, or pass --url).")
         return
 
-    # Live mode intentionally writes only ONE clean test document, regardless
-    # of --limit, to keep the admin queue tidy during manual testing.
-    c = candidates[0]
-    print(f"-> Enriching + queueing: {c['title'][:70]}")
-    enriched = enrich_structured(c["title"], c["desc"], c["link"])
-    _print_structured(c["title"], enriched)
+    written: list[dict] = []
+    for c in candidates:
+        if len(written) >= count:
+            break
+        print(f"\n-> Enriching + queueing: {c['title'][:70]}")
+        enriched = enrich_structured(c["title"], c["desc"], c["link"])
+        _print_structured(c["title"], enriched)
 
-    notification = {
-        "source_id": "news_rss_test",
-        "headline": enriched["headline"],
-        "category": enriched["category"],
-        "impactedVisas": enriched["impactedVisas"],
-        "effectiveDate": enriched["effectiveDate"],
-        "summary": enriched["summary"],
-        "is_agent_relevant": enriched["is_agent_relevant"],
-        "is_official": enriched["is_official"],
-        "requires_verification": enriched["requires_verification"],
-        "references_official_instrument": enriched["references_official_instrument"],
-        "source_tier": enriched["source_tier"],
-        "needs_manual_review": enriched["needs_manual_review"],
-        "title": c["title"][:150],
-        "body": enriched["body"],
-        "url": c["link"],
-    }
+        notification = {
+            "source_id": "news_rss_test",
+            "headline": enriched["headline"],
+            "category": enriched["category"],
+            "impactedVisas": enriched["impactedVisas"],
+            "effectiveDate": enriched["effectiveDate"],
+            "summary": enriched["summary"],
+            "is_agent_relevant": enriched["is_agent_relevant"],
+            "is_official": enriched["is_official"],
+            "requires_verification": enriched["requires_verification"],
+            "references_official_instrument": enriched["references_official_instrument"],
+            "source_tier": enriched["source_tier"],
+            "needs_manual_review": enriched["needs_manual_review"],
+            "title": c["title"][:150],
+            "body": enriched["body"],
+            "url": c["link"],
+        }
 
-    queued = queue_news_item(db, notification)
-    if queued:
-        print("\nWrote 1 test document to news_items - check /admin/actions now.")
+        # queue_news_item() computes this same deterministic ID internally;
+        # replicate it here (read-only) so we can report back which doc was
+        # written without changing that function's public bool-only signature.
+        source_id = str(notification.get("source_id", "news_rss")).strip().lower()
+        title_key = _normalize_title(notification.get("title", ""))
+        canonical_url = _canonicalize_url(notification.get("url", ""))
+        doc_id = hashlib.sha256(f"{source_id}|{title_key}|{canonical_url}".encode("utf-8")).hexdigest()[:24]
+
+        queued = queue_news_item(db, notification)
+        if queued:
+            written.append({"id": doc_id, "title": enriched["headline"] or c["title"]})
+        else:
+            print(f"   (skipped - duplicate or filtered by notify.py)")
+
+    print(f"\n{'=' * 60}")
+    if written:
+        print(f"Wrote {len(written)} document(s) to news_items:")
+        for w in written:
+            print(f"  - {w['id']}  |  {w['title'][:70]}")
+        print("\nCheck https://migrateau-admin-205705.web.app/admin/actions now.")
     else:
-        print(
-            "\nNot queued (likely a duplicate of an existing news_items doc, "
-            "or it failed the migration-relevance/personal-story filters in notify.py)."
-        )
+        print("Nothing written - all candidates were duplicates or filtered.")
 
 
 def main() -> None:
@@ -229,12 +247,13 @@ def main() -> None:
     mode.add_argument("--live", action="store_true", help="Write one clean test document to news_items.")
     parser.add_argument("--limit", type=int, default=2, help="Max candidates to process (dry-run only; default 2).")
     parser.add_argument("--url", type=str, default=None, help="Enrich this specific article URL instead of pulling from RSS feeds.")
+    parser.add_argument("--count", type=int, default=1, help="Number of clean documents to write in --live mode (default 1).")
     args = parser.parse_args()
 
     if args.dry_run:
         run_dry(args.limit, args.url)
     else:
-        run_live(args.limit, args.url)
+        run_live(args.limit, args.url, args.count)
 
 
 if __name__ == "__main__":
