@@ -121,8 +121,22 @@ function getStateStatusInfo(item: SkilledOccupation, s: StateCode): StateStatusI
     return { kind: 'closed', label: 'Closed', visas: [] };
   }
 
-  const onshoreOnly = sponsoredVisas.some((v) => reqs[v]?.residencyRequired);
-  const jobOfferReq = sponsoredVisas.some((v) => reqs[v]?.jobOfferRequired);
+  // A state is only "Onshore Only" when a sponsored visa explicitly requires
+  // residency AND explicitly rules out offshore applicants. Note: the
+  // scraped `residencyRequired` flag on SC 491 actually represents a
+  // *regional-living* requirement (must live/work in a designated regional
+  // area once granted), not an onshore-application restriction -- treating
+  // it as the latter previously made every state with an open 491 stream
+  // (i.e. almost every state, including VIC and WA, which both accept
+  // offshore candidates) get blanket-labelled "🟡 Onshore Only".
+  // `offshoreEligible` isn't populated in the current ingested dataset, so
+  // until a state explicitly flags `offshoreEligible: false`, we don't show
+  // this warning at all -- a conservative default that favours "Open" over
+  // a potentially wrong restrictive label.
+  const onshoreOnly = sponsoredVisas.some(
+    (v) => reqs[v]?.residencyRequired === true && reqs[v]?.offshoreEligible === false,
+  );
+  const jobOfferReq = sponsoredVisas.some((v) => reqs[v]?.jobOfferRequired === true);
   if (onshoreOnly || jobOfferReq) {
     const reasons = [onshoreOnly && 'Onshore Only', jobOfferReq && 'Job Offer Req'].filter(Boolean) as string[];
     return { kind: 'conditional', label: reasons.join(' \u00b7 '), visas: sponsoredVisas };
@@ -2330,7 +2344,7 @@ export default function OccupationsScreen() {
                         };
 
                         const VISA_DESCRIPTIONS: Record<'190' | '491', string> = {
-                          '190': 'Skilled Independent — Permanent visa',
+                          '190': 'Skilled Nominated — Permanent visa',
                           '491': 'Skilled Regional — 5-year provisional',
                         };
 
