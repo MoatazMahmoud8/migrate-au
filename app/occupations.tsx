@@ -1310,7 +1310,7 @@ export default function OccupationsScreen() {
   const [selected, setSelected] = useState<SkilledOccupation | null>(null);
   const [savedAnzsco, setSavedAnzsco] = useState<string>('');
   const [expandedState, setExpandedState] = useState<StateCode | null>(null);
-  const [selectedVisa, setSelectedVisa] = useState<'190' | '491' | '482'>('190');
+  const [selectedVisa, setSelectedVisa] = useState<'190' | '491'>('190');
   const [profile, setProfile] = useState<any>(null);
   const [showPaywall, setShowPaywall] = useState(false);
   const [userId, setUserId] = useState<string>('');
@@ -1782,6 +1782,128 @@ export default function OccupationsScreen() {
                     );
                   })()}
 
+                  {/* ─── Skills Assessment ────────────────────────────── */}
+                  {selected.assessingAuthority && (() => {
+                    // Prefer enriched authorityInfo from merged database, fall back to bundled constant
+                    const enriched = selected.authorityInfo;
+                    const info = enriched
+                      ? {
+                          name: enriched.name || selected.assessingAuthority!,
+                          assesses: enriched.assesses || '',
+                          website: enriched.website || '',
+                          typicalTime: enriched.processingTime || '',
+                          fee: enriched.fee || '',
+                          documents: [] as string[],
+                          notes: [] as string[],
+                        }
+                      : (() => {
+                          // Fallback: resolve from bundled AUTHORITY_INFO constant
+                          const ALIASES: Record<string, string> = {
+                            'CPA Australia': 'CPAA',
+                            'CA ANZ': 'CAANZ',
+                            'Medical Board': 'Medical Board',
+                            'Dietitians Australia': 'Dietitians Australia',
+                            'Community Work': 'Community Work Australia',
+                          };
+                          const raw = selected.assessingAuthority!;
+                          const rawLower = raw.toLowerCase();
+                          const authorityKey =
+                            selected.assessingAuthority === 'APharmC'
+                              ? 'APharmC'
+                              : AUTHORITY_INFO[raw]
+                              ? raw
+                              : Object.entries(ALIASES).find(([frag]) => rawLower.includes(frag.toLowerCase()))?.[1] ??
+                                Object.keys(AUTHORITY_INFO).find(k => rawLower.includes(k.toLowerCase()));
+                          return authorityKey ? AUTHORITY_INFO[authorityKey] : null;
+                        })();
+                    return (
+                      <>
+                        <Text style={[styles.sectionLabel, {color: Colors.textPrimary}]}>Skills assessment</Text>
+                        <View style={[styles.authCard, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
+                          <View style={styles.authHeader}>
+                            <View style={styles.authIcon}>
+                              <Ionicons name="shield-checkmark-outline" size={16} color={Colors.accent} />
+                            </View>
+                            <TouchableOpacity style={{ flex: 1 }} activeOpacity={0.7}
+                              onPress={() => {
+                                setSelected(null);
+                                router.push({ pathname: '/(tabs)/skill-assessment', params: { authority: selected.assessingAuthority! } });
+                              }}>
+                              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                                <Text style={[styles.authName, {color: Colors.textPrimary}]}>{info ? info.name : selected.assessingAuthority}</Text>
+                                <Ionicons name="chevron-forward" size={11} color={Colors.accent} />
+                              </View>
+                              {info && <Text style={[styles.authAssesses, {color: Colors.textPrimary}]}>{info.assesses}</Text>}
+                            </TouchableOpacity>
+                          </View>
+
+                          {info && (
+                            <>
+                              <View style={styles.authRow}>
+                                <Ionicons name="time-outline" size={13} color={Colors.textMuted} />
+                                <Text style={[styles.authRowKey, {color: Colors.textPrimary}]}>Typical time</Text>
+                                <Text style={[styles.authRowVal, {color: Colors.textPrimary}]}>{info.typicalTime}</Text>
+                              </View>
+
+                              {profile?.isPremium ? (
+                                <>
+                                  <View style={styles.authRow}>
+                                    <Ionicons name="card-outline" size={13} color={Colors.textMuted} />
+                                    <Text style={[styles.authRowKey, {color: Colors.textPrimary}]}>Assessment fee</Text>
+                                    <Text style={[styles.authRowVal, {color: Colors.textPrimary}]}>{info.fee}</Text>
+                                  </View>
+
+                                  {info.documents.length > 0 && (
+                                    <View style={styles.authNotes}>
+                                      <Text style={[styles.authSectionHeading, {color: Colors.textMuted}]}>Required documents</Text>
+                                      {info.documents.map((d, i) => (
+                                        <View key={i} style={styles.authNoteRow}>
+                                          <Ionicons name="document-text-outline" size={12} color={Colors.accent} style={{ marginTop: 2 }} />
+                                          <Text style={[styles.authNoteText, {color: Colors.textPrimary}]}>{d}</Text>
+                                        </View>
+                                      ))}
+                                    </View>
+                                  )}
+                                </>
+                              ) : (
+                                <TouchableOpacity
+                                  style={[styles.premiumGate, { backgroundColor: `${Colors.secondary}0D`, borderColor: `${Colors.secondary}40`, marginTop: Spacing.sm }]}
+                                  onPress={() => setShowPaywall(true)}
+                                  activeOpacity={0.8}
+                                >
+                                  <Ionicons name="lock-closed" size={14} color={Colors.secondary} />
+                                  <Text style={[styles.premiumGateText, { color: Colors.secondary }]}>Unlock fee & required documents — Premium</Text>
+                                  <Ionicons name="chevron-forward" size={13} color={Colors.secondary} />
+                                </TouchableOpacity>
+                              )}
+
+                              {info.notes.length > 0 && (
+                                <View style={styles.authNotes}>
+                                  <Text style={[styles.authSectionHeading, {color: Colors.textMuted}]}>Notes</Text>
+                                  {info.notes.map((n, i) => (
+                                    <View key={i} style={styles.authNoteRow}>
+                                      <View style={styles.authNoteDot} />
+                                      <Text style={[styles.authNoteText, {color: Colors.textPrimary}]}>{n}</Text>
+                                    </View>
+                                  ))}
+                                </View>
+                              )}
+
+                              <TouchableOpacity
+                                style={styles.authLink}
+                                activeOpacity={0.8}
+                                onPress={() => void openExternalUrl(info.website)}
+                              >
+                                <Ionicons name="open-outline" size={12} color={Colors.accent} />
+                                <Text style={[styles.authLinkText, {color: Colors.textPrimary}]}>Visit {info.name} website</Text>
+                              </TouchableOpacity>
+                            </>
+                          )}
+                        </View>
+                      </>
+                    );
+                  })()}
+
                   {Array.isArray((selected as any).tasks) && (selected as any).tasks.length > 0 && (
                     <>
                       <Text style={[styles.sectionLabel, {color: Colors.textPrimary}]}>Responsibilities (ANZSCO tasks)</Text>
@@ -2197,16 +2319,31 @@ export default function OccupationsScreen() {
                         const req = (stateReqs as any)?.[selectedVisa];
                         const col = STATE_COLORS[expandedState];
 
-                        const VISA_LABELS: Record<'190' | '491' | '482', string> = {
+                        // State nomination only applies to SC 190/491 — SC 482 is
+                        // employer-sponsored and belongs strictly in the Federal visa
+                        // section above, not here (it previously caused a visual
+                        // contradiction where a state marked Closed still showed an
+                        // active, selectable 482 tab).
+                        const VISA_LABELS: Record<'190' | '491', string> = {
                           '190': 'SC 190\nPermanent',
                           '491': 'SC 491\nRegional',
-                          '482': 'SC 482\nEmployer',
                         };
 
-                        const VISA_DESCRIPTIONS: Record<'190' | '491' | '482', string> = {
+                        const VISA_DESCRIPTIONS: Record<'190' | '491', string> = {
                           '190': 'Skilled Independent — Permanent visa',
                           '491': 'Skilled Regional — 5-year provisional',
-                          '482': 'Temporary Skill Shortage — Employer-sponsored',
+                        };
+
+                        // Static processing-duration estimates. These replace the
+                        // raw scraped "applications lodged from <Month Year>" cutoff
+                        // date (meta.processingCutoffLabel) which was being displayed
+                        // unlabelled as if it were a turnaround time ("Processing: Feb
+                        // 2025"), which is misleading.
+                        const PROCESSING_DURATION: Record<'189' | '190' | '491' | '482', string> = {
+                          '189': '6 – 12 months',
+                          '190': '9 – 16 months',
+                          '491': '12 – 14 months',
+                          '482': '1 – 3 months',
                         };
 
                         const alertActive = isStateAlertActive(expandedState, selectedVisa);
@@ -2236,9 +2373,10 @@ export default function OccupationsScreen() {
                                 : `Alert me when ${expandedState} opens rounds for this occupation`}
                             </Text>
 
-                            {/* Visa type tabs */}
+                            {/* Visa type tabs — state nomination only (190/491); SC 482
+                                is employer-sponsored and lives in the Federal visa section. */}
                             <View style={[styles.visaTabs, { borderBottomColor: Colors.divider }]}>
-                              {(['190', '491', '482'] as const).map((visa) => (
+                              {(['190', '491'] as const).map((visa) => (
                                 <TouchableOpacity
                                   key={visa}
                                   onPress={() => setSelectedVisa(visa)}
@@ -2319,14 +2457,12 @@ export default function OccupationsScreen() {
                                           </Text>
                                         </View>
                                       )}
-                                      {meta.processingCutoffLabel && (
-                                        <View style={[styles.visaMetaPill, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
-                                          <Ionicons name="time-outline" size={11} color={col} />
-                                          <Text style={[styles.visaMetaText, { color: col }]}>
-                                            Processing: {meta.processingCutoffLabel}
-                                          </Text>
-                                        </View>
-                                      )}
+                                      <View style={[styles.visaMetaPill, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
+                                        <Ionicons name="time-outline" size={11} color={col} />
+                                        <Text style={[styles.visaMetaText, { color: col }]}>
+                                          Processing: {PROCESSING_DURATION[selectedVisa]}
+                                        </Text>
+                                      </View>
                                       {meta.stayDuration && (
                                         <View style={[styles.visaMetaPill, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
                                           <Ionicons name="hourglass-outline" size={11} color={col} />
@@ -2353,11 +2489,15 @@ export default function OccupationsScreen() {
                                   <View pointerEvents={profile?.isPremium ? 'auto' : 'none'} style={profile?.isPremium ? undefined : styles.proGateDimmed}>
                                 <View style={styles.stateReqRows}>
                                   {req.minSalary != null ? (
+                                      // State nomination (190/491) does not mandate a specific minimum
+                                      // salary figure — the raw scraped number here (e.g. "$31,488 AUD/yr")
+                                      // was a stale/unrelated figure, not a real state requirement. Show
+                                      // the actual rule instead: meet the relevant Fair Work award rate.
                                       <View style={[styles.stateReqRow, { borderBottomColor: Colors.divider }]}>
                                       <Ionicons name="cash-outline" size={13} color={Colors.textMuted} />
-                                      <Text style={[styles.stateReqKey, { color: Colors.textSecondary }]}>Min. salary</Text>
+                                      <Text style={[styles.stateReqKey, { color: Colors.textSecondary }]}>Market Salary Rate</Text>
                                       <Text style={[styles.stateReqVal, { color: col }]}>
-                                        ${req.minSalary.toLocaleString('en-AU')} AUD/yr
+                                        Must meet Fair Work award
                                       </Text>
                                     </View>
                                   ) : req.salaryDataAvailable === false ? (
@@ -2565,128 +2705,6 @@ export default function OccupationsScreen() {
                             )}
                           </View>
                         ))}
-                      </>
-                    );
-                  })()}
-
-                  {/* ─── Skills Assessment ────────────────────────────── */}
-                  {selected.assessingAuthority && (() => {
-                    // Prefer enriched authorityInfo from merged database, fall back to bundled constant
-                    const enriched = selected.authorityInfo;
-                    const info = enriched
-                      ? {
-                          name: enriched.name || selected.assessingAuthority!,
-                          assesses: enriched.assesses || '',
-                          website: enriched.website || '',
-                          typicalTime: enriched.processingTime || '',
-                          fee: enriched.fee || '',
-                          documents: [] as string[],
-                          notes: [] as string[],
-                        }
-                      : (() => {
-                          // Fallback: resolve from bundled AUTHORITY_INFO constant
-                          const ALIASES: Record<string, string> = {
-                            'CPA Australia': 'CPAA',
-                            'CA ANZ': 'CAANZ',
-                            'Medical Board': 'Medical Board',
-                            'Dietitians Australia': 'Dietitians Australia',
-                            'Community Work': 'Community Work Australia',
-                          };
-                          const raw = selected.assessingAuthority!;
-                          const rawLower = raw.toLowerCase();
-                          const authorityKey =
-                            selected.assessingAuthority === 'APharmC'
-                              ? 'APharmC'
-                              : AUTHORITY_INFO[raw]
-                              ? raw
-                              : Object.entries(ALIASES).find(([frag]) => rawLower.includes(frag.toLowerCase()))?.[1] ??
-                                Object.keys(AUTHORITY_INFO).find(k => rawLower.includes(k.toLowerCase()));
-                          return authorityKey ? AUTHORITY_INFO[authorityKey] : null;
-                        })();
-                    return (
-                      <>
-                        <Text style={[styles.sectionLabel, {color: Colors.textPrimary}]}>Skills assessment</Text>
-                        <View style={[styles.authCard, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
-                          <View style={styles.authHeader}>
-                            <View style={styles.authIcon}>
-                              <Ionicons name="shield-checkmark-outline" size={16} color={Colors.accent} />
-                            </View>
-                            <TouchableOpacity style={{ flex: 1 }} activeOpacity={0.7}
-                              onPress={() => {
-                                setSelected(null);
-                                router.push({ pathname: '/(tabs)/skill-assessment', params: { authority: selected.assessingAuthority! } });
-                              }}>
-                              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                                <Text style={[styles.authName, {color: Colors.textPrimary}]}>{info ? info.name : selected.assessingAuthority}</Text>
-                                <Ionicons name="chevron-forward" size={11} color={Colors.accent} />
-                              </View>
-                              {info && <Text style={[styles.authAssesses, {color: Colors.textPrimary}]}>{info.assesses}</Text>}
-                            </TouchableOpacity>
-                          </View>
-
-                          {info && (
-                            <>
-                              <View style={styles.authRow}>
-                                <Ionicons name="time-outline" size={13} color={Colors.textMuted} />
-                                <Text style={[styles.authRowKey, {color: Colors.textPrimary}]}>Typical time</Text>
-                                <Text style={[styles.authRowVal, {color: Colors.textPrimary}]}>{info.typicalTime}</Text>
-                              </View>
-
-                              {profile?.isPremium ? (
-                                <>
-                                  <View style={styles.authRow}>
-                                    <Ionicons name="card-outline" size={13} color={Colors.textMuted} />
-                                    <Text style={[styles.authRowKey, {color: Colors.textPrimary}]}>Assessment fee</Text>
-                                    <Text style={[styles.authRowVal, {color: Colors.textPrimary}]}>{info.fee}</Text>
-                                  </View>
-
-                                  {info.documents.length > 0 && (
-                                    <View style={styles.authNotes}>
-                                      <Text style={[styles.authSectionHeading, {color: Colors.textMuted}]}>Required documents</Text>
-                                      {info.documents.map((d, i) => (
-                                        <View key={i} style={styles.authNoteRow}>
-                                          <Ionicons name="document-text-outline" size={12} color={Colors.accent} style={{ marginTop: 2 }} />
-                                          <Text style={[styles.authNoteText, {color: Colors.textPrimary}]}>{d}</Text>
-                                        </View>
-                                      ))}
-                                    </View>
-                                  )}
-                                </>
-                              ) : (
-                                <TouchableOpacity
-                                  style={[styles.premiumGate, { backgroundColor: `${Colors.secondary}0D`, borderColor: `${Colors.secondary}40`, marginTop: Spacing.sm }]}
-                                  onPress={() => setShowPaywall(true)}
-                                  activeOpacity={0.8}
-                                >
-                                  <Ionicons name="lock-closed" size={14} color={Colors.secondary} />
-                                  <Text style={[styles.premiumGateText, { color: Colors.secondary }]}>Unlock fee & required documents — Premium</Text>
-                                  <Ionicons name="chevron-forward" size={13} color={Colors.secondary} />
-                                </TouchableOpacity>
-                              )}
-
-                              {info.notes.length > 0 && (
-                                <View style={styles.authNotes}>
-                                  <Text style={[styles.authSectionHeading, {color: Colors.textMuted}]}>Notes</Text>
-                                  {info.notes.map((n, i) => (
-                                    <View key={i} style={styles.authNoteRow}>
-                                      <View style={styles.authNoteDot} />
-                                      <Text style={[styles.authNoteText, {color: Colors.textPrimary}]}>{n}</Text>
-                                    </View>
-                                  ))}
-                                </View>
-                              )}
-
-                              <TouchableOpacity
-                                style={styles.authLink}
-                                activeOpacity={0.8}
-                                onPress={() => void openExternalUrl(info.website)}
-                              >
-                                <Ionicons name="open-outline" size={12} color={Colors.accent} />
-                                <Text style={[styles.authLinkText, {color: Colors.textPrimary}]}>Visit {info.name} website</Text>
-                              </TouchableOpacity>
-                            </>
-                          )}
-                        </View>
                       </>
                     );
                   })()}
