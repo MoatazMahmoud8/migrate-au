@@ -109,7 +109,7 @@ export const ALL_VISAS: VisaEntry[] = [
     code: '189', name: 'Skilled Independent', icon: 'globe-outline', type: 'Permanent', category: 'Skilled',
     subclasses: ['189 – Points-tested stream', '189 – New Zealand stream'],
     conditions: ['No sponsorship required', 'Occupation on MLTSSL', 'Points score ≥ 65', 'Age under 45'],
-    fee: 'AUD $6,140',
+    fee: 'AUD $6,135',
     url: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/skilled-independent-189',
   },
   {

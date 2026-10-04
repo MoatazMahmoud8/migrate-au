@@ -47,9 +47,11 @@ export interface DailyUpdates {
 // null here since the UI (app/occupations.tsx) now shows a static duration
 // range instead of this scraped/stale field.
 export const DEFAULT_VISA_META: Record<string, VisaMeta> = {
-  '189': { code: '189', cost: 'AUD $6,140', processingCutoffLabel: null, stayDuration: 'Permanent' },
+  '189': { code: '189', cost: 'AUD $6,135', processingCutoffLabel: null, stayDuration: 'Permanent' },
   '190': { code: '190', cost: 'AUD $6,140', processingCutoffLabel: null, stayDuration: 'Permanent' },
   '491': { code: '491', cost: 'AUD $6,140', processingCutoffLabel: null, stayDuration: '5 Years' },
+  '494': { code: '494', cost: 'AUD $6,140', processingCutoffLabel: null, stayDuration: '5 Years' },
+  '186': { code: '186', cost: 'AUD $6,140', processingCutoffLabel: null, stayDuration: 'Permanent' },
   '482': { code: '482', cost: 'AUD $4,015', processingCutoffLabel: null, stayDuration: '1–4 Years' },
 };
 

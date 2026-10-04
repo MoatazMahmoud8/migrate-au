@@ -25,7 +25,7 @@ export const VISA_FEES_SNAPSHOT_DATE = '2026-07-29';
 
 export const VISA_FEES: VisaFeeEntry[] = [
   // ─── Skilled ──────────────────────────────────────────────────────
-  { subclass: '189', fee: 'AUD $6,140', note: 'Family: +$3,070 per adult · +$1,535 per child' },
+  { subclass: '189', fee: 'AUD $6,135', note: 'Family: +$3,070 per adult · +$1,535 per child' },
   { subclass: '190', fee: 'AUD $6,140', note: 'Family: +$3,070 per adult · +$1,535 per child' },
   { subclass: '191', fee: 'AUD $4,640', note: 'Family: +$2,320 per adult · +$1,160 per child' },
   { subclass: '192', fee: 'AUD $505' },
