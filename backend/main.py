@@ -32,6 +32,25 @@ def get_db():
     return firestore.client()
 
 
+def _write_heartbeat(db, *, status, items_found, items_published, duplicates_skipped,
+                      sources_checked, error_message, summary):
+    """Record scraper heartbeat so the admin dashboard can tell whether the
+    scraper actually ran, even on runs that find zero new items."""
+    try:
+        db.collection("system_health").document("scraper_status").set({
+            "last_run_at": firestore.SERVER_TIMESTAMP,
+            "status": status,
+            "items_found": items_found,
+            "items_published": items_published,
+            "duplicates_skipped": duplicates_skipped,
+            "sources_checked": sources_checked,
+            "error_message": error_message,
+            "summary": summary,
+        })
+    except Exception as exc:  # pragma: no cover - heartbeat must never crash the run
+        print(f"  ⚠ Failed to write scraper heartbeat: {exc}")
+
+
 def run():
     started_at = datetime.now(timezone.utc)
     print(f"\n{'='*55}")
@@ -40,6 +59,10 @@ def run():
 
     db = get_db()
     all_notifications = []
+    sources_checked = [
+        "home_affairs", "anzsco", "state_nominations", "visa_fees",
+        "assessing_authority_fees", "news_rss", "processing_times", "admin_intel",
+    ]
 
     # ── 1. Home Affairs (visa changes, points test, SkillSelect, processing times)
     print("\n[1/7] Scraping Home Affairs...")
@@ -79,6 +102,7 @@ def run():
     # News goes into news_items (admin curates in /admin/news) — NOT into the
     # laws-and-directions approval queue. Keeps compliance clean while still
     # giving users a migration news feed.
+    news_stats = {"queued": 0, "duplicates_or_failed": 0}
     if news_notifications:
         news_stats = queue_news_batch(db, news_notifications)
         print(f"      → queued {news_stats['queued']} news item(s) for admin review")
@@ -98,6 +122,7 @@ def run():
     # ── Queue all detected changes for administrator review
     print(f"\n{'─'*55}")
     total = len(all_notifications)
+    stats = {"queued": 0, "duplicates_or_failed": 0}
     if total == 0:
         print("  No changes detected — no drafts queued.")
     else:
@@ -130,6 +155,53 @@ def run():
     print(f"\n  Completed in {elapsed:.1f}s")
     print(f"{'='*55}\n")
 
+    # ── Heartbeat: let the admin dashboard know the scraper actually ran,
+    # even on a run that finds zero new items.
+    items_found = total + len(news_notifications) + len(intel_items)
+    items_published = stats["queued"] + news_stats["queued"]
+    duplicates_skipped = stats["duplicates_or_failed"] + news_stats["duplicates_or_failed"]
+    if items_published == 0:
+        summary = f"Ran successfully. 0 new articles found (up to date). Checked {len(sources_checked)} sources."
+    else:
+        summary = (
+            f"Ran successfully. {items_published} new item(s) published "
+            f"({items_found} found, {duplicates_skipped} duplicate/skipped)."
+        )
+    _write_heartbeat(
+        db,
+        status="ok",
+        items_found=items_found,
+        items_published=items_published,
+        duplicates_skipped=duplicates_skipped,
+        sources_checked=sources_checked,
+        error_message=None,
+        summary=summary,
+    )
+
+
+def main():
+    try:
+        run()
+    except Exception as exc:
+        # Still record that the scraper executed (and failed) so the admin
+        # dashboard can surface an error state instead of looking merely idle.
+        print(f"\n❌ Scraper run failed: {exc}")
+        try:
+            db = get_db()
+            _write_heartbeat(
+                db,
+                status="error",
+                items_found=0,
+                items_published=0,
+                duplicates_skipped=0,
+                sources_checked=[],
+                error_message=str(exc),
+                summary=f"Run failed: {exc}",
+            )
+        except Exception as heartbeat_exc:  # pragma: no cover
+            print(f"  ⚠ Also failed to write error heartbeat: {heartbeat_exc}")
+        raise
+
 
 if __name__ == "__main__":
-    run()
+    main()
