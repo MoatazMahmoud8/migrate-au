@@ -42,10 +42,14 @@ export interface DailyUpdates {
 }
 
 // Sensible defaults used until live data arrives
+// NOTE: processingCutoffLabel is a DHA "applications lodged from <date>"
+// backlog marker, not a processing-duration estimate -- it's intentionally
+// null here since the UI (app/occupations.tsx) now shows a static duration
+// range instead of this scraped/stale field.
 export const DEFAULT_VISA_META: Record<string, VisaMeta> = {
   '189': { code: '189', cost: 'AUD $6,140', processingCutoffLabel: null, stayDuration: 'Permanent' },
-  '190': { code: '190', cost: 'AUD $6,140', processingCutoffLabel: 'Feb 2025', stayDuration: 'Permanent' },
-  '491': { code: '491', cost: 'AUD $6,140', processingCutoffLabel: 'Jan 2025', stayDuration: '5 Years' },
+  '190': { code: '190', cost: 'AUD $6,140', processingCutoffLabel: null, stayDuration: 'Permanent' },
+  '491': { code: '491', cost: 'AUD $6,140', processingCutoffLabel: null, stayDuration: '5 Years' },
   '482': { code: '482', cost: 'AUD $4,015', processingCutoffLabel: null, stayDuration: '1–4 Years' },
 };
 
