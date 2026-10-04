@@ -10,6 +10,7 @@ import {
   Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { calculatePoints } from '../../utils/pointsCalculator';
@@ -156,6 +157,8 @@ function ScoreRing({ score, eligible }: { score: number; eligible: boolean }) {
 
 export default function CalculatorScreen() {
   const Colors = useColors();
+  const params = useLocalSearchParams<{ anzsco?: string; visaSubclass?: string }>();
+  const prefilledAnzsco = typeof params.anzsco === 'string' ? params.anzsco : undefined;
   const [input, setInput] = useState<PointsInput>(defaultInput);
   const [showPaywall, setShowPaywall] = useState(false);
   const [profile, setProfile] = useState<any>(null);
@@ -180,6 +183,15 @@ export default function CalculatorScreen() {
       }
     });
   }, []);
+
+  // Arriving from an occupation detail's "Calculate Points for ANZSCO ..."
+  // quick action — pre-select the visa subclass the user was looking at.
+  useEffect(() => {
+    const visa = params.visaSubclass;
+    if (visa === '189' || visa === '190' || visa === '491') {
+      setInput((p) => ({ ...p, visaSubclass: visa }));
+    }
+  }, [params.visaSubclass]);
 
   // Persist input whenever it changes
   useEffect(() => {
@@ -229,6 +241,15 @@ export default function CalculatorScreen() {
       showsVerticalScrollIndicator={false}
       contentContainerStyle={{ paddingBottom: 100, paddingTop: Platform.OS === 'ios' ? 110 : 96 }}
     >
+      {prefilledAnzsco && (
+        <View style={[styles.prefillBanner, { backgroundColor: `${Colors.secondary}14`, borderColor: `${Colors.secondary}40` }]}>
+          <Ionicons name="pricetag-outline" size={14} color={Colors.secondary} />
+          <Text style={[styles.prefillBannerText, { color: Colors.secondary }]}>
+            Calculating points for ANZSCO {prefilledAnzsco}
+          </Text>
+        </View>
+      )}
+
       {/* Remaining Uses Badge */}
       {profile && remaining !== null && !profile.isPremium && (
         <UsageMeter
@@ -578,6 +599,19 @@ const seg = StyleSheet.create({
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+
+  prefillBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginHorizontal: Spacing.lg,
+    marginTop: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 8,
+    borderRadius: Radius.md,
+    borderWidth: 1,
+  },
+  prefillBannerText: { fontSize: FontSize.xs, fontWeight: FontWeight.semiBold },
 
   card: {
     borderRadius: Radius.xl,

@@ -43,10 +43,10 @@ export interface DailyUpdates {
 
 // Sensible defaults used until live data arrives
 export const DEFAULT_VISA_META: Record<string, VisaMeta> = {
-  '189': { code: '189', cost: 'AUD $4,885', processingCutoffLabel: null, stayDuration: 'Permanent' },
-  '190': { code: '190', cost: 'AUD $4,885', processingCutoffLabel: 'Feb 2025', stayDuration: 'Permanent' },
-  '491': { code: '491', cost: 'AUD $4,910', processingCutoffLabel: 'Jan 2025', stayDuration: '5 Years' },
-  '482': { code: '482', cost: 'AUD $3,210', processingCutoffLabel: null, stayDuration: '1–4 Years' },
+  '189': { code: '189', cost: 'AUD $6,140', processingCutoffLabel: null, stayDuration: 'Permanent' },
+  '190': { code: '190', cost: 'AUD $6,140', processingCutoffLabel: 'Feb 2025', stayDuration: 'Permanent' },
+  '491': { code: '491', cost: 'AUD $6,140', processingCutoffLabel: 'Jan 2025', stayDuration: '5 Years' },
+  '482': { code: '482', cost: 'AUD $4,015', processingCutoffLabel: null, stayDuration: '1–4 Years' },
 };
 
 export async function getDailyUpdates(): Promise<DailyUpdates | null> {

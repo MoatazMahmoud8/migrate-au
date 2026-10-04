@@ -1315,6 +1315,7 @@ export default function OccupationsScreen() {
   const [showPaywall, setShowPaywall] = useState(false);
   const [userId, setUserId] = useState<string>('');
   const [stateAlerts, setStateAlerts] = useState<WatchlistItem[]>([]);
+  const [selectedFederalVisa, setSelectedFederalVisa] = useState<string | null>(null);
   const [dailyUpdates, setDailyUpdates] = useState<DailyUpdates | null>(null);
   const visaMeta = useMemo(() => buildVisaMetaMap(dailyUpdates), [dailyUpdates]);
   const [occupationCutoffs, setOccupationCutoffs] = useState<Map<string, { sc189: number | null; sc491Family: number | null }>>(new Map());
@@ -1654,7 +1655,7 @@ export default function OccupationsScreen() {
             <TouchableOpacity
               style={[styles.card, { backgroundColor: Colors.surface, borderColor: Colors.border }, savedAnzsco === item.anzsco && { backgroundColor: `${Colors.success}0D`, borderColor: `${Colors.success}55` }]}
               activeOpacity={0.85}
-              onPress={() => { hapticTap(); setSelected(item); setExpandedState(getDefaultEligibleState(item)); }}
+              onPress={() => { hapticTap(); setSelected(item); setExpandedState(getDefaultEligibleState(item)); setSelectedFederalVisa(null); }}
             >
               <View style={styles.cardHead}>
                 <View style={[styles.codePill, { backgroundColor: Colors.surfaceRaised, borderColor: Colors.border }]}>
@@ -1860,11 +1861,49 @@ export default function OccupationsScreen() {
                       })
                       .filter((x): x is { visa: string; condition: FederalVisaCondition } => x.condition != null);
                     if (federalConditions.length === 0) return null;
+
+                    const defaultVisa = federalConditions.find((f) => f.visa === '189')?.visa
+                      ?? federalConditions.find((f) => f.visa === '190')?.visa
+                      ?? federalConditions[0].visa;
+                    const activeFederalVisa = federalConditions.some((f) => f.visa === selectedFederalVisa)
+                      ? selectedFederalVisa!
+                      : defaultVisa;
+
                     return (
                       <>
                         <Text style={[styles.sectionLabel, { color: Colors.textPrimary }]}>Federal visa conditions</Text>
-                        <View style={styles.federalVisaList}>
+
+                        {/* Visa subclass accordion tabs — show only the active visa's
+                            card beneath, instead of stacking every eligible subclass. */}
+                        <View style={styles.federalVisaTabs}>
                           {federalConditions.map(({ visa, condition }) => (
+                            <TouchableOpacity
+                              key={visa}
+                              onPress={() => { setSelectedFederalVisa(visa); hapticTap(); }}
+                              style={[
+                                styles.federalVisaTab,
+                                { borderColor: Colors.border },
+                                activeFederalVisa === visa && {
+                                  backgroundColor: condition.category === 'permanent' ? `${Colors.success}18` : `${Colors.warning}18`,
+                                  borderColor: condition.category === 'permanent' ? Colors.success : Colors.warning,
+                                },
+                              ]}
+                              activeOpacity={0.8}
+                            >
+                              <Text
+                                style={[
+                                  styles.federalVisaTabText,
+                                  { color: activeFederalVisa === visa ? (condition.category === 'permanent' ? Colors.success : Colors.warning) : Colors.textSecondary },
+                                ]}
+                              >
+                                SC {visa}
+                              </Text>
+                            </TouchableOpacity>
+                          ))}
+                        </View>
+
+                        <View style={styles.federalVisaList}>
+                          {federalConditions.filter(({ visa }) => visa === activeFederalVisa).map(({ visa, condition }) => (
                             <View
                               key={visa}
                               style={[
@@ -2254,7 +2293,11 @@ export default function OccupationsScreen() {
                                   {VISA_DESCRIPTIONS[selectedVisa]}
                                 </Text>
 
-                                {/* Live visa metadata (cost, processing cutoff) */}
+                                {/* Live visa metadata (cost, processing cutoff).
+                                    NOTE: "cost" here is the federal DHA visa application
+                                    charge — NOT a state nomination fee. State nomination
+                                    submission itself is free, so we label it explicitly
+                                    to avoid it being mistaken for a state application fee. */}
                                 {(() => {
                                   const meta = visaMeta[selectedVisa];
                                   if (!meta) return null;
@@ -2264,7 +2307,15 @@ export default function OccupationsScreen() {
                                         <View style={[styles.visaMetaPill, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
                                           <Ionicons name="card-outline" size={11} color={col} />
                                           <Text style={[styles.visaMetaText, { color: col }]}>
-                                            {meta.cost}
+                                            Federal visa fee: {meta.cost}
+                                          </Text>
+                                        </View>
+                                      )}
+                                      {(selectedVisa === '190' || selectedVisa === '491') && (
+                                        <View style={[styles.visaMetaPill, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
+                                          <Ionicons name="checkmark-circle-outline" size={11} color={Colors.success} />
+                                          <Text style={[styles.visaMetaText, { color: Colors.success }]}>
+                                            State nomination: Free
                                           </Text>
                                         </View>
                                       )}
@@ -2643,6 +2694,27 @@ export default function OccupationsScreen() {
                   {/* Set as my occupation lives in the sticky footer below */}
 
                   <TouchableOpacity
+                    style={[styles.modalCta, { backgroundColor: Colors.secondary }]}
+                    activeOpacity={0.85}
+                    onPress={() => {
+                      hapticTap();
+                      router.push({
+                        pathname: '/(tabs)/calculator',
+                        params: {
+                          anzsco: selected.anzsco,
+                          visaSubclass: (['189', '190', '491'] as const).includes(selectedFederalVisa as any)
+                            ? selectedFederalVisa!
+                            : selected.visas.find((v) => v === '189' || v === '190' || v === '491') ?? '189',
+                        },
+                      });
+                    }}
+                  >
+                    <Text style={[styles.modalCtaText, { color: Colors.primaryDark }]}>
+                      Calculate Points for ANZSCO {selected.anzsco} →
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
                     style={[styles.modalCta, styles.modalCtaSecondary]}
                     activeOpacity={0.85}
                     onPress={() =>
@@ -2991,6 +3063,19 @@ const styles = StyleSheet.create({
   },
   visaChipText: { fontSize: FontSize.xs, fontWeight: FontWeight.semiBold },
 
+  federalVisaTabs: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: Spacing.sm,
+  },
+  federalVisaTab: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 7,
+    borderRadius: Radius.full,
+    borderWidth: 1.5,
+  },
+  federalVisaTabText: { fontSize: FontSize.xs, fontWeight: FontWeight.bold },
   federalVisaList: {
     gap: Spacing.sm,
   },
