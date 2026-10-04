@@ -12,6 +12,7 @@ import { useEffect, useState } from 'react';
 import { initNotifications, onReadChange, getReadIds } from '../utils/notifications';
 import { refreshLatestRound } from '../utils/latestRound';
 import { initRevenueCat, syncSubscriptionStatus, getRevenueCatUserId } from '../utils/iap';
+import { getWatchlistUid } from '../utils/firebaseAuth';
 import { selection } from '../utils/haptics';
 import { getProfile, saveProfile } from '../utils/storage';
 import OnboardingModal from '../components/OnboardingModal';
@@ -157,12 +158,19 @@ function RootLayout() {
     let unsubFeed: (() => void) | undefined;
     (async () => {
       try {
-        const userId = await getRevenueCatUserId().catch(() => undefined);
+        // Watchlist/personal-notification identity is keyed by the Firebase
+        // Auth anonymous uid (not the RevenueCat id) so Firestore rules can
+        // enforce request.auth.uid == userId. The RevenueCat id is still
+        // fetched and passed through for the optional cross-reference link
+        // stored on the watchlist doc.
+        const revenueCatId = await getRevenueCatUserId().catch(() => undefined);
+        const userId = await getWatchlistUid().catch(() => undefined);
         console.log('[_layout] Initializing notifications...');
         
         const notifInitSuccess = await initNotifications(
           ['NSW', 'VIC', 'QLD', 'WA', 'SA', 'TAS', 'ACT', 'NT'],
-          userId ?? undefined
+          userId ?? undefined,
+          revenueCatId ?? undefined
         );
         
         if (!notifInitSuccess) {

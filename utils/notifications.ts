@@ -65,7 +65,7 @@ Notifications.setNotificationHandler({
 
 // ─── Initialisation (call once on app start) ─────────────────────────────────
 
-export async function initNotifications(subscribedStates: string[] = [], userId?: string) {
+export async function initNotifications(subscribedStates: string[] = [], userId?: string, revenueCatId?: string) {
   // Native-only: @react-native-firebase/messaging has no web implementation.
   if (Platform.OS === 'web') {
     console.log('[notifications] skipped on web');
@@ -121,7 +121,7 @@ export async function initNotifications(subscribedStates: string[] = [], userId?
         const token = await messaging().getToken();
         if (token) {
           console.log('[notifications] ✅ FCM token obtained:', token.substring(0, 20) + '...');
-          await registerWatchlistDevice(userId, token);
+          await registerWatchlistDevice(userId, token, revenueCatId);
           console.log('[notifications] ✅ Watchlist device registered for userId:', userId);
         } else {
           console.warn('[notifications] ⚠️  FCM token is null/empty - device may not be registered');

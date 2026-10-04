@@ -45,7 +45,7 @@ import {
 } from '../utils/skilledOccupations';
 import type { SkilledOccupation } from '../constants/skilledOccupations';
 import { getProfile } from '../utils/storage';
-import { getRevenueCatUserId } from '../utils/iap';
+import { getWatchlistUid } from '../utils/firebaseAuth';
 import { PaywallModal } from '../components/PaywallModal';
 import { tap as hapticTap, success as hapticSuccess } from '../utils/haptics';
 import { recordEngagement } from '../utils/rateApp';
@@ -80,7 +80,7 @@ export default function WatchlistScreen() {
     (async () => {
       try {
         const [uid, profile, snap] = await Promise.all([
-          getRevenueCatUserId().catch(() => ''),
+          getWatchlistUid().catch(() => ''),
           getProfile(),
           getSkilledOccupations(),
         ]);

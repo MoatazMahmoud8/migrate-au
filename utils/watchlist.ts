@@ -8,14 +8,19 @@
  *    for subclass 189 at or below 75 points."
  *
  * Data shape (Firestore):
- *   watchlists/{userId}                            -> { fcmToken, updatedAt }
+ *   watchlists/{userId}                            -> { fcmToken, updatedAt, revenueCatId? }
  *   watchlists/{userId}/items/{itemId}             -> WatchlistItem
  *
- *   userId  = RevenueCat anonymous app user ID (stable per install)
+ *   userId  = Firebase Auth anonymous uid (see utils/firebaseAuth.ts) --
+ *             NOT the RevenueCat id. Firestore rules need a real
+ *             `request.auth.uid` to authorize per-user access, which the
+ *             RevenueCat id (no Firebase Auth session behind it) can't
+ *             provide. `revenueCatId` is stored as an optional link field
+ *             for cross-referencing with the subscription record.
  *   itemId  = `${anzsco}_${visaSubclass}` for natural de-dup
  *
  * Why this shape:
- *   - Subcollection keeps per-user data isolated for security rules later.
+ *   - Subcollection keeps per-user data isolated for security rules.
  *   - Top-level doc carries the device FCM token so the backend dispatcher
  *     can push directly without re-querying users.
  */
@@ -68,10 +73,17 @@ function userRef(userId: string) {
 /**
  * Register / refresh this device's FCM token on the user's watchlist doc.
  * Call from notifications.ts after we obtain a token.
+ *
+ * `userId` is the Firebase Auth anonymous uid (see utils/firebaseAuth.ts) --
+ * required so the `watchlists/{userId}` security rule can check
+ * `request.auth.uid == userId`. `revenueCatId` is optionally stored as a
+ * link so support/analytics can cross-reference this watchlist with the
+ * user's subscription (which is still keyed by the RevenueCat id).
  */
 export async function registerWatchlistDevice(
   userId: string,
   fcmToken: string,
+  revenueCatId?: string,
 ): Promise<void> {
   if (Platform.OS === 'web' || !userId || !fcmToken) return;
   await userRef(userId).set(
@@ -79,6 +91,7 @@ export async function registerWatchlistDevice(
       fcmToken,
       platform: Platform.OS,
       updatedAt: new Date().toISOString(),
+      ...(revenueCatId ? { revenueCatId } : {}),
     },
     { merge: true },
   );

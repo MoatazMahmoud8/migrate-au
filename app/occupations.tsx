@@ -50,7 +50,7 @@ import {
 } from '../utils/salaries';
 import type { VisaFeeEntry } from '../constants/visaFees';
 import { PaywallModal } from '../components/PaywallModal';
-import { getRevenueCatUserId } from '../utils/iap';
+import { getWatchlistUid } from '../utils/firebaseAuth';
 import { listWatchlist, saveWatchlistItem, removeWatchlistItem, WatchlistItem } from '../utils/watchlist';
 import { BlurView } from 'expo-blur';
 
@@ -1340,7 +1340,7 @@ export default function OccupationsScreen() {
   useEffect(() => {
     (async () => {
       try {
-        const id = await getRevenueCatUserId();
+        const id = await getWatchlistUid();
         setUserId(id || '');
       } catch {
         setUserId('');
