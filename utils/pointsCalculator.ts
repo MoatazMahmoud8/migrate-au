@@ -30,8 +30,12 @@ function calcOverseasWork(years: number): number {
   return 0;
 }
 
-function calcStateNomination(visa: VisaSubclass, hasNomination: boolean): number {
-  if (!hasNomination) return 0;
+function calcStateNomination(visa: VisaSubclass): number {
+  // Nomination points are a direct consequence of the visa subclass itself -
+  // 190 and 491 are BY DEFINITION state/regional nominated visas, so the
+  // points apply automatically the moment that subclass is selected. They
+  // are no longer gated behind a separate manual toggle (previously this
+  // caused the total score to incorrectly stay flat across 189/190/491).
   if (visa === '491') return 15;
   if (visa === '190') return 5;
   return 0;
@@ -47,7 +51,7 @@ export function calculatePoints(input: PointsInput): PointsBreakdown {
   if (input.hasPartnerSkills) partner = 10;
   else if (input.hasPartnerSuperiorEnglish) partner = 5;
 
-  const stateNomination = calcStateNomination(input.visaSubclass, input.hasStateNomination);
+  const stateNomination = calcStateNomination(input.visaSubclass);
   const professionalYear = input.hasProfessionalYear ? 5 : 0;
   const naati = input.hasNaati ? 5 : 0;
   const communityLanguage = input.hasCommunityLanguage ? 5 : 0;

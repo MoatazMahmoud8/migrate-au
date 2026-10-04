@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   ScrollView,
   View,
@@ -30,7 +30,7 @@ import { openExternalUrl } from '../../utils/openExternalUrl';
 import { shareReferral } from '../../utils/growth';
 import { setWeeklyDigestSubscription } from '../../utils/notifications';
 import type { SkilledOccupation } from '../../constants/skilledOccupations';
-import { getSkilledOccupations } from '../../utils/skilledOccupations';
+import { getSkilledOccupations, searchOccupations } from '../../utils/skilledOccupations';
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import { canAddJourneyEntry, canAddStateSubscription } from '../../utils/paywall';
 import { askToRate } from '../../utils/rateApp';
@@ -184,6 +184,8 @@ export default function ProfileScreen() {
   const [newVisa, setNewVisa] = useState<JourneyVisaType>('189');
   const [newState, setNewState] = useState('Federal');
   const [newAnzsco, setNewAnzsco] = useState('');
+  const [occQuery, setOccQuery] = useState('');
+  const [selectedJourneyOcc, setSelectedJourneyOcc] = useState<SkilledOccupation | null>(null);
   const [showDateModal, setShowDateModal] = useState(false);
   const [dateTarget, setDateTarget] = useState<{ entryId: string; stageKey: JourneyStageKey } | null>(null);
   const [dateInput, setDateInput] = useState('');
@@ -296,17 +298,11 @@ export default function ProfileScreen() {
       return;
     }
 
-    const trimmed = newAnzsco.trim();
-    const occ = trimmed
-      ? allOccupations.find(
-          (o) => o.anzsco === trimmed ||
-            o.name.toLowerCase().includes(trimmed.toLowerCase())
-        )
-      : undefined;
+    const occ = selectedJourneyOcc;
     const entry: JourneyEntry = {
       id: Date.now().toString(),
       visaType: newVisa,
-      anzscoCode: occ?.anzsco || (trimmed || undefined),
+      anzscoCode: occ?.anzsco || undefined,
       occupationName: occ?.name || undefined,
       state: newState === 'Federal' ? undefined : newState,
       currentStage: 0,
@@ -317,10 +313,15 @@ export default function ProfileScreen() {
     setJourneyEntries(updated);
     await saveProfile({ journeyEntries: updated });
     setShowAddJourney(false);
-    setNewVisa('189'); setNewState('Federal'); setNewAnzsco('');
+    setNewVisa('189'); setNewState('Federal'); setNewAnzsco(''); setOccQuery(''); setSelectedJourneyOcc(null);
     setExpandedId(entry.id);
     hapticSuccess();
   };
+
+  const journeyOccResults = useMemo(
+    () => (occQuery.trim() ? searchOccupations(allOccupations, occQuery, 8) : []),
+    [allOccupations, occQuery]
+  );
 
   const deleteJourneyEntry = (id: string) => {
     Alert.alert('Remove Journey', 'Remove this visa application journey?', [
@@ -360,7 +361,7 @@ export default function ProfileScreen() {
     hapticSuccess();
   };
 
-  const handleExportPDF = () => {
+  const handleExportPDF = async () => {
     if (!profile) return;
 
     if (!profile.isPremium) {
@@ -369,22 +370,13 @@ export default function ProfileScreen() {
     }
 
     const pdfContent = generateJourneyPDF(profile);
-    const shared = sharePDF(pdfContent, profile);
+    const shared = await sharePDF(pdfContent, profile);
 
-    Alert.alert(
-      '📄 Journey Exported',
-      'Your visa journey has been exported as a text document. You can copy this to save or share with a migration agent.',
-      [
-        {
-          text: 'Copy to Clipboard',
-          onPress: () => {
-            // In production, use react-native-clipboard
-            alert('PDF export ready! Share with your migration agent.');
-          },
-        },
-        { text: 'Done', style: 'cancel' },
-      ]
-    );
+    if (shared && Platform.OS === 'web') {
+      Alert.alert('📄 Journey Exported', 'Your visa journey summary has been downloaded.');
+    } else if (!shared) {
+      Alert.alert('Export Unavailable', 'Could not export your journey right now. Please try again.');
+    }
   };
 
   const openDateModal = (entryId: string, stageKey: JourneyStageKey) => {
@@ -1192,21 +1184,65 @@ export default function ProfileScreen() {
               })}
             </View>
 
-            <Text style={[jStyles.fieldLabel, {color: Colors.textPrimary}]}>ANZSCO code or occupation name <Text style={[jStyles.fieldOptional, {color: Colors.textPrimary}]}>(optional)</Text></Text>
-            <TextInput
-              style={[jStyles.textInput, {color: Colors.textPrimary, borderColor: Colors.border}]}
-              value={newAnzsco}
-              onChangeText={setNewAnzsco}
-              placeholder="e.g. 261313 or Software Engineer"
-              placeholderTextColor={Colors.textMuted}
-              returnKeyType="done"
-              autoCapitalize="words"
-            />
+            <Text style={[jStyles.fieldLabel, {color: Colors.textPrimary}]}>Occupation <Text style={[jStyles.fieldOptional, {color: Colors.textPrimary}]}>(optional)</Text></Text>
+            {selectedJourneyOcc ? (
+              <View style={[jStyles.selectedOcc, { backgroundColor: Colors.background, borderColor: Colors.border }]}>
+                <View style={{ flex: 1 }}>
+                  <Text style={[jStyles.selectedOccName, { color: Colors.textPrimary }]} numberOfLines={1}>
+                    {selectedJourneyOcc.name}
+                  </Text>
+                  <Text style={[jStyles.selectedOccCode, { color: Colors.textSecondary }]}>
+                    ANZSCO {selectedJourneyOcc.anzsco}
+                  </Text>
+                </View>
+                <TouchableOpacity onPress={() => setSelectedJourneyOcc(null)} hitSlop={10}>
+                  <Ionicons name="close-circle" size={22} color={Colors.textSecondary} />
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <>
+                <TextInput
+                  style={[jStyles.textInput, {color: Colors.textPrimary, borderColor: Colors.border}]}
+                  value={occQuery}
+                  onChangeText={setOccQuery}
+                  placeholder="Search by title or ANZSCO code (e.g. 2613, Nurse)"
+                  placeholderTextColor={Colors.textMuted}
+                  returnKeyType="search"
+                  autoCorrect={false}
+                />
+                {journeyOccResults.length > 0 && (
+                  <View style={[jStyles.occResultsBox, { backgroundColor: Colors.background, borderColor: Colors.border }]}>
+                    {journeyOccResults.map((occ) => (
+                      <TouchableOpacity
+                        key={occ.anzsco}
+                        style={[jStyles.occResultRow, { borderBottomColor: Colors.border }]}
+                        onPress={() => { setSelectedJourneyOcc(occ); setOccQuery(''); }}
+                      >
+                        <Text style={[jStyles.occResultCode, { color: Colors.textSecondary }]}>{occ.anzsco}</Text>
+                        <Text style={[jStyles.occResultName, { color: Colors.textPrimary }]} numberOfLines={1}>
+                          {occ.name}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
+                {occQuery.trim().length > 0 && journeyOccResults.length === 0 && (
+                  <Text style={[jStyles.fieldOptional, { color: Colors.textSecondary, marginTop: 4 }]}>No matches</Text>
+                )}
+              </>
+            )}
 
             <TouchableOpacity style={[jStyles.saveBtn, { backgroundColor: Colors.accent }]} onPress={addJourneyEntry} activeOpacity={0.85}>
               <Text style={[jStyles.saveBtnText, {color: Colors.primaryDark}]}>Add Journey</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[jStyles.cancelBtn, { borderColor: Colors.border }]} onPress={() => setShowAddJourney(false)}>
+            <TouchableOpacity
+              style={[jStyles.cancelBtn, { borderColor: Colors.border }]}
+              onPress={() => {
+                setShowAddJourney(false);
+                setOccQuery('');
+                setSelectedJourneyOcc(null);
+              }}
+            >
               <Text style={[jStyles.cancelBtnText, {color: Colors.textPrimary}]}>Cancel</Text>
             </TouchableOpacity>
           </View>
@@ -1593,6 +1629,25 @@ const jStyles = StyleSheet.create({
     fontSize: FontSize.md, borderWidth: 1,
     marginBottom: Spacing.lg,
   },
+  selectedOcc: {
+    flexDirection: 'row', alignItems: 'center',
+    borderRadius: Radius.md, borderWidth: 1,
+    padding: Spacing.md, marginBottom: Spacing.lg,
+  },
+  selectedOccName: { fontSize: FontSize.sm, fontWeight: FontWeight.semiBold },
+  selectedOccCode: { fontSize: FontSize.xs, marginTop: 2 },
+  occResultsBox: {
+    borderRadius: Radius.md, borderWidth: 1,
+    marginTop: -Spacing.md, marginBottom: Spacing.lg,
+    overflow: 'hidden',
+  },
+  occResultRow: {
+    flexDirection: 'row', alignItems: 'center', gap: Spacing.sm,
+    paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm,
+    borderBottomWidth: 1,
+  },
+  occResultCode: { fontSize: FontSize.xs, fontWeight: FontWeight.semiBold, width: 56 },
+  occResultName: { fontSize: FontSize.sm, flex: 1 },
   saveBtn: { borderRadius: Radius.md,
     paddingVertical: 13, alignItems: 'center', justifyContent: 'center',
     marginBottom: Spacing.sm,

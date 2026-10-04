@@ -1,3 +1,4 @@
+import { Platform, Share } from 'react-native';
 import { UserProfile, JourneyEntry } from '../constants/types';
 
 /**
@@ -68,14 +69,43 @@ export function generateJourneyPDF(profile: UserProfile): string {
 }
 
 /**
- * Share or save the PDF content
- * (In production, would use ShareSheet or file system)
+ * Share or save the journey export.
+ *
+ * - Native (iOS/Android): opens the system share sheet via `Share.share`
+ *   so the user can send the text to Mail/Messages/Files/a migration agent.
+ * - Web: triggers a browser download of a `.txt` file (no native share sheet
+ *   exists in the browser DOM environment RN Web runs in).
+ *
+ * Returns true if the share/download flow was successfully invoked.
  */
-export function sharePDF(content: string, profile: UserProfile) {
-  // For now, just return the content
-  // Production would use:
-  // - expo-sharing to send to Mail/Messages
-  // - expo-file-system to save locally
-  // - or react-native-pdf-lib to generate actual PDF
-  return content;
+export async function sharePDF(content: string, profile: UserProfile): Promise<boolean> {
+  const fileName = `my-visa-journey-${new Date().toISOString().slice(0, 10)}.txt`;
+
+  if (Platform.OS === 'web') {
+    try {
+      const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  try {
+    const result = await Share.share(
+      Platform.OS === 'ios'
+        ? { message: content }
+        : { message: content, title: fileName }
+    );
+    return result.action !== Share.dismissedAction;
+  } catch {
+    return false;
+  }
 }

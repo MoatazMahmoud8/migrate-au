@@ -346,12 +346,15 @@ export default function CalculatorScreen() {
           <Text style={[styles.cardTitle, {color: Colors.textPrimary}]}>Bonus Points</Text>
         </View>
         {input.visaSubclass !== '189' && (
-          <SwitchRow
-            label="State/Territory Nomination"
-            value={input.hasStateNomination}
-            onChange={(v) => set({ hasStateNomination: v })}
-            pts={input.visaSubclass === '491' ? 15 : 5}
-          />
+          <View style={[styles.row, { borderTopColor: Colors.divider }]}>
+            <Ionicons name="checkmark-circle" size={18} color={Colors.success} style={{ marginRight: 8 }} />
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.rowLabel, { color: Colors.textPrimary }]}>State/Territory Nomination</Text>
+              <Text style={[styles.rowHint, { color: Colors.textSecondary }]}>
+                Includes +{input.visaSubclass === '491' ? 15 : 5} points for {input.visaSubclass} nomination
+              </Text>
+            </View>
+          </View>
         )}
         <SwitchRow
           label="Professional Year"
@@ -453,12 +456,12 @@ export default function CalculatorScreen() {
           {
             label: 'State Nomination 190 (+5)',
             pts: 5,
-            available: input.visaSubclass === '189' || (!input.hasStateNomination && input.visaSubclass === '190'),
+            available: input.visaSubclass === '189',
           },
           {
             label: 'State Nomination 491 (+15)',
             pts: 15,
-            available: input.visaSubclass === '189' && !input.hasStateNomination,
+            available: input.visaSubclass === '189',
           },
           {
             label: 'Regional Study Bonus',

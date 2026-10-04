@@ -244,6 +244,16 @@ export default function WatchlistScreen() {
                 <Text style={[styles.emptyBody, { color: Colors.textSecondary }]}>
                   Add an occupation to get pinged the moment its SkillSelect round drops at-or-below your points.
                 </Text>
+                <TouchableOpacity
+                  style={[styles.emptyAddBtn, { backgroundColor: Colors.secondary }]}
+                  onPress={handleAddPress}
+                  activeOpacity={0.85}
+                >
+                  <Ionicons name="add" size={18} color={Colors.primaryDark} />
+                  <Text style={[styles.emptyAddBtnText, { color: Colors.primaryDark }]}>
+                    Add Occupation to Watchlist
+                  </Text>
+                </TouchableOpacity>
               </View>
             }
             renderItem={({ item }) => (
@@ -483,6 +493,19 @@ const styles = StyleSheet.create({
     fontSize: FontSize.sm,
     textAlign: 'center',
     lineHeight: 20,
+  },
+  emptyAddBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm,
+    borderRadius: Radius.full,
+    marginTop: Spacing.md,
+  },
+  emptyAddBtnText: {
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.semiBold,
   },
   card: {
     flexDirection: 'row',
