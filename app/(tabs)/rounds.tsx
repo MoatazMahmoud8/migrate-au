@@ -10,11 +10,16 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
 import { useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors, FontSize, FontWeight, Radius, Spacing } from '../../constants/theme';
 import { useColors } from '../../constants/ThemeContext';
 import { openExternalUrl } from '../../utils/openExternalUrl';
+import { getProfile } from '../../utils/storage';
+import { PaywallModal } from '../../components/PaywallModal';
+import { getRevenueCatUserId } from '../../utils/iap';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -612,6 +617,9 @@ export default function RoundsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [stateExpanded, setStateExpanded] = useState(true);
   const [historyExpanded, setHistoryExpanded] = useState(true);
+  const [isPremium, setIsPremium] = useState(false);
+  const [showPaywall, setShowPaywall] = useState(false);
+  const [userId, setUserId] = useState('');
 
   const fetchData = useCallback(async (isRefresh = false) => {
     if (isRefresh) {
@@ -625,6 +633,15 @@ export default function RoundsScreen() {
   }, []);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => { getRevenueCatUserId().then(setUserId).catch(() => {}); }, []);
+
+  // Re-check premium status every time the screen gains focus (e.g. right
+  // after a successful purchase in the paywall modal).
+  useFocusEffect(
+    useCallback(() => {
+      getProfile().then((p) => setIsPremium(!!p.isPremium)).catch(() => {});
+    }, [])
+  );
 
   const cr = data.currentRound;
   const currentRoundYear = financialYearCode(cr.date);
@@ -760,6 +777,7 @@ export default function RoundsScreen() {
       </TouchableOpacity>
 
       {stateExpanded && (
+        <View style={styles.proGateWrap}>
         <>
           <View style={[styles.stateTable, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
             <View style={[styles.stateRow, styles.tableHeader, { backgroundColor: Colors.primaryDark }]}>
@@ -846,6 +864,14 @@ export default function RoundsScreen() {
             </Text>
           </View>
         </>
+        {!isPremium && (
+          <ProLockOverlay
+            Colors={Colors}
+            label="State-by-state SC 190 & 491 breakdown"
+            onPress={() => setShowPaywall(true)}
+          />
+        )}
+        </View>
       )}
 
       {/* Round history toggle */}
@@ -857,6 +883,7 @@ export default function RoundsScreen() {
       </TouchableOpacity>
 
       {historyExpanded && (
+        <View style={styles.proGateWrap}>
         <View style={[styles.stateTable, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
           <View style={[styles.stateRow, styles.tableHeader, { backgroundColor: Colors.primaryDark }]}>
             <Text style={[styles.histDateCell, styles.headerText, { color: Colors.white }]}>Date</Text>
@@ -901,6 +928,14 @@ export default function RoundsScreen() {
             <Text style={[styles.sourceLinkText, { color: Colors.accent }]}>View Home Affairs previous rounds ↗</Text>
           </TouchableOpacity>
         </View>
+        {!isPremium && (
+          <ProLockOverlay
+            Colors={Colors}
+            label="18-month historical cutoff chart"
+            onPress={() => setShowPaywall(true)}
+          />
+        )}
+        </View>
       )}
 
       <TouchableOpacity
@@ -930,18 +965,62 @@ export default function RoundsScreen() {
   }
 
   return (
-    <ScrollView
-      style={[styles.container, { backgroundColor: Colors.background }]}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => fetchData(true)} tintColor={Colors.accent} />}
-    >
-      {ListHeader}
-      <View style={[styles.footer, { paddingBottom: insets.bottom + 80 }]}>
-        <TouchableOpacity onPress={() => void openExternalUrl(data.sourceUrl)}>
-          <Text style={[styles.footerSource, { color: Colors.accent }]}>Source: Dept of Home Affairs ↗</Text>
-        </TouchableOpacity>
-        <Text style={[styles.footerNote, { color: Colors.textSecondary }]}>Data auto-refreshes every {CACHE_HOURS} hours. Pull down to force refresh.</Text>
+    <>
+      <ScrollView
+        style={[styles.container, { backgroundColor: Colors.background }]}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => fetchData(true)} tintColor={Colors.accent} />}
+      >
+        {ListHeader}
+        <View style={[styles.footer, { paddingBottom: insets.bottom + 80 }]}>
+          <TouchableOpacity onPress={() => void openExternalUrl(data.sourceUrl)}>
+            <Text style={[styles.footerSource, { color: Colors.accent }]}>Source: Dept of Home Affairs ↗</Text>
+          </TouchableOpacity>
+          <Text style={[styles.footerNote, { color: Colors.textSecondary }]}>Data auto-refreshes every {CACHE_HOURS} hours. Pull down to force refresh.</Text>
+        </View>
+      </ScrollView>
+
+      <PaywallModal
+        visible={showPaywall}
+        onClose={() => setShowPaywall(false)}
+        userId={userId}
+        title="Unlock Full Cutoff Trends"
+        message="See 18 months of SkillSelect cutoff history and the full state-by-state nomination breakdown, not just the latest round."
+        feature="rounds"
+      />
+    </>
+  );
+}
+
+// ─── Pro lock overlay ──────────────────────────────────────────────────────────
+
+function ProLockOverlay({
+  Colors,
+  label,
+  onPress,
+}: {
+  Colors: ReturnType<typeof useColors>;
+  label: string;
+  onPress: () => void;
+}) {
+  return (
+    <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
+      <BlurView intensity={55} tint="dark" style={StyleSheet.absoluteFill} />
+      <View style={styles.proLockCenter} pointerEvents="box-none">
+        <View style={[styles.proLockCard, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
+          <Ionicons name="lock-closed" size={22} color={Colors.secondary} />
+          <Text style={[styles.proLockLabel, { color: Colors.textPrimary }]}>{label}</Text>
+          <TouchableOpacity
+            style={[styles.proLockBtn, { backgroundColor: Colors.secondary }]}
+            onPress={onPress}
+            activeOpacity={0.85}
+          >
+            <Text style={[styles.proLockBtnText, { color: Colors.primaryDark }]}>
+              Pro Feature: Unlock Full Cutoff Trends
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
-    </ScrollView>
+    </View>
   );
 }
 
@@ -1020,6 +1099,40 @@ const styles = StyleSheet.create({
   },
   sectionToggleText: { fontSize: FontSize.sm, fontWeight: FontWeight.semiBold, flexShrink: 1 },
   sectionToggleSub: { fontSize: FontSize.xs, flexShrink: 1 },
+
+  proGateWrap: {
+    position: 'relative',
+  },
+  proLockCenter: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0, bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: Spacing.xl,
+  },
+  proLockCard: {
+    width: '100%',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    padding: Spacing.lg,
+    borderRadius: Radius.lg,
+    borderWidth: 1,
+  },
+  proLockLabel: {
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.semiBold,
+    textAlign: 'center',
+  },
+  proLockBtn: {
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm,
+    borderRadius: Radius.full,
+  },
+  proLockBtnText: {
+    fontSize: FontSize.xs,
+    fontWeight: FontWeight.bold,
+    textAlign: 'center',
+  },
 
   stateTable: {
     marginHorizontal: Spacing.lg, marginBottom: Spacing.md,

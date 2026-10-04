@@ -70,9 +70,10 @@ export interface JourneyEntry {
 // Profile
 export interface UsageLimits {
   calculatorUses: number;      // 0-5 per month (free), unlimited for premium
-  aiMessages: number;          // 0-5 per month (free), unlimited for premium
+  aiMessages: number;          // 0-3 per rolling 24h window (free), unlimited for premium
   anzscoSearches: number;      // 0-10 per month (free), unlimited for premium
-  lastResetMonth: string;      // YYYY-MM format, for monthly reset
+  lastResetMonth: string;      // YYYY-MM format, for monthly reset (calculator/anzscoSearches)
+  aiMessagesResetAt?: string;  // ISO timestamp — start of the current 24h window for aiMessages
 }
 
 export interface UserProfile {

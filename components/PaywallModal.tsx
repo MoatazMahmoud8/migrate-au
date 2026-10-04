@@ -27,13 +27,32 @@ interface PaywallModalProps {
   feature?: string;
 }
 
-// Streamlined 4 high-value features (choice overload reduction)
+// Streamlined 4 high-value, value-oriented features (choice overload reduction)
 const BENEFITS = [
-  { icon: 'sparkles-outline',     text: 'Aria AI — Unlimited expert visa advice' },
-  { icon: 'calculator-outline',   text: 'Instant ANZSCO occupation & points calculator' },
-  { icon: 'notifications-outline', text: 'Real-time SkillSelect & state invitation alerts' },
-  { icon: 'stats-chart-outline',  text: 'Full 18-month invitation trends & cutoff history' },
+  {
+    icon: 'sparkles-outline',
+    title: 'Unlimited Aria AI',
+    text: 'Deep visa scenario analysis, partner points check & eligibility advice (Free limited to 3/day)',
+  },
+  {
+    icon: 'notifications-outline',
+    title: 'Instant Round & Quota Alerts',
+    text: 'Get notified immediately when SkillSelect rounds run or your target state opens',
+  },
+  {
+    icon: 'stats-chart-outline',
+    title: '18-Month Cutoff Trends & Odds',
+    text: 'View historical invitation scores and minimum cutoff trends for your ANZSCO',
+  },
+  {
+    icon: 'star-outline',
+    title: 'Unlimited Watchlist & Pathways',
+    text: 'Track multiple occupations and state nomination streams simultaneously',
+  },
 ];
+
+const PAYWALL_SUBTITLE =
+  'Get real-time invitation alerts, cutoff score trends, and unlimited AI case evaluation.';
 
 export function PaywallModal({ visible, onClose, userId, title, message, feature }: PaywallModalProps) {
   const Colors = useColors();
@@ -80,7 +99,7 @@ export function PaywallModal({ visible, onClose, userId, title, message, feature
   const getFeatureMessage = () => {
     switch (feature) {
       case 'aiMessages':
-        return '3 expert consultation questions per month isn\'t enough for your visa journey. Aria is here 24/7 to guide you through every step.';
+        return 'You\'ve reached your free daily limit. Upgrade to Pro for unlimited AI visa audits.';
       case 'calculator':
         return 'Track every point in your visa strategy. 3 calculations per month limits your planning. Go unlimited with Premium.';
       case 'anzscoSearches':
@@ -92,7 +111,7 @@ export function PaywallModal({ visible, onClose, userId, title, message, feature
       case 'pdfExport':
         return 'Export your visa journey as a PDF — keep official records, share with agents, save offline.';
       default:
-        return message;
+        return message || PAYWALL_SUBTITLE;
     }
   };
 
@@ -296,12 +315,15 @@ export function PaywallModal({ visible, onClose, userId, title, message, feature
               <View style={[styles.benefitsDividerLine, { backgroundColor: Colors.border }]} />
             </View>
             <View style={[styles.benefits, { borderColor: Colors.border }]}>
-              {BENEFITS.map(({ icon, text }) => (
-                <View key={text} style={styles.benefitRow}>
+              {BENEFITS.map(({ icon, title, text }) => (
+                <View key={title} style={styles.benefitRow}>
                   <View style={[styles.benefitIcon, { backgroundColor: `${Colors.secondary}15` }]}>
                     <Ionicons name={icon as any} size={14} color={Colors.secondary} />
                   </View>
-                  <Text style={[styles.benefitText, { color: Colors.textSecondary }]}>{text}</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.benefitTitle, { color: Colors.textPrimary }]}>{title}</Text>
+                    <Text style={[styles.benefitText, { color: Colors.textSecondary }]}>{text}</Text>
+                  </View>
                 </View>
               ))}
             </View>
@@ -474,7 +496,7 @@ const styles = StyleSheet.create({
   },
   benefitRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: Spacing.sm,
   },
   benefitIcon: {
@@ -482,6 +504,12 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     alignItems: 'center',
     justifyContent: 'center',
+    marginTop: 1,
+  },
+  benefitTitle: {
+    fontSize: FontSize.xs,
+    fontWeight: FontWeight.semiBold,
+    marginBottom: 2,
   },
   benefitText: {
     flex: 1,

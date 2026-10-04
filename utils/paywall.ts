@@ -24,6 +24,18 @@ export function shouldResetMonthlyLimits(lastResetMonth: string | undefined): bo
   return !lastResetMonth || lastResetMonth !== currentMonth;
 }
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Check if the rolling 24h window for aiMessages has elapsed.
+ */
+export function shouldResetDailyAiLimit(aiMessagesResetAt: string | undefined): boolean {
+  if (!aiMessagesResetAt) return true;
+  const resetAt = new Date(aiMessagesResetAt).getTime();
+  if (Number.isNaN(resetAt)) return true;
+  return Date.now() - resetAt >= DAY_MS;
+}
+
 /**
  * Get fresh usage limits for current month
  */
@@ -33,17 +45,27 @@ export function getFreshUsageLimits(): UsageLimits {
     aiMessages: 0,
     anzscoSearches: 0,
     lastResetMonth: MONTH_FORMAT(),
+    aiMessagesResetAt: new Date().toISOString(),
   };
 }
 
 /**
- * Ensure usage limits are initialized and reset if needed
+ * Ensure usage limits are initialized and reset if needed.
+ *
+ * calculatorUses / anzscoSearches reset monthly; aiMessages resets on its
+ * own rolling 24h window (independent of the calendar month) since Aria's
+ * free quota is "3 messages per 24 hours", not "3 per month".
  */
 export function ensureUsageLimits(profile: UserProfile): UsageLimits {
   if (!profile.usageLimits || shouldResetMonthlyLimits(profile.usageLimits.lastResetMonth)) {
     return getFreshUsageLimits();
   }
-  return profile.usageLimits;
+
+  let limits = profile.usageLimits;
+  if (shouldResetDailyAiLimit(limits.aiMessagesResetAt)) {
+    limits = { ...limits, aiMessages: 0, aiMessagesResetAt: new Date().toISOString() };
+  }
+  return limits;
 }
 
 /**
