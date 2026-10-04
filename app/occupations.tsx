@@ -50,6 +50,9 @@ import {
 } from '../utils/salaries';
 import type { VisaFeeEntry } from '../constants/visaFees';
 import { PaywallModal } from '../components/PaywallModal';
+import { getRevenueCatUserId } from '../utils/iap';
+import { listWatchlist, saveWatchlistItem, removeWatchlistItem, WatchlistItem } from '../utils/watchlist';
+import { BlurView } from 'expo-blur';
 
 type ListFilter = 'All' | SkillList;
 type JurisdictionFilter = 'All' | 'Federal' | StateCode;
@@ -89,6 +92,53 @@ const STATE_COLORS: Record<StateCode, string> = {
   ACT: '#A78BFA',
   NT: '#FFB800',
 };
+
+// ─── State nomination status (freemium discovery hook) ─────────────────────
+
+type StateNominationStatus = 'open' | 'conditional' | 'closed';
+
+interface StateStatusInfo {
+  kind: StateNominationStatus;
+  label: string;
+  visas: string[];
+}
+
+/** Classify a state's nomination status for a given occupation so we can show
+ *  a clean green/yellow/red pill without a user needing to tap in. */
+function getStateStatusInfo(item: SkilledOccupation, s: StateCode): StateStatusInfo {
+  const reqs = item.stateRequirements?.[s] as any;
+  const seedVisas = item.states?.[s] ?? [];
+
+  if (!reqs) {
+    if (seedVisas.length > 0) {
+      return { kind: 'open', label: `Open (${seedVisas.join(' / ')})`, visas: seedVisas };
+    }
+    return { kind: 'closed', label: 'Not Eligible', visas: [] };
+  }
+
+  const sponsoredVisas = (['190', '491'] as const).filter((v) => reqs?.[v]?.status === 'sponsored');
+  if (sponsoredVisas.length === 0) {
+    return { kind: 'closed', label: 'Closed', visas: [] };
+  }
+
+  const onshoreOnly = sponsoredVisas.some((v) => reqs[v]?.residencyRequired);
+  const jobOfferReq = sponsoredVisas.some((v) => reqs[v]?.jobOfferRequired);
+  if (onshoreOnly || jobOfferReq) {
+    const reasons = [onshoreOnly && 'Onshore Only', jobOfferReq && 'Job Offer Req'].filter(Boolean) as string[];
+    return { kind: 'conditional', label: reasons.join(' \u00b7 '), visas: sponsoredVisas };
+  }
+
+  return { kind: 'open', label: `Open (${sponsoredVisas.join(' / ')})`, visas: sponsoredVisas };
+}
+
+/** First state that's Open, else first Conditional, else null (all closed). */
+function getDefaultEligibleState(item: SkilledOccupation): StateCode | null {
+  const statuses = STATE_CODES.map((s) => ({ s, info: getStateStatusInfo(item, s) }));
+  const open = statuses.find((x) => x.info.kind === 'open');
+  if (open) return open.s;
+  const conditional = statuses.find((x) => x.info.kind === 'conditional');
+  return conditional ? conditional.s : null;
+}
 
 // Australian University Graduate Pathways by State
 const STATE_UNIVERSITIES: Record<StateCode, string[]> = {
@@ -1200,6 +1250,42 @@ function buildCutoffsFromMerged(items: SkilledOccupation[]): {
   return { cutoffs, history };
 }
 
+// ─── Pro gate overlay for state nomination deep-criteria ───────────────────
+
+function StateCriteriaProLock({
+  Colors,
+  onPress,
+}: {
+  Colors: ReturnType<typeof useColors>;
+  onPress: () => void;
+}) {
+  return (
+    <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
+      <BlurView intensity={45} tint="dark" style={StyleSheet.absoluteFill} />
+      <View style={styles.proLockCenter} pointerEvents="box-none">
+        <View style={[styles.proLockCard, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
+          <Ionicons name="lock-closed" size={20} color={Colors.secondary} />
+          <Text style={[styles.proLockTitle, { color: Colors.textPrimary }]}>
+            Unlock Full State Nomination Criteria & Stream Rules
+          </Text>
+          <Text style={[styles.proLockDesc, { color: Colors.textSecondary }]}>
+            See exact salary requirements, offshore pathway odds, and quota speeds.
+          </Text>
+          <TouchableOpacity
+            style={[styles.proLockBtn, { backgroundColor: Colors.secondary }]}
+            onPress={onPress}
+            activeOpacity={0.85}
+          >
+            <Text style={[styles.proLockBtnText, { color: Colors.primaryDark }]}>
+              Upgrade to Pro — AUD $6.67/mo
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </View>
+  );
+}
+
 export default function OccupationsScreen() {
   const Colors = useColors();
   const router = useRouter();
@@ -1227,6 +1313,8 @@ export default function OccupationsScreen() {
   const [selectedVisa, setSelectedVisa] = useState<'190' | '491' | '482'>('190');
   const [profile, setProfile] = useState<any>(null);
   const [showPaywall, setShowPaywall] = useState(false);
+  const [userId, setUserId] = useState<string>('');
+  const [stateAlerts, setStateAlerts] = useState<WatchlistItem[]>([]);
   const [dailyUpdates, setDailyUpdates] = useState<DailyUpdates | null>(null);
   const visaMeta = useMemo(() => buildVisaMetaMap(dailyUpdates), [dailyUpdates]);
   const [occupationCutoffs, setOccupationCutoffs] = useState<Map<string, { sc189: number | null; sc491Family: number | null }>>(new Map());
@@ -1245,6 +1333,38 @@ export default function OccupationsScreen() {
     setOccupationCutoffs(cutoffs);
     setOccupationHistory(history);
   };
+
+  // Load the RevenueCat anonymous user id once so we can read/write the
+  // per-occupation "alert me when state X opens" watchlist toggles.
+  useEffect(() => {
+    (async () => {
+      try {
+        const id = await getRevenueCatUserId();
+        setUserId(id || '');
+      } catch {
+        setUserId('');
+      }
+    })();
+  }, []);
+
+  // Refresh this occupation's existing state-alert subscriptions whenever the
+  // user opens a different occupation's detail modal.
+  useEffect(() => {
+    if (!userId || !selected) {
+      setStateAlerts([]);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const all = await listWatchlist(userId);
+        if (!cancelled) setStateAlerts(all.filter((w) => w.anzsco === selected.anzsco));
+      } catch {
+        if (!cancelled) setStateAlerts([]);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [userId, selected?.anzsco]);
 
   useEffect(() => {
     (async () => {
@@ -1333,6 +1453,51 @@ export default function OccupationsScreen() {
   const FILTERS: ListFilter[] = ['All', ...SKILL_LISTS];
   const JURISDICTIONS: JurisdictionFilter[] = ['All', 'Federal', ...STATE_CODES];
   const showListFilter = jurisdiction === 'All' || jurisdiction === 'Federal';
+
+  // "Alert me when {state} opens rounds for this occupation" — free users are
+  // routed to the paywall; Pro users toggle a scoped watchlist subscription.
+  const isStateAlertActive = (state: StateCode, visa: '190' | '491' | '482') =>
+    stateAlerts.some((w) => w.visaSubclass === visa && (w.states ?? []).includes(state));
+
+  const toggleStateAlert = async (occ: SkilledOccupation, state: StateCode, visa: '190' | '491' | '482') => {
+    if (profile?.isPremium !== true) {
+      setShowPaywall(true);
+      return;
+    }
+    if (!userId) return;
+    hapticTap();
+    const existing = stateAlerts.find((w) => w.visaSubclass === visa);
+    try {
+      if (existing && (existing.states ?? []).includes(state)) {
+        const remainingStates = (existing.states ?? []).filter((s) => s !== state);
+        if (remainingStates.length === 0) {
+          await removeWatchlistItem(userId, existing.id);
+          setStateAlerts((prev) => prev.filter((w) => w.id !== existing.id));
+        } else {
+          const updated = await saveWatchlistItem(userId, { ...existing, states: remainingStates });
+          setStateAlerts((prev) => prev.map((w) => (w.id === updated.id ? updated : w)));
+        }
+      } else {
+        const base: WatchlistItem = existing ?? {
+          id: `${occ.anzsco}_${visa}`,
+          anzsco: occ.anzsco,
+          anzscoTitle: occ.name,
+          visaSubclass: visa,
+          minPoints: 65,
+          states: [],
+          createdAt: new Date().toISOString(),
+        };
+        const updated = await saveWatchlistItem(userId, { ...base, states: [...(base.states ?? []), state] });
+        setStateAlerts((prev) => {
+          const without = prev.filter((w) => w.id !== updated.id);
+          return [...without, updated];
+        });
+      }
+      hapticSuccess();
+    } catch {
+      Alert.alert('Could not update alert', 'Please try again.');
+    }
+  };
 
   return (
     <>
@@ -1489,7 +1654,7 @@ export default function OccupationsScreen() {
             <TouchableOpacity
               style={[styles.card, { backgroundColor: Colors.surface, borderColor: Colors.border }, savedAnzsco === item.anzsco && { backgroundColor: `${Colors.success}0D`, borderColor: `${Colors.success}55` }]}
               activeOpacity={0.85}
-              onPress={() => { hapticTap(); setSelected(item); setExpandedState(null); }}
+              onPress={() => { hapticTap(); setSelected(item); setExpandedState(getDefaultEligibleState(item)); }}
             >
               <View style={styles.cardHead}>
                 <View style={[styles.codePill, { backgroundColor: Colors.surfaceRaised, borderColor: Colors.border }]}>
@@ -1936,21 +2101,22 @@ export default function OccupationsScreen() {
                     const hasAnyData = !!selected.stateRequirements && Object.keys(selected.stateRequirements).length > 0;
                     const hasSeed = !!selected.states && Object.keys(selected.states).length > 0;
                     if (!hasAnyData && !hasSeed) return null;
+
+                    const statuses = STATE_CODES.map((s) => ({ s, info: getStateStatusInfo(selected, s) }));
+                    const openCount = statuses.filter((x) => x.info.kind !== 'closed').length;
+
                     return (
                     <>
+                      <Text style={[styles.stateSummaryCounter, { color: openCount > 0 ? Colors.success : Colors.textMuted }]}>
+                        Available for nomination in {openCount} of {STATE_CODES.length} states
+                      </Text>
+
                       <View style={styles.stateGrid}>
-                        {STATE_CODES.map((s) => {
-                          // Prefer real requirements data; fall back to hardcoded seed.
-                          const reqs = selected.stateRequirements?.[s];
-                          const sponsoredVisas = reqs
-                            ? (['190', '491', '482'] as const).filter((v) => (reqs as any)?.[v]?.status === 'sponsored')
-                            : [];
-                          const seedVisas = selected.states?.[s] ?? [];
-                          const visas = sponsoredVisas.length > 0 ? sponsoredVisas : seedVisas;
-                          const eligible = sponsoredVisas.length > 0 || seedVisas.length > 0;
-                          // Tappable whenever we have any state-level data (sponsored OR explicit not_sponsored entry).
-                          const tappable = !!reqs || seedVisas.length > 0;
+                        {statuses.map(({ s, info }) => {
+                          const tappable = info.kind !== 'closed' || !!selected.stateRequirements?.[s];
                           const isOpen = expandedState === s;
+                          const dotColor = info.kind === 'open' ? Colors.success : info.kind === 'conditional' ? Colors.warning : Colors.error;
+                          const dot = info.kind === 'open' ? '🟢' : info.kind === 'conditional' ? '🟡' : '🔴';
                           return (
                             <TouchableOpacity
                               key={s}
@@ -1962,24 +2128,22 @@ export default function OccupationsScreen() {
                               }}
                               style={[
                                 styles.stateCell,
-                                eligible
+                                info.kind !== 'closed'
                                   ? { backgroundColor: `${STATE_COLORS[s]}18`, borderColor: STATE_COLORS[s], borderWidth: isOpen ? 2 : 1.5 }
-                                  : tappable
-                                    ? { backgroundColor: `${Colors.warning}08`, borderColor: `${Colors.warning}40`, opacity: 0.6 }
-                                    : { opacity: 0.4, backgroundColor: Colors.surfaceRaised },
+                                  : { opacity: 0.4, backgroundColor: Colors.surfaceRaised, borderColor: Colors.border },
                               ]}
                             >
-                              <Text style={[styles.stateCellCode, { color: eligible ? STATE_COLORS[s] : tappable ? Colors.warning : Colors.textMuted }]}>
+                              <Text style={[styles.stateCellCode, { color: info.kind !== 'closed' ? STATE_COLORS[s] : Colors.textMuted }]}>
                                 {s}
                               </Text>
-                              <Text style={[styles.stateCellVisas, { color: eligible ? Colors.textPrimary : Colors.textSecondary }]}>
-                                {visas.length > 0 ? visas.join(' · ') : tappable ? 'Not sponsored' : '—'}
+                              <Text style={[styles.stateCellStatus, { color: dotColor }]} numberOfLines={1}>
+                                {dot} {info.label}
                               </Text>
                               {tappable && (
                                 <Ionicons
-                                  name={isOpen ? 'chevron-up' : eligible ? 'information-circle-outline' : 'alert-circle-outline'}
+                                  name={isOpen ? 'chevron-up' : 'chevron-down'}
                                   size={10}
-                                  color={eligible ? STATE_COLORS[s] : Colors.warning}
+                                  color={info.kind !== 'closed' ? STATE_COLORS[s] : Colors.textMuted}
                                   style={{ marginTop: 2 }}
                                 />
                               )}
@@ -2006,6 +2170,8 @@ export default function OccupationsScreen() {
                           '482': 'Temporary Skill Shortage — Employer-sponsored',
                         };
 
+                        const alertActive = isStateAlertActive(expandedState, selectedVisa);
+
                         return (
                           <View style={[styles.stateReqPanel, { backgroundColor: Colors.surfaceRaised, borderColor: `${col}40` }]}>
                             <View style={[styles.stateReqHeader, { borderBottomColor: Colors.divider }]}>
@@ -2013,7 +2179,23 @@ export default function OccupationsScreen() {
                               <Text style={[styles.stateReqTitle, { color: col }]}>
                                 {expandedState} — Visa Requirements
                               </Text>
+                              <TouchableOpacity
+                                onPress={() => toggleStateAlert(selected, expandedState, selectedVisa)}
+                                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                                style={styles.stateAlertBell}
+                              >
+                                <Ionicons
+                                  name={alertActive ? 'notifications' : 'notifications-outline'}
+                                  size={16}
+                                  color={alertActive ? col : Colors.textMuted}
+                                />
+                              </TouchableOpacity>
                             </View>
+                            <Text style={[styles.stateAlertLabel, { color: Colors.textMuted }]}>
+                              {alertActive
+                                ? `✓ Alerting when ${expandedState} opens rounds for this occupation`
+                                : `Alert me when ${expandedState} opens rounds for this occupation`}
+                            </Text>
 
                             {/* Visa type tabs */}
                             <View style={[styles.visaTabs, { borderBottomColor: Colors.divider }]}>
@@ -2108,6 +2290,16 @@ export default function OccupationsScreen() {
                                   );
                                 })()}
 
+                                {/* Free tier: standard, state-agnostic overview */}
+                                <View style={[styles.stateReqRow, { borderBottomColor: Colors.divider }]}>
+                                  <Ionicons name="stats-chart-outline" size={13} color={Colors.textMuted} />
+                                  <Text style={[styles.stateReqKey, { color: Colors.textSecondary }]}>Standard minimum</Text>
+                                  <Text style={[styles.stateReqVal, { color: col }]}>65 points</Text>
+                                </View>
+
+                                {/* Pro tier: exact salary/experience/notes/graduate-pathway deep criteria */}
+                                <View style={styles.proGateWrap}>
+                                  <View pointerEvents={profile?.isPremium ? 'auto' : 'none'} style={profile?.isPremium ? undefined : styles.proGateDimmed}>
                                 <View style={styles.stateReqRows}>
                                   {req.minSalary != null ? (
                                       <View style={[styles.stateReqRow, { borderBottomColor: Colors.divider }]}>
@@ -2238,6 +2430,11 @@ export default function OccupationsScreen() {
                                   <Text style={[styles.stateReqLinkText, { color: col }]}>View {expandedState} nomination page</Text>
                                   <Text style={[styles.stateReqUpdated, {color: Colors.textPrimary}]}>Updated {req.updatedAt}</Text>
                                 </TouchableOpacity>
+                                  </View>
+                                  {profile?.isPremium !== true && (
+                                    <StateCriteriaProLock Colors={Colors} onPress={() => setShowPaywall(true)} />
+                                  )}
+                                </View>
                               </>
                             )}
 
@@ -3029,6 +3226,11 @@ const styles = StyleSheet.create({
   },
 
   /* State grid (modal) */
+  stateSummaryCounter: {
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.semiBold,
+    marginBottom: Spacing.sm,
+  },
   stateGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -3043,7 +3245,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   stateCellCode: { fontSize: FontSize.xs, fontWeight: FontWeight.bold, letterSpacing: 0.4 },
-  stateCellVisas: { fontSize: 9, marginTop: 2 },
+  stateCellStatus: { fontSize: 9, marginTop: 2, textAlign: 'center' },
 
   // State requirements panel
   stateReqPanel: {
@@ -3061,6 +3263,49 @@ const styles = StyleSheet.create({
   },
   stateReqDot: { width: 8, height: 8, borderRadius: 4 },
   stateReqTitle: { flex: 1, fontSize: FontSize.xs, fontWeight: FontWeight.bold },
+  stateAlertBell: { padding: 4 },
+  stateAlertLabel: {
+    fontSize: 11,
+    paddingHorizontal: Spacing.md,
+    paddingTop: Spacing.sm,
+  },
+
+  // Pro gate — state nomination deep criteria
+  proGateWrap: { position: 'relative' },
+  proGateDimmed: { opacity: 0.3 },
+  proLockCenter: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: Spacing.md,
+  },
+  proLockCard: {
+    width: '100%',
+    borderRadius: Radius.md,
+    borderWidth: 1,
+    padding: Spacing.md,
+    alignItems: 'center',
+    gap: 6,
+  },
+  proLockTitle: {
+    fontSize: FontSize.sm,
+    fontWeight: FontWeight.bold,
+    textAlign: 'center',
+  },
+  proLockDesc: {
+    fontSize: FontSize.xs,
+    textAlign: 'center',
+  },
+  proLockBtn: {
+    marginTop: 4,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 8,
+    borderRadius: Radius.full,
+  },
+  proLockBtnText: {
+    fontSize: FontSize.xs,
+    fontWeight: FontWeight.bold,
+  },
   closedBadge: {
     backgroundColor: 'rgba(239,68,68,0.15)',
     borderRadius: Radius.full,
