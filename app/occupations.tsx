@@ -95,7 +95,7 @@ const STATE_COLORS: Record<StateCode, string> = {
 
 // ─── State nomination status (freemium discovery hook) ─────────────────────
 
-type StateNominationStatus = 'open' | 'conditional' | 'closed';
+type StateNominationStatus = 'open' | 'conditional' | 'closed' | 'unverified';
 
 interface StateStatusInfo {
   kind: StateNominationStatus;
@@ -118,6 +118,16 @@ function getStateStatusInfo(item: SkilledOccupation, s: StateCode): StateStatusI
 
   const sponsoredVisas = (['190', '491'] as const).filter((v) => reqs?.[v]?.status === 'sponsored');
   if (sponsoredVisas.length === 0) {
+    // Some states' official nomination lists can't be reliably scraped
+    // (blocked/moved/non-machine-readable pages -- see
+    // generate_visa_specific_requirements.py). We show a neutral "Not
+    // Verified" indicator rather than falsely claiming Closed, which would
+    // tell an eligible applicant they have no pathway when we simply don't
+    // know either way.
+    const unverifiedVisas = (['190', '491'] as const).filter((v) => reqs?.[v]?.status === 'unverified');
+    if (unverifiedVisas.length > 0) {
+      return { kind: 'unverified', label: 'Not Verified — Check Official Site', visas: [] };
+    }
     return { kind: 'closed', label: 'Closed', visas: [] };
   }
 
@@ -2278,7 +2288,7 @@ export default function OccupationsScreen() {
                     if (!hasAnyData && !hasSeed) return null;
 
                     const statuses = STATE_CODES.map((s) => ({ s, info: getStateStatusInfo(selected, s) }));
-                    const openCount = statuses.filter((x) => x.info.kind !== 'closed').length;
+                    const openCount = statuses.filter((x) => x.info.kind === 'open' || x.info.kind === 'conditional').length;
 
                     return (
                     <>
@@ -2288,10 +2298,19 @@ export default function OccupationsScreen() {
 
                       <View style={styles.stateGrid}>
                         {statuses.map(({ s, info }) => {
-                          const tappable = info.kind !== 'closed' || !!selected.stateRequirements?.[s];
+                          const tappable = info.kind !== 'closed' && info.kind !== 'unverified' || !!selected.stateRequirements?.[s];
                           const isOpen = expandedState === s;
-                          const dotColor = info.kind === 'open' ? Colors.success : info.kind === 'conditional' ? Colors.warning : Colors.error;
-                          const dot = info.kind === 'open' ? '🟢' : info.kind === 'conditional' ? '🟡' : '🔴';
+                          const dotColor =
+                            info.kind === 'open' ? Colors.success
+                            : info.kind === 'conditional' ? Colors.warning
+                            : info.kind === 'unverified' ? Colors.textMuted
+                            : Colors.error;
+                          const dot =
+                            info.kind === 'open' ? '🟢'
+                            : info.kind === 'conditional' ? '🟡'
+                            : info.kind === 'unverified' ? '⚪'
+                            : '🔴';
+                          const muted = info.kind === 'closed' || info.kind === 'unverified';
                           return (
                             <TouchableOpacity
                               key={s}
@@ -2303,12 +2322,12 @@ export default function OccupationsScreen() {
                               }}
                               style={[
                                 styles.stateCell,
-                                info.kind !== 'closed'
+                                !muted
                                   ? { backgroundColor: `${STATE_COLORS[s]}18`, borderColor: STATE_COLORS[s], borderWidth: isOpen ? 2 : 1.5 }
                                   : { opacity: 0.4, backgroundColor: Colors.surfaceRaised, borderColor: Colors.border },
                               ]}
                             >
-                              <Text style={[styles.stateCellCode, { color: info.kind !== 'closed' ? STATE_COLORS[s] : Colors.textMuted }]}>
+                              <Text style={[styles.stateCellCode, { color: !muted ? STATE_COLORS[s] : Colors.textMuted }]}>
                                 {s}
                               </Text>
                               <Text style={[styles.stateCellStatus, { color: dotColor }]} numberOfLines={1}>
@@ -2318,7 +2337,7 @@ export default function OccupationsScreen() {
                                 <Ionicons
                                   name={isOpen ? 'chevron-up' : 'chevron-down'}
                                   size={10}
-                                  color={info.kind !== 'closed' ? STATE_COLORS[s] : Colors.textMuted}
+                                  color={!muted ? STATE_COLORS[s] : Colors.textMuted}
                                   style={{ marginTop: 2 }}
                                 />
                               )}
@@ -2439,7 +2458,32 @@ export default function OccupationsScreen() {
                                 ) : null}
                               </View>
                             )}
-                            {req && req.status !== 'not_sponsored' && (
+                            {req && req.status === 'unverified' && (
+                              <View style={styles.notSponsoredCard}>
+                                <View style={styles.notSponsoredHeader}>
+                                  <Ionicons name="help-circle" size={18} color={Colors.textMuted} />
+                                  <Text style={[styles.notSponsoredTitle, {color: Colors.textPrimary}]}>
+                                    Not verified — SC {selectedVisa} in {expandedState}
+                                  </Text>
+                                </View>
+                                <Text style={[styles.notSponsoredReason, {color: Colors.textPrimary}]}>
+                                  {req.reason || `${expandedState}'s official occupation list could not be verified from source.`}
+                                </Text>
+                                {req.notes && req.notes.length > 0 && (
+                                  <View style={styles.notSponsoredNotes}>
+                                    {req.notes.map((n: string, i: number) => (
+                                      <Text key={i} style={[styles.notSponsoredNoteText, { color: Colors.textSecondary }]}>• {n}</Text>
+                                    ))}
+                                  </View>
+                                )}
+                                {req.sourceUrl ? (
+                                  <Text style={[styles.notSponsoredSource, {color: Colors.textPrimary}]}>
+                                    Check official source: {req.sourceUrl}
+                                  </Text>
+                                ) : null}
+                              </View>
+                            )}
+                            {req && req.status !== 'not_sponsored' && req.status !== 'unverified' && (
                               <>
                                 <Text style={[styles.visaDescription, { color: Colors.textMuted }]}>
                                   {VISA_DESCRIPTIONS[selectedVisa]}
