@@ -42,7 +42,7 @@ import { subscribeToFeedPoll } from '../utils/notifications-poll';
 import { openExternalUrl } from '../utils/openExternalUrl';
 import { shareReferral, sharePointsCard } from '../utils/growth';
 import { getApprovedNews, NewsItem } from '../utils/newsFeed';
-import { getNewsHeadline, getNewsSourceLabel, getNewsSummaryBullets, getNewsVisaPills, getNewsUrl, requiresVerification } from '../utils/newsDisplay';
+import { getNewsHeadline, getNewsSourceLabel, getNewsSummaryBullets, getNewsVisaPills, getNewsUrl, requiresVerification, isGovAuSource } from '../utils/newsDisplay';
 
 const CALC_STORAGE_KEY = 'calc_input_v1';
 
@@ -247,6 +247,7 @@ export default function TodayScreen() {
   const [streak, setStreak] = useState(0);
   const [calcInput, setCalcInput] = useState<PointsInput | null>(null);
   const [news, setNews] = useState<NewsItem[]>([]);
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -321,6 +322,15 @@ export default function TodayScreen() {
     setTimeout(() => setRefreshing(false), 500);
   }, [loadStatic]);
 
+  const toggleExpanded = useCallback((id: string) => {
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
   const firstName = (profile?.name || '').split(' ')[0] || 'there';
 
   const pointsRing = useMemo(() => {
@@ -353,6 +363,7 @@ export default function TodayScreen() {
     timestamp?: string;
     url?: string;
     needsVerification: boolean;
+    isGovSource: boolean;
   }
 
   const unifiedUpdates = useMemo<UnifiedUpdate[]>(() => {
@@ -367,6 +378,7 @@ export default function TodayScreen() {
       timestamp: item.timestamp,
       url: item.url || item.sourceUrl,
       needsVerification: false,
+      isGovSource: true,
     }));
 
     const newsCards: UnifiedUpdate[] = news.map((item) => ({
@@ -380,6 +392,7 @@ export default function TodayScreen() {
       timestamp: item.createdAt || item.timestamp,
       url: getNewsUrl(item),
       needsVerification: requiresVerification(item),
+      isGovSource: isGovAuSource(item),
     }));
 
     return [...officialCards, ...newsCards]
@@ -479,86 +492,8 @@ export default function TodayScreen() {
           </View>
         </View>
 
-        {/* ─── Latest 3 official updates (news app) ─── */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeaderRow}>
-            <Text style={styles.sectionLabel}>Latest official updates</Text>
-            <Pressable onPress={() => router.push('/(tabs)/notifications' as any)}>
-              <Text style={styles.link}>See all</Text>
-            </Pressable>
-          </View>
-
-          {loading ? (
-            <View style={styles.skeletonCard}>
-              <ActivityIndicator color={Colors.accent} />
-              <Text style={styles.skeletonText}>Loading updates…</Text>
-            </View>
-          ) : unifiedUpdates.length === 0 ? (
-            <View style={styles.emptyCard}>
-              <Ionicons name="notifications-off-outline" size={22} color={Colors.textMuted} />
-              <Text style={styles.emptyTitle}>Nothing yet</Text>
-              <Text style={styles.emptyHelper}>
-                We only surface official laws and directions from Home Affairs and state programs. When one lands, it'll appear here.
-              </Text>
-              <Pressable onPress={() => router.push('/sources' as any)}>
-                <Text style={styles.link}>See our sources →</Text>
-              </Pressable>
-            </View>
-          ) : (
-            unifiedUpdates.map((item) => (
-              <View key={item.id} style={styles.feedCard}>
-                <View style={styles.feedBadgeRow}>
-                  <View style={styles.feedBadge}>
-                    <Text style={styles.feedBadgeText}>{item.badge}</Text>
-                  </View>
-                  {item.needsVerification ? (
-                    <View style={styles.verifyBadge}>
-                      <Text style={styles.verifyBadgeText}>⚠ Unverified source</Text>
-                    </View>
-                  ) : null}
-                </View>
-                <Text style={styles.feedTitle} numberOfLines={3}>{item.headline}</Text>
-                <Text style={styles.feedSource}>{item.sourceLabel}</Text>
-
-                {item.bullets.length > 0 ? (
-                  item.bullets.map((b) => (
-                    <View key={b.label} style={styles.bulletRow}>
-                      <Text style={styles.bulletLabel}>{b.label}: </Text>
-                      <Text style={styles.feedBody}>{b.text}</Text>
-                    </View>
-                  ))
-                ) : item.body ? (
-                  <Text style={styles.feedBody} numberOfLines={2}>{item.body}</Text>
-                ) : null}
-
-                {item.visaPills.length > 0 ? (
-                  <View style={styles.pillRow}>
-                    {item.visaPills.map((v) => (
-                      <View key={v} style={styles.visaPill}>
-                        <Text style={styles.visaPillText}>{v}</Text>
-                      </View>
-                    ))}
-                  </View>
-                ) : null}
-
-                <View style={styles.feedFooterRow}>
-                  <Text style={styles.feedMeta}>{timeAgo(item.timestamp)}</Text>
-                  {item.url ? (
-                    <Pressable onPress={() => void openExternalUrl(item.url!)}>
-                      <Text style={styles.readMoreLink}>Read full article ↗</Text>
-                    </Pressable>
-                  ) : (
-                    <Pressable onPress={() => router.push('/(tabs)/notifications' as any)}>
-                      <Text style={styles.readMoreLink}>View details ↗</Text>
-                    </Pressable>
-                  )}
-                </View>
-              </View>
-            ))
-          )}
-        </View>
-
-        {/* ─── Quick actions (Apple HIG grid) ─── */}
+        {/* ─── Quick actions (Apple HIG grid) — moved above updates so the ─── */}
+        {/* grid is reachable without scrolling past the news feed.          */}
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>Quick actions</Text>
           <View style={styles.quickGrid}>
@@ -605,6 +540,99 @@ export default function TodayScreen() {
               onPress={() => router.push('/sources' as any)}
             />
           </View>
+        </View>
+
+        {/* ─── Latest updates (compact feed) ─── */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeaderRow}>
+            <Text style={styles.sectionLabel}>Latest official updates</Text>
+            <Pressable onPress={() => router.push('/(tabs)/notifications' as any)}>
+              <Text style={styles.link}>See all</Text>
+            </Pressable>
+          </View>
+
+          {loading ? (
+            <View style={styles.skeletonCard}>
+              <ActivityIndicator color={Colors.accent} />
+              <Text style={styles.skeletonText}>Loading updates…</Text>
+            </View>
+          ) : unifiedUpdates.length === 0 ? (
+            <View style={styles.emptyCard}>
+              <Ionicons name="notifications-off-outline" size={22} color={Colors.textMuted} />
+              <Text style={styles.emptyTitle}>Nothing yet</Text>
+              <Text style={styles.emptyHelper}>
+                We only surface official laws and directions from Home Affairs and state programs. When one lands, it'll appear here.
+              </Text>
+              <Pressable onPress={() => router.push('/sources' as any)}>
+                <Text style={styles.link}>See our sources →</Text>
+              </Pressable>
+            </View>
+          ) : (
+            unifiedUpdates.map((item) => {
+              const expanded = expandedIds.has(item.id);
+              const [firstBullet, ...restBullets] = item.bullets;
+              return (
+                <View key={item.id} style={styles.feedCard}>
+                  <View style={styles.feedBadgeRow}>
+                    <View style={styles.feedBadge}>
+                      <Text style={styles.feedBadgeText}>{item.badge}</Text>
+                    </View>
+                    <View style={item.isGovSource ? styles.officialBadge : styles.mediaBadge}>
+                      <Text style={item.isGovSource ? styles.officialBadgeText : styles.mediaBadgeText}>
+                        {item.isGovSource ? '✓ Official Notice' : 'Media Report'}
+                      </Text>
+                    </View>
+                  </View>
+                  <Text style={styles.feedTitle} numberOfLines={2}>{item.headline}</Text>
+
+                  {item.visaPills.length > 0 ? (
+                    <View style={styles.pillRow}>
+                      {item.visaPills.map((v) => (
+                        <View key={v} style={styles.visaPill}>
+                          <Text style={styles.visaPillText}>{v}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  ) : null}
+
+                  {firstBullet ? (
+                    <View style={styles.bulletRow}>
+                      <Text style={styles.bulletLabel}>{firstBullet.label}: </Text>
+                      <Text style={styles.feedBody} numberOfLines={2}>{firstBullet.text}</Text>
+                    </View>
+                  ) : item.body ? (
+                    <Text style={styles.feedBody} numberOfLines={2}>{item.body}</Text>
+                  ) : null}
+
+                  {expanded && restBullets.map((b) => (
+                    <View key={b.label} style={styles.bulletRow}>
+                      <Text style={styles.bulletLabel}>{b.label}: </Text>
+                      <Text style={styles.feedBody}>{b.text}</Text>
+                    </View>
+                  ))}
+
+                  {restBullets.length > 0 ? (
+                    <Pressable onPress={() => toggleExpanded(item.id)} hitSlop={8}>
+                      <Text style={styles.showMoreLink}>{expanded ? 'Show less ︿' : 'Show more ⌄'}</Text>
+                    </Pressable>
+                  ) : null}
+
+                  <View style={styles.feedFooterRow}>
+                    <Text style={styles.feedMeta}>{item.sourceLabel} · {timeAgo(item.timestamp)}</Text>
+                    {item.url ? (
+                      <Pressable onPress={() => void openExternalUrl(item.url!)}>
+                        <Text style={styles.readMoreLink}>Read full article ↗</Text>
+                      </Pressable>
+                    ) : (
+                      <Pressable onPress={() => router.push('/(tabs)/notifications' as any)}>
+                        <Text style={styles.readMoreLink}>View details ↗</Text>
+                      </Pressable>
+                    )}
+                  </View>
+                </View>
+              );
+            })
+          )}
         </View>
 
         {/* ─── Trust footnote ─── */}
@@ -762,16 +790,27 @@ function makeStyles(Colors: ReturnType<typeof useColors>) {
     feedBody: { color: Colors.textSecondary, fontSize: FontSize.sm, marginTop: 4 },
     feedMeta: { color: Colors.textMuted, fontSize: FontSize.xs, marginTop: 6 },
     feedBadgeRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-    verifyBadge: {
+    officialBadge: {
       alignSelf: 'flex-start',
-      backgroundColor: '#FEF3C7',
+      backgroundColor: '#DCFCE7',
       paddingHorizontal: Spacing.sm,
       paddingVertical: 2,
       borderRadius: Radius.full,
       marginBottom: 6,
     },
-    verifyBadgeText: { color: '#92400E', fontSize: FontSize.xs, fontWeight: FontWeight.semiBold },
-    feedSource: { color: Colors.textMuted, fontSize: FontSize.xs, marginTop: 2, marginBottom: 4 },
+    officialBadgeText: { color: '#15803D', fontSize: FontSize.xs, fontWeight: FontWeight.semiBold },
+    mediaBadge: {
+      alignSelf: 'flex-start',
+      backgroundColor: Colors.surfaceRaised,
+      borderColor: Colors.border,
+      borderWidth: 1,
+      paddingHorizontal: Spacing.sm,
+      paddingVertical: 2,
+      borderRadius: Radius.full,
+      marginBottom: 6,
+    },
+    mediaBadgeText: { color: Colors.textMuted, fontSize: FontSize.xs, fontWeight: FontWeight.semiBold },
+    showMoreLink: { color: Colors.accent, fontSize: FontSize.xs, fontWeight: FontWeight.semiBold, marginTop: 4 },
     bulletRow: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 4 },
     bulletLabel: { color: Colors.textPrimary, fontSize: FontSize.sm, fontWeight: FontWeight.semiBold },
     pillRow: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 8, gap: 6 },

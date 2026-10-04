@@ -89,3 +89,15 @@ export function getNewsUrl(item: NewsItem): string | undefined {
 export function requiresVerification(item: NewsItem): boolean {
   return Boolean((item as any).requires_verification) && !(item as any).is_official;
 }
+
+/**
+ * True only for genuine .gov.au (or is_official-flagged) sources — reserved
+ * for the green "✓ Official Notice" badge. Everything else (media, blogs)
+ * gets the neutral "Media Report" / "Industry Update" badge instead of a
+ * scary "unverified" warning.
+ */
+export function isGovAuSource(item: NewsItem): boolean {
+  if ((item as any).is_official) return true;
+  const host = hostnameOf(item.sourceUrl || item.url);
+  return Boolean(host && host.endsWith('.gov.au'));
+}
