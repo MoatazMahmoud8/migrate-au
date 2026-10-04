@@ -668,5 +668,5 @@ export async function getUnreadCount(): Promise<number> {
     .collection('notifications')
     .limit(30)
     .get();
-  return snap.docs.filter(doc => !readIds.has(doc.id)).length;
+  return snap.docs.filter(doc => isNotificationVisible(doc.data()) && !readIds.has(doc.id)).length;
 }
