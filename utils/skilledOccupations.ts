@@ -210,7 +210,7 @@ async function writeMergedOccupationsCache(snapshot: OccupationsSnapshot): Promi
  *  3. Cached skilled-occupations (422, federal lists only)
  *  4. Bundled data (422, federal lists only)
  */
-async function getCachedSkilledOccupations(): Promise<OccupationsSnapshot> {
+export async function getCachedSkilledOccupations(): Promise<OccupationsSnapshot> {
   // Try merged database first (richest)
   const mergedCached = await readMergedOccupationsCache();
   if (mergedCached && !isLikelyStaleSnapshot(mergedCached)) return mergedCached;

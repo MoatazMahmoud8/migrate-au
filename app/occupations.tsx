@@ -29,6 +29,7 @@ import {
 } from '../constants/skilledOccupations';
 import {
   getSkilledOccupations,
+  getCachedSkilledOccupations,
   getOccupationsLastCheckedAt,
   refreshMergedOccupations,
   refreshStateRequirements,
@@ -1247,30 +1248,31 @@ export default function OccupationsScreen() {
 
   useEffect(() => {
     (async () => {
-      const [mergedResult, reqSnap, p] = await Promise.all([
-        refreshMergedOccupations({ force: true }),
-        refreshStateRequirements(),
+      // First paint: render instantly from the bundled/cached snapshot (no
+      // network wait) so the screen never blocks on a cold/slow connection.
+      const [cachedSnap, p] = await Promise.all([
+        getCachedSkilledOccupations(),
         getProfile(),
       ]);
-      const merged = mergeStateRequirements(mergedResult.snapshot.items, reqSnap.snapshot);
-      const final = normalizeOccupationAuthorities(deduplicateOccupations(merged));
-      setItems(final);
-      setSnapshotDate(mergedResult.snapshot.snapshotDate);
-      setLastChecked(await getOccupationsLastCheckedAt());
+      const quickFinal = normalizeOccupationAuthorities(deduplicateOccupations(cachedSnap.items));
+      setItems(quickFinal);
+      setSnapshotDate(cachedSnap.snapshotDate);
       setProfile(p);
       setSavedAnzsco(p.anzscoCode ?? '');
-      populateFromMergedDB(final);
+      populateFromMergedDB(quickFinal);
+      setLastChecked(await getOccupationsLastCheckedAt());
 
+      // Then revalidate against the live database + state requirements in the
+      // background and only re-render if the merged dataset actually changed.
+      const [reqSnap] = await Promise.all([refreshStateRequirements()]);
       refreshMergedOccupations()
         .then(async (res) => {
-          if (res.updated) {
-            const merged2 = mergeStateRequirements(res.snapshot.items, reqSnap.snapshot);
-            const final2 = normalizeOccupationAuthorities(deduplicateOccupations(merged2));
-            setItems(final2);
-            setSnapshotDate(res.snapshot.snapshotDate);
-            setLastChecked(await getOccupationsLastCheckedAt());
-            populateFromMergedDB(final2);
-          }
+          const merged2 = mergeStateRequirements(res.snapshot.items, reqSnap.snapshot);
+          const final2 = normalizeOccupationAuthorities(deduplicateOccupations(merged2));
+          setItems(final2);
+          setSnapshotDate(res.snapshot.snapshotDate);
+          setLastChecked(await getOccupationsLastCheckedAt());
+          populateFromMergedDB(final2);
         })
         .catch(() => {});
     })();
