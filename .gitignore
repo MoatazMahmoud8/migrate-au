@@ -44,3 +44,5 @@ expo-env.d.ts
 # @end expo-clibackend/__pycache__/
 backend/scrapers/__pycache__/
 backend/.venv/
+__pycache__/
+*.pyc
