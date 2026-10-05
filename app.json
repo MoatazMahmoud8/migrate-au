@@ -68,7 +68,10 @@
           },
           "android": {
             "googleServicesFile": "./google-services.json",
-            "enableHermes": true
+            "enableHermes": true,
+            "enableMinifyInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true,
+            "extraProguardRules": "# Sentry crash reporting\n-keep class io.sentry.** { *; }\n-dontwarn io.sentry.**\n# RevenueCat in-app purchases\n-keep class com.revenuecat.purchases.** { *; }\n-dontwarn com.revenuecat.purchases.**\n# Firebase (messaging / auth / firestore)\n-keep class com.google.firebase.** { *; }\n-dontwarn com.google.firebase.**\n# React Native Hermes / Reanimated (already partly covered by RN defaults)\n-keep class com.swmansion.reanimated.** { *; }\n-keep class com.facebook.react.turbomodule.** { *; }\n-keep class com.facebook.hermes.unicode.** { *; }\n-keep class com.facebook.jni.** { *; }\n"
           }
         }
       ],
