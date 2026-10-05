@@ -111,7 +111,7 @@ function getStateStatusInfo(item: SkilledOccupation, s: StateCode): StateStatusI
 
   if (!reqs) {
     if (seedVisas.length > 0) {
-      return { kind: 'open', label: `Open (${seedVisas.join(' / ')})`, visas: seedVisas };
+      return { kind: 'open', label: `Eligible for EOI (${seedVisas.join(' / ')})`, visas: seedVisas };
     }
     return { kind: 'closed', label: 'Not Eligible', visas: [] };
   }
@@ -152,7 +152,7 @@ function getStateStatusInfo(item: SkilledOccupation, s: StateCode): StateStatusI
     return { kind: 'conditional', label: reasons.join(' \u00b7 '), visas: sponsoredVisas };
   }
 
-  return { kind: 'open', label: `Open (${sponsoredVisas.join(' / ')})`, visas: sponsoredVisas };
+  return { kind: 'open', label: `Eligible for EOI (${sponsoredVisas.join(' / ')})`, visas: sponsoredVisas };
 }
 
 /** First state that's Open, else first Conditional, else null (all closed). */
@@ -2293,7 +2293,10 @@ export default function OccupationsScreen() {
                     return (
                     <>
                       <Text style={[styles.stateSummaryCounter, { color: openCount > 0 ? Colors.success : Colors.textMuted }]}>
-                        Available for nomination in {openCount} of {STATE_CODES.length} states
+                        Eligible for EOI in {openCount} of {STATE_CODES.length} states
+                      </Text>
+                      <Text style={[styles.stateSummaryHelper, { color: Colors.textMuted }]}>
+                        "On Skills List" means an occupation can be included in a SkillSelect Expression of Interest (EOI) — it isn't an immediate visa grant or direct lodgement.
                       </Text>
 
                       <View style={styles.stateGrid}>
@@ -2503,7 +2506,7 @@ export default function OccupationsScreen() {
                                         <View style={[styles.visaMetaPill, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
                                           <Ionicons name="card-outline" size={11} color={col} />
                                           <Text style={[styles.visaMetaText, { color: col }]}>
-                                            Federal visa fee: {meta.cost}
+                                            Federal visa fee (on invitation): {meta.cost}
                                           </Text>
                                         </View>
                                       )}
@@ -2511,7 +2514,7 @@ export default function OccupationsScreen() {
                                         <View style={[styles.visaMetaPill, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
                                           <Ionicons name="checkmark-circle-outline" size={11} color={Colors.success} />
                                           <Text style={[styles.visaMetaText, { color: Colors.success }]}>
-                                            State nomination: Free
+                                            State nomination (endorsement): Free
                                           </Text>
                                         </View>
                                       )}
@@ -2534,6 +2537,28 @@ export default function OccupationsScreen() {
                                     </View>
                                   );
                                 })()}
+
+                                {/* Clarifies the two-step fee/role split: state nomination is a
+                                    free, points-boosting endorsement step; the Department of Home
+                                    Affairs only charges (and grants) the visa itself, after
+                                    invitation. Prevents users from thinking the "Federal visa fee"
+                                    pill above is a state application cost. */}
+                                {(selectedVisa === '190' || selectedVisa === '491') && (
+                                  <Text style={[styles.feeClarificationNote, { color: Colors.textMuted }]}>
+                                    State nomination gives extra points toward an invitation. The final visa application and fee are lodged with the Department of Home Affairs.
+                                  </Text>
+                                )}
+
+                                {/* Persistent reminder: being on a state's skills list is not
+                                    itself an invitation or a visa grant — an EOI must still be
+                                    lodged and selected. */}
+                                {(selectedVisa === '190' || selectedVisa === '491') && (
+                                  <View style={[styles.invitationBanner, { borderColor: `${Colors.warning}55`, backgroundColor: `${Colors.warning}14` }]}>
+                                    <Text style={[styles.invitationBannerText, { color: Colors.textPrimary }]}>
+                                      ⚠️ Invitation Required: Lodge a SkillSelect EOI and meet state criteria to be invited before you can apply.
+                                    </Text>
+                                  </View>
+                                )}
 
                                 {/* Free tier: standard, state-agnostic overview */}
                                 <View style={[styles.stateReqRow, { borderBottomColor: Colors.divider }]}>
@@ -3390,6 +3415,11 @@ const styles = StyleSheet.create({
   stateSummaryCounter: {
     fontSize: FontSize.sm,
     fontWeight: FontWeight.semiBold,
+    marginBottom: 2,
+  },
+  stateSummaryHelper: {
+    fontSize: 11,
+    lineHeight: 15,
     marginBottom: Spacing.sm,
   },
   stateGrid: {
@@ -3546,6 +3576,25 @@ const styles = StyleSheet.create({
   },
   visaMetaText: {
     fontSize: 10,
+    fontWeight: '600',
+  },
+  feeClarificationNote: {
+    fontSize: 11,
+    lineHeight: 15,
+    fontStyle: 'italic',
+    paddingHorizontal: Spacing.md,
+    paddingBottom: Spacing.sm,
+  },
+  invitationBanner: {
+    marginHorizontal: Spacing.md,
+    marginBottom: Spacing.sm,
+    padding: Spacing.sm,
+    borderRadius: Radius.md,
+    borderWidth: 1,
+  },
+  invitationBannerText: {
+    fontSize: 11,
+    lineHeight: 15,
     fontWeight: '600',
   },
 
