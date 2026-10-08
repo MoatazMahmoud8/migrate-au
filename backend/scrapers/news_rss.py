@@ -74,6 +74,11 @@ HIGH_INTENT_KEYWORDS = [
     "migration intake", "immigration intake", "visa cap",
     "migration cap", "permanent migration", "migration level",
     "net migration", "migration cut", "migration slash",
+    # Migration policy debate (parties/government proposing or changing migration settings)
+    "migration polic", "immigration polic", "migration plan",
+    "immigration plan", "migration pledge", "immigration pledge",
+    "migration target", "immigration target", "migration reform",
+    "immigration reform", "migration middle road",
 ]
 
 # Secondary keywords for scoring (but not required)
@@ -168,7 +173,17 @@ def _hash_article(title: str, url: str) -> str:
     return hashlib.sha256(normalized).hexdigest()[:24]
 
 
-def _is_australian(title: str, desc: str) -> bool:
+# Feeds that are already scoped to Australian news/politics sections — an
+# article from these doesn't need an explicit "Australia"/state-name marker
+# in its title or description to be considered Australian-focused.
+AU_SCOPED_FEEDS = [
+    "theguardian.com/australia-news",
+    "sbs.com.au",
+    "abc.net.au",
+]
+
+
+def _is_australian(title: str, desc: str, url: str = "") -> bool:
     """Return True only if the article is clearly about Australia."""
     text = (title + " " + desc).lower()
     # Reject if it contains exclusion terms
@@ -178,6 +193,9 @@ def _is_australian(title: str, desc: str) -> bool:
             return False
     # Accept if it mentions Australian markers
     if any(marker in text for marker in AUSTRALIA_MARKERS):
+        return True
+    # Accept if the source feed itself is already Australia-scoped
+    if any(scoped in url for scoped in AU_SCOPED_FEEDS):
         return True
     return False
 
@@ -328,7 +346,7 @@ def scrape(db) -> list[dict]:
                     continue
 
                 score = _relevance_score(title, desc)
-                if title and link and score >= 2 and _is_australian(title, desc):
+                if title and link and score >= 2 and _is_australian(title, desc, url):
                     # Reject guide/evergreen blog content
                     if _is_guide_content(title):
                         print(f"  [news_rss] ❌ GUIDE rejected: {title[:60]}...")
