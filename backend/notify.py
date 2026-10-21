@@ -614,7 +614,12 @@ def queue_news_item(db, notification: dict) -> bool:
 
         body_text = notification.get("body") or structured_summary.get("whatChanged") or ""
         needs_manual_review = notification.get("needs_manual_review", False)
-        auto_status = "pending" if needs_manual_review else "approved"
+        is_agent_relevant = notification.get("is_agent_relevant", True)
+        # Gate auto-publish on BOTH signals: the enricher's own content-quality
+        # flag (needs_manual_review) AND its relevance flag (is_agent_relevant).
+        # A clean structured summary for an irrelevant article should still be
+        # reviewed by a human before it reaches the live feed.
+        auto_status = "approved" if (not needs_manual_review and is_agent_relevant) else "pending"
 
         doc_data = {
             "id": news_id,

@@ -199,6 +199,8 @@ def run_live(limit: int, single_url, count: int = 1):
         notification = {
             "source_id": "news_rss_test",
             "headline": enriched["headline"],
+            "headline_ar": enriched.get("headline_ar", ""),
+            "sourceAttribution": enriched.get("sourceAttribution", ""),
             "category": enriched["category"],
             "impactedVisas": enriched["impactedVisas"],
             "effectiveDate": enriched["effectiveDate"],
