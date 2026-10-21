@@ -658,6 +658,27 @@ def queue_news_item(db, notification: dict) -> bool:
             doc_data["reviewedBy"] = "scraper_automation"
 
         ref.create(doc_data)
+
+        # Auto-published items still need an actual push notification — writing
+        # to news_items only updates the in-app feed that users see on pull/open.
+        # fcm_triggers/{docId} is the same collection the existing admin "Approve"
+        # flow (approveNotification Cloud Function) writes to; processFcmTrigger
+        # (already deployed) watches it and sends a real FCM push to the
+        # 'au_migration' topic every device subscribes to on first launch.
+        if auto_status == "approved":
+            try:
+                db.collection("fcm_triggers").document(f"news_{news_id}").create({
+                    "title": doc_data["headline"][:150],
+                    "body": body_text[:500],
+                    "route": "/(tabs)/notifications",
+                    "articleUrl": notification.get("url", ""),
+                    "topics": ["au_migration"],
+                    "createdAt": created_at,
+                })
+            except Exception as fcm_err:
+                # Never let a push-trigger failure roll back the news item itself.
+                print(f"  [news] WARN: failed to queue FCM push trigger: {fcm_err}")
+
         print(f"  [news] {'Auto-published' if auto_status == 'approved' else 'Queued'} news item: {news_id}")
         return True
     except Exception as e:
