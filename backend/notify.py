@@ -564,12 +564,21 @@ def queue_batch(db, notifications: list[dict]) -> dict:
 
 
 def queue_news_item(db, notification: dict) -> bool:
-    """Queue a news/media item into news_items for admin approval.
+    """Write a news/media item into news_items.
 
     This is SEPARATE from queue_batch (laws & directions). News items are
     media articles about migration — they are useful for retention but must
     never be presented as official law/direction. Personal stories and
     opinion pieces are still rejected here using the same markers.
+
+    Auto-publish: items the enricher could summarise from real article
+    content (needs_manual_review=False) are written with status "approved"
+    so they appear in the live app news feed immediately, skipping the
+    manual admin gate. Items the enricher could NOT get real content for
+    (needs_manual_review=True) still land as "pending" so an admin verifies
+    them before publishing — auto-publishing unverified/low-quality content
+    would defeat the point of human review. Admins can still revoke any
+    already-approved item (see revoke action in the admin dashboard).
     """
     text = _text_blob(notification)
     for marker in PERSONAL_OR_STORY_MARKERS:
@@ -604,8 +613,10 @@ def queue_news_item(db, notification: dict) -> bool:
             }
 
         body_text = notification.get("body") or structured_summary.get("whatChanged") or ""
+        needs_manual_review = notification.get("needs_manual_review", False)
+        auto_status = "pending" if needs_manual_review else "approved"
 
-        ref.create({
+        doc_data = {
             "id": news_id,
             # Legacy flat fields — kept for backward compatibility with older UI.
             "title": notification.get("title", notification.get("headline", ""))[:200],
@@ -614,12 +625,18 @@ def queue_news_item(db, notification: dict) -> bool:
             "url": notification.get("url", ""),
             "source": notification.get("source_id", "news_rss"),
             "dedupKey": dedup_raw,
-            "status": "pending",
+            "status": auto_status,
             "createdAt": created_at,
             "timestamp": created_at,
             # Agent-grade structured fields used by the Action Center.
             "headline": notification.get("headline") or notification.get("title", "")[:200],
+            "headline_ar": notification.get("headline_ar", ""),
             "category": notification.get("category", "News"),
+            # Compliance tag: separates media-sourced content from official
+            # .gov.au legal alerts for Play Store policy purposes. Distinct
+            # from "category" (the topic badge like "SkillSelect"/"Visa Fees").
+            "contentType": "media_news",
+            "sourceAttribution": notification.get("sourceAttribution", ""),
             "impactedVisas": notification.get("impactedVisas", []),
             "effectiveDate": notification.get("effectiveDate", "Immediate"),
             "summary": structured_summary,
@@ -629,9 +646,14 @@ def queue_news_item(db, notification: dict) -> bool:
             "requires_verification": notification.get("requires_verification", True),
             "references_official_instrument": notification.get("references_official_instrument", False),
             "source_tier": notification.get("source_tier", "tier2"),
-            "needs_manual_review": notification.get("needs_manual_review", False),
-        })
-        print(f"  [news] Queued news item: {news_id}")
+            "needs_manual_review": needs_manual_review,
+        }
+        if auto_status == "approved":
+            doc_data["reviewedAt"] = created_at
+            doc_data["reviewedBy"] = "scraper_automation"
+
+        ref.create(doc_data)
+        print(f"  [news] {'Auto-published' if auto_status == 'approved' else 'Queued'} news item: {news_id}")
         return True
     except Exception as e:
         print(f"  [news] Failed to queue news item: {e}")

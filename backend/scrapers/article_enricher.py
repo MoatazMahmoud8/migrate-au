@@ -20,7 +20,50 @@ import re
 import requests
 from bs4 import BeautifulSoup
 
+from urllib.parse import urlsplit
+
 from scrapers.source_classifier import classify as classify_source
+
+# Deterministic publisher display names for the "Source: X" attribution line.
+# Computed from the domain directly (never trusted to the LLM) so the
+# disclaimer is always accurate even if the model hallucinates.
+PUBLISHER_NAMES = {
+    "theguardian.com": "The Guardian Australia",
+    "sbs.com.au": "SBS News",
+    "abc.net.au": "ABC News",
+    "visaenvoy.com": "VisaEnvoy",
+    "pathwaytoaus.com": "Pathway to Australia",
+    "seekvisa.com.au": "SeekVisa",
+    "iscah.com": "Iscah Migration Newsletter",
+    "smartvisaguide.com": "Smart Visa Guide",
+    "australiavisa.com": "Australia Visa",
+    "migration.sa.gov.au": "Migration SA",
+    "immi.homeaffairs.gov.au": "Department of Home Affairs",
+    "homeaffairs.gov.au": "Department of Home Affairs",
+}
+
+
+def _publisher_name(url: str) -> str:
+    """Return a clean, human-readable publisher name for attribution."""
+    try:
+        host = urlsplit((url or "").strip()).netloc.lower()
+        host = host[4:] if host.startswith("www.") else host
+    except Exception:
+        host = ""
+    if not host:
+        return "Unknown source"
+    if host in PUBLISHER_NAMES:
+        return PUBLISHER_NAMES[host]
+    for domain, name in PUBLISHER_NAMES.items():
+        if host.endswith("." + domain):
+            return name
+    # Fallback: titleize the registrable domain, e.g. "example.com" -> "Example"
+    base = host.split(".")[0]
+    return base.replace("-", " ").title()
+
+
+def _source_attribution(url: str) -> str:
+    return f"Source: {_publisher_name(url)} • Published for general news information."
 
 try:
     import google.generativeai as genai
@@ -136,28 +179,33 @@ def _fetch_article(url: str) -> str | None:
         return None
 
 
-STRUCTURED_SCHEMA_PROMPT = """You are an AI migration policy analyst generating a strict JSON brief for an Australian migration admin dashboard.
+STRUCTURED_SCHEMA_PROMPT = """You are an AI migration policy analyst generating a strict JSON brief for an Australian migration admin dashboard and public news feed.
 
 TASK: Read the article below and output ONLY a JSON object (no markdown fences, no commentary) matching EXACTLY this schema:
 
 {{
-  "headline": "Concise, agent-level title (max 120 chars)",
+  "headline": "Clear, professional title (max 120 chars) in English",
+  "headline_ar": "Professional Arabic translation of the headline (max 160 chars)",
   "category": "Visa Conditions | Fees | State Nomination | Legislation | Policy",
   "impactedVisas": ["<subclass numbers mentioned, e.g. 500, 482>"],
   "effectiveDate": "YYYY-MM-DD or 'Immediate' if no date is given",
   "summary": {{
-    "whatChanged": "Precise regulatory/policy amendment or news event",
-    "whoIsAffected": "Specific subclasses, applicants, or sponsors affected",
-    "actionRequired": "Operational advice or deadline for affected people"
+    "whatChanged": "Bullet-point style, one crisp professional sentence stating the actual migration-related change or event",
+    "whoIsAffected": "Bullet-point style, one crisp professional sentence naming the affected visas, states, or applicant groups",
+    "actionRequired": "Bullet-point style, one crisp professional sentence on the timeline or next step, or 'No action required.' if purely informational"
   }},
   "is_agent_relevant": true
 }}
 
-RULES:
+TONE & STYLE RULES (strict):
+- Professional, neutral, factual register only — this is official-adjacent public communication, not social media.
+- NEVER use casual slang, emoji, hype words ("huge", "breaking!!!" "slams"), clickbait phrasing, or exclamation marks.
+- Each of the three "summary" fields must read as a single clear, complete, professional sentence (bullet-point style) — not a sprawling paragraph.
 - "category" MUST be exactly one of the 5 listed values.
 - "impactedVisas" MUST be an array of strings (subclass numbers only, no "subclass" word). Use [] if none mentioned.
 - Set "is_agent_relevant" to false if the article is not actually about Australian migration policy/visas (e.g. unrelated news that slipped through).
 - Never include newsletter prompts, "subscribe", "appeared first on", or other boilerplate in any field.
+- "headline_ar" must be a faithful, professional Modern Standard Arabic translation of "headline" — not a literal word-for-word gloss.
 - Output valid JSON only.
 
 SOURCE TIER: {tier_note}
@@ -211,7 +259,13 @@ def _generate_structured_summary(title: str, content: str, is_official: bool) ->
         response = model.generate_content(
             prompt,
             generation_config=genai.types.GenerationConfig(
-                max_output_tokens=2048,
+                # gemini-2.5-flash spends a hidden "thinking" budget out of
+                # max_output_tokens before writing visible text. 2048 was
+                # fully consumed by thinking on real articles, truncating
+                # the response to empty (finish_reason=MAX_TOKENS) and
+                # silently forcing every item into needs_manual_review.
+                # 8192 leaves enough room for both.
+                max_output_tokens=8192,
                 temperature=0.1,
             ),
         )
@@ -231,6 +285,9 @@ def _generate_structured_summary(title: str, content: str, is_official: bool) ->
 
         # Clean any junk that slipped through into text fields.
         data["headline"] = _clean_junk_text(str(data.get("headline", "")))[:120]
+        # headline_ar is optional (older prompt versions / model hiccups) —
+        # never block an otherwise-valid structured summary on its absence.
+        data["headline_ar"] = _clean_junk_text(str(data.get("headline_ar", "") or ""))[:200]
         summary["whatChanged"] = _clean_junk_text(str(summary.get("whatChanged", "")))
         summary["whoIsAffected"] = _clean_junk_text(str(summary.get("whoIsAffected", "")))
         summary["actionRequired"] = _clean_junk_text(str(summary.get("actionRequired", "")))
@@ -298,12 +355,14 @@ def enrich_structured(title: str, rss_desc: str, url: str) -> dict:
         return {
             **tier_info,
             "headline": structured["headline"] or title,
+            "headline_ar": structured.get("headline_ar") or "",
             "category": structured["category"],
             "impactedVisas": structured["impactedVisas"],
             "effectiveDate": structured["effectiveDate"],
             "summary": structured["summary"],
             "is_agent_relevant": bool(structured["is_agent_relevant"]),
             "body": _finalize_sentences(body_source),
+            "sourceAttribution": _source_attribution(url),
             "needs_manual_review": False,
         }
 
@@ -321,6 +380,7 @@ def enrich_structured(title: str, rss_desc: str, url: str) -> dict:
             return {
                 **tier_info,
                 "headline": title,
+                "headline_ar": "",
                 "category": "Policy",
                 "impactedVisas": [],
                 "effectiveDate": "Immediate",
@@ -331,6 +391,7 @@ def enrich_structured(title: str, rss_desc: str, url: str) -> dict:
                 },
                 "is_agent_relevant": True,
                 "body": _finalize_sentences(excerpt),
+                "sourceAttribution": _source_attribution(url),
                 "needs_manual_review": True,
             }
 
@@ -342,6 +403,7 @@ def enrich_structured(title: str, rss_desc: str, url: str) -> dict:
     return {
         **tier_info,
         "headline": title,
+        "headline_ar": "",
         "category": "Policy",
         "impactedVisas": [],
         "effectiveDate": "Immediate",
@@ -352,6 +414,7 @@ def enrich_structured(title: str, rss_desc: str, url: str) -> dict:
         },
         "is_agent_relevant": True,
         "body": "Full article unavailable — review the original source directly before approving.",
+        "sourceAttribution": _source_attribution(url),
         "needs_manual_review": True,
     }
 

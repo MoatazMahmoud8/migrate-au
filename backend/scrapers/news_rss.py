@@ -420,6 +420,8 @@ def scrape(db) -> list[dict]:
             "topic": "au_migration",
             # Structured, agent-grade fields (see article_enricher.enrich_structured)
             "headline": enriched["headline"] or article["title"][:150],
+            "headline_ar": enriched.get("headline_ar", ""),
+            "sourceAttribution": enriched.get("sourceAttribution", ""),
             "category": enriched.get("category") or fallback_category,
             "impactedVisas": enriched.get("impactedVisas", []),
             "effectiveDate": enriched.get("effectiveDate", "Immediate"),
