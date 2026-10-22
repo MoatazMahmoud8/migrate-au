@@ -667,7 +667,10 @@ def queue_news_item(db, notification: dict) -> bool:
         # 'au_migration' topic every device subscribes to on first launch.
         if auto_status == "approved":
             try:
-                db.collection("fcm_triggers").document(f"news_{news_id}").create({
+                # processFcmTrigger (deployed Cloud Function) only sends a real
+                # push if the trigger doc id is prefixed "approval_" — any other
+                # prefix is silently skipped as "not created by admin approval".
+                db.collection("fcm_triggers").document(f"approval_{news_id}_auto").create({
                     "title": doc_data["headline"][:150],
                     "body": body_text[:500],
                     "route": "/(tabs)/notifications",
