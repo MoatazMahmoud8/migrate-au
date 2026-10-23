@@ -64,8 +64,9 @@ HIGH_INTENT_KEYWORDS = [
     "visa fee increase", "visa fee change",
     "home affairs announce", "department announce",
     "migration review", "migration strategy",
-    # Points test changes
-    "points test change", "points requirement", "points update",
+    # Points test (any mention — explainer articles are genuinely useful to
+    # users calculating their own eligibility, not just "change" announcements)
+    "points test", "points test change", "points requirement", "points update",
     # Humanitarian & refugee (policy changes affect many migrants)
     "refugee visa", "refugee intake", "refugee program",
     "humanitarian visa", "humanitarian intake", "humanitarian program",
