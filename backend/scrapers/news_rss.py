@@ -61,7 +61,8 @@ HIGH_INTENT_KEYWORDS = [
     "skilled migration program", "migration program planning",
     # Processing & official changes
     "processing time", "visa processing", "visa grant",
-    "visa fee increase", "visa fee change",
+    "visa fee increase", "visa fee change", "visa change", "visa changes",
+    "visa condition change", "visa rule change", "sudden visa",
     "home affairs announce", "department announce",
     "migration review", "migration strategy",
     # Points test (any mention — explainer articles are genuinely useful to
