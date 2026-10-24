@@ -38,17 +38,29 @@ async function openStoreListing(): Promise<void> {
 }
 
 /**
- * Show the native in-app review prompt if available. Falls back to
- * opening the store listing. Pass `force=true` from a settings row
- * to skip the engagement threshold.
+ * Explicit, user-initiated request (e.g. Profile → "Ask for a rating").
+ *
+ * IMPORTANT: Apple's SKStoreReviewController and Google Play's In-App
+ * Review API are both throttled by the OS itself (e.g. Apple caps the
+ * dialog to ~3 appearances per app per 365 days per account, and may
+ * silently no-op with zero error/signal the rest of the time — this is
+ * by design per Apple's HIG, which explicitly says NOT to wire an
+ * explicit "Rate Us" button to requestReview() for this exact reason).
+ * That silent no-op is why tapping the button could previously appear
+ * to do nothing at all. A manual, explicit tap should always produce a
+ * visible result, so it goes straight to the real store listing.
  */
 export async function askToRate(force = false): Promise<void> {
-  if (!force) {
-    const rated = await AsyncStorage.getItem(RATED_KEY);
-    if (rated) {
-      await openStoreListing();
-      return;
-    }
+  if (force) {
+    await AsyncStorage.setItem(RATED_KEY, '1');
+    await openStoreListing();
+    return;
+  }
+
+  const rated = await AsyncStorage.getItem(RATED_KEY);
+  if (rated) {
+    await openStoreListing();
+    return;
   }
 
   try {
@@ -57,9 +69,11 @@ export async function askToRate(force = false): Promise<void> {
     if (available && hasAction) {
       await StoreReview.requestReview();
       await AsyncStorage.setItem(LAST_PROMPT_KEY, new Date().toISOString());
-      // Native prompt doesn't tell us the outcome — assume positive intent
-      // and don't keep nagging the user.
-      await AsyncStorage.setItem(RATED_KEY, '1');
+      // Native prompt doesn't tell us the outcome, and may have silently
+      // no-op'd due to OS throttling — don't mark as rated here so the
+      // engagement-based auto-prompt can still try again later (subject
+      // to its own cooldown), unlike the old behavior which stopped
+      // asking forever after the very first (possibly invisible) call.
       return;
     }
   } catch {
