@@ -104,7 +104,7 @@ def _briefing_fallback(items: list[dict[str, Any]]) -> dict[str, str]:
         "- No active state nomination changes were detected at the time of this briefing.",
         "",
         "### 3. Fee, Occupation & Employer Sponsorship Changes",
-        "- Check the latest visa fee, skills assessment, and CSOL updates released by official government sources.",
+        "- No fee, occupation, or employer sponsorship changes were detected at the time of this briefing.",
         "",
         "### 4. Smart Applicant Action Steps",
         "1. Confirm your visa subclass and required documents before lodging or updating an Expression of Interest.",
