@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   ScrollView,
   View,
@@ -13,12 +13,16 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants from 'expo-constants';
 import { calculatePoints } from '../../utils/pointsCalculator';
 import { sharePointsCard } from '../../utils/growth';
+import { captureAndShareCard, DEFAULT_SHARE_MESSAGE } from '../../utils/shareCard';
 import { hasExceededLimit, getRemainingUses, incrementUsage } from '../../utils/paywall';
 import { getProfile, saveProfile } from '../../utils/storage';
 import { PaywallModal } from '../../components/PaywallModal';
 import { UsageMeter } from '../../components/UsageMeter';
+import { BrandedFooter } from '../../components/BrandedFooter';
+import { ShareCardHost } from '../../components/ShareCardHost';
 import { PointsInput, VisaSubclass, EnglishLevel } from '../../constants/types';
 import { Colors, Spacing, Radius, FontSize, FontWeight } from '../../constants/theme';
 import { useColors, useTheme } from '../../constants/ThemeContext';
@@ -164,6 +168,17 @@ export default function CalculatorScreen() {
   const [profile, setProfile] = useState<any>(null);
   const [remaining, setRemaining] = useState<number | null>(null);
   const breakdown = calculatePoints(input);
+  const shareCardRef = useRef<View>(null);
+
+  const handleShareCard = async () => {
+    recordEngagement('calculator_share_card');
+    const shared = await captureAndShareCard(shareCardRef, DEFAULT_SHARE_MESSAGE);
+    if (!shared) {
+      // Web / unsupported platform (or capture failed) — fall back to the
+      // existing text-only share so the button never dead-ends.
+      await sharePointsCard({ total: breakdown.total, eligibleThreshold: 65 });
+    }
+  };
 
   // Load profile and usage on mount
   useEffect(() => {
@@ -261,6 +276,32 @@ export default function CalculatorScreen() {
       )}
 
       <ScoreRing score={breakdown.total} eligible={breakdown.likelyEligible} />
+
+      {/* Prominent "Share Result" action — generates a branded snapshot card
+          (off-screen) and launches the native share sheet. */}
+      <TouchableOpacity
+        onPress={handleShareCard}
+        activeOpacity={0.85}
+        accessibilityRole="button"
+        accessibilityLabel="Share your result as an image"
+        style={[styles.shareResultBtn, { backgroundColor: Colors.secondary, shadowColor: Colors.secondary }]}
+      >
+        <Ionicons name="share-social" size={18} color={Colors.primaryDark} />
+        <Text style={[styles.shareResultBtnText, { color: Colors.primaryDark }]}>Share Result</Text>
+      </TouchableOpacity>
+
+      {/* Off-screen snapshot card used for the share flow above (invisible). */}
+      <ShareCardHost
+        ref={shareCardRef}
+        appVersion={Constants.expoConfig?.version}
+        data={{
+          kind: 'points',
+          visaSubclass: input.visaSubclass,
+          total: breakdown.total,
+          eligible: breakdown.likelyEligible,
+          threshold: 65,
+        }}
+      />
 
       {/* Visa Type */}
       <View style={[styles.card, { backgroundColor: Colors.surface, borderColor: Colors.border }]}>
@@ -449,6 +490,9 @@ export default function CalculatorScreen() {
             Share your score
           </Text>
         </TouchableOpacity>
+
+        {/* Branded footer — naturally captured by manual screenshots too. */}
+        <BrandedFooter compact />
       </View>
 
       {/* Gap Filler — Points Improvement Tips */}
@@ -612,6 +656,22 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   prefillBannerText: { fontSize: FontSize.xs, fontWeight: FontWeight.semiBold },
+
+  shareResultBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginHorizontal: Spacing.lg,
+    marginTop: Spacing.md,
+    paddingVertical: 14,
+    borderRadius: Radius.lg,
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
+  },
+  shareResultBtnText: { fontSize: FontSize.md, fontWeight: FontWeight.bold },
 
   card: {
     borderRadius: Radius.xl,

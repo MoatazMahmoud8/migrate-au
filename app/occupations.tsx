@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
   Modal,
   ScrollView,
   Alert,
+  Share,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -53,6 +54,10 @@ import { PaywallModal } from '../components/PaywallModal';
 import { getWatchlistUid } from '../utils/firebaseAuth';
 import { listWatchlist, saveWatchlistItem, removeWatchlistItem, WatchlistItem } from '../utils/watchlist';
 import { BlurView } from 'expo-blur';
+import Constants from 'expo-constants';
+import { captureAndShareCard, DEFAULT_SHARE_MESSAGE } from '../utils/shareCard';
+import { BrandedFooter } from '../components/BrandedFooter';
+import { ShareCardHost } from '../components/ShareCardHost';
 
 type ListFilter = 'All' | SkillList;
 type JurisdictionFilter = 'All' | 'Federal' | StateCode;
@@ -1332,6 +1337,21 @@ export default function OccupationsScreen() {
     return (STATE_CODES as string[]).includes(p) ? (p as StateCode) : 'All';
   });
   const [selected, setSelected] = useState<SkilledOccupation | null>(null);
+  const shareCardRef = useRef<View>(null);
+
+  const handleShareOccupationCard = async (occ: SkilledOccupation, nominationStatusLabel: string, openCount: number, totalCount: number) => {
+    recordEngagement('occupation_share_card');
+    const shared = await captureAndShareCard(shareCardRef, DEFAULT_SHARE_MESSAGE);
+    if (!shared) {
+      // Web / unsupported platform (or capture failed) — fall back to a
+      // text-only share so the button never dead-ends.
+      try {
+        await Share.share({
+          message: `${occ.name} (ANZSCO ${occ.anzsco}) — ${nominationStatusLabel}. Check your pathway on MigrateAU: https://migrateau.app/get`,
+        });
+      } catch {}
+    }
+  };
   const [savedAnzsco, setSavedAnzsco] = useState<string>('');
   const [expandedState, setExpandedState] = useState<StateCode | null>(null);
   const [selectedVisa, setSelectedVisa] = useState<'190' | '491'>('190');
@@ -2299,6 +2319,36 @@ export default function OccupationsScreen() {
                         "On Skills List" means an occupation can be included in a SkillSelect Expression of Interest (EOI) — it isn't an immediate visa grant or direct lodgement.
                       </Text>
 
+                      {/* Prominent "Share Result" action — generates a branded
+                          snapshot card (off-screen) and launches the native share sheet. */}
+                      <TouchableOpacity
+                        onPress={() => {
+                          const nominationLabel = `Eligible for EOI in ${openCount} of ${STATE_CODES.length} states`;
+                          handleShareOccupationCard(selected, nominationLabel, openCount, STATE_CODES.length);
+                        }}
+                        activeOpacity={0.85}
+                        accessibilityRole="button"
+                        accessibilityLabel="Share this occupation's eligibility as an image"
+                        style={[styles.shareOccBtn, { backgroundColor: Colors.secondary, shadowColor: Colors.secondary }]}
+                      >
+                        <Ionicons name="share-social" size={16} color={Colors.primaryDark} />
+                        <Text style={[styles.shareOccBtnText, { color: Colors.primaryDark }]}>Share Result</Text>
+                      </TouchableOpacity>
+
+                      {/* Off-screen snapshot card used for the share flow above (invisible). */}
+                      <ShareCardHost
+                        ref={shareCardRef}
+                        appVersion={Constants.expoConfig?.version}
+                        data={{
+                          kind: 'occupation',
+                          anzsco: selected.anzsco,
+                          name: selected.name,
+                          nominationStatus: `Eligible for EOI in ${openCount} of ${STATE_CODES.length} states`,
+                          openStatesCount: openCount,
+                          totalStatesCount: STATE_CODES.length,
+                        }}
+                      />
+
                       <View style={styles.stateGrid}>
                         {statuses.map(({ s, info }) => {
                           const tappable = info.kind !== 'closed' && info.kind !== 'unverified' || !!selected.stateRequirements?.[s];
@@ -2827,6 +2877,9 @@ export default function OccupationsScreen() {
                     <Ionicons name="open-outline" size={14} color={Colors.textSecondary} />
                     <Text style={[styles.modalCtaText, { color: Colors.textSecondary }]}>View on DHA</Text>
                   </TouchableOpacity>
+
+                  {/* Branded footer — naturally captured by manual screenshots too. */}
+                  <BrandedFooter compact />
                 </ScrollView>
                 <View style={styles.modalStickyFooter}>
                   <TouchableOpacity
@@ -3422,6 +3475,20 @@ const styles = StyleSheet.create({
     lineHeight: 15,
     marginBottom: Spacing.sm,
   },
+  shareOccBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: Radius.md,
+    marginBottom: Spacing.md,
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 2,
+  },
+  shareOccBtnText: { fontSize: FontSize.sm, fontWeight: FontWeight.bold },
   stateGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
