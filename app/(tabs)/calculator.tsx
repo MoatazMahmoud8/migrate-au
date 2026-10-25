@@ -10,7 +10,7 @@ import {
   Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
@@ -162,6 +162,7 @@ function ScoreRing({ score, eligible }: { score: number; eligible: boolean }) {
 export default function CalculatorScreen() {
   const Colors = useColors();
   const params = useLocalSearchParams<{ anzsco?: string; visaSubclass?: string }>();
+  const router = useRouter();
   const prefilledAnzsco = typeof params.anzsco === 'string' ? params.anzsco : undefined;
   const [input, setInput] = useState<PointsInput>(defaultInput);
   const [showPaywall, setShowPaywall] = useState(false);
@@ -288,6 +289,33 @@ export default function CalculatorScreen() {
       >
         <Ionicons name="share-social" size={18} color={Colors.primaryDark} />
         <Text style={[styles.shareResultBtnText, { color: Colors.primaryDark }]}>Share Result</Text>
+      </TouchableOpacity>
+
+      {/* Personalised step-by-step pathway for this user's visa subclass +
+          occupation (if known from the prefilled ANZSCO param). Routes into
+          the existing /visa-journey screen so there's no logic duplication —
+          it already customises the skills-assessment step per assessing
+          authority when an ANZSCO is supplied. */}
+      <TouchableOpacity
+        onPress={() => {
+          router.push({
+            pathname: '/visa-journey',
+            params: {
+              visa: input.visaSubclass,
+              ...(prefilledAnzsco ? { anzsco: prefilledAnzsco } : {}),
+            },
+          } as any);
+        }}
+        activeOpacity={0.85}
+        accessibilityRole="button"
+        accessibilityLabel="View my step-by-step visa journey"
+        style={[styles.journeyBtn, { backgroundColor: Colors.surface, borderColor: Colors.accent }]}
+      >
+        <Ionicons name="map-outline" size={18} color={Colors.accent} />
+        <Text style={[styles.journeyBtnText, { color: Colors.accent }]}>
+          View My Step-by-Step Visa {input.visaSubclass} Journey
+        </Text>
+        <Ionicons name="chevron-forward" size={16} color={Colors.accent} />
       </TouchableOpacity>
 
       {/* Off-screen snapshot card used for the share flow above (invisible). */}
@@ -672,6 +700,19 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   shareResultBtnText: { fontSize: FontSize.md, fontWeight: FontWeight.bold },
+
+  journeyBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginHorizontal: Spacing.lg,
+    marginTop: Spacing.sm,
+    paddingVertical: 12,
+    borderRadius: Radius.lg,
+    borderWidth: 1.5,
+  },
+  journeyBtnText: { fontSize: FontSize.sm, fontWeight: FontWeight.semiBold, flexShrink: 1, textAlign: 'center' },
 
   card: {
     borderRadius: Radius.xl,
