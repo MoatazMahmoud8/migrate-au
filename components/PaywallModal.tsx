@@ -127,7 +127,7 @@ export function PaywallModal({ visible, onClose, userId, title, message, feature
             <Ionicons name="close" size={20} color={Colors.textMuted} />
           </TouchableOpacity>
 
-          <ScrollView showsVerticalScrollIndicator={false} bounces={false}>
+          <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} bounces={false}>
             {/* Social Proof Banner */}
             <View style={styles.socialProof}>
               <Text style={[styles.socialProofText, { color: Colors.textSecondary }]}>

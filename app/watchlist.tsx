@@ -291,6 +291,7 @@ export default function WatchlistScreen() {
           style={{ flex: 1 }}
         >
           <ScrollView
+            style={{ flex: 1 }}
             contentContainerStyle={{ padding: Spacing.lg, paddingBottom: 120 }}
             keyboardShouldPersistTaps="handled"
           >

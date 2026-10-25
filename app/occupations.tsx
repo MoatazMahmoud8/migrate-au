@@ -11,6 +11,8 @@ import {
   ScrollView,
   Alert,
   Share,
+  Animated,
+  PanResponder,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -1339,6 +1341,49 @@ export default function OccupationsScreen() {
   const [selected, setSelected] = useState<SkilledOccupation | null>(null);
   const shareCardRef = useRef<View>(null);
 
+  // ── Swipe-down-to-dismiss for the detail modal's drag handle ────────────
+  // The handle bar previously looked draggable (standard bottom-sheet
+  // convention) but had no gesture attached at all — dragging it did
+  // nothing. Wired up with PanResponder (built into React Native core, no
+  // new dependency) so it actually follows the finger and dismisses past a
+  // distance/velocity threshold, snapping back otherwise.
+  const modalTranslateY = useRef(new Animated.Value(0)).current;
+  const modalPanResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: (_evt, gestureState) => Math.abs(gestureState.dy) > 4,
+      onPanResponderMove: (_evt, gestureState) => {
+        if (gestureState.dy > 0) {
+          modalTranslateY.setValue(gestureState.dy);
+        }
+      },
+      onPanResponderRelease: (_evt, gestureState) => {
+        const shouldDismiss = gestureState.dy > 120 || gestureState.vy > 1.2;
+        if (shouldDismiss) {
+          Animated.timing(modalTranslateY, {
+            toValue: 800,
+            duration: 180,
+            useNativeDriver: true,
+          }).start(() => {
+            setSelected(null);
+            modalTranslateY.setValue(0);
+          });
+        } else {
+          Animated.spring(modalTranslateY, {
+            toValue: 0,
+            useNativeDriver: true,
+            bounciness: 4,
+          }).start();
+        }
+      },
+    })
+  ).current;
+
+  useEffect(() => {
+    // Reset any leftover drag offset whenever a different occupation opens.
+    modalTranslateY.setValue(0);
+  }, [selected?.anzsco, modalTranslateY]);
+
   const handleShareOccupationCard = async (occ: SkilledOccupation, nominationStatusLabel: string, openCount: number, totalCount: number) => {
     recordEngagement('occupation_share_card');
     const shared = await captureAndShareCard(shareCardRef, DEFAULT_SHARE_MESSAGE);
@@ -1761,11 +1806,24 @@ export default function OccupationsScreen() {
         animationType="slide"
         onRequestClose={() => setSelected(null)}
       >
-        <View style={[styles.modalBackdrop, { backgroundColor: 'rgba(0,0,0,0.6)' }]}>
-          <View style={[styles.modalSheet, { backgroundColor: Colors.surface, paddingBottom: insets.bottom + 16 }]}>
+        <TouchableOpacity
+          style={[styles.modalBackdrop, { backgroundColor: 'rgba(0,0,0,0.6)' }]}
+          activeOpacity={1}
+          onPress={() => setSelected(null)}
+        >
+          <Animated.View
+            style={[
+              styles.modalSheet,
+              { backgroundColor: Colors.surface, paddingBottom: insets.bottom + 16 },
+              { transform: [{ translateY: modalTranslateY }] },
+            ]}
+            onStartShouldSetResponder={() => true}
+          >
             {selected && (
               <>
-                <View style={[styles.modalHandle, { backgroundColor: Colors.border }]} />
+                <View {...modalPanResponder.panHandlers} style={styles.modalHandleArea}>
+                  <View style={[styles.modalHandle, { backgroundColor: Colors.border }]} />
+                </View>
                 <ScrollView
                   style={styles.modalScroll}
                   contentContainerStyle={styles.modalScrollContent}
@@ -2907,8 +2965,8 @@ export default function OccupationsScreen() {
                 </View>
               </>
             )}
-          </View>
-        </View>
+          </Animated.View>
+        </TouchableOpacity>
       </Modal>
 
       <PaywallModal
@@ -3204,10 +3262,14 @@ const styles = StyleSheet.create({
   modalScrollContent: {
     paddingBottom: Spacing.md,
   },
+  modalHandleArea: {
+    paddingTop: Spacing.sm,
+    paddingBottom: Spacing.md,
+    alignItems: 'center',
+  },
   modalHandle: {
     width: 40, height: 4, borderRadius: 2,
-    alignSelf: 'center',
-    marginBottom: Spacing.md,
+    marginBottom: 0,
   },
   modalHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   codePillLg: {
