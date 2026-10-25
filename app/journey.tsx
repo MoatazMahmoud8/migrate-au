@@ -104,6 +104,17 @@ export default function JourneyScreen() {
 
   const nextStepKey = STEPS.find((s) => !status[s.key])?.key ?? STEPS[STEPS.length - 1].key;
 
+  // Derive a personalised visa-journey deep link from the user's actual saved
+  // data: prefer their most recent tracked JourneyEntry (visaType + anzsco),
+  // falling back to their saved occupation/anzsco and a default 189 visa.
+  const SUPPORTED_VISA_CODES = ['189', '190', '491'];
+  const activeEntry = profile?.journeyEntries?.[0];
+  const derivedVisa =
+    activeEntry?.visaType && SUPPORTED_VISA_CODES.includes(activeEntry.visaType)
+      ? activeEntry.visaType
+      : '189';
+  const derivedAnzsco = activeEntry?.anzscoCode || profile?.anzscoCode || undefined;
+
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <Stack.Screen options={{ headerShown: false }} />
@@ -151,6 +162,36 @@ export default function JourneyScreen() {
             <Text style={styles.heroRingText}>{completed}/{STEPS.length}</Text>
           </View>
         </LinearGradient>
+
+        {/* Personalised step-by-step visa pathway shortcut */}
+        <View style={[styles.section, { marginTop: Spacing.lg }]}>
+          <TouchableOpacity
+            style={styles.visaJourneyCard}
+            activeOpacity={0.85}
+            accessibilityRole="button"
+            accessibilityLabel="View my step-by-step visa journey"
+            onPress={() => {
+              router.push({
+                pathname: '/visa-journey',
+                params: {
+                  visa: derivedVisa,
+                  ...(derivedAnzsco ? { anzsco: derivedAnzsco } : {}),
+                },
+              } as any);
+            }}
+          >
+            <View style={styles.visaJourneyIconWrap}>
+              <Ionicons name="map-outline" size={20} color={Colors.accent} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.visaJourneyTitle}>My Step-by-Step Visa {derivedVisa} Journey</Text>
+              <Text style={styles.visaJourneySub}>
+                {derivedAnzsco ? 'Personalised to your occupation' : 'English test → Assessment → EOI → Grant'}
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={Colors.textMuted} />
+          </TouchableOpacity>
+        </View>
 
         {/* Steps */}
         <View style={styles.section}>
@@ -285,5 +326,20 @@ function makeStyles(Colors: ReturnType<typeof useColors>) {
     },
     markPillText: { fontSize: 11, fontWeight: FontWeight.semiBold, letterSpacing: 0.3 },
     foot: { color: Colors.textMuted, fontSize: FontSize.xs, textAlign: 'center', lineHeight: 16 },
+    visaJourneyCard: {
+      flexDirection: 'row', alignItems: 'center',
+      backgroundColor: Colors.surface,
+      borderColor: Colors.accent, borderWidth: 1.5,
+      borderRadius: Radius.lg,
+      padding: Spacing.md,
+      gap: Spacing.md,
+    },
+    visaJourneyIconWrap: {
+      width: 36, height: 36, borderRadius: 18,
+      backgroundColor: Colors.infoLight,
+      alignItems: 'center', justifyContent: 'center',
+    },
+    visaJourneyTitle: { color: Colors.textPrimary, fontSize: FontSize.md, fontWeight: FontWeight.semiBold },
+    visaJourneySub: { color: Colors.textSecondary, fontSize: FontSize.sm, marginTop: 2 },
   });
 }

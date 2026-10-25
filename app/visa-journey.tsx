@@ -137,22 +137,46 @@ export default function VisaJourneyScreen() {
               const customCost = auth ? auth.fee : step.cost;
               const customDocs = auth ? auth.requiredDocuments : step.documents;
 
+              const isLastStep = index === journey.steps.length - 1;
+              const isDone = expandedStep !== step.id && index < journey.steps.findIndex(s => s.id === expandedStep);
+
               return (
-              <TouchableOpacity
-                key={step.id}
-                style={[styles.stepCard, { backgroundColor: Colors.surface, borderColor: Colors.border },
-                  auth ? { borderColor: `${Colors.accent}50`, borderWidth: 1.5 } : {}
-                ]}
-                onPress={() => {
-                  hapticTap();
-                  setExpandedStep(expandedStep === step.id ? null : step.id);
-                }}
-                activeOpacity={0.8}
-              >
-                <View style={styles.stepHeader}>
-                  <View style={[styles.stepNumber, { backgroundColor: auth ? Colors.success : Colors.accent }]}>
-                    <Text style={styles.stepNumberText}>{index + 1}</Text>
+              <View key={step.id} style={styles.timelineRow}>
+                {/* Timeline connector: a vertical line behind each step's
+                    number badge, linking it to the previous/next step so the
+                    whole journey reads as one continuous path (not a stack of
+                    disconnected cards). */}
+                <View style={styles.timelineRail}>
+                  {index > 0 && (
+                    <View style={[styles.timelineLine, styles.timelineLineTop, { backgroundColor: Colors.border }]} />
+                  )}
+                  <View style={[
+                    styles.stepNumber,
+                    styles.timelineBadge,
+                    { backgroundColor: auth ? Colors.success : Colors.accent },
+                  ]}>
+                    {isDone ? (
+                      <Ionicons name="checkmark" size={16} color="#fff" />
+                    ) : (
+                      <Text style={styles.stepNumberText}>{index + 1}</Text>
+                    )}
                   </View>
+                  {!isLastStep && (
+                    <View style={[styles.timelineLine, styles.timelineLineBottom, { backgroundColor: Colors.border }]} />
+                  )}
+                </View>
+
+                <TouchableOpacity
+                  style={[styles.stepCard, styles.timelineCard, { backgroundColor: Colors.surface, borderColor: Colors.border },
+                    auth ? { borderColor: `${Colors.accent}50`, borderWidth: 1.5 } : {}
+                  ]}
+                  onPress={() => {
+                    hapticTap();
+                    setExpandedStep(expandedStep === step.id ? null : step.id);
+                  }}
+                  activeOpacity={0.8}
+                >
+                <View style={styles.stepHeader}>
                   <View style={styles.stepInfo}>
                     <Text style={[styles.stepTitle, { color: Colors.textPrimary }]}>{customTitle}</Text>
                     <View style={styles.stepMetaRow}>
@@ -274,7 +298,8 @@ export default function VisaJourneyScreen() {
                     )}
                   </View>
                 )}
-              </TouchableOpacity>
+                </TouchableOpacity>
+              </View>
               );
             })}
           </>
@@ -323,6 +348,13 @@ const styles = StyleSheet.create({
   authorityNoteText: { fontSize: FontSize.sm, flex: 1 },
   sectionTitle: { fontSize: FontSize.lg, fontWeight: FontWeight.bold, paddingHorizontal: Spacing.md, paddingTop: Spacing.md, paddingBottom: Spacing.sm },
   stepCard: { marginHorizontal: Spacing.md, marginBottom: Spacing.sm, borderRadius: Radius.md, overflow: 'hidden', borderWidth: 1 },
+  timelineRow: { flexDirection: 'row', alignItems: 'stretch' },
+  timelineRail: { width: 32 + Spacing.md, alignItems: 'center', paddingLeft: Spacing.md, paddingTop: Spacing.md, position: 'relative' },
+  timelineBadge: { marginRight: 0 },
+  timelineLine: { position: 'absolute', width: 2, left: '50%', marginLeft: -1 },
+  timelineLineTop: { top: 0, height: Spacing.md },
+  timelineLineBottom: { top: Spacing.md + 32, bottom: 0 },
+  timelineCard: { flex: 1, marginLeft: 0 },
   stepHeader: { flexDirection: 'row', alignItems: 'center', padding: Spacing.md },
   stepNumber: {
     width: 32, height: 32, borderRadius: 16,
