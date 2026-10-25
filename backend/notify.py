@@ -671,6 +671,7 @@ def queue_news_item(db, notification: dict) -> bool:
                 # push if the trigger doc id is prefixed "approval_" — any other
                 # prefix is silently skipped as "not created by admin approval".
                 db.collection("fcm_triggers").document(f"approval_{news_id}_auto").create({
+                    "id": news_id,
                     "title": doc_data["headline"][:150],
                     "body": body_text[:500],
                     "route": "/(tabs)/notifications",
