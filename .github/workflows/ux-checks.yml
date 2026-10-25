@@ -1,0 +1,30 @@
+name: UX Checks
+
+on:
+  pull_request:
+    paths:
+      - 'app/**'
+      - 'components/**'
+  push:
+    branches: [main]
+    paths:
+      - 'app/**'
+      - 'components/**'
+
+jobs:
+  scroll-overlap-check:
+    name: Check for ScrollView/sticky-footer overlap bugs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run check-scroll-overlap
+        run: node scripts/ux-checks/check-scroll-overlap.js
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## UX Check: ScrollView / sticky-footer overlap" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Catches a recurring bug pattern: a ScrollView inside a percentage-height sheet (e.g. a bottom-sheet Modal) missing \`flex: 1\`, which causes content to be clipped/hidden behind a sticky footer. See \`scripts/ux-checks/check-scroll-overlap.js\` for details." >> $GITHUB_STEP_SUMMARY
