@@ -155,18 +155,6 @@ export default function NotificationsScreen() {
     }
   }, [deepLinkedId]);
 
-  // Watch feed: as soon as items arrive, check if we have a pending deep-link
-  useEffect(() => {
-    const targetId = deepLinkedIdRef.current;
-    if (!targetId || feed.length === 0) return;
-    const match = feed.find((n) => n.id === targetId);
-    if (match) {
-      deepLinkedIdRef.current = null; // consume it
-      setSelectedNotification(match);
-      if (!match.read) void markAsRead(match.id);
-    }
-  }, [feed]);
-
   useEffect(() => {
     let cancelled = false;
     let unsub: (() => void) | undefined;
@@ -320,6 +308,21 @@ export default function NotificationsScreen() {
   const unifiedFeed = useMemo<AppNotification[]>(() => {
     return [...feed, ...mappedNews].sort((a, b) => (b.timestamp || '').localeCompare(a.timestamp || ''));
   }, [feed, mappedNews]);
+
+  // Watch the unified feed (notifications + mapped news_items) as soon as
+  // items arrive, check if we have a pending deep-link. news_items are
+  // remapped with a `news-` prefixed id (see mappedNews above), but the FCM
+  // payload carries the raw Firestore doc id, so match both forms.
+  useEffect(() => {
+    const targetId = deepLinkedIdRef.current;
+    if (!targetId || unifiedFeed.length === 0) return;
+    const match = unifiedFeed.find((n) => n.id === targetId || n.id === `news-${targetId}`);
+    if (match) {
+      deepLinkedIdRef.current = null; // consume it
+      setSelectedNotification(match);
+      if (!match.read) void markAsRead(match.id);
+    }
+  }, [unifiedFeed]);
 
   const filteredFeed = useMemo(() => {
     let items = unifiedFeed;
