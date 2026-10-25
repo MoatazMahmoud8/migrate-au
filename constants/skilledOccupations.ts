@@ -474,8 +474,15 @@ export const SKILLED_OCCUPATIONS: SkilledOccupation[] = [
   { anzsco: '225313', name: 'Illustrator', lists: ['CSOL'], visas: ['482', '186', '494'], assessingAuthority: 'VETASSESS', group: 'Professionals' },
   { anzsco: '225314', name: 'Industrial Designer', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'VETASSESS', group: 'Professionals' },
   { anzsco: '225315', name: 'Interior Designer', lists: ['CSOL'], visas: ['482', '186', '494'], assessingAuthority: 'VETASSESS', group: 'Professionals' },
-  { anzsco: '225411', name: 'Journalist', lists: ['CSOL'], visas: ['482', '186', '494'], assessingAuthority: 'VETASSESS', group: 'Professionals' },
-  { anzsco: '225499', name: 'Authors, and Related Professionals nec', lists: ['CSOL'], visas: ['482', '186', '494'], assessingAuthority: 'VETASSESS', group: 'Professionals' },
+  // NOTE: ANZSCO 2022 (the version CSOL actually uses) reclassified the old
+  // 2013 code 225411 "Journalist" into specific unit-group-2124 titles below;
+  // 225411 itself now maps to an unrelated occupation ("Sales Representative
+  // (Industrial Products)", not CSOL-eligible) so it is intentionally omitted
+  // here. Verified against the live Dept. of Home Affairs combined list.
+  { anzsco: '212413', name: 'Print Journalist', lists: ['CSOL', 'STSOL'], visas: ['186', '190', '407', '482', '489', '491', '494'], assessingAuthority: 'VETASSESS', group: 'Professionals' },
+  { anzsco: '212414', name: 'Radio Journalist', lists: ['CSOL', 'ROL'], visas: ['186', '482', '494'], assessingAuthority: 'VETASSESS', group: 'Professionals' },
+  { anzsco: '212416', name: 'Television Journalist', lists: ['CSOL', 'STSOL'], visas: ['186', '190', '407', '482', '489', '491', '494'], assessingAuthority: 'VETASSESS', group: 'Professionals' },
+  { anzsco: '212499', name: 'Journalists and Other Writers nec', lists: ['CSOL', 'STSOL'], visas: ['186', '190', '407', '482', '489', '491', '494'], assessingAuthority: 'VETASSESS', group: 'Professionals' },
   { anzsco: '225511', name: 'ICT Business Analyst', lists: ['CSOL', 'MLTSSL'], visas: ['189', '190', '491', '482', '186', '485'], assessingAuthority: 'ACS', group: 'Professionals' },
 
   // ── Additional Architecture, Planning & Science ──────────────────────────
