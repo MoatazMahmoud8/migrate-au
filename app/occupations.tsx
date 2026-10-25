@@ -1766,7 +1766,11 @@ export default function OccupationsScreen() {
             {selected && (
               <>
                 <View style={[styles.modalHandle, { backgroundColor: Colors.border }]} />
-                <ScrollView showsVerticalScrollIndicator={false}>
+                <ScrollView
+                  style={styles.modalScroll}
+                  contentContainerStyle={styles.modalScrollContent}
+                  showsVerticalScrollIndicator={false}
+                >
                   <View style={styles.modalHead}>
                     <View style={styles.modalHeadBadges}>
                       <View style={[styles.codePillLg, { backgroundColor: Colors.surfaceRaised, borderColor: Colors.border }]}>
@@ -3189,6 +3193,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.sm,
     maxHeight: '85%',
+  },
+  // Bounds the scrollable detail content to the space remaining after the
+  // handle + sticky footer, so long content (state alerts, visa tabs,
+  // documents, CTAs) scrolls internally instead of overflowing past the
+  // 85%-height sheet and rendering underneath/behind the sticky footer.
+  modalScroll: {
+    flex: 1,
+  },
+  modalScrollContent: {
+    paddingBottom: Spacing.md,
   },
   modalHandle: {
     width: 40, height: 4, borderRadius: 2,
