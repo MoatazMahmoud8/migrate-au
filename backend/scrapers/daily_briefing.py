@@ -83,18 +83,42 @@ def _dedupe(items: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
 
 
 def _briefing_fallback(items: list[dict[str, Any]]) -> dict[str, str]:
-    """Deterministic fallback if Gemini is unavailable or disabled."""
+    """Deterministic fallback if Gemini is unavailable or disabled.
+
+    IMPORTANT: push_body must always be derived from the actual items passed
+    in, never a hardcoded generic sentence. A static "Official migration
+    updates are now available..." body was shipping on nearly every
+    notification (since most RSS news sources aren't on the strict
+    OFFICIAL_SOURCE_HOSTS allowlist and almost always land here), making
+    notifications look identical and carry no real information.
+    """
     filtered = [item for item in items if (item.get("sourceUrl") or item.get("url") or item.get("source"))]
     if not filtered:
         return {
             "subject": "Migration update",
             "body": "### 1. Federal Policy & SkillSelect Rounds\n- No new government migration updates were detected today.\n\n### 2. State & Territory Nomination Status & Quotas\n- No active state updates.\n\n### 3. Fee, Occupation & Employer Sponsorship Changes\n- No fee or occupation changes were detected.\n\n### 4. Smart Applicant Action Steps\n1. Review your current visa and occupation profile.\n2. Confirm your documents and English test readiness.\n",
-            "push_body": "Official migration updates are now available. Review the latest federal and state changes.",
+            "push_body": "No new migration updates were detected today — check back tomorrow.",
         }
 
     primary = filtered[0]
     primary_title = _normalize_text(primary.get("title") or primary.get("source") or "Migration update")
     subject = primary_title[:90] if len(primary_title) <= 90 else f"{primary_title[:87].rstrip()}..."
+
+    primary_summary = _normalize_text(primary.get("body") or primary.get("summary") or "")
+
+    # Build a push body from the actual top story (+ a second headline when
+    # available) instead of a static sentence, so every notification reflects
+    # what's genuinely new that day.
+    if primary_summary:
+        push_body = f"{primary_title}: {primary_summary}"
+    else:
+        push_body = primary_title
+    if len(filtered) > 1:
+        second_title = _normalize_text(filtered[1].get("title") or filtered[1].get("source") or "")
+        if second_title and second_title.lower() != primary_title.lower():
+            push_body = f"{push_body} Also: {second_title}."
+    if len(push_body) > 300:
+        push_body = push_body[:297].rstrip() + "…"
 
     lines = [
         "### 1. Federal Policy & SkillSelect Rounds",
@@ -113,7 +137,7 @@ def _briefing_fallback(items: list[dict[str, Any]]) -> dict[str, str]:
     return {
         "subject": subject,
         "body": "\n".join(lines),
-        "push_body": "Official migration updates are now available. Review the latest federal and state changes.",
+        "push_body": push_body,
     }
 
 
@@ -209,14 +233,29 @@ If there is no strong official update, produce a concise but factual 'no materia
 
 
 def generate_daily_briefing(items: list[dict[str, Any]]) -> dict[str, str] | None:
-    """Build the daily migration intelligence briefing for app notifications."""
-    filtered = [item for item in _dedupe(items) if _is_official(item)]
-    if not filtered:
+    """Build the daily migration intelligence briefing for app notifications.
+
+    Previously this only ever called Gemini when at least one item matched
+    the strict OFFICIAL_SOURCE_HOSTS allowlist (gov.au domains etc). Since
+    the daily briefing's only input is RSS media articles (ABC/SBS/migration
+    agent blogs), that allowlist almost never matched anything, so Gemini was
+    effectively never invoked and every single day fell through to the
+    deterministic fallback -- which used to hardcode the same generic
+    push_body regardless of content. Now Gemini is tried against all deduped
+    items (official sources are still prioritized/ordered first when
+    present), and only the deterministic (now content-aware) fallback is used
+    if Gemini is unavailable or fails.
+    """
+    deduped = _dedupe(items)
+    if not deduped:
         return _briefing_fallback(items)
 
-    briefing = _generate_with_gemini(filtered)
+    official = [item for item in deduped if _is_official(item)]
+    ordered = official + [item for item in deduped if item not in official]
+
+    briefing = _generate_with_gemini(ordered)
     if briefing is None:
-        return _briefing_fallback(filtered)
+        return _briefing_fallback(ordered)
     return briefing
 
 
