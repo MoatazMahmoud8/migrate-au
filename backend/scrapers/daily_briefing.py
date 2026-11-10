@@ -204,10 +204,36 @@ If there is no strong official update, produce a concise but factual 'no materia
             prompt,
             generation_config={
                 "temperature": 0.1,
-                "max_output_tokens": 900,
+                # 900 tokens was too tight for the full 4-section structure
+                # (especially with markdown links), so Gemini's response was
+                # silently truncated mid-sentence and that incomplete text
+                # (e.g. "- No new federal") was shipped as the notification
+                # body. Raised to give the full structure room to complete.
+                "max_output_tokens": 2048,
                 "top_p": 0.8,
             },
         )
+
+        # If generation was cut off before finishing (hit the token limit,
+        # tripped a safety filter, etc), response.text can still return
+        # whatever partial text was produced instead of raising. Treat any
+        # non-"STOP" finish reason as a failed generation so we fall back to
+        # the deterministic briefing instead of shipping a truncated/garbled
+        # notification to users.
+        candidates = getattr(response, "candidates", None) or []
+        if candidates:
+            finish_reason = getattr(candidates[0], "finish_reason", None)
+            # FinishReason.STOP has both .name == "STOP" and int value 1;
+            # accept either representation depending on SDK/protobuf version.
+            finish_reason_name = getattr(finish_reason, "name", None)
+            try:
+                finish_reason_value = int(finish_reason) if finish_reason is not None else None
+            except (TypeError, ValueError):
+                finish_reason_value = None
+            is_stop = finish_reason_name == "STOP" or finish_reason_value == 1
+            if finish_reason is not None and not is_stop:
+                return None
+
         text = getattr(response, "text", "").strip()
         if not text:
             return None
@@ -220,6 +246,14 @@ If there is no strong official update, produce a concise but factual 'no materia
         subject = subject_match.group(1).strip().splitlines()[0].strip()
         body = body_match.group(1).strip()
         if not subject or not body:
+            return None
+
+        # Require all 4 required section headers to be present -- a
+        # response that's missing any of them is incomplete/truncated
+        # (this is what let a cut-off "- No new federal" body through
+        # before: it had section 1 but was missing 2, 3 and 4).
+        required_sections = ["### 1.", "### 2.", "### 3.", "### 4."]
+        if not all(section in body for section in required_sections):
             return None
 
         lines = [line.strip() for line in body.splitlines() if line.strip()]
