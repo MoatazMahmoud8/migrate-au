@@ -122,7 +122,25 @@ def _normalize_inline_text(text: str) -> str:
     return re.sub(r"\s+", " ", normalized).strip()
 
 
-def _fetch_article(url: str) -> str | None:
+def _title_overlap_ok(title: str, text: str) -> bool:
+    """Reject extracted body text that shares no meaningful words with the
+    article title -- a strong signal we grabbed an unrelated related-posts
+    teaser instead of the real article body."""
+    if not title or not text:
+        return True  # nothing to compare against; don't block on this check
+    stopwords = {
+        "the", "a", "an", "of", "for", "and", "or", "to", "in", "on", "with",
+        "your", "you", "is", "are", "how", "what", "why", "does", "do",
+        "visa", "australia", "australian",
+    }
+    title_words = {w for w in re.findall(r"[a-z0-9]+", title.lower()) if len(w) > 3 and w not in stopwords}
+    text_words = {w for w in re.findall(r"[a-z0-9]+", text.lower()) if len(w) > 3 and w not in stopwords}
+    if not title_words:
+        return True
+    return bool(title_words & text_words)
+
+
+def _fetch_article(url: str, title: str | None = None) -> str | None:
     """Fetch the real article body from the target webpage (never the RSS
     description). Strips navigation, ads, and copyright footers."""
     try:
@@ -137,7 +155,14 @@ def _fetch_article(url: str) -> str | None:
         # tag names, not selectors, so the two must be handled separately.
         for tag in soup.find_all(["script", "style", "nav", "footer", "aside", "iframe", "form", "button"]):
             tag.decompose()
-        for selector in [".newsletter", ".social-share", ".ad", ".advertisement", ".promo", ".signup"]:
+        for selector in [
+            ".newsletter", ".social-share", ".ad", ".advertisement", ".promo", ".signup",
+            # "Related posts" / "featured" teaser widgets are often marked up
+            # as their own <article>/card elements that pass a naive
+            # "has an <article> tag" check but contain none of the real
+            # content -- strip them before any candidate selection runs.
+            ".related-posts", ".related-articles", "[class*='featured__card']", "[class*='related']",
+        ]:
             for tag in soup.select(selector):
                 tag.decompose()
 
@@ -152,10 +177,12 @@ def _fetch_article(url: str) -> str | None:
         # Prefer semantic containers for the real article body, but don't
         # short-circuit on the first container that merely EXISTS -- a
         # WordPress theme's related-posts "article" teaser can have zero
-        # paragraphs. Pick the first candidate that actually yields usable
-        # paragraphs instead.
+        # paragraphs (or, worse, a single unrelated one-liner). Pick the
+        # first candidate that actually yields usable paragraphs AND whose
+        # text overlaps meaningfully with the title.
         candidates = [
             soup.select_one("article .entry-content-wrapper"),
+            soup.select_one(".et_pb_post_content"),  # Divi builder theme (e.g. pathwaytoaus.com)
             soup.find("main"),
             soup.select_one(".post-content"),
             soup.find("article"),
@@ -166,12 +193,24 @@ def _fetch_article(url: str) -> str | None:
             if candidate is None:
                 continue
             found = _paragraphs_of(candidate)
-            if found:
-                paragraphs = found
-                break
+            if not found:
+                continue
+            candidate_text = " ".join(found)
+            if not _title_overlap_ok(title, candidate_text):
+                # Looks like an unrelated teaser/related-post block -- keep
+                # trying later, broader candidates instead of accepting it.
+                continue
+            paragraphs = found
+            break
 
         text = "\n".join(paragraphs[:20])
         text = _clean_junk_text(text)
+
+        if text and title and not _title_overlap_ok(title, text):
+            # Every candidate (including the full-page fallback) failed the
+            # overlap check -- don't ship mismatched content silently.
+            print(f"  [enricher] Extracted text has no overlap with title '{title}'; discarding")
+            return None
 
         return text[:8000] if text else None
     except Exception as e:
@@ -339,7 +378,7 @@ def enrich_structured(title: str, rss_desc: str, url: str) -> dict:
     """
     cleaned_rss_desc = _normalize_inline_text(_clean_junk_text(rss_desc))
 
-    article_text = _fetch_article(url)
+    article_text = _fetch_article(url, title=title)
     tier_info = classify_source(url, article_text or cleaned_rss_desc)
 
     structured = None
