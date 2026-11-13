@@ -106,7 +106,12 @@ def run():
     if news_notifications:
         news_stats = queue_news_batch(db, news_notifications)
         print(f"      → queued {news_stats['queued']} news item(s) for admin review")
-        queue_daily_briefing(db, news_notifications)
+
+    # Run once per day regardless of whether THIS run found new articles --
+    # on slow-news days news_notifications is legitimately empty on every
+    # run, and the briefing must still ship (with its own graceful "no major
+    # updates today" fallback) rather than silently never firing.
+    queue_daily_briefing(db, news_notifications)
 
     # ── 6. Processing times (cloudscraper-based)
     print("\n[6/7] Scraping processing times...")

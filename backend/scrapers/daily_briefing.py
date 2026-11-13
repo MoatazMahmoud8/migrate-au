@@ -294,17 +294,37 @@ def generate_daily_briefing(items: list[dict[str, Any]]) -> dict[str, str] | Non
 
 
 def queue_daily_briefing(db, items: list[dict[str, Any]]) -> bool:
-    """Create a daily briefing notification in the main app feed."""
-    if not db:
-        return False
+    """Create a daily briefing notification in the main app feed.
 
-    briefing = generate_daily_briefing(items)
-    if briefing is None:
+    Must run once per calendar day regardless of whether this particular
+    scraper run found any NEW articles passing the strict relevance filter
+    -- on slow-news days that list is legitimately empty most/all runs, and
+    previously this function was only ever called by main.py when it was
+    non-empty, so on those days no briefing document was created at all
+    (not even the deterministic "no major updates today" fallback, which
+    already handles an empty `items` list fine). Callers should now invoke
+    this on every run with whatever items they have (possibly []); the
+    idempotency check below ensures we don't regenerate/overwrite an
+    already-queued briefing for today on subsequent runs the same day.
+    """
+    if not db:
         return False
 
     now = datetime.now(timezone.utc)
     doc_id = f"daily-briefing-{now.strftime('%Y%m%d')}"
     ref = db.collection("notifications").document(doc_id)
+
+    # Already queued earlier today (e.g. by an earlier run that found real
+    # news) -- don't clobber it with a blander later-run result.
+    try:
+        if ref.get().exists:
+            return True
+    except Exception:
+        pass
+
+    briefing = generate_daily_briefing(items)
+    if briefing is None:
+        return False
 
     payload = {
         "id": doc_id,
