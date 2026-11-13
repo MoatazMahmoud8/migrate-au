@@ -82,7 +82,75 @@ def _dedupe(items: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
     return out
 
 
-def _briefing_fallback(items: list[dict[str, Any]]) -> dict[str, str]:
+_SNAPSHOT_SUBCLASSES = ["189", "190", "491", "482", "500", "485", "186"]
+
+
+def _visa_snapshot_tip(db, now: datetime) -> dict[str, str] | None:
+    """Build a genuinely informative notification from real, current fee and
+    processing-time data (visa_fees/visa_processing_times collections) when
+    there is no new news to report that day.
+
+    A flat "No new migration updates were detected today" message was being
+    shipped on every slow-news day (and most days ARE slow-news days once
+    guide/evergreen blog content and unrelated general-news articles are
+    correctly filtered out) -- technically honest, but useless to a user
+    checking the app, and complained about directly. Instead of silence,
+    rotate daily through a real visa subclass's actual current fee and
+    processing time (both scraped from Home Affairs, never fabricated), so
+    every single day's notification carries real, concrete information even
+    when there's no breaking policy change to report.
+    """
+    if db is None:
+        return None
+    subclass = _SNAPSHOT_SUBCLASSES[now.timetuple().tm_yday % len(_SNAPSHOT_SUBCLASSES)]
+    try:
+        fee_doc = db.collection("visa_fees").document(subclass).get().to_dict()
+        pt_doc = db.collection("visa_processing_times").document(subclass).get().to_dict()
+    except Exception:
+        return None
+    if not fee_doc and not pt_doc:
+        return None
+
+    visa_name = (pt_doc or {}).get("name") or (fee_doc or {}).get("name") or f"Subclass {subclass}"
+    fee = (fee_doc or {}).get("fee")
+    fee_note = (fee_doc or {}).get("feeNote") or ""
+    streams = (pt_doc or {}).get("streams") or []
+    processing_line = ""
+    if streams:
+        parts = [f"{s.get('name')}: median {s.get('p50')}, 90% within {s.get('p90')}" for s in streams if s.get("name")]
+        processing_line = "; ".join(parts)
+
+    subject = f"Today's Visa Snapshot: Subclass {subclass} {visa_name}"
+    push_parts = [f"Subclass {subclass} ({visa_name})"]
+    if fee:
+        push_parts.append(f"fee is {fee}")
+    if processing_line:
+        push_parts.append(f"current processing time — {processing_line}")
+    push_body = ". ".join(push_parts)[:296]
+    if len(push_body) == 296:
+        push_body = push_body.rstrip() + "…"
+
+    conditions = (pt_doc or {}).get("conditions") or []
+    conditions_md = "\n".join(f"- {c}" for c in conditions) or "- No special conditions on file."
+
+    body = (
+        "### 1. Federal Policy & SkillSelect Rounds\n"
+        "- No new federal migration policy changes were detected today.\n\n"
+        "### 2. State & Territory Nomination Status & Quotas\n"
+        "- No active state nomination changes were detected today.\n\n"
+        f"### 3. Fee, Occupation & Employer Sponsorship Changes\n"
+        f"- Today's visa snapshot: Subclass {subclass} ({visa_name}) current fee is "
+        f"{fee or 'not available'}{f' ({fee_note})' if fee_note else ''}.\n"
+        f"- Processing time: {processing_line or 'not available'}.\n\n"
+        "### 4. Smart Applicant Action Steps\n"
+        f"{conditions_md}\n"
+        "1. Confirm your own visa subclass matches current eligibility conditions above.\n"
+        "2. Check your occupation and points profile against the latest official criteria.\n"
+    )
+    return {"subject": subject, "body": body, "push_body": push_body}
+
+
+def _briefing_fallback(items: list[dict[str, Any]], db=None, now: datetime | None = None) -> dict[str, str]:
     """Deterministic fallback if Gemini is unavailable or disabled.
 
     IMPORTANT: push_body must always be derived from the actual items passed
@@ -94,6 +162,9 @@ def _briefing_fallback(items: list[dict[str, Any]]) -> dict[str, str]:
     """
     filtered = [item for item in items if (item.get("sourceUrl") or item.get("url") or item.get("source"))]
     if not filtered:
+        snapshot = _visa_snapshot_tip(db, now or datetime.now(timezone.utc))
+        if snapshot:
+            return snapshot
         return {
             "subject": "Migration update",
             "body": "### 1. Federal Policy & SkillSelect Rounds\n- No new government migration updates were detected today.\n\n### 2. State & Territory Nomination Status & Quotas\n- No active state updates.\n\n### 3. Fee, Occupation & Employer Sponsorship Changes\n- No fee or occupation changes were detected.\n\n### 4. Smart Applicant Action Steps\n1. Review your current visa and occupation profile.\n2. Confirm your documents and English test readiness.\n",
@@ -266,7 +337,7 @@ If there is no strong official update, produce a concise but factual 'no materia
         return None
 
 
-def generate_daily_briefing(items: list[dict[str, Any]]) -> dict[str, str] | None:
+def generate_daily_briefing(items: list[dict[str, Any]], db=None, now: datetime | None = None) -> dict[str, str] | None:
     """Build the daily migration intelligence briefing for app notifications.
 
     Previously this only ever called Gemini when at least one item matched
@@ -279,17 +350,21 @@ def generate_daily_briefing(items: list[dict[str, Any]]) -> dict[str, str] | Non
     items (official sources are still prioritized/ordered first when
     present), and only the deterministic (now content-aware) fallback is used
     if Gemini is unavailable or fails.
+
+    `db`/`now` are threaded through to the fallback so that on days with no
+    genuine news it can surface a real visa fee/processing-time snapshot
+    instead of a contentless "no updates" placeholder.
     """
     deduped = _dedupe(items)
     if not deduped:
-        return _briefing_fallback(items)
+        return _briefing_fallback(items, db=db, now=now)
 
     official = [item for item in deduped if _is_official(item)]
     ordered = official + [item for item in deduped if item not in official]
 
     briefing = _generate_with_gemini(ordered)
     if briefing is None:
-        return _briefing_fallback(ordered)
+        return _briefing_fallback(ordered, db=db, now=now)
     return briefing
 
 
@@ -322,7 +397,7 @@ def queue_daily_briefing(db, items: list[dict[str, Any]]) -> bool:
     except Exception:
         pass
 
-    briefing = generate_daily_briefing(items)
+    briefing = generate_daily_briefing(items, db=db, now=now)
     if briefing is None:
         return False
 
