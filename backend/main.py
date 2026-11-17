@@ -17,7 +17,7 @@ from firebase_admin import credentials, firestore
 from scrapers import home_affairs, anzsco, state_nominations, news_rss, processing_times, admin_intel
 from scrapers.assessing_authority_fees import scrape as scrape_assessing_fees
 from scrapers.daily_briefing import queue_daily_briefing
-from notify import queue_batch, queue_news_batch
+from notify import queue_batch, queue_news_batch, news_item_auto_published
 
 
 def get_db():
@@ -111,7 +111,16 @@ def run():
     # on slow-news days news_notifications is legitimately empty on every
     # run, and the briefing must still ship (with its own graceful "no major
     # updates today" fallback) rather than silently never firing.
-    queue_daily_briefing(db, news_notifications)
+    #
+    # Exclude items already auto-published by queue_news_batch above: those
+    # already went out as their own real push notification with a clean,
+    # enriched headline. Including them here too caused the exact same story
+    # to appear twice in the feed seconds apart -- once via the enriched
+    # headline (push-sent) and once via the briefing's own independent
+    # Gemini rewrite of the raw scraped title (not push-sent, but still a
+    # confusing near-duplicate "second, worse notification" in-app).
+    briefing_items = [n for n in news_notifications if not news_item_auto_published(n)]
+    queue_daily_briefing(db, briefing_items)
 
     # ── 6. Processing times (cloudscraper-based)
     print("\n[6/7] Scraping processing times...")

@@ -563,6 +563,22 @@ def queue_batch(db, notifications: list[dict]) -> dict:
     return stats
 
 
+def news_item_auto_published(notification: dict) -> bool:
+    """True if `queue_news_item` would auto-publish this item (status
+    "approved", with its own real FCM push sent immediately).
+
+    Used to keep the daily briefing from re-summarising a story that already
+    went out as its own clean, enriched-headline notification -- without
+    this, the same article produced two competing notifications seconds
+    apart (one with the enriched headline, one with the raw scraped title
+    from the briefing's own independent Gemini pass), which looked like a
+    system bug sending "two notifications, one good one bad".
+    """
+    needs_manual_review = notification.get("needs_manual_review", False)
+    is_agent_relevant = notification.get("is_agent_relevant", True)
+    return not needs_manual_review and is_agent_relevant
+
+
 def queue_news_item(db, notification: dict) -> bool:
     """Write a news/media item into news_items.
 
