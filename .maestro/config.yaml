@@ -1,0 +1,4 @@
+# Maestro project config (https://maestro.mobile.dev/cli/project-configuration).
+# This is NOT a flow file — just shared defaults picked up automatically
+# when running `maestro test` from this directory.
+appId: com.jsmglobal.migration_au

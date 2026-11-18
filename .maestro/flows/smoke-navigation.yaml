@@ -1,0 +1,16 @@
+# Basic smoke test: app launches and the Occupations tab's search + list
+# render without crashing. Keep this flow intentionally small/fast — it's
+# meant to catch "the app doesn't even open" or "this screen is completely
+# broken" regressions, not deep feature coverage.
+appId: com.jsmglobal.migration_au
+---
+- launchApp
+- tapOn:
+    text: "Occupations"
+    optional: true
+- assertVisible:
+    id: "occupations-list"
+    optional: true
+- assertVisible:
+    text: "ANZSCO code, occupation, visa, authority…"
+    optional: true

@@ -1723,6 +1723,7 @@ export default function OccupationsScreen() {
 
         {/* List */}
         <FlatList
+          testID="occupations-list"
           data={filtered}
           keyExtractor={(o) => o.anzsco}
           contentContainerStyle={styles.list}
@@ -1742,6 +1743,7 @@ export default function OccupationsScreen() {
             const salary = getSalaryFor(salaries, item.anzsco);
             return (
             <TouchableOpacity
+              testID={`occupation-card-${item.anzsco}`}
               style={[styles.card, { backgroundColor: Colors.surface, borderColor: Colors.border }, savedAnzsco === item.anzsco && { backgroundColor: `${Colors.success}0D`, borderColor: `${Colors.success}55` }]}
               activeOpacity={0.85}
               onPress={() => { hapticTap(); setSelected(item); setExpandedState(getDefaultEligibleState(item)); setSelectedFederalVisa(null); }}
@@ -1812,6 +1814,7 @@ export default function OccupationsScreen() {
           onPress={() => setSelected(null)}
         >
           <Animated.View
+            testID="occupation-modal-sheet"
             style={[
               styles.modalSheet,
               { backgroundColor: Colors.surface, paddingBottom: insets.bottom + 16 },
@@ -1821,7 +1824,11 @@ export default function OccupationsScreen() {
           >
             {selected && (
               <>
-                <View {...modalPanResponder.panHandlers} style={styles.modalHandleArea}>
+                <View
+                  {...modalPanResponder.panHandlers}
+                  style={styles.modalHandleArea}
+                  testID="occupation-modal-drag-handle"
+                >
                   <View style={[styles.modalHandle, { backgroundColor: Colors.border }]} />
                 </View>
                 <ScrollView
@@ -1848,7 +1855,11 @@ export default function OccupationsScreen() {
                         </TouchableOpacity>
                       )}
                     </View>
-                    <TouchableOpacity onPress={() => setSelected(null)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                    <TouchableOpacity
+                      onPress={() => setSelected(null)}
+                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                      testID="occupation-modal-close-button"
+                    >
                       <Ionicons name="close" size={22} color={Colors.textPrimary} />
                     </TouchableOpacity>
                   </View>

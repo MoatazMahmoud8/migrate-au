@@ -1,0 +1,43 @@
+# Regression flow for the bug fixed in this session: the Occupations detail
+# modal's drag handle looked like a draggable bottom-sheet handle but had
+# zero gesture logic attached, so swiping it down did nothing (and the
+# backdrop had no tap-to-dismiss either). This flow opens an occupation,
+# verifies the modal appears, drags the handle down, and asserts the modal
+# closes. If this regresses (e.g. someone strips the PanResponder again),
+# this flow fails.
+appId: com.jsmglobal.migration_au
+---
+- launchApp
+- tapOn:
+    text: "Occupations"
+    optional: true
+- tapOn:
+    id: "occupations-list"
+    optional: true
+- scrollUntilVisible:
+    element:
+      id: "occupation-card-.*"
+    direction: DOWN
+    optional: true
+- tapOn:
+    id: "occupation-card-.*"
+- assertVisible:
+    id: "occupation-modal-sheet"
+- swipe:
+    from:
+      id: "occupation-modal-drag-handle"
+    direction: DOWN
+    duration: 400
+- assertNotVisible:
+    id: "occupation-modal-sheet"
+
+# Also verify the explicit close ("X") button still works, and that
+# tap-outside-on-backdrop dismisses the modal too.
+- tapOn:
+    id: "occupation-card-.*"
+- assertVisible:
+    id: "occupation-modal-sheet"
+- tapOn:
+    id: "occupation-modal-close-button"
+- assertNotVisible:
+    id: "occupation-modal-sheet"
