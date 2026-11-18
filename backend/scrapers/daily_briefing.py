@@ -138,17 +138,19 @@ def _visa_snapshot_tip(db, now: datetime) -> dict[str, str] | None:
     conditions = (pt_doc or {}).get("conditions") or []
     conditions_md = "\n".join(f"- {c}" for c in conditions) or "- No special conditions on file."
 
+    # This fallback only ever runs because there's no real federal/state
+    # policy news to report that day -- so leading with "No new federal
+    # migration policy changes" / "No active state nomination changes"
+    # sections was pure filler, padding out the real content (the fee +
+    # processing-time snapshot) with two headers that never say anything.
+    # Lead directly with the one thing that's actually useful.
     body = (
-        "### 1. Federal Policy & SkillSelect Rounds\n"
-        "- No new federal migration policy changes were detected today.\n\n"
-        "### 2. State & Territory Nomination Status & Quotas\n"
-        "- No active state nomination changes were detected today.\n\n"
-        f"### 3. Fee, Occupation & Employer Sponsorship Changes\n"
-        f"- Today's visa snapshot: Subclass {subclass} ({visa_name}) current fee is "
-        f"{fee or 'not available'}{f' ({fee_note})' if fee_note else ''}.\n"
+        f"### Today's Visa Snapshot: Subclass {subclass} ({visa_name})\n"
+        f"- Current fee: {fee or 'not available'}{f' ({fee_note})' if fee_note else ''}.\n"
         f"- Processing time: {processing_line or 'not available'}.\n\n"
-        "### 4. Smart Applicant Action Steps\n"
-        f"{conditions_md}\n"
+        "### Eligibility Conditions\n"
+        f"{conditions_md}\n\n"
+        "### Smart Applicant Action Steps\n"
         "1. Confirm your own visa subclass matches current eligibility conditions above.\n"
         "2. Check your occupation and points profile against the latest official criteria.\n"
     )
@@ -170,9 +172,13 @@ def _briefing_fallback(items: list[dict[str, Any]], db=None, now: datetime | Non
         snapshot = _visa_snapshot_tip(db, now or datetime.now(timezone.utc))
         if snapshot:
             return snapshot
+        # Only reached if even the visa-fee/processing-time snapshot above
+        # is unavailable (e.g. a Firestore outage) -- genuinely nothing to
+        # report, so this stays a single plain notice instead of padding it
+        # out with three empty "No new X" section headers.
         return {
             "subject": "Migration update",
-            "body": "### 1. Federal Policy & SkillSelect Rounds\n- No new government migration updates were detected today.\n\n### 2. State & Territory Nomination Status & Quotas\n- No active state updates.\n\n### 3. Fee, Occupation & Employer Sponsorship Changes\n- No fee or occupation changes were detected.\n\n### 4. Smart Applicant Action Steps\n1. Review your current visa and occupation profile.\n2. Confirm your documents and English test readiness.\n",
+            "body": "No new government migration updates were detected today. Check back tomorrow for the latest federal and state visa news.",
             "push_body": "No new migration updates were detected today — check back tomorrow.",
         }
 
