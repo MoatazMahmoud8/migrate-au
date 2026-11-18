@@ -90,8 +90,9 @@ _SNAPSHOT_SUBCLASSES = ["189", "190", "491", "482", "500", "485", "186"]
 # matches one of these, the whole section (header included) is dropped
 # rather than shipped as empty filler.
 _FILLER_LINE_RE = re.compile(
-    r"^[\s\-*]*no\s+[\w\s/&,-]{0,60}?"
-    r"(changes?|updates?)\s+"
+    r"^[\s\-*]*(no|none|there\s+(?:were|was)\s+no)\s+[\w\s/&,-]{0,80}?"
+    r"(detected|found|reported|identified|available)|"
+    r"^[\s\-*]*(no|none)\s+[\w\s/&,-]{0,60}?(changes?|updates?)\s+"
     r"(were|was|have been|has been)?\s*(detected|found|reported|identified|available)",
     re.IGNORECASE,
 )
