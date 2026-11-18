@@ -84,6 +84,48 @@ def _dedupe(items: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
 
 _SNAPSHOT_SUBCLASSES = ["189", "190", "491", "482", "500", "485", "186"]
 
+# Phrases the model (or a deterministic template) might use to pad out a
+# section that has nothing real to report. Matched case-insensitively
+# against a section's content lines; if every content line in a section
+# matches one of these, the whole section (header included) is dropped
+# rather than shipped as empty filler.
+_FILLER_LINE_RE = re.compile(
+    r"^[\s\-*]*no\s+[\w\s/&,-]{0,60}?"
+    r"(changes?|updates?)\s+"
+    r"(were|was|have been|has been)?\s*(detected|found|reported|identified|available)",
+    re.IGNORECASE,
+)
+
+
+def _strip_filler_sections(body: str) -> str:
+    """Remove any '### N. Title' section whose only content is a generic
+    'no changes/updates detected' placeholder line, regardless of whether
+    that placeholder came from a template or from Gemini ignoring the
+    prompt's instruction not to pad empty sections. This is the backstop
+    that makes the no-filler guarantee hold even when the model doesn't
+    comply, since prompting alone proved unreliable in testing.
+    """
+    if "###" not in body:
+        return body
+
+    # Split into (header, content) blocks on each "### " heading line.
+    blocks = re.split(r"(?m)^(### .+)$", body)
+    # blocks[0] is any preamble before the first heading; after that it
+    # alternates [header, content, header, content, ...].
+    kept = [blocks[0]] if blocks and blocks[0].strip() else []
+    for i in range(1, len(blocks), 2):
+        header = blocks[i]
+        content = blocks[i + 1] if i + 1 < len(blocks) else ""
+        content_lines = [line for line in content.splitlines() if line.strip()]
+        is_all_filler = bool(content_lines) and all(
+            _FILLER_LINE_RE.search(line) for line in content_lines
+        )
+        if is_all_filler:
+            continue
+        kept.append(header)
+        kept.append(content)
+    return "\n".join(part for part in kept).strip()
+
 
 def _visa_snapshot_tip(db, now: datetime) -> dict[str, str] | None:
     """Build a genuinely informative notification from real, current fee and
@@ -202,15 +244,14 @@ def _briefing_fallback(items: list[dict[str, Any]], db=None, now: datetime | Non
     if len(push_body) > 300:
         push_body = push_body[:297].rstrip() + "…"
 
+    # Only section 1 (the actual story) and section 4 (always-applicable
+    # generic advice) have real content here -- sections 2 and 3 are
+    # omitted entirely rather than padded with "No new X were detected"
+    # placeholders (see _strip_filler_sections for why that matters for
+    # the Gemini path too).
     lines = [
         "### 1. Federal Policy & SkillSelect Rounds",
         f"- {primary_title}.",
-        "",
-        "### 2. State & Territory Nomination Status & Quotas",
-        "- No active state nomination changes were detected at the time of this briefing.",
-        "",
-        "### 3. Fee, Occupation & Employer Sponsorship Changes",
-        "- No fee, occupation, or employer sponsorship changes were detected at the time of this briefing.",
         "",
         "### 4. Smart Applicant Action Steps",
         "1. Confirm your visa subclass and required documents before lodging or updating an Expression of Interest.",
@@ -252,9 +293,16 @@ CRITICAL CONTENT RULES:
 2. STRICTLY INCLUDE: visa fee changes and VAC indexing; skilled occupation list additions/removals or CSOL changes; state and territory nomination openings, quota allocations, and status changes; federal and state invitation rounds, cutoffs and invited occupations; direct, actionable tips or compliance warnings.
 3. GROUNDING & LINKS: every single update must be grounded in official government announcements. Include direct clickable markdown links [Source Name](URL) to the official government or agency source.
 4. DEDUPLICATION: merge multiple articles on the same topic into a single concise update.
+5. NO FILLER SECTIONS: never write a placeholder line like "No new federal
+   migration policy changes were detected today" or "No active state
+   nomination changes were detected today". If a section (1, 2, or 3) has
+   no real update to report, OMIT that entire section -- header and all --
+   rather than including it with a negative/empty statement. Only sections
+   with genuine content should appear in the output.
 
 OUTPUT FORMAT:
-Generate ONLY the following structure:
+Generate ONLY the following structure (omitting any of sections 1-3 that
+have no real content per rule 5 above):
 
 Subject: [Engaging, high-impact headline with an emoji, summarizing the #1 national migration update of the day for mobile push notifications]
 
@@ -278,7 +326,7 @@ Use these recent updates as the source material.
 RECENT UPDATES:
 {chr(10).join(context_lines)}
 
-If there is no strong official update, produce a concise but factual 'no material change' briefing that still follows the required structure.
+If sections 1-3 have no real update to report, omit them per rule 5 -- do not pad them with a 'no material change' placeholder. Section 4 (Smart Applicant Action Steps) must always be present.
 """
 
     try:
@@ -330,12 +378,20 @@ If there is no strong official update, produce a concise but factual 'no materia
         if not subject or not body:
             return None
 
-        # Require all 4 required section headers to be present -- a
-        # response that's missing any of them is incomplete/truncated
-        # (this is what let a cut-off "- No new federal" body through
-        # before: it had section 1 but was missing 2, 3 and 4).
-        required_sections = ["### 1.", "### 2.", "### 3.", "### 4."]
-        if not all(section in body for section in required_sections):
+        # Backstop against Gemini padding an empty section with "No new X
+        # were detected" filler despite the prompt instruction not to --
+        # prompting alone proved unreliable in testing, so strip any such
+        # section deterministically regardless of model compliance.
+        body = _strip_filler_sections(body)
+
+        # Section 4 (Action Steps) must always be present -- a response
+        # missing it is incomplete/truncated (this is what let a cut-off
+        # "- No new federal" body through before). Sections 1-3 are each
+        # optional now (rule 5 tells Gemini to omit any with nothing real
+        # to report), so they're no longer required here. Match on the
+        # section's title text rather than its number, since Gemini may
+        # renumber remaining sections when earlier ones are omitted.
+        if "smart applicant action steps" not in body.lower():
             return None
 
         lines = [line.strip() for line in body.splitlines() if line.strip()]
