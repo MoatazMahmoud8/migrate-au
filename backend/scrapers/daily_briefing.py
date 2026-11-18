@@ -121,14 +121,19 @@ def _visa_snapshot_tip(db, now: datetime) -> dict[str, str] | None:
         processing_line = "; ".join(parts)
 
     subject = f"Today's Visa Snapshot: Subclass {subclass} {visa_name}"
-    push_parts = [f"Subclass {subclass} ({visa_name})"]
+    # Build one real, grammatically complete sentence instead of joining
+    # sentence fragments with ". " (which previously produced lowercase
+    # fragments glued together like "Subclass 189 (Skilled Independent).
+    # fee is AUD $6,140. current processing time — ...", reading as raw
+    # concatenated data rather than a sentence a person would write).
+    push_body = f"Subclass {subclass} ({visa_name}) currently has"
     if fee:
-        push_parts.append(f"fee is {fee}")
+        push_body += f" a visa fee of {fee}"
     if processing_line:
-        push_parts.append(f"current processing time — {processing_line}")
-    push_body = ". ".join(push_parts)[:296]
-    if len(push_body) == 296:
-        push_body = push_body.rstrip() + "…"
+        push_body += f"{',' if fee else ''} with current processing times of {processing_line}"
+    push_body += "."
+    if len(push_body) > 296:
+        push_body = push_body[:293].rstrip() + "…"
 
     conditions = (pt_doc or {}).get("conditions") or []
     conditions_md = "\n".join(f"- {c}" for c in conditions) or "- No special conditions on file."
