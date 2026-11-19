@@ -1,14 +1,29 @@
 """
-Processing times scraper — attempts multiple methods to scrape Home Affairs.
-Falls back to cloudscraper if Playwright is blocked.
+Processing times scraper.
+
+Previously this scraped the global visa-processing-times page's rendered
+HTML and only hashed a handful of loose "X months" text mentions to detect
+*that* something on the page changed -- it never extracted real per-subclass
+values, so the actual `visa_processing_times` Firestore collection was never
+auto-updated and stayed frozen at its one-time seed data (discovered stale
+by ~3 months in production).
+
+That page's real numbers are rendered client-side via an AJAX call to a
+public DHA SharePoint API, which we can call directly for structured,
+official, per-subclass/per-stream data:
+
+    POST /_layouts/15/api/GPT.aspx/GetVisaGlobalProcessingTime
+    {"gptRequest": [{"VisaSubclassCode": "189", "StreamCode": ""}]}
+
+This module now calls that API per monitored subclass, auto-syncs genuine
+changes to Firestore (via visa_rules_sync.sync_processing_time_to_firestore,
+which also bumps rules_version so the app refreshes), and queues an admin
+notification for each subclass that changed.
 """
 
-import hashlib
 import json
 from datetime import datetime, timezone
 from typing import Optional
-
-from scrapers.baseline import store_hash_baseline
 
 # Visa subclasses we monitor for processing time changes
 MONITORED_VISAS = [
@@ -23,157 +38,98 @@ MONITORED_VISAS = [
 ]
 
 PROCESSING_TIMES_URL = "https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-processing-times/global-visa-processing-times"
+GPT_API_URL = "https://immi.homeaffairs.gov.au/_layouts/15/api/GPT.aspx/GetVisaGlobalProcessingTime"
 
 
-def _hash(text: str) -> str:
-    return hashlib.sha256(text.encode()).hexdigest()[:16]
+def _fetch_gpt_records(scraper, subclass: str) -> list[dict]:
+    """Call the official GPT.aspx API for one subclass (all streams)."""
+    payload = {"gptRequest": [{"VisaSubclassCode": subclass, "StreamCode": ""}]}
+    headers = {"Content-Type": "application/json; charset=UTF-8", "Accept": "application/json"}
+    resp = scraper.post(GPT_API_URL, data=json.dumps(payload), headers=headers, timeout=20)
+    resp.raise_for_status()
+    body = resp.json().get("d", {})
+    if not body.get("success"):
+        return []
+    return body.get("data") or []
+
+
+def _normalize_duration(text: Optional[str]) -> Optional[str]:
+    """Pass through a real duration string; return None for the API's
+    'Processing times are not available' placeholder (older/retired
+    streams DHA hasn't retired from the response yet) so those are
+    skipped rather than stored as bogus values."""
+    if not text or "not available" in text.lower():
+        return None
+    return text.strip()
+
+
+def _streams_from_gpt(records: list[dict]) -> list[dict]:
+    streams = []
+    for record in records:
+        p50 = _normalize_duration(record.get("Percent50"))
+        p90 = _normalize_duration(record.get("Percent90"))
+        if not p50 or not p90:
+            continue
+        streams.append({
+            "name": record.get("StreamText") or "Standard",
+            "p50": p50,
+            "p90": p90,
+        })
+    return streams
 
 
 def scrape_processing_times(db) -> list[dict]:
     """
-    Attempts to scrape processing times using cloudscraper.
-    Returns notifications for any visa subclass with changed processing times.
+    Fetches current per-subclass/per-stream processing times from the
+    official GPT API and auto-syncs any real change to Firestore.
+    Returns admin notifications for subclasses whose data changed.
     """
     import cloudscraper
-    from bs4 import BeautifulSoup
-    
+    from scrapers.visa_rules_sync import sync_processing_time_to_firestore, create_auto_update_notification
+
     notifications = []
-    meta_ref = db.collection("_scraper_meta")
+    scraper = cloudscraper.create_scraper(
+        browser={"browser": "chrome", "platform": "windows", "desktop": True},
+        delay=3,
+    )
 
-    try:
-        # Use cloudscraper to bypass Cloudflare
-        scraper = cloudscraper.create_scraper(
-            browser={
-                'browser': 'chrome',
-                'platform': 'windows',
-                'desktop': True
-            },
-            delay=5
-        )
-        
-        response = scraper.get(PROCESSING_TIMES_URL, timeout=30)
-        
-        if response.status_code != 200:
-            print(f"  [processing_times] ⚠️ HTTP {response.status_code}")
-            return notifications
-            
-        html = response.text
-        
-        # Log response info for debugging
-        print(f"  [processing_times] Response length: {len(html)} chars")
-        # Show first non-empty chars
-        clean_html = html.strip()[:300]
-        
-        # Check if we got blocked
-        if "Access Denied" in html or "blocked" in html.lower() or "challenge" in html.lower():
-            print(f"  [processing_times] ⚠️ Access blocked by WAF/Cloudflare")
-            return notifications
-        
-        # Check if it's the real page
-        if "immi.homeaffairs.gov.au" not in html and "processing" not in html.lower():
-            print(f"  [processing_times] ⚠️ Page doesn't look like Home Affairs")
-            return notifications
-        
-        soup = BeautifulSoup(html, "html.parser")
-        
-        # Extract any visible processing time information
-        # The page structure may have changed, so we look for common patterns
-        processing_content = []
-        
-        # Look for embedded JSON data (common in SharePoint pages)
-        import re
-        
-        # Look for JSON containing processing time data
-        json_patterns = [
-            r'"processingTime[^"]*"\s*:\s*"([^"]+)"',
-            r'"VisaProcessingTime[^"]*"\s*:\s*"([^"]+)"',
-            r'months?\s*to\s*\d+\s*months?',
-            r'\d+\s*months?\s*to\s*\d+\s*months?',
-        ]
-        
-        for pattern in json_patterns:
-            matches = re.findall(pattern, html, re.IGNORECASE)
-            if matches:
-                processing_content.extend(matches[:10])
-        
-        # Also check for script tags with data
-        scripts = soup.find_all("script", type="application/json")
-        
-        # Look for any text mentioning months
-        month_mentions = re.findall(r'\d+\s*(?:to\s*\d+\s*)?months?', html, re.IGNORECASE)
-        if month_mentions:
-            processing_content.extend(month_mentions[:20])
-        
-        # Look for tables with processing data
-        tables = soup.find_all("table")
-        for i, table in enumerate(tables[:5]):  # Check first 5 tables
-            rows = table.find_all("tr")
-            for row in rows[:3]:  # First 3 rows for preview
-                cells = row.find_all(["td", "th"])
-                if cells:
-                    row_text = " | ".join(c.get_text(strip=True) for c in cells)
-                    if any(kw in row_text.lower() for kw in ["month", "day", "week", "%", "processing"]):
-                        processing_content.append(row_text)
-        
-        # Also look for specific visa sections
-        visa_sections = soup.select(".visa-processing, .processing-time, [class*='processing']")
-        for section in visa_sections:
-            processing_content.append(section.get_text(strip=True)[:500])
-        
-        # If we found content, hash it to detect changes
-        if processing_content:
-            combined_content = "\n".join(processing_content)
-            current_hash = _hash(combined_content)
-            
-            src_id = "processing_times_global"
-            meta_doc = meta_ref.document(src_id).get()
-            stored = meta_doc.to_dict() if meta_doc.exists else {}
-            stored_hash = stored.get("hash")
-            
-            if not stored_hash:
-                store_hash_baseline(meta_ref, src_id, current_hash, {
-                    "content_preview": combined_content[:1000],
-                })
-                print(f"  [processing_times] 📌 Global page baseline stored")
-                return notifications
-            
-            if current_hash == stored_hash:
-                meta_ref.document(src_id).set(
-                    {"last_checked": datetime.now(timezone.utc).isoformat()},
-                    merge=True
+    for subclass, label in MONITORED_VISAS:
+        try:
+            records = _fetch_gpt_records(scraper, subclass)
+            streams = _streams_from_gpt(records)
+            if not streams:
+                print(f"  [processing_times] SC {subclass} ({label}): no numeric data available from GPT API")
+                continue
+
+            existing_doc = db.collection("visa_processing_times").document(subclass).get()
+            existing = existing_doc.to_dict() if existing_doc.exists else {}
+            existing_streams = existing.get("streams") or []
+
+            if existing_streams == streams:
+                print(f"  [processing_times] SC {subclass} ({label}): no change")
+                continue
+
+            now_iso = datetime.now(timezone.utc).isoformat()
+            time_data = {
+                "streams": streams,
+                "updated_at": now_iso,
+                "updatedAt": now_iso,
+                "lastUpdated": now_iso,
+                "lastScraped": now_iso,
+            }
+
+            if sync_processing_time_to_firestore(db, subclass, time_data):
+                old_preview = (
+                    f"{existing_streams[0]['p50']} / {existing_streams[0]['p90']}"
+                    if existing_streams else "no prior data"
                 )
-                print(f"  [processing_times] No changes detected")
-                return notifications
-            
-            # Content changed!
-            notifications.append({
-                "source_id": src_id,
-                "topic": "processing_times",
-                "category": "Processing Time",
-                "title": "⏱️ Processing Times Page Updated",
-                "body": "The global visa processing times page has been updated. Check for changes to specific visa subclasses.",
-                "url": PROCESSING_TIMES_URL,
-                "content_preview": combined_content[:500],
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-            })
-            
-            meta_ref.document(src_id).set({
-                "hash": current_hash,
-                "last_checked": datetime.now(timezone.utc).isoformat(),
-                "last_changed": datetime.now(timezone.utc).isoformat(),
-                "content_preview": combined_content[:1000],
-            })
-            print(f"  [processing_times] 🔔 Processing times page changed!")
-        else:
-            print(f"  [processing_times] ⚠️ No processing time content found on page")
-            # Log page title for debugging
-            title = soup.find("title")
-            if title:
-                print(f"  [processing_times] Page title: {title.get_text()}")
-
-    except Exception as e:
-        import traceback
-        print(f"  [processing_times] ❌ Scraper error: {e}")
-        print(f"  [processing_times] Stack: {traceback.format_exc()[:300]}")
+                new_preview = f"{streams[0]['p50']} / {streams[0]['p90']}"
+                notifications.append(create_auto_update_notification(
+                    subclass, "processing_time", old_preview, new_preview, PROCESSING_TIMES_URL,
+                ))
+        except Exception as e:
+            import traceback
+            print(f"  [processing_times] ❌ SC {subclass} ({label}) error: {e}")
+            print(f"  [processing_times] Stack: {traceback.format_exc()[:300]}")
 
     return notifications
